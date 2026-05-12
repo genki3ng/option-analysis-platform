@@ -1263,7 +1263,7 @@ function renderPosition(p) {
 
       <div class="pos-actions">
         <button onclick="showClose('${p.id}')">平仓</button>
-        <button class="del-btn" onclick="deletePos('${p.id}', '${p.label.replace(/'/g, '\\'')}')" title="彻底删除（误添加时使用）">🗑 删除</button>
+        <button class="del-btn" onclick="deletePos('${p.id}')" title="彻底删除（误添加时使用）">🗑 删除</button>
       </div>
 
       <div class="close-form" id="cf-${p.id}">
@@ -1452,11 +1452,13 @@ function exportHistoryCsv() {
   downloadCsv(`pnl_history_${dateStamp()}.csv`, headers, rows);
 }
 
-function deletePos(id, label) {
-  if (!confirm(`确认彻底删除持仓 "${label}"？` + NL + `此操作不可撤销（不同于平仓）。` + NL + `仅在录入错误时使用。`)) return;
+function deletePos(id) {
+  // 通过 id 找 label
+  const found = (window._currentData?.positions || []).find(p => p.id === id);
+  const label = found ? found.label : id;
+  if (!confirm('确认彻底删除持仓 "' + label + '"?' + NL + '此操作不可撤销（不同于平仓）。' + NL + '仅在录入错误时使用。')) return;
   const positions = loadPositions().filter(p => posIdOf(p) !== id);
   savePositions(positions);
-  // 顺便清理 state 中的关联
   const state = loadStateMap();
   if (state[id]) { delete state[id]; saveStateMap(state); }
   selectedIds.delete(id);

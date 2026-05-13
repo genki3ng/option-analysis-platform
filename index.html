@@ -833,7 +833,12 @@
       <li>👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见</li>
       <li>💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件</li>
       <li>📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON</li>
-      <li>🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：把 JSON 放 Google Drive 文件夹，点 <strong>🔗 文件同步</strong> 选它 → 改动自动写文件 → Drive 自动同步到云 → 其他设备打开同一个文件即可</li>
+      <li>🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：
+        <ul style="margin:4px 0">
+          <li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li>
+          <li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li>
+        </ul>
+      </li>
       <li>👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
     </ul>
   </div>
@@ -955,7 +960,8 @@
           <button class="muted" onclick="exportHistoryCsv()" title="每日 P&L 历史">📊 历史 CSV</button>
           <button class="muted" onclick="exportJSONBackup()" title="完整数据备份（可重新导入）">💾 导出备份</button>
           <button class="muted" onclick="triggerImport()" title="从备份文件恢复">📂 导入备份</button>
-          <button class="muted" id="sync-btn" onclick="linkSyncFile()" title="连接到 JSON 文件实现跨设备同步（Chrome/Edge 限定）">🔗 文件同步</button>
+          <button class="muted" id="sync-btn" onclick="linkSyncFile()" title="连接到单个 JSON 文件（跨设备同步，Chrome/Edge 限定）">🔗 文件同步</button>
+          <button class="muted" onclick="linkSyncDir()" title="连接到文件夹（兼容本地 Mac app 的 positions.json + state.json 格式）">📁 文件夹同步</button>
           <span id="sync-status" style="font-size:11px;margin-left:4px"></span>
           <button class="muted" id="hide-closed-btn" onclick="toggleHideClosed()">隐藏已平仓</button>
           <span class="label-tag">排序</span>
@@ -1524,9 +1530,12 @@ function reopenPos(id) {
 // 不同设备打开同一个文件 → 走 Drive 自家同步 → 数据跨设备共享。
 // 只支持 Chromium 浏览器（Chrome / Edge / Brave）。
 
-let _syncHandle = null;
+let _syncHandle = null;     // 单文件 handle（mode = 'file'）
+let _syncDirHandle = null;  // 文件夹 handle（mode = 'dir' — 兼容本地 Mac app 格式）
+let _syncMode = null;       // 'file' | 'dir' | null
 let _syncing = false;
 const _syncSupported = ('showOpenFilePicker' in window);
+const _syncDirSupported = ('showDirectoryPicker' in window);
 
 // IndexedDB 持久化 file handle
 function _idbOpen() {
@@ -1601,30 +1610,81 @@ function _applyData(data) {
   return true;
 }
 
-async function syncOut() {
-  if (!_syncHandle || _syncing) return;
-  _syncing = true;
+async function _writeFile(dirHandle, filename, content) {
+  const fh = await dirHandle.getFileHandle(filename, { create: true });
+  const w = await fh.createWritable();
+  await w.write(content);
+  await w.close();
+}
+
+async function _readFile(dirHandle, filename) {
   try {
-    await _fsaWrite(_syncHandle, _packData());
-    _showSyncStatus('synced');
+    const fh = await dirHandle.getFileHandle(filename);
+    const f = await fh.getFile();
+    const text = await f.text();
+    return text.trim() ? JSON.parse(text) : null;
   } catch (e) {
-    console.warn('syncOut failed', e);
-    _showSyncStatus('error', e.message);
-  } finally {
-    _syncing = false;
+    if (e.name === 'NotFoundError') return null;
+    throw e;
+  }
+}
+
+async function syncOut() {
+  if (_syncing) return;
+  if (_syncMode === 'file' && _syncHandle) {
+    _syncing = true;
+    try {
+      await _fsaWrite(_syncHandle, _packData());
+      _showSyncStatus('synced');
+    } catch (e) {
+      console.warn('syncOut(file) failed', e);
+      _showSyncStatus('error', e.message);
+    } finally { _syncing = false; }
+  } else if (_syncMode === 'dir' && _syncDirHandle) {
+    _syncing = true;
+    try {
+      // 写两个文件：positions.json（flat array）+ state.json（map）
+      // —— 兼容本地 Mac app 格式
+      await _writeFile(_syncDirHandle, 'positions.json',
+        JSON.stringify(loadPositions(), null, 2));
+      await _writeFile(_syncDirHandle, 'state.json',
+        JSON.stringify(loadStateMap(), null, 2));
+      // username 单独存（本地 app 没有这个概念）
+      await _writeFile(_syncDirHandle, 'username.txt', loadUsername());
+      _showSyncStatus('synced');
+    } catch (e) {
+      console.warn('syncOut(dir) failed', e);
+      _showSyncStatus('error', e.message);
+    } finally { _syncing = false; }
   }
 }
 
 async function syncIn() {
-  if (!_syncHandle) return;
-  try {
-    const data = await _fsaRead(_syncHandle);
-    if (data) _applyData(data);
-    selectedIds = null;
-    refresh();
-  } catch (e) {
-    console.warn('syncIn failed', e);
+  if (_syncMode === 'file' && _syncHandle) {
+    try {
+      const data = await _fsaRead(_syncHandle);
+      if (data) _applyData(data);
+    } catch (e) { console.warn('syncIn(file) failed', e); }
+  } else if (_syncMode === 'dir' && _syncDirHandle) {
+    try {
+      const positions = await _readFile(_syncDirHandle, 'positions.json');
+      const state = await _readFile(_syncDirHandle, 'state.json');
+      let username = null;
+      try {
+        const fh = await _syncDirHandle.getFileHandle('username.txt');
+        username = (await (await fh.getFile()).text()).trim();
+      } catch (e) {}
+      if (Array.isArray(positions)) {
+        _applyData({
+          positions,
+          state: state || {},
+          username: username || undefined,
+        });
+      }
+    } catch (e) { console.warn('syncIn(dir) failed', e); }
   }
+  selectedIds = null;
+  refresh();
 }
 
 async function linkSyncFile() {
@@ -1684,7 +1744,9 @@ async function linkSyncFile() {
   }
 
   _syncHandle = handle;
+  _syncMode = 'file';
   await idbSet('fileHandle', handle);
+  await idbSet('syncMode', 'file');
   await syncOut();
 
   _showSyncStatus('synced');
@@ -1692,28 +1754,101 @@ async function linkSyncFile() {
   selectedIds = null;
   refresh();
   alert('✅ 已连接到文件: ' + handle.name + NL + NL +
-        '现在每次改动都会自动写入这个文件，' +
-        'Google Drive 会自动同步到云端。' + NL +
-        '换设备：打开网站 → 🔗 文件同步 → 选同一个文件 → 选"用文件数据覆盖本地"');
+        '每次改动都会自动写入这个文件。' + NL +
+        '换设备：打开网站 → 选同一个文件 → 选"用文件数据覆盖本地"');
+}
+
+// ── 文件夹同步模式（兼容本地 Mac app 格式：positions.json + state.json）
+async function linkSyncDir() {
+  if (!_syncDirSupported) {
+    alert('当前浏览器不支持文件夹同步功能，需要 Chrome / Edge / Brave。');
+    return;
+  }
+
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('选择失败: ' + e.message);
+    return;
+  }
+
+  // 验证权限
+  const perm = await dirHandle.queryPermission({ mode: 'readwrite' });
+  if (perm !== 'granted') {
+    const r = await dirHandle.requestPermission({ mode: 'readwrite' });
+    if (r !== 'granted') {
+      alert('需要文件夹读写权限');
+      return;
+    }
+  }
+
+  // 读现有文件（如果有）
+  let positions = null, state = null, username = null;
+  try { positions = await _readFile(dirHandle, 'positions.json'); } catch (e) {}
+  try { state = await _readFile(dirHandle, 'state.json'); } catch (e) {}
+  try {
+    const fh = await dirHandle.getFileHandle('username.txt');
+    username = (await (await fh.getFile()).text()).trim();
+  } catch (e) {}
+
+  if (Array.isArray(positions) && positions.length) {
+    const merge = confirm(
+      '文件夹 ' + dirHandle.name + ' 已有数据：' + NL +
+      '  • ' + positions.length + ' 个持仓 (positions.json)' + NL +
+      '  • ' + (state ? Object.keys(state).length : 0) + ' 条平仓记录 (state.json)' + NL +
+      (username ? '  • 用户名: ' + username + NL : '') + NL +
+      '点 OK = 用文件夹数据覆盖本地（跨设备恢复 / 复用本地 Mac app 数据）' + NL +
+      '点 取消 = 用本地浏览器数据覆盖文件夹'
+    );
+    if (merge) {
+      _applyData({ positions, state: state || {}, username: username || undefined });
+    }
+  }
+
+  _syncDirHandle = dirHandle;
+  _syncMode = 'dir';
+  await idbSet('dirHandle', dirHandle);
+  await idbSet('syncMode', 'dir');
+  await syncOut();
+
+  _showSyncStatus('synced');
+  _updateSyncBtn(true, dirHandle.name + '/ (文件夹)');
+  selectedIds = null;
+  refresh();
+  alert('✅ 已连接到文件夹: ' + dirHandle.name + NL + NL +
+        '会自动读写：' + NL +
+        '  • positions.json（持仓数组）' + NL +
+        '  • state.json（平仓状态）' + NL +
+        '  • username.txt（用户名）' + NL + NL +
+        '这个格式与本地 Mac app 完全兼容 — 同一个 Drive 文件夹两边共用 ✨');
 }
 
 async function unlinkSync() {
-  if (!confirm('断开文件同步？\n本地 localStorage 数据保留，但以后改动不再同步到文件。')) return;
+  if (!confirm('断开同步？\n本地 localStorage 数据保留，但以后改动不再同步。')) return;
   _syncHandle = null;
+  _syncDirHandle = null;
+  _syncMode = null;
   await idbDel('fileHandle');
+  await idbDel('dirHandle');
+  await idbDel('syncMode');
   _updateSyncBtn(false);
   _showSyncStatus('none');
 }
 
 async function syncMenu() {
-  if (!_syncHandle) return linkSyncFile();
+  if (!_syncMode) return linkSyncFile();
+  const target = _syncMode === 'file'
+    ? '文件: ' + (_syncHandle?.name || '?')
+    : '文件夹: ' + (_syncDirHandle?.name || '?');
   const action = prompt(
-    '🔗 已连接: ' + _syncHandle.name + NL + NL +
+    '🔗 已连接（' + _syncMode + '）: ' + target + NL + NL +
     '输入命令：' + NL +
-    '  pull  → 从文件重新读取（用于另一设备改了文件后）' + NL +
-    '  push  → 立即把本地数据写到文件' + NL +
+    '  pull   → 从文件/文件夹重新读取（另一设备改了之后）' + NL +
+    '  push   → 立即把本地数据写出去' + NL +
     '  unlink → 断开同步' + NL +
-    '  change → 改连接别的文件',
+    '  change-file → 改连接别的单文件' + NL +
+    '  change-dir  → 改连接别的文件夹（兼容本地 app 模式）',
     'pull'
   );
   if (!action) return;
@@ -1721,11 +1856,10 @@ async function syncMenu() {
     case 'pull': await syncIn(); break;
     case 'push': await syncOut(); break;
     case 'unlink': await unlinkSync(); break;
-    case 'change':
-      await idbDel('fileHandle');
-      _syncHandle = null;
-      linkSyncFile();
-      break;
+    case 'change-file':
+      await unlinkSync(); linkSyncFile(); break;
+    case 'change-dir':
+      await unlinkSync(); linkSyncDir(); break;
   }
 }
 
@@ -1763,28 +1897,56 @@ function _updateSyncBtn(linked, filename) {
 async function _initSync() {
   if (!_syncSupported) return;
   try {
-    const handle = await idbGet('fileHandle');
-    if (!handle) return;
-    // queryPermission 不弹窗
-    const perm = await handle.queryPermission({ mode: 'readwrite' });
-    if (perm === 'granted') {
-      _syncHandle = handle;
-      _updateSyncBtn(true, handle.name);
-      // 启动时先 pull 一遍（其他设备可能改过文件）
-      await syncIn();
+    const mode = await idbGet('syncMode');
+    if (mode === 'dir') {
+      const dh = await idbGet('dirHandle');
+      if (!dh) return;
+      const perm = await dh.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        _syncDirHandle = dh;
+        _syncMode = 'dir';
+        _updateSyncBtn(true, dh.name + '/');
+        await syncIn();
+      } else {
+        _updateSyncBtn(false);
+        const btn = document.getElementById('sync-btn');
+        if (btn) {
+          btn.textContent = '🔗 重新授权 ' + dh.name + '/';
+          btn.onclick = async () => {
+            const r = await dh.requestPermission({ mode: 'readwrite' });
+            if (r === 'granted') {
+              _syncDirHandle = dh;
+              _syncMode = 'dir';
+              _updateSyncBtn(true, dh.name + '/');
+              await syncIn();
+            }
+          };
+        }
+      }
     } else {
-      // 需用户手势重新授权
-      _updateSyncBtn(false);
-      const btn = document.getElementById('sync-btn');
-      if (btn) {
-        btn.textContent = '🔗 重新授权 ' + handle.name;
-        btn.onclick = async () => {
-          if (await _fsaHasPerm(handle)) {
-            _syncHandle = handle;
-            _updateSyncBtn(true, handle.name);
-            await syncIn();
-          }
-        };
+      // 默认 / 老用户：单文件模式
+      const handle = await idbGet('fileHandle');
+      if (!handle) return;
+      const perm = await handle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        _syncHandle = handle;
+        _syncMode = 'file';
+        _updateSyncBtn(true, handle.name);
+        await syncIn();
+      } else {
+        _updateSyncBtn(false);
+        const btn = document.getElementById('sync-btn');
+        if (btn) {
+          btn.textContent = '🔗 重新授权 ' + handle.name;
+          btn.onclick = async () => {
+            if (await _fsaHasPerm(handle)) {
+              _syncHandle = handle;
+              _syncMode = 'file';
+              _updateSyncBtn(true, handle.name);
+              await syncIn();
+            }
+          };
+        }
       }
     }
   } catch (e) {

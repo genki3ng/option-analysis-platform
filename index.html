@@ -93,6 +93,45 @@
   }
   .theme-toggle .t-icon { line-height: 1; }
 
+  /* 用户身份徽章 — 镜像 theme toggle 但在左侧 */
+  .user-badge {
+    position: absolute; left: 0; top: 50%;
+    transform: translateY(-50%);
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; height: 36px; padding: 0 14px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text); font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+    max-width: 200px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .user-badge:hover {
+    border-color: var(--accent);
+    transform: translateY(-50%) scale(1.02);
+  }
+  .user-badge .icon { flex-shrink: 0; }
+  .user-badge .name {
+    overflow: hidden; text-overflow: ellipsis;
+    max-width: 130px;
+  }
+
+  /* 数据存储提示 */
+  .storage-info {
+    text-align: center;
+    color: var(--sub);
+    font-size: 11px;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .storage-info .key {
+    background: var(--card2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", monospace;
+    font-size: 10px;
+  }
+
   .yf-warning {
     display: none;
     background: rgba(234, 88, 12, 0.10);
@@ -707,12 +746,21 @@
 <body>
 <div class="wrap">
   <div class="header">
+    <div class="user-badge" id="user-badge" onclick="editUsername()" title="点击修改用户名（仅本地显示）">
+      <span class="icon">👤</span>
+      <span class="name" id="user-name">本地用户</span>
+    </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="切换主题">
       <span class="t-icon">☀️</span>
     </button>
     <h1>Option Analysis Platform</h1>
-    <div class="sub" id="sub">5 持仓 · 实时 P&L · 自动每 30 秒刷新</div>
+    <div class="sub" id="sub">实时 P&L · 自动每 30 秒刷新</div>
+    <div class="storage-info">
+      💾 你的数据存储在<strong>本浏览器</strong>的 <span class="key">localStorage</span> 里，不上传任何服务器。<br>
+      清除浏览器数据 / 换浏览器会丢失 — 重要持仓请定期 <strong>导出备份</strong>。
+    </div>
   </div>
+  <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
   <div class="summary">
     <div class="item">
@@ -840,8 +888,10 @@
           <button class="add-btn" onclick="showAdd()">+ 新建持仓</button>
           <button class="muted" onclick="selectAll(true)">全选</button>
           <button class="muted" onclick="selectAll(false)">全不选</button>
-          <button class="muted" onclick="exportPositionsCsv()" title="当前持仓快照">📥 持仓 CSV</button>
+          <button class="muted" onclick="exportPositionsCsv()" title="当前持仓快照（Excel 可读）">📥 持仓 CSV</button>
           <button class="muted" onclick="exportHistoryCsv()" title="每日 P&L 历史">📊 历史 CSV</button>
+          <button class="muted" onclick="exportJSONBackup()" title="完整数据备份（可重新导入）">💾 导出备份</button>
+          <button class="muted" onclick="triggerImport()" title="从备份文件恢复">📂 导入备份</button>
           <button class="muted" id="hide-closed-btn" onclick="toggleHideClosed()">隐藏已平仓</button>
           <span class="label-tag">排序</span>
           <select id="sort-select" onchange="setSortKey(this.value)">
@@ -1337,6 +1387,94 @@ function reopenPos(id) {
   delete state[id];
   saveStateMap(state);
   refresh();
+}
+
+// ── 用户身份（仅本地展示，区分"这是哪台浏览器的数据"）─────────────────
+function loadUsername() {
+  return localStorage.getItem('username') || '本地用户';
+}
+function saveUsername(name) {
+  localStorage.setItem('username', name);
+  const el = document.getElementById('user-name');
+  if (el) el.textContent = name;
+}
+function editUsername() {
+  const cur = loadUsername();
+  const next = prompt('设置你的名字（只在本地显示，用于区分不同浏览器的数据）', cur);
+  if (next !== null && next.trim()) saveUsername(next.trim());
+}
+// 启动时应用
+saveUsername(loadUsername());
+
+// ── JSON 备份 / 恢复 ──────────────────────────────────────────────────
+function exportJSONBackup() {
+  const positions = loadPositions();
+  const state = loadStateMap();
+  const username = loadUsername();
+  const backup = {
+    app: 'option-analysis-platform',
+    version: '1',
+    exportedAt: new Date().toISOString(),
+    username: username,
+    positions: positions,
+    state: state,
+  };
+  const safeName = username.replace(/[^a-zA-Z0-9_一-龥]/g, '_');
+  const blob = new Blob([JSON.stringify(backup, null, 2)],
+                        { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `oap-backup-${safeName}-${dateStamp()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function triggerImport() {
+  document.getElementById('import-file').click();
+}
+
+function handleImportJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.positions)) {
+        throw new Error('文件格式错误：找不到 positions 数组');
+      }
+      const nPos = data.positions.length;
+      const nState = Object.keys(data.state || {}).length;
+      const exportedAt = data.exportedAt
+        ? new Date(data.exportedAt).toLocaleString('zh-CN')
+        : '未知';
+      const msg = '即将导入：' + NL +
+                  '  • ' + nPos + ' 个持仓' + NL +
+                  '  • ' + nState + ' 条平仓记录' + NL +
+                  '  • 用户名: ' + (data.username || '(无)') + NL +
+                  '  • 备份时间: ' + exportedAt + NL + NL +
+                  '⚠️ 这会覆盖你当前的所有数据，确定继续？';
+      if (!confirm(msg)) {
+        e.target.value = '';
+        return;
+      }
+      savePositions(data.positions);
+      saveStateMap(data.state || {});
+      if (data.username) saveUsername(data.username);
+      // 清空 selectedIds 让 refresh 自动重选所有
+      selectedIds = null;
+      alert('✅ 导入成功！共 ' + nPos + ' 个持仓');
+      refresh();
+    } catch (err) {
+      alert('❌ 导入失败：' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.onerror = () => alert('❌ 文件读取失败');
+  reader.readAsText(file);
 }
 
 // ── CSV 导出 ──────────────────────────────────────────────────────────

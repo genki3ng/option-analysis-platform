@@ -69,6 +69,8 @@ def implied_vol(target, S, K, T, r, is_call):
 _cache_prices: Dict[str, Dict] = {}
 _cache_chain: Dict[Tuple[str, str], Dict] = {}
 _cache_hist: Dict[Tuple[str, str], Dict[str, float]] = {}
+_cache_intraday: Dict[str, List] = {}
+_cache_intraday_ts: Dict[str, float] = {}
 
 
 def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
@@ -132,6 +134,29 @@ def fetch_option_quote(ticker, expiry, strike, is_call):
     if q and q.get("mid", 0) > 0:
         return q
     return None
+
+
+def fetch_intraday(ticker: str) -> List[Dict]:
+    """今日分钟级走势。返回 [{t: 'HH:MM', p: price}, ...]"""
+    now = time.time()
+    if ticker in _cache_intraday and now - _cache_intraday_ts.get(ticker, 0) < 60:
+        return _cache_intraday[ticker]
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+        hist = t.history(period="1d", interval="5m", prepost=False)
+        out = []
+        for idx, row in hist.iterrows():
+            close = float(row.get("Close", 0) or 0)
+            if close > 0:
+                out.append({"t": idx.strftime("%H:%M"), "p": close})
+        _cache_intraday[ticker] = out
+        _cache_intraday_ts[ticker] = now
+        return out
+    except Exception:
+        _cache_intraday[ticker] = []
+        _cache_intraday_ts[ticker] = now
+        return []
 
 
 def fetch_history(ticker: str, start: date) -> Dict[str, float]:
@@ -496,15 +521,17 @@ def compute(payload):
         return {
             "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "yfinance_available": _check_yf(),
-            "tsla": {}, "meta": {},
+            "tickers": {}, "intraday": {},
+            "tsla": {}, "meta": {},  # 向后兼容
             "total_sold": 0, "total_mktval": 0, "total_pnl": 0,
             "total_pnl_pct": 0, "total_theta": 0,
             "positions": [], "suggestions": [], "history": [],
         }
 
     positions = [parse_position(p) for p in positions_raw]
-    tickers = list(set(p["ticker"] for p in positions))
-    prices = fetch_prices(tickers + ["TSLA", "META"])  # 这俩拿来显示
+    tickers = sorted(set(p["ticker"] for p in positions))
+    prices = fetch_prices(tickers)
+    intraday = {tk: fetch_intraday(tk) for tk in tickers}
     today = date.today()
     earliest = min(p["trade_date"] for p in positions) - timedelta(days=5)
 
@@ -521,6 +548,9 @@ def compute(payload):
     return {
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "yfinance_available": _check_yf(),
+        "tickers": prices,        # 所有持仓涉及的 ticker
+        "intraday": intraday,     # 每个 ticker 的当日分钟级数据
+        # 向后兼容（前端老代码用到）
         "tsla": prices.get("TSLA", {}),
         "meta": prices.get("META", {}),
         "total_sold": total_sold,

@@ -1,11 +1,7 @@
 {
   "functions": {
     "api/state.py": {
-      "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 60
     }
-  },
-  "rewrites": [
-    { "source": "/api/state", "destination": "/api/state" }
-  ]
+  }
 }

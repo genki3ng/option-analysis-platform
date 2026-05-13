@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/state.py": {
-      "maxDuration": 60
-    }
-  }
-}

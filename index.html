@@ -116,21 +116,53 @@
     max-width: 130px;
   }
 
-  /* 数据存储提示 */
-  .storage-info {
-    text-align: center;
-    color: var(--sub);
-    font-size: 11px;
-    margin-top: 8px;
-    line-height: 1.5;
+  /* 数据存储提示卡 — 首次访问展开，可永久折叠 */
+  .info-card {
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.06) 0%,
+      rgba(167,139,250,0.06) 100%);
+    border: 1px solid rgba(91,141,239,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    position: relative;
   }
-  .storage-info .key {
+  .info-card .title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .info-card .close {
+    position: absolute; top: 8px; right: 12px;
+    cursor: pointer; color: var(--sub);
+    font-size: 16px; line-height: 1;
+  }
+  .info-card .close:hover { color: var(--text); }
+  .info-card ul {
+    margin: 0; padding-left: 18px; color: var(--text);
+  }
+  .info-card ul li { margin: 2px 0; }
+  .info-card .key {
     background: var(--card2);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: "SF Mono", monospace;
-    font-size: 10px;
+    font-size: 11px;
   }
+  .info-card.collapsed { display: none; }
+
+  .info-summary {
+    text-align: center;
+    color: var(--sub);
+    font-size: 11px;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+  .info-summary:hover { color: var(--accent); }
+  .info-summary.hidden { display: none; }
 
   .yf-warning {
     display: none;
@@ -755,10 +787,21 @@
     </button>
     <h1>Option Analysis Platform</h1>
     <div class="sub" id="sub">实时 P&L · 自动每 30 秒刷新</div>
-    <div class="storage-info">
-      💾 你的数据存储在<strong>本浏览器</strong>的 <span class="key">localStorage</span> 里，不上传任何服务器。<br>
-      清除浏览器数据 / 换浏览器会丢失 — 重要持仓请定期 <strong>导出备份</strong>。
-    </div>
+  </div>
+
+  <div class="info-card" id="info-card">
+    <span class="close" onclick="dismissInfo()" title="收起">×</span>
+    <div class="title">ℹ️ 关于这个工具（点 × 收起，以后从底部展开）</div>
+    <ul>
+      <li>📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
+      <li>👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见</li>
+      <li>💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件</li>
+      <li>📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON</li>
+      <li>👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
+    </ul>
+  </div>
+  <div class="info-summary hidden" id="info-summary" onclick="expandInfo()">
+    ℹ️ 数据存储 & 备份说明 — 点击展开
   </div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
@@ -1388,6 +1431,30 @@ function reopenPos(id) {
   saveStateMap(state);
   refresh();
 }
+
+// ── 信息卡折叠状态 ─────────────────────────────────────────────────────
+function applyInfoState() {
+  const dismissed = localStorage.getItem('infoCardDismissed') === '1';
+  const card = document.getElementById('info-card');
+  const sum = document.getElementById('info-summary');
+  if (!card || !sum) return;
+  if (dismissed) {
+    card.classList.add('collapsed');
+    sum.classList.remove('hidden');
+  } else {
+    card.classList.remove('collapsed');
+    sum.classList.add('hidden');
+  }
+}
+function dismissInfo() {
+  localStorage.setItem('infoCardDismissed', '1');
+  applyInfoState();
+}
+function expandInfo() {
+  localStorage.removeItem('infoCardDismissed');
+  applyInfoState();
+}
+applyInfoState();
 
 // ── 用户身份（仅本地展示，区分"这是哪台浏览器的数据"）─────────────────
 function loadUsername() {

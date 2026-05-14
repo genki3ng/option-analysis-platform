@@ -573,6 +573,9 @@ def _decide_strategy(direction: str, intent: str):
     if intent == "covered_call":     return True, True    # short call 减仓
     if intent == "long_vol":
         return (True, False) if direction == "bullish" else (False, False)
+    if intent == "long_leaps":
+        # LEAPS 股票替代：根据方向决定 long call 或 long put（通常 call）
+        return (True, False) if direction != "bearish" else (False, False)
     # 默认 premium：根据方向决定
     if direction == "bullish":       return False, True   # short put
     if direction == "bearish":       return True, True    # short call
@@ -618,11 +621,19 @@ def recommend(req: dict) -> dict:
         return {"error": f"无法拉到 {ticker} 实时价格"}
 
     is_call, is_short = _decide_strategy(direction, intent)
-    delta_band = {
-        "conservative": (0.08, 0.20),
-        "balanced":     (0.20, 0.35),
-        "aggressive":   (0.35, 0.50),
-    }.get(risk, (0.20, 0.35))
+    # LEAPS / 股票替代：扫描深度 ITM 区间（Delta 0.55-0.85）
+    if intent == "long_leaps":
+        delta_band = {
+            "conservative": (0.75, 0.90),  # 接近股票
+            "balanced":     (0.65, 0.80),  # 平衡杠杆
+            "aggressive":   (0.55, 0.72),  # 高杠杆
+        }.get(risk, (0.65, 0.80))
+    else:
+        delta_band = {
+            "conservative": (0.08, 0.20),
+            "balanced":     (0.20, 0.35),
+            "aggressive":   (0.35, 0.50),
+        }.get(risk, (0.20, 0.35))
 
     target_exps = _find_expiries(ticker, timeframe, n=3)
     today = date.today()
@@ -661,9 +672,30 @@ def recommend(req: dict) -> dict:
                 annualized = (premium / collateral) * (365 / days) * 100
             prob_safe = (1 - abs_delta) * 100  # 粗估安全概率
 
-            # 综合评分（仅做空适用）：年化 × 安全度 × 流动性扣分
+            # 综合评分
             liquidity_factor = max(0.3, 1.0 - spread_pct / 50)
-            score = annualized * (prob_safe / 100) * liquidity_factor if is_short else mid
+            if is_short:
+                # Short: 年化收益 × 安全度 × 流动性
+                score = annualized * (prob_safe / 100) * liquidity_factor
+            elif intent == "long_leaps":
+                # LEAPS Long Call: 杠杆 × 时间 × 便宜度 × 流动性
+                # 越深度 ITM、越长时间、越低 IV，越好
+                leverage = abs_delta * underlying / mid  # 1 元期权能涨多少
+                time_value_pct = max(0, (mid - max(underlying - strike if is_call else strike - underlying, 0)) / mid)
+                time_value_pct = max(0.01, min(0.6, time_value_pct))  # 时间价值占比，越低越好
+                iv_penalty = max(0.3, 1.0 - iv * 1.0)  # IV 越低评分越高
+                score = leverage * iv_penalty * liquidity_factor / (1 + time_value_pct * 3)
+            else:
+                # 普通 long: leverage / 成本
+                score = abs_delta * 100 / mid * liquidity_factor
+
+            # LEAPS 用的特殊指标：杠杆和盈亏平衡点
+            leverage_x = None
+            breakeven_pct = None
+            if not is_short and intent == "long_leaps":
+                leverage_x = round(abs_delta * underlying / mid, 2)
+                breakeven_strike = strike + mid if is_call else strike - mid
+                breakeven_pct = round((breakeven_strike / underlying - 1) * 100, 1)
 
             candidates.append({
                 "ticker": ticker,
@@ -685,6 +717,8 @@ def recommend(req: dict) -> dict:
                 "prob_safe_pct": round(prob_safe, 1),
                 "moneyness_pct": round((strike / underlying - 1) * 100, 1),
                 "score": round(score, 2),
+                "leverage_x": leverage_x,
+                "breakeven_pct": breakeven_pct,
             })
 
     candidates.sort(key=lambda x: -x["score"])

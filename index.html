@@ -692,6 +692,39 @@
     border-radius: 6px; padding: 7px 10px; font-size: 13px;
     color: var(--text); font-family: inherit; width: 120px;
   }
+  .rec-form .preset-row {
+    background: linear-gradient(135deg, rgba(91,141,239,0.05), rgba(167,139,250,0.05));
+    border: 1px dashed rgba(91,141,239,0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .rec-form .preset-btn {
+    background: white;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  :root[data-theme="dark"] .rec-form .preset-btn {
+    background: var(--card2);
+  }
+  .rec-form .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .rec-form .preset-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
   .rec-form .submit-row {
     display: flex; gap: 8px; justify-content: flex-end;
     margin-top: 16px; padding-top: 14px;
@@ -1245,6 +1278,15 @@
     <span class="x" onclick="hideRec()">×</span>
   </h4>
 
+  <div class="row preset-row">
+    <span class="label">📖 大佬策略模板（一键填表）</span>
+    <button class="preset-btn" data-preset="value_leaps" title="@joely7758521 价值哥风格：大跌时加 LEAPS，长期攒正股">📖 价值哥 LEAPS</button>
+    <button class="preset-btn" data-preset="diamond_hands" title="@Rustallintsla 风格：深度 ITM 长 Call，做股票替代">💎 死多头股票替代</button>
+    <button class="preset-btn" data-preset="csp_wheel" title="经典 Wheel：卖 OTM Put 收权利金，被指派就接货卖 Covered Call">🔄 Wheel 卖跌接货</button>
+    <button class="preset-btn" data-preset="weekly_premium" title="每周 short put / call 收 theta">💰 周收权利金</button>
+    <button class="preset-btn" data-preset="iron_condor_neutral" title="区间震荡：远 OTM short put + short call">↔️ 区间震荡</button>
+  </div>
+
   <div class="row">
     <span class="label">1. 标的 Ticker</span>
     <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
@@ -1263,7 +1305,8 @@
     <button class="opt-btn" data-group="intent" data-value="premium">💰 收权利金</button>
     <button class="opt-btn" data-group="intent" data-value="csp">🎯 准备接货（CSP）</button>
     <button class="opt-btn" data-group="intent" data-value="covered_call">📤 减仓（Covered Call）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率</button>
+    <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率（近期）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_leaps">📖 LEAPS 股票替代（长期 Long Call）</button>
   </div>
 
   <div class="row">
@@ -2291,6 +2334,67 @@ const _recDefaults = {
 const _recSelection = { ...localStorage.getItem('rec_last_choice')
   ? JSON.parse(localStorage.getItem('rec_last_choice')) : _recDefaults };
 
+// ── 大佬策略预设 ────────────────────────────────────────────────────
+const REC_PRESETS = {
+  value_leaps: {
+    label: '📖 价值哥 LEAPS',
+    fill: { direction: 'bullish', intent: 'long_leaps', timeframe: '180', risk: 'balanced' },
+    note: '价值哥 (@joely7758521) 风格：大跌时分批加 LEAPS，赚 100%+ 就部分止盈换正股。' +
+          '推荐用在你长期看好的核心标的（如 TSLA, GOOG, META）。',
+  },
+  diamond_hands: {
+    label: '💎 死多头股票替代',
+    fill: { direction: 'bullish', intent: 'long_leaps', timeframe: '365', risk: 'aggressive' },
+    note: '@Rustallintsla 风格：深度 ITM 1 年+ LEAPS 替代正股，杠杆约 1.5-2x。Delta 0.70+ 模仿持股。' +
+          '风险：黑天鹅时 LEAPS 不止跌，要心理准备。',
+  },
+  csp_wheel: {
+    label: '🔄 Wheel',
+    fill: { direction: 'bullish', intent: 'csp', timeframe: '30', risk: 'balanced' },
+    note: 'Wheel 经典：卖 30 天 0.25 Delta Put 收权利金 → 被指派就接货 → 卖 covered call → 再被叫走 → 重复。' +
+          '适合"我本来就想低价买入"的标的。',
+  },
+  weekly_premium: {
+    label: '💰 周收权利金',
+    fill: { direction: 'bullish', intent: 'premium', timeframe: '7', risk: 'balanced' },
+    note: '每周卖 5-10 DTE OTM Put（看涨）或 Call（看跌），收 theta。' +
+          '注意 gamma 风险大，到期前要密切监控。',
+  },
+  iron_condor_neutral: {
+    label: '↔️ 区间震荡',
+    fill: { direction: 'neutral', intent: 'premium', timeframe: '14', risk: 'conservative' },
+    note: '横盘标的：远 OTM 双侧卖出（实际需手动组成 short put + short call）。' +
+          '低风险但收益也低。先看 short put 的推荐，再去对侧建仓。',
+  },
+};
+
+function applyPreset(key) {
+  const p = REC_PRESETS[key];
+  if (!p) return;
+  Object.assign(_recSelection, p.fill);
+  _applyRecSelection();
+  // 高亮当前激活的预设按钮
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.preset === key));
+  // 显示策略说明
+  showPresetNote(p.note);
+}
+
+function showPresetNote(note) {
+  let el = document.getElementById('preset-note');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'preset-note';
+    el.style.cssText = 'font-size:11px;color:var(--accent);' +
+                       'padding:8px 12px;margin-top:8px;' +
+                       'background:rgba(91,141,239,0.08);' +
+                       'border-left:3px solid var(--accent);' +
+                       'border-radius:4px;line-height:1.6;';
+    document.querySelector('.rec-form .preset-row').appendChild(el);
+  }
+  el.textContent = '💡 ' + note;
+}
+
 function showRec() {
   const form = document.getElementById('rec-form');
   const bd = document.getElementById('rec-backdrop');
@@ -2305,7 +2409,12 @@ function showRec() {
       const group = btn.dataset.group;
       _recSelection[group] = btn.dataset.value;
       _applyRecSelection();
+      // 用户手动调整后取消预设高亮
+      document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
     };
+  });
+  document.querySelectorAll('.rec-form .preset-btn').forEach(btn => {
+    btn.onclick = () => applyPreset(btn.dataset.preset);
   });
 }
 function hideRec() {
@@ -2376,8 +2485,10 @@ function renderRecResult(d) {
     return;
   }
 
+  const isShort = c.is_short;
+  const isLeaps = c.intent === 'long_leaps';
+
   const rows = d.candidates.map((opt, i) => {
-    const isShort = c.is_short;
     return `
       <tr>
         <td class="rank">#${i + 1}</td>
@@ -2393,6 +2504,11 @@ function renderRecResult(d) {
           <td>安全概率<br><strong>${opt.prob_safe_pct}%</strong></td>
           <td>每张抵押<br>$${fmt(opt.collateral_per_contract, 0)}</td>
           <td>每张收<br><strong style="color:var(--green)">$${fmt(opt.premium_per_contract, 0)}</strong></td>
+        ` : isLeaps ? `
+          <td>杠杆<br><strong style="color:var(--accent)">${opt.leverage_x}x</strong></td>
+          <td>盈亏平衡<br><strong>${signed(opt.breakeven_pct, 1)}%</strong></td>
+          <td>每张成本<br>$${fmt(opt.premium_per_contract, 0)}</td>
+          <td>每日 Theta<br><span style="color:var(--red)">-$${fmt(Math.abs(opt.theta_per_day), 2)}</span></td>
         ` : `
           <td>权利金<br>$${fmt(opt.premium_per_contract, 0)}</td>
           <td>Δ ${opt.delta}</td>
@@ -2403,9 +2519,11 @@ function renderRecResult(d) {
     `;
   }).join('');
 
-  const headerExtra = c.is_short
+  const headerExtra = isShort
     ? '<th>距行权</th><th>年化</th><th>安全概率</th><th>抵押</th><th>权利金</th>'
-    : '<th>距行权</th><th>权利金</th><th>Δ</th><th colspan="2">Theta</th>';
+    : isLeaps
+      ? '<th>距行权</th><th>杠杆</th><th>盈亏平衡</th><th>每张成本</th><th>Theta</th>'
+      : '<th>距行权</th><th>权利金</th><th>Δ</th><th colspan="2">Theta</th>';
 
   document.getElementById('rec-result').innerHTML = `
     <div class="summary">${summary}</div>

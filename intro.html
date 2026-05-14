@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option Analysis Platform — Smart Options, Made Simple</title>
+<meta name="description" content="实时监控空头期权持仓，AI 推荐最佳合约，期权小白也能用得懂的专业工具。">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  :root {
+    --bg: #0A0A14;
+    --bg-2: #0F0F1F;
+    --card: rgba(255,255,255,0.04);
+    --card-hover: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --text: #F0F0F8;
+    --sub: #8B8BA0;
+    --primary: #5B8DEF;
+    --secondary: #A78BFA;
+    --green: #4ADE80;
+    --red: #F87171;
+    --orange: #FB923C;
+    --yellow: #FACC15;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 "Helvetica Neue", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* 全局背景渐变 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(91,141,239,0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 30%, rgba(167,139,250,0.12) 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, rgba(74,222,128,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 32px;
+    background: rgba(10,10,20,0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    transition: all 0.3s;
+  }
+  nav .logo {
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.3px;
+  }
+  nav .nav-cta {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white; padding: 9px 20px;
+    border-radius: 100px; text-decoration: none;
+    font-weight: 600; font-size: 14px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(91,141,239,0.3);
+  }
+  nav .nav-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(91,141,239,0.5);
+  }
+
+  /* Hero */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 100px 24px 80px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(91,141,239,0.1);
+    border: 1px solid rgba(91,141,239,0.3);
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 12px; color: var(--primary);
+    margin-bottom: 24px;
+    animation: fadeInUp 0.6s ease 0.1s both;
+  }
+  .hero-badge .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.5); }
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 84px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 24px;
+    max-width: 900px;
+    animation: fadeInUp 0.6s ease 0.2s both;
+  }
+  .hero h1 .gradient {
+    background: linear-gradient(135deg, var(--primary), var(--secondary) 50%, #F472B6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .sub {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--sub);
+    max-width: 640px;
+    margin-bottom: 36px;
+    animation: fadeInUp 0.6s ease 0.3s both;
+  }
+
+  .hero-ctas {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 56px;
+    animation: fadeInUp 0.6s ease 0.4s both;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 100px;
+    font-weight: 600; font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer; border: none;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    box-shadow: 0 8px 24px rgba(91,141,239,0.4);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(91,141,239,0.55);
+  }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    background: var(--card-hover);
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Hero 实时股票卡片 */
+  .live-tickers {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    margin-top: 16px;
+    animation: fadeInUp 0.8s ease 0.6s both;
+  }
+  .live-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 18px;
+    min-width: 140px;
+    backdrop-filter: blur(20px);
+  }
+  .live-card .lc-tk { font-size: 11px; color: var(--sub); font-weight: 600; }
+  .live-card .lc-px { font-size: 18px; font-weight: 700; margin-top: 2px;
+                       font-variant-numeric: tabular-nums; }
+  .live-card .lc-chg { font-size: 11px; margin-top: 2px;
+                        font-variant-numeric: tabular-nums; }
+  .lc-up { color: var(--green); }
+  .lc-down { color: var(--red); }
+
+  /* Section base */
+  section {
+    position: relative; z-index: 1;
+    padding: 100px 24px;
+  }
+  .container {
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-head {
+    text-align: center; margin-bottom: 60px;
+  }
+  .section-tag {
+    display: inline-block;
+    color: var(--primary);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(28px, 4.5vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+  .section-sub {
+    color: var(--sub);
+    font-size: clamp(15px, 1.6vw, 18px);
+    max-width: 680px; margin: 0 auto;
+  }
+
+  /* Features grid */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  .feature {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px;
+    transition: all 0.3s;
+    backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+  }
+  .feature::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+      transparent 0%,
+      rgba(91,141,239,0.05) 50%,
+      transparent 100%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature:hover {
+    transform: translateY(-4px);
+    border-color: rgba(91,141,239,0.3);
+    background: var(--card-hover);
+  }
+  .feature:hover::before { opacity: 1; }
+  .feature .icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.15),
+      rgba(167,139,250,0.15));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(91,141,239,0.2);
+  }
+  .feature h3 {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature p {
+    color: var(--sub);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Dashboard preview */
+  .dashboard-section {
+    overflow: hidden;
+  }
+  .dashboard-preview {
+    background: linear-gradient(180deg, var(--bg-2), transparent);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 1000px; margin: 0 auto;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  }
+  .dash-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+  }
+  .dash-summary .item .lab {
+    font-size: 9px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .dash-summary .item .val {
+    font-size: 18px; font-weight: 800;
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dash-pos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .dash-pos {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    border-left: 3px solid;
+    transition: transform 0.2s;
+  }
+  .dash-pos:hover { transform: translateY(-2px); }
+  .dash-pos.call { border-left-color: var(--green); }
+  .dash-pos.put { border-left-color: var(--orange); }
+  .dash-pos.danger { border-left-color: var(--red); }
+  .dash-pos .head {
+    display: flex; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .dash-pos .ticker { font-weight: 700; font-size: 14px; }
+  .dash-pos .pnl {
+    font-weight: 700; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dash-pos .meta {
+    font-size: 11px; color: var(--sub);
+    margin-bottom: 8px;
+  }
+  .dash-pos .stat-row {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--sub);
+  }
+  .dash-pos .stat-row .v { color: var(--text); font-weight: 600; }
+  .dash-status {
+    display: inline-block; padding: 2px 6px;
+    border-radius: 4px; font-size: 9px;
+    font-weight: 700;
+  }
+  .dash-status.good { background: rgba(74,222,128,0.15); color: var(--green); }
+  .dash-status.warn { background: rgba(250,204,21,0.15); color: var(--yellow); }
+  .dash-status.danger { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* How it works */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 32px;
+    position: relative;
+  }
+  .step {
+    text-align: center;
+  }
+  .step-num {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 24px rgba(91,141,239,0.4);
+  }
+  .step h3 {
+    font-size: 19px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .step p {
+    color: var(--sub);
+    font-size: 14px;
+  }
+
+  /* Stats */
+  .stats {
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.06),
+      rgba(167,139,250,0.06));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 32px;
+    text-align: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 32px;
+  }
+  .stat .num {
+    font-size: clamp(34px, 5vw, 52px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .lab {
+    color: var(--sub);
+    font-size: 13px;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* CTA section */
+  .cta-section {
+    text-align: center;
+    padding: 120px 24px;
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.08),
+      rgba(167,139,250,0.08));
+    margin: 60px 24px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+  }
+  .cta-section h2 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -1.5px;
+  }
+  .cta-section p {
+    color: var(--sub);
+    font-size: 18px;
+    margin-bottom: 32px;
+    max-width: 600px;
+    margin-left: auto; margin-right: auto;
+  }
+
+  /* Footer */
+  footer {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--sub);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    position: relative; z-index: 1;
+  }
+  footer a { color: var(--primary); text-decoration: none; }
+  .disclaimer {
+    max-width: 800px; margin: 0 auto;
+    background: rgba(202,138,4,0.08);
+    border: 1px solid rgba(202,138,4,0.25);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 11px;
+    color: rgba(250,204,21,0.9);
+    line-height: 1.6;
+  }
+  .disclaimer strong { color: var(--orange); }
+
+  /* Scroll animations */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.7s, transform 0.7s;
+  }
+  .reveal.visible {
+    opacity: 1; transform: translateY(0);
+  }
+
+  @media (max-width: 720px) {
+    nav { padding: 12px 16px; }
+    nav .nav-cta { padding: 7px 14px; font-size: 13px; }
+    section { padding: 60px 16px; }
+    .hero { padding: 80px 16px 50px; }
+    .feature { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <a href="#" class="logo">⊕ Option Analysis Platform</a>
+  <a href="/" class="nav-cta">立即使用 →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    <span>实时数据 · 智能推荐 · 完全免费</span>
+  </div>
+
+  <h1>
+    <span class="gradient">智能期权分析</span><br>
+    数据驱动每一笔交易
+  </h1>
+
+  <p class="sub">
+    实时监控你的空头期权持仓，AI 引擎从期权链推荐最佳合约。
+    无论你是想周收权利金的老手，还是刚听说 ITM/OTM 的小白 —— 都能用得懂、看得清。
+  </p>
+
+  <div class="hero-ctas">
+    <a href="/" class="btn btn-primary">
+      <span>🚀 立即开始（免费）</span>
+    </a>
+    <a href="#features" class="btn btn-secondary">
+      <span>了解更多 ↓</span>
+    </a>
+  </div>
+
+  <div class="live-tickers" id="live-tickers">
+    <!-- 实时填充 -->
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-tag">CORE FEATURES</div>
+      <h2 class="section-title">不只是看持仓，而是<span style="background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">看懂持仓</span></h2>
+      <p class="section-sub">从单一持仓到组合策略，从希腊字母到大白话解释，把期权交易者需要的全装进了一个网页。</p>
+    </div>
+
+    <div class="features">
+      <div class="feature reveal">
+        <div class="icon">📊</div>
+        <h3>实时持仓监控</h3>
+        <p>每 30 秒自动刷新。期权 Mark 价从 yfinance 实时拉取（最准）；BS 模型保底。Delta、Theta、IV 一目了然。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">🎯</div>
+        <h3>AI 期权推荐</h3>
+        <p>5 步问答 + 5 大佬策略预设（价值哥 LEAPS / Wheel / 周收权利金…）→ 从期权链评分排名，⭐⭐⭐⭐⭐ 强烈推荐永远在最前。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">📈</div>
+        <h3>损益曲线图</h3>
+        <p>每个持仓都有 Payoff Diagram，蓝实线 = 到期，橙虚线 = 今天。一眼看出最大盈、最大亏、盈亏平衡点。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">☀️</div>
+        <h3>每日早安 Brief</h3>
+        <p>个性化早间播报：今日市场、持仓累计盈亏、利润目标、风险预警、财报提醒 —— 一段话掌握全局。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">📚</div>
+        <h3>期权小白指南</h3>
+        <p>25 个核心术语分 6 类（价位关系/Greeks/报价/时间/操作/策略）。ITM、OTM、Wheel、LEAPS 全是大白话+实例+实战建议。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">📊</div>
+        <h3>复盘报告</h3>
+        <p>胜率、盈亏比、最佳/最差交易、累计实现盈亏。系统会警告"赚小亏大"模式 — 别让一次大亏吞掉多次小赢。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">💾</div>
+        <h3>跨设备同步</h3>
+        <p>数据全存浏览器（私有）。需要跨设备？点 🔗 同步连到 Google Drive 文件夹 → 走 Drive 自家同步。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">🌍</div>
+        <h3>多语言 + 主题</h3>
+        <p>简中 / 繁中 / English 一键切换。白天 / 夜间双主题。响应式设计，手机、平板、桌面都好用。</p>
+      </div>
+
+      <div class="feature reveal">
+        <div class="icon">🔒</div>
+        <h3>隐私优先</h3>
+        <p>不上传任何持仓数据。所有数据在你浏览器的 localStorage。<strong>其他人打开同一网址看到的是他们自己的数据</strong>。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-section">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-tag">SEE IT IN ACTION</div>
+      <h2 class="section-title">数据 + 智能 = <span style="background:linear-gradient(135deg,var(--green),var(--primary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">更好的决策</span></h2>
+      <p class="section-sub">实时市场数据驱动每一个评分，让你看见数字背后的故事。</p>
+    </div>
+
+    <div class="dashboard-preview reveal">
+      <div class="dash-summary">
+        <div class="item">
+          <div class="lab">收到权利金</div>
+          <div class="val" style="color:#fff">$28,071</div>
+        </div>
+        <div class="item">
+          <div class="lab">当前买回成本</div>
+          <div class="val" style="color:#fff">$24,247</div>
+        </div>
+        <div class="item">
+          <div class="lab">未实现盈亏</div>
+          <div class="val" style="color:var(--green)">+$3,824</div>
+        </div>
+        <div class="item">
+          <div class="lab">已实现盈亏</div>
+          <div class="val" style="color:var(--green)">+$712</div>
+        </div>
+        <div class="item">
+          <div class="lab">每日 Theta</div>
+          <div class="val" style="color:var(--green)">+$531</div>
+        </div>
+      </div>
+
+      <div class="dash-pos-grid">
+        <div class="dash-pos call">
+          <div class="head">
+            <div>
+              <span class="ticker">TSLA $600 Call</span>
+              <span class="dash-status good">🟢 健康</span>
+            </div>
+            <div class="pnl" style="color:var(--green)">+4.1%</div>
+          </div>
+          <div class="meta">Exp 2027-01-15 · 10× · 254 天</div>
+          <div class="stat-row"><span>距行权</span><span class="v" style="color:var(--green)">+54%</span></div>
+          <div class="stat-row"><span>Delta</span><span class="v">0.128</span></div>
+        </div>
+
+        <div class="dash-pos put danger">
+          <div class="head">
+            <div>
+              <span class="ticker">META $630 Put</span>
+              <span class="dash-status danger">🚨 Put ITM</span>
+            </div>
+            <div class="pnl" style="color:var(--green)">+11%</div>
+          </div>
+          <div class="meta">Exp 2026-05-29 · 1× · 22 天</div>
+          <div class="stat-row"><span>距行权</span><span class="v" style="color:var(--orange)">-2.8%</span></div>
+          <div class="stat-row"><span>财报警告</span><span class="v" style="color:var(--yellow)">⚠️ 5/24</span></div>
+        </div>
+
+        <div class="dash-pos put">
+          <div class="head">
+            <div>
+              <span class="ticker">TSLA $400 Put</span>
+              <span class="dash-status good">🎯 接近平仓</span>
+            </div>
+            <div class="pnl" style="color:var(--green)">+94%</div>
+          </div>
+          <div class="meta">Exp 2026-05-15 · 3× · 3 天</div>
+          <div class="stat-row"><span>Mark</span><span class="v">$0.09</span></div>
+          <div class="stat-row"><span>建议</span><span class="v" style="color:var(--green)">锁利</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="section-tag">HOW IT WORKS</div>
+      <h2 class="section-title">3 步开始</h2>
+      <p class="section-sub">不需要注册，不需要绑卡。打开网页就能用。</p>
+    </div>
+
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3>录入你的持仓</h3>
+        <p>点 "+ 新建持仓"，粘贴 OCC 代码（如 TSLA260515P00400000）自动解析，或手动填。<br><br>同一合约多次卖出自动加权合并。</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h3>看实时分析</h3>
+        <p>每个持仓自动显示 Mark、Δ、Θ、距行权、损益曲线、操作建议、每日 P&L 图。<br><br>财报临近、距行权过近会主动警告。</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h3>找下一笔</h3>
+        <p>点 🎯 找最佳 Option，告诉系统你想做什么（收权利金 / Wheel / LEAPS）→ 看排名候选 → 一键加入持仓。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="stats reveal">
+      <div class="stat">
+        <div class="num">25</div>
+        <div class="lab">期权术语</div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="lab">语言</div>
+      </div>
+      <div class="stat">
+        <div class="num">10+</div>
+        <div class="lab">智能信号</div>
+      </div>
+      <div class="stat">
+        <div class="num">$0</div>
+        <div class="lab">永久免费</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-section reveal">
+  <h2>准备好<span style="background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">看懂你的期权</span>了吗？</h2>
+  <p>30 秒上手，30 分钟掌握自己的持仓全局。</p>
+  <a href="/" class="btn btn-primary" style="font-size:17px;padding:16px 36px">
+    立即开始 →
+  </a>
+</div>
+
+<footer>
+  <div class="disclaimer">
+    ⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。
+    所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br>
+    Not financial advice. For educational use only. Options trading involves substantial risk.
+  </div>
+  <div>
+    Built with ❤️ by <a href="https://github.com/genki3ng">@genki3ng</a> ·
+    Data via yfinance + Massive API · Open source on
+    <a href="https://github.com/genki3ng/option-analysis-platform">GitHub</a>
+  </div>
+</footer>
+
+<script>
+  // Nav 滚动效果
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').style.background =
+      window.scrollY > 20 ? 'rgba(10,10,20,0.92)' : 'rgba(10,10,20,0.7)';
+  });
+
+  // Scroll-reveal 动画
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Hero 实时股票
+  async function loadLiveTickers() {
+    const tickers = ['TSLA', 'META', 'NVDA', 'SPY'];
+    try {
+      const r = await fetch('/api/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'compute',
+          positions: tickers.map(t => ({
+            ticker: t, type: 'put', strike: 1, expiry: '2030-01-15',
+            contracts: 1, sell_price: 1, trade_date: '2030-01-01'
+          })),
+          state: {}
+        })
+      });
+      const d = await r.json();
+      const html = tickers.map(t => {
+        const info = d.tickers?.[t];
+        if (!info || !info.price) return '';
+        const chg = info.price - (info.prev || info.price);
+        const pct = info.prev ? chg / info.prev * 100 : 0;
+        const cls = chg >= 0 ? 'lc-up' : 'lc-down';
+        const arrow = chg >= 0 ? '▲' : '▼';
+        return `
+          <div class="live-card">
+            <div class="lc-tk">${t}</div>
+            <div class="lc-px">$${info.price.toFixed(2)}</div>
+            <div class="lc-chg ${cls}">${arrow} ${Math.abs(pct).toFixed(2)}%</div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('live-tickers').innerHTML = html;
+    } catch (e) {
+      console.warn('live ticker load failed', e);
+    }
+  }
+  loadLiveTickers();
+</script>
+
+</body>
+</html>

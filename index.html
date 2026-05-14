@@ -1653,6 +1653,25 @@
 <script>
 // ── i18n 国际化 ───────────────────────────────────────────────────────
 const I18N = {
+  // 简中（默认）— 只有语义 key 才需要列在这里，
+  // 直接用中文做 key 的字符串会原样返回（fallback）
+  zh: {
+    'info_b1': '📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器',
+    'info_b2': '👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见',
+    'info_b3': '💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件',
+    'info_b4': '📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON',
+    'info_b5': '🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li></ul>',
+    'info_b6': '👤 改用户名（左上角）方便区分多浏览器/多设备的数据',
+    'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>关于这个工具</b>（点 × 收起）',
+    'hint_sold': '卖出期权时一次性收到的现金。<br>这是你的最大可能利润',
+    'hint_mktval': '现在花多少钱可以全部买回平仓。<br>越低越好（你赚的越多）',
+    'hint_pnl': '权利金 − 买回成本。<br>还没落袋的浮盈/浮亏',
+    'hint_realized': '已平仓持仓的累计盈亏。<br>已经落袋的钱',
+    'hint_theta': '如果其他都不变，<br>明天到账的钱（时间是空头的朋友）',
+    'sync_file_opt': '🔗 单个 JSON 文件<div class="dd-hint">网页自用格式</div>',
+    'sync_dir_opt': '📁 文件夹<div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>',
+  },
+
   zh_tw: {
     // 标题 & 信息卡
     '实时 P&L · 自动每 30 秒刷新': '即時 P&L · 自動每 30 秒刷新',
@@ -2124,9 +2143,14 @@ function _detectLang() {
 }
 
 function t(s) {
-  if (_lang === 'zh' || !s) return s;
+  if (!s) return s;
+  // 当前语言字典优先
   const dict = I18N[_lang];
-  return (dict && dict[s]) || s;
+  if (dict && dict[s]) return dict[s];
+  // 回退到 zh 字典（语义 key 在 zh 里有原文）
+  if (I18N.zh && I18N.zh[s]) return I18N.zh[s];
+  // 都没有 → 原样返回（中文字符串作 key 时直接显示）
+  return s;
 }
 
 function setLang(lang) {

@@ -978,6 +978,17 @@
   }
 
   /* 📚 期权小白指南 */
+  .edu-card .edu-cat-header {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    margin: 14px 0 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    letter-spacing: 0.3px;
+  }
+  .edu-card .edu-cat-header:first-child {
+    margin-top: 0; padding-top: 0; border-top: none;
+  }
   .edu-card details {
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -3166,103 +3177,219 @@ async function _initSync() {
 
 // ── 📚 期权小白指南 ───────────────────────────────────────────────────
 const EDU_TOPICS = [
-  {
+  // ── 🎯 价位关系（最基础，先讲）
+  { cat: '🎯 价位关系（最基础）',
+    sym: 'ITM', name: 'ITM · 实值（有内在价值）',
+    desc: '对持有方有利的状态。<br><strong>Call</strong>：现价 > 行权价；<strong>Put</strong>：现价 < 行权价。',
+    ex: 'TSLA $440：$420 Call 是 <strong>ITM</strong>（差 $20 内在价值）；$460 Call 是 OTM。<br>反过来 $460 Put 是 ITM，$420 Put 是 OTM。',
+    care: '期权价 = 内在价值 + 时间价值。ITM 越深 Delta 越接近 ±1（跟股票联动越强）。<strong>到期是 ITM 会被自动指派</strong>。',
+  },
+  { cat: '🎯 价位关系（最基础）',
+    sym: 'OTM', name: 'OTM · 虚值（无内在价值）',
+    desc: '对持有方不利。<br><strong>Call</strong>：现价 < 行权价；<strong>Put</strong>：现价 > 行权价。',
+    ex: 'TSLA $440，$460 Call 是 OTM（差 $20 才有价值）。<br>到期还是 OTM → 价值归零。',
+    care: 'OTM 期权全是"时间价值"。<strong>卖方爱卖 OTM</strong>（远离危险区收钱）；<strong>买方便宜赌方向</strong>。',
+  },
+  { cat: '🎯 价位关系（最基础）',
+    sym: 'ATM', name: 'ATM · 平值',
+    desc: '行权价 ≈ 现价。期权"刚好在边缘"。',
+    ex: 'TSLA $440，$440 Call/Put 就是 ATM。',
+    care: '<strong>Gamma 最大、Theta 最大、Vega 最大</strong> — 三个希腊字母都极端。波动剧烈，新手最容易爆仓的位置。',
+  },
+  { cat: '🎯 价位关系（最基础）',
+    sym: '行权', name: 'Strike · 行权价 · 距行权 (Moneyness)',
+    desc: '行权价 = 期权约定的买/卖价。距行权 = 现价距 strike 多远 %。',
+    ex: 'TSLA $440，$420 Put：距行权 -4.5%（put 还在 OTM 区）。',
+    care: '<strong>距行权越大越安全</strong>。卖期权常选 5-15% OTM 平衡风险收益。',
+  },
+
+  // ── 🧮 关键指标 / Greeks
+  { cat: '🧮 关键指标',
     sym: 'Δ', name: 'Delta · 价格敏感度',
-    desc: '股票每涨 $1，这张期权大概涨多少。<br>Call 是 0~1（正相关），Put 是 -1~0（反相关）。',
-    ex: '例：Delta = 0.30 → 股票涨 $1，期权约涨 $0.30。',
-    care: '<strong>≈ 期权到期成为 ITM 的概率</strong>（粗估）。卖出方希望 |Δ| 小（OTM 安全），买入方希望 |Δ| 大（接近股票）。',
+    desc: '股票每涨 $1，期权大概涨多少。Call 是 0~1，Put 是 -1~0。',
+    ex: 'Delta = 0.30 → 股票涨 $1，期权约涨 $0.30。',
+    care: '<strong>≈ 期权到期成为 ITM 的概率</strong>（粗估）。卖方希望 |Δ| 小（OTM 安全），买方希望 |Δ| 大。',
   },
-  {
+  { cat: '🧮 关键指标',
     sym: 'Θ', name: 'Theta · 时间衰减',
-    desc: '每过一天，期权大概贬值多少。<br>对卖方有利（收钱不动），对买方不利（每天亏）。',
-    ex: '例：Theta = -0.10 → 明天这张期权大概便宜 $0.10/股。',
-    care: '<strong>卖期权 = 收 theta 钱</strong>。临近到期 theta 加速（gamma 风险也大）。',
+    desc: '每过一天，期权贬值多少。对卖方有利（收钱不动），对买方不利。',
+    ex: 'Theta = -0.10 → 明天期权约便宜 $0.10/股。',
+    care: '<strong>卖期权 = 收 theta 的钱</strong>。临近到期 theta 加速（但 gamma 也加速）。',
   },
-  {
-    sym: 'IV', name: '隐含波动率 (Implied Volatility)',
-    desc: '市场对未来标的波动的预期，年化百分比。<br>IV 高 → 期权贵；IV 低 → 期权便宜。',
-    ex: '例：TSLA IV = 50% → 市场预期 1 年内可能上下波动 ±50%。',
-    care: '<strong>卖期权希望 IV 高（收得多）</strong>，买期权希望 IV 低（成本低）。财报前 IV 通常升高。',
-  },
-  {
-    sym: 'IV Rank', name: 'IV 相对位置',
-    desc: '当前 IV 在过去 1 年 IV 范围中的位置（0-100）。<br>50 = 中位，>70 偏高，<30 偏低。',
-    ex: '例：IV Rank = 80 → 当前 IV 比过去 1 年里 80% 的时间都高。',
-    care: '<strong>卖期权选 IV Rank 高的时机</strong>（如财报前），<strong>买期权选低的时机</strong>。',
-  },
-  {
-    sym: '行权', name: '行权价 (Strike) · 距行权 (Moneyness)',
-    desc: '行权价 = 期权约定的买/卖价。<br>距行权 = 标的现价距行权价多远，%。',
-    ex: 'TSLA 现 $440，卖出 $420 Put：距行权 -4.5%（OTM 安全）。',
-    care: '<strong>距行权越大越安全</strong>（被指派概率低）。卖期权一般选 5-15% OTM 平衡风险收益。',
-  },
-  {
+  { cat: '🧮 关键指标',
     sym: 'Γ', name: 'Gamma · Delta 变化速度',
-    desc: 'Delta 自身的变化率。Gamma 高 → 标的小动，Delta 就剧变。<br>临近到期 + ATM 时 gamma 最大。',
-    ex: '快到期的 ATM 期权 gamma 极大，标的小波动就可能让你的盈亏剧烈翻转。',
-    care: '<strong>到期前几天 + 价格在行权附近 = gamma 噩梦</strong>。要么远 OTM，要么早平仓。',
+    desc: 'Delta 自身的变化率。Gamma 高 = 标的小动 Delta 就剧变。',
+    ex: '快到期 + ATM = Gamma 最大。标的小波动可能让你盈亏剧烈翻转。',
+    care: '<strong>到期前几天 + 价格逼近 strike = gamma 噩梦</strong>。要么远 OTM，要么早平仓。',
   },
-  {
-    sym: 'Vega', name: 'Vega · IV 敏感度',
-    desc: 'IV 每变动 1%，期权价格变动多少。<br>长期期权 vega 大（对 IV 敏感），短期 vega 小。',
-    ex: 'Vega = 0.20 → IV 升 5%，期权涨 $1.00/股。',
-    care: '<strong>财报前 IV 飙升</strong>（Vega 影响放大），<strong>财报后 IV crush</strong>（Vega 反向）。',
+  { cat: '🧮 关键指标',
+    sym: 'V', name: 'Vega · IV 敏感度',
+    desc: 'IV 每变 1%，期权价格变动多少。长期期权 vega 大，短期 vega 小。',
+    ex: 'Vega = 0.20 → IV 升 5% → 期权涨 $1.00/股。',
+    care: '<strong>财报前 IV 飙升（Vega 影响放大）</strong>，<strong>财报后 IV crush（反向）</strong>。',
   },
-  {
-    sym: 'Bid/Ask', name: '买/卖价 · Mid 价 · Spread',
-    desc: 'Bid = 别人愿意出的最高价；Ask = 别人想要的最低价。<br>Mid = (Bid+Ask)/2 大致公允价。Spread 大 = 流动性差。',
-    ex: '$5.00 / $5.20 → Mid $5.10，Spread 4%（OK）；$5.00 / $7.00 → Spread 33%（很差，慎做）。',
-    care: '<strong>Spread > 10% 慎做</strong>（成交价可能远离 Mid）。流动性差的合约滑点大、平仓难。',
+  { cat: '🧮 关键指标',
+    sym: 'IV', name: '隐含波动率 (Implied Volatility)',
+    desc: '市场对标的未来波动的预期（年化%）。IV 高 → 期权贵；IV 低 → 期权便宜。',
+    ex: 'TSLA IV = 50% → 市场预期 1 年内可能上下波动 ±50%。',
+    care: '<strong>卖期权希望 IV 高</strong>（收得多），<strong>买期权希望 IV 低</strong>（成本低）。',
   },
-  {
-    sym: 'DTE', name: 'Days to Expiry · 剩余天数',
-    desc: '到期还剩多少天。短期 theta 大但 gamma 也大；长期 theta 慢但需要更多耐心。',
-    ex: '7 DTE：典型周期权，theta 收益快但风险也大。<br>365 DTE：LEAPS，做股票替代。',
-    care: '<strong>卖期权常选 7-45 DTE</strong>（theta sweet spot）。<strong>买长期看涨选 180+ DTE</strong>（LEAPS）。',
+  { cat: '🧮 关键指标',
+    sym: 'IV%', name: 'IV Rank · IV 相对位置',
+    desc: '当前 IV 在过去 1 年范围里的位置（0-100）。50 = 中位，>70 高，<30 低。',
+    ex: 'IV Rank = 80 → 当前 IV 比过去一年里 80% 的时间都高。',
+    care: '<strong>卖期权选 IV Rank 高的时机</strong>（财报前），<strong>买期权选低的时机</strong>。',
   },
-  {
-    sym: '$', name: '权利金 (Premium) · 1 张 = 100 股',
-    desc: '期权报价是"每股"，1 张合约 = 100 股的总和。<br>权利金 = 报价 × 100 × 张数。',
-    ex: '卖 1 张 $0.50 的 Put → 收 $0.50 × 100 × 1 = $50。<br>卖 5 张 $2.00 → 收 $1,000。',
-    care: '永远算到"实际现金"。$0.10 听起来便宜，但 10 张就是 $100。',
+
+  // ── 💰 报价 / 价格
+  { cat: '💰 报价与价格',
+    sym: 'B/A', name: 'Bid · Ask · Mid · Spread',
+    desc: 'Bid = 买方最高出价；Ask = 卖方最低要价。Mid = (Bid+Ask)/2。Spread 大 = 流动性差。',
+    ex: '$5.00/$5.20 → Mid $5.10，Spread 4%（OK）；$5.00/$7.00 → Spread 33%（很差）。',
+    care: '<strong>Spread > 10% 慎做</strong>。成交价可能远离 Mid，平仓也难。',
   },
-  {
+  { cat: '💰 报价与价格',
+    sym: '$', name: 'Premium · 权利金（1 张 = 100 股）',
+    desc: '期权报价是"每股"。1 张合约 = 100 股。<br>实际现金 = 报价 × 100 × 张数。',
+    ex: '卖 1 张 $0.50 Put → 收 $50。卖 5 张 $2.00 → 收 $1,000。',
+    care: '永远算"实际现金"。$0.10 听着便宜，10 张就是 $100。',
+  },
+  { cat: '💰 报价与价格',
+    sym: 'BE', name: 'Break-even · 盈亏平衡点',
+    desc: '标的需要到哪个价格你才不亏不赚。',
+    ex: '买 $400 Call 花 $5/股 → BE = $405（标的得涨到 $405 才回本）。',
+    care: '<strong>方向对还不够，标的必须穿过 BE</strong>。BE 越近越容易盈利。',
+  },
+
+  // ── 📅 时间相关
+  { cat: '📅 时间相关',
+    sym: 'DTE', name: 'DTE · Days to Expiry · 剩余天数',
+    desc: '到期还剩多少天。短期 theta 大但 gamma 也大；长期 theta 慢但要耐心。',
+    ex: '7 DTE：典型周期权。365 DTE：LEAPS。',
+    care: '<strong>卖期权常选 7-45 DTE</strong>（theta sweet spot），<strong>买长期看涨选 180+ DTE</strong>。',
+  },
+  { cat: '📅 时间相关',
+    sym: '0D', name: '0DTE · 当日到期期权',
+    desc: '今天就到期的期权。SPY 每周一/三/五都有。Gamma 极大，价格剧烈跳动。',
+    ex: 'SPY 周五早上的 0DTE，下午 4 点收盘，几小时内可能 100x 或归零。',
+    care: '<strong>赌博性质强</strong>。新手最好远离。卖 0DTE = 收 theta + 极大 gamma 风险并存。',
+  },
+  { cat: '📅 时间相关',
+    sym: '📌', name: 'Pin Risk · 钉子风险',
+    desc: '到期时标的恰好在 strike 附近徘徊，导致不确定会不会被指派。',
+    ex: '卖 TSLA $400 Put，周五收盘 $400.05 → 看似安全，盘后跌到 $399 可能就被指派。',
+    care: '<strong>到期前几天若价格逼近 strike，提前平仓</strong>避免 pin risk。',
+  },
+
+  // ── 🎬 操作 / 事件
+  { cat: '🎬 操作与事件',
+    sym: 'L/S', name: 'Long · Short · 买入 / 卖出',
+    desc: 'Long = 买入持有；Short = 卖出（哪怕你没拥有）。<br>"Long Call" = 买入看涨；"Short Put" = 卖出看跌（CSP 就是）。',
+    ex: '<strong>Long</strong>：付权利金博方向；<strong>Short</strong>：收权利金、希望不动。',
+    care: 'Long 和 Short 心智完全不同 — Long 是猎人（要方向），Short 是渔夫（撒网等收）。',
+  },
+  { cat: '🎬 操作与事件',
+    sym: '🩲', name: 'Naked vs Covered · 裸卖 vs 有担保',
+    desc: '卖期权时：<strong>Covered</strong> = 有标的或现金兜底；<strong>Naked</strong> = 裸卖（无担保）。',
+    ex: '持 100 股 TSLA 卖 Call = Covered Call。手上没正股直接卖 Call = Naked Call。',
+    care: '<strong>Naked Call 极度危险</strong>（标的可无限涨，亏损无上限）。多数券商有限制。',
+  },
+  { cat: '🎬 操作与事件',
+    sym: '指派', name: 'Assignment · 被指派',
+    desc: '你卖的期权到期 ITM（或被对手早行权）时，必须按 strike 履约。',
+    ex: '卖 TSLA $400 Put，到期 $390 → 必须用 $400 买入 100 股（$40,000 现金）。',
+    care: '卖期权之前确认<strong>有"被指派的能力"</strong>（CSP 需 strike × 100 现金，CC 需 100 股正股）。',
+  },
+  { cat: '🎬 操作与事件',
+    sym: '行权', name: 'Exercise · 行权',
+    desc: '期权持有者主动按 strike 买入(call)/卖出(put)正股。美式期权可随时行权。',
+    ex: '买 TSLA $400 Call，TSLA 涨到 $450 → 行权用 $400 买入 100 股，立刻浮盈 $5,000。',
+    care: '实践中大多数人直接卖期权获利了结，<strong>很少行权</strong>。ITM Put 临近除息日可能被早行权。',
+  },
+  { cat: '🎬 操作与事件',
+    sym: '🔄', name: 'Roll · 转仓 / 期权续命',
+    desc: '同时买回当前期权 + 卖出新期权（换 strike 或换日期）。',
+    ex: 'TSLA $400 Put 5/20 浮亏 → 买回 + 卖出 $400 Put 6/20，多收一笔权利金换 30 天时间。',
+    care: '<strong>Roll for credit</strong>（净收钱）一般好；<strong>Roll for debit</strong>（净付钱）= 把亏损延后，要慎重。',
+  },
+  { cat: '🎬 操作与事件',
+    sym: '💥', name: 'IV Crush · 财报后 IV 暴跌',
+    desc: '财报或重大事件公布后，不确定性消失，IV 瞬间跌 30-50%。',
+    ex: 'TSLA 财报前 IV 80%，财报后跌到 40% → 你买的 ATM Call 即使方向猜对也可能亏。',
+    care: '<strong>财报前买期权很坑</strong>（IV crush 吃掉方向利润）。卖期权反而好（赌 IV crush）。',
+  },
+
+  // ── 🛠 常见策略
+  { cat: '🛠 常见策略',
     sym: 'CSP', name: 'Cash-Secured Put · 卖看跌等接货',
-    desc: '卖 OTM Put，把 strike × 100 现金锁住做抵押。<br>到期：股票没跌破 → 收权利金；跌破 → 以 strike 买入正股。',
-    ex: 'TSLA $440，卖 $400 Put 收 $5。结果：要么收 $500，要么 $400 接 100 股（含权利金等于 $395 成本）。',
+    desc: '卖 OTM Put，锁住 strike × 100 现金做抵押。到期：股票没跌破 → 收权利金；跌破 → 以 strike 接货。',
+    ex: 'TSLA $440，卖 $400 Put 收 $5。结果：要么收 $500，要么 $400 接 100 股（净成本 $395）。',
     care: '<strong>适合"我本来就想低价买入"的标的</strong>。被指派不是坏事，是预期结局。',
   },
-  {
+  { cat: '🛠 常见策略',
     sym: 'CC', name: 'Covered Call · 持股卖看涨',
-    desc: '已持有 100 股正股，卖 OTM Call 收权利金。<br>到期：股票没涨破 → 收权利金；涨破 → 以 strike 卖出正股。',
-    ex: '持有 TSLA $440，卖 $460 Call 收 $3。要么收 $300，要么 $460 卖出（再加权利金等于 $463 卖出价）。',
-    care: '<strong>放弃上涨空间换权利金</strong>。如果不舍得 strike 卖出，那个 strike 就选错了。',
+    desc: '持有 100 股正股，卖 OTM Call 收权利金。到期：股票没涨破 → 收权利金；涨破 → 以 strike 卖出。',
+    ex: '持 TSLA $440，卖 $460 Call 收 $3。要么收 $300，要么 $460 卖出（净 $463）。',
+    care: '<strong>放弃上涨空间换权利金</strong>。strike 选错了就会舍不得 — 一定选"愿意卖"的价。',
   },
-  {
+  { cat: '🛠 常见策略',
+    sym: '🔄', name: 'Wheel Strategy · 轮转策略',
+    desc: 'CSP → 被指派接货 → Covered Call → 被叫走 → 再 CSP，循环。',
+    ex: '卖 $400 CSP → 被指派 → 卖 $460 CC → 被叫走（净赚 $6000 + 两笔权利金）→ 再卖 CSP。',
+    care: '<strong>价值哥 / 接货党最爱</strong>。适合长期看好的标的，下跌不慌，上涨也赚。',
+  },
+  { cat: '🛠 常见策略',
     sym: 'LEAPS', name: 'LEAPS · 长期期权（1 年+）',
-    desc: '到期 9 个月以上的期权。深度 ITM 的 LEAPS Call 可当股票替代。<br>用 30-50% 资金控制相同股数，杠杆 2-3x。',
-    ex: 'TSLA $440，买 $300 Call 2027/1/15 价 $160/股。控制 100 股只用 $16,000（vs 直接买 $44,000）。',
-    care: '<strong>价值哥风格</strong>：长期看好的标的买 LEAPS 替代正股，省资金。注意盈亏平衡点和 IV crush 风险。',
+    desc: '9+ 个月到期的期权。深度 ITM LEAPS Call 可作股票替代，30-50% 资金控制等量股，杠杆 2-3x。',
+    ex: 'TSLA $440，买 $300 Call 2027/1/15 价 $160/股 → 控 100 股只要 $16,000（vs 直接 $44,000）。',
+    care: '<strong>价值哥风格</strong>。注意盈亏平衡点 + IV crush 风险。<strong>不要在 IV 高位买</strong>。',
+  },
+  { cat: '🛠 常见策略',
+    sym: '⛓', name: 'Vertical Spread · 垂直价差',
+    desc: '同时买 + 卖两个同类型不同 strike 的期权，限制最大亏损也限制最大盈利。',
+    ex: '买 TSLA $420 Call + 卖 TSLA $450 Call = bull call spread。最大盈利 $30/股，最大亏损 = 净付出。',
+    care: '<strong>Risk-defined 交易</strong>。新手友好，亏损上限固定。代价是上涨空间也封顶。',
+  },
+  { cat: '🛠 常见策略',
+    sym: '🦅', name: 'Iron Condor · 铁鹰',
+    desc: '区间震荡策略：远 OTM short put + 更远 long put + 远 OTM short call + 更远 long call。',
+    ex: '预期 TSLA 在 $400-$480 区间，构造 $390/$400 put spread + $480/$490 call spread。',
+    care: '<strong>横盘最佳</strong>。最大亏损固定，但需要价格稳定才能拿满收益。突破任一翼会亏。',
   },
 ];
+
+// 按 category 分组
+function _groupByCategory(items) {
+  const groups = {};
+  for (const it of items) {
+    const cat = it.cat || '其他';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(it);
+  }
+  return groups;
+}
 
 const EDU_I18N_KEYS = ['📚 期权小白指南', '不懂某个指标？点开看大白话解释'];
 
 function renderEduList() {
   const el = document.getElementById('edu-list');
   if (!el) return;
-  el.innerHTML = EDU_TOPICS.map(topic => `
-    <details>
-      <summary>
-        <span class="edu-symbol">${topic.sym}</span>
-        <span>${t(topic.name)}</span>
-      </summary>
-      <div class="edu-body">
-        ${t(topic.desc)}
-        <div class="ex">📌 ${t(topic.ex)}</div>
-        <div class="care">💡 ${t(topic.care)}</div>
-      </div>
-    </details>
+  const groups = _groupByCategory(EDU_TOPICS);
+  el.innerHTML = Object.entries(groups).map(([cat, items]) => `
+    <div class="edu-cat-header">${t(cat)}</div>
+    ${items.map(topic => `
+      <details>
+        <summary>
+          <span class="edu-symbol">${topic.sym}</span>
+          <span>${t(topic.name)}</span>
+        </summary>
+        <div class="edu-body">
+          ${t(topic.desc)}
+          <div class="ex">📌 ${t(topic.ex)}</div>
+          <div class="care">💡 ${t(topic.care)}</div>
+        </div>
+      </details>
+    `).join('')}
   `).join('');
 }
 // 启动渲染

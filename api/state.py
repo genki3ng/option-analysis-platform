@@ -548,8 +548,8 @@ def compute(payload):
     return {
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "yfinance_available": _check_yf(),
-        "tickers": prices,        # 所有持仓涉及的 ticker
-        "intraday": intraday,     # 每个 ticker 的当日分钟级数据
+        "tickers": prices,
+        "intraday": intraday,
         # 向后兼容（前端老代码用到）
         "tsla": prices.get("TSLA", {}),
         "meta": prices.get("META", {}),
@@ -561,6 +561,150 @@ def compute(payload):
         "positions": enriched,
         "suggestions": suggestions,
         "history": history,
+    }
+
+
+# ── Option 推荐引擎 ───────────────────────────────────────────────────────────
+def _decide_strategy(direction: str, intent: str):
+    """根据方向 + 意图决定 (是否 Call, 是否做空)"""
+    direction = (direction or "bullish").lower()
+    intent = (intent or "premium").lower()
+    if intent == "csp":              return False, True   # short put 准备接货
+    if intent == "covered_call":     return True, True    # short call 减仓
+    if intent == "long_vol":
+        return (True, False) if direction == "bullish" else (False, False)
+    # 默认 premium：根据方向决定
+    if direction == "bullish":       return False, True   # short put
+    if direction == "bearish":       return True, True    # short call
+    return False, True  # neutral 默认 short put
+
+
+def _find_expiries(ticker: str, target_days: int, n: int = 3):
+    """找最接近 target_days 的到期日"""
+    try:
+        import yfinance as yf
+        exps = yf.Ticker(ticker).options
+        today = date.today()
+        scored = []
+        for e in exps:
+            try:
+                d = date.fromisoformat(e)
+                days = (d - today).days
+                if days < 1:
+                    continue
+                scored.append((abs(days - target_days), e, days))
+            except Exception:
+                continue
+        scored.sort()
+        return [e for _, e, _ in scored[:n]]
+    except Exception:
+        return []
+
+
+def recommend(req: dict) -> dict:
+    """返回排名后的 option 候选清单"""
+    ticker = (req.get("ticker") or "").upper().strip()
+    if not ticker:
+        return {"error": "请提供 ticker"}
+    direction = req.get("direction", "bullish")
+    intent = req.get("intent", "premium")
+    timeframe = int(req.get("timeframe", 7))
+    risk = req.get("risk", "balanced")
+
+    # 拿当前价
+    prices = fetch_prices([ticker])
+    underlying = prices.get(ticker, {}).get("price", 0.0)
+    if underlying <= 0:
+        return {"error": f"无法拉到 {ticker} 实时价格"}
+
+    is_call, is_short = _decide_strategy(direction, intent)
+    delta_band = {
+        "conservative": (0.08, 0.20),
+        "balanced":     (0.20, 0.35),
+        "aggressive":   (0.35, 0.50),
+    }.get(risk, (0.20, 0.35))
+
+    target_exps = _find_expiries(ticker, timeframe, n=3)
+    today = date.today()
+
+    candidates = []
+    for exp_str in target_exps:
+        chain = fetch_chain(ticker, exp_str)
+        for (strike, type_), q in chain.items():
+            if (type_ == "call") != is_call:
+                continue
+            if q["bid"] <= 0 or q["mid"] <= 0 or q["iv"] <= 0:
+                continue  # 流动性差或无数据
+
+            days = (date.fromisoformat(exp_str) - today).days
+            if days < 1:
+                continue
+            T = days / 365.0
+            iv = q["iv"]
+            mid = q["mid"]
+
+            _, delta, theta, vega = price_option(
+                underlying, strike, T, RISK_FREE, iv, is_call)
+            abs_delta = abs(delta)
+            if not (delta_band[0] <= abs_delta <= delta_band[1]):
+                continue
+
+            spread = q["ask"] - q["bid"]
+            spread_pct = spread / mid * 100 if mid else 100
+
+            shares = 100
+            premium = mid * shares
+            # 抵押金：CSP 用 strike；Covered Call 假定持有正股，用 strike；裸卖也用 strike
+            collateral = strike * shares if is_short else mid * shares
+            annualized = 0
+            if is_short and collateral > 0 and days > 0:
+                annualized = (premium / collateral) * (365 / days) * 100
+            prob_safe = (1 - abs_delta) * 100  # 粗估安全概率
+
+            # 综合评分（仅做空适用）：年化 × 安全度 × 流动性扣分
+            liquidity_factor = max(0.3, 1.0 - spread_pct / 50)
+            score = annualized * (prob_safe / 100) * liquidity_factor if is_short else mid
+
+            candidates.append({
+                "ticker": ticker,
+                "type": type_,
+                "strike": strike,
+                "expiry": exp_str,
+                "days": days,
+                "bid": round(q["bid"], 3),
+                "ask": round(q["ask"], 3),
+                "mid": round(mid, 3),
+                "spread_pct": round(spread_pct, 1),
+                "iv": round(iv * 100, 1),
+                "delta": round(delta, 3),
+                "theta_per_day": round(-theta * shares if is_short else theta * shares, 2),
+                "vega_per_1pct": round(vega * shares, 2),
+                "premium_per_contract": round(premium, 2),
+                "collateral_per_contract": round(collateral, 2),
+                "annualized_yield_pct": round(annualized, 1),
+                "prob_safe_pct": round(prob_safe, 1),
+                "moneyness_pct": round((strike / underlying - 1) * 100, 1),
+                "score": round(score, 2),
+            })
+
+    candidates.sort(key=lambda x: -x["score"])
+
+    return {
+        "ticker": ticker,
+        "underlying": underlying,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "criteria": {
+            "direction": direction,
+            "intent": intent,
+            "timeframe": timeframe,
+            "risk": risk,
+            "delta_band": list(delta_band),
+            "is_call": is_call,
+            "is_short": is_short,
+            "expiries_searched": target_exps,
+        },
+        "candidates": candidates[:10],
+        "total_examined": len(candidates),
     }
 
 
@@ -603,7 +747,11 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length).decode("utf-8") if length else "{}"
             payload = json.loads(body) if body else {}
-            result = compute(payload)
+            action = payload.get("action", "compute")
+            if action == "recommend":
+                result = recommend(payload)
+            else:
+                result = compute(payload)
             self._send_json(200, result)
         except Exception as e:
             self._send_json(500, {

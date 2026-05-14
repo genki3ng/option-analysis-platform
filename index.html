@@ -557,6 +557,105 @@
     color: var(--green);
     font-weight: 600;
   }
+  .pos-toolbar button.rec-btn {
+    background: linear-gradient(135deg, #5B8DEF, #A78BFA);
+    color: white; border-color: transparent;
+    font-weight: 700;
+  }
+  .pos-toolbar button.rec-btn:hover { filter: brightness(1.1); }
+
+  /* ── 推荐引擎表单 + 结果 ───────────────────────────────────────────── */
+  .rec-form {
+    display: none;
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.06) 0%, rgba(167,139,250,0.06) 100%);
+    border: 1px solid rgba(91,141,239,0.3);
+    border-radius: 14px; padding: 20px;
+    margin-bottom: 14px;
+  }
+  .rec-form.open { display: block; }
+  .rec-form h4 {
+    font-size: 14px; color: var(--accent);
+    margin-bottom: 14px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .rec-form h4 .x {
+    cursor: pointer; color: var(--sub); font-size: 20px;
+  }
+  .rec-form .row {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 14px; align-items: center;
+  }
+  .rec-form .label {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    width: 100%; margin-bottom: 4px;
+  }
+  .rec-form .opt-btn {
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 7px 12px; font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rec-form .opt-btn:hover { border-color: var(--accent); }
+  .rec-form .opt-btn.selected {
+    background: var(--accent); color: white;
+    border-color: var(--accent); font-weight: 600;
+  }
+  .rec-form input[type="text"], .rec-form input[type="number"] {
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 10px; font-size: 13px;
+    color: var(--text); font-family: inherit; width: 120px;
+  }
+  .rec-form .submit-row {
+    display: flex; gap: 8px; justify-content: flex-end;
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .rec-form button.submit {
+    background: var(--accent); color: white;
+    border: none; border-radius: 6px;
+    padding: 9px 18px; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .rec-form button.cancel {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line);
+    border-radius: 6px; padding: 9px 14px; cursor: pointer;
+  }
+
+  .rec-result { margin-top: 12px; }
+  .rec-result .summary {
+    font-size: 12px; color: var(--sub); margin-bottom: 10px;
+  }
+  .rec-result table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .rec-result th {
+    text-align: left; padding: 8px;
+    background: var(--card2); color: var(--sub);
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.5px; font-weight: 600;
+  }
+  .rec-result td {
+    padding: 8px; border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .rec-result tr:hover { background: var(--card2); }
+  .rec-result .add-btn {
+    background: var(--green); color: white; border: none;
+    border-radius: 4px; padding: 4px 10px;
+    font-size: 11px; cursor: pointer; font-weight: 600;
+  }
+  .rec-result .rank { font-weight: 700; color: var(--accent); }
+  .rec-result .empty {
+    text-align: center; color: var(--sub);
+    padding: 24px; font-size: 12px;
+  }
+  .rec-form .loading {
+    text-align: center; padding: 20px;
+    color: var(--sub); font-size: 12px;
+  }
 
   /* ── 新建持仓表单 ────────────────────────────────────────────────── */
   .add-form {
@@ -953,6 +1052,7 @@
         </div>
 
         <div class="pos-toolbar">
+          <button class="rec-btn" onclick="showRec()">🎯 找最佳 Option</button>
           <button class="add-btn" onclick="showAdd()">+ 新建持仓</button>
           <button class="muted" onclick="selectAll(true)">全选</button>
           <button class="muted" onclick="selectAll(false)">全不选</button>
@@ -980,6 +1080,58 @@
           <span style="flex:1"></span>
           <span id="sel-count" style="color:var(--sub);">--</span>
         </div>
+        <div class="rec-form" id="rec-form">
+          <h4>
+            <span>🎯 找最佳 Option（基于实时市场数据评分排名）</span>
+            <span class="x" onclick="hideRec()">×</span>
+          </h4>
+
+          <div class="row">
+            <span class="label">1. 标的 Ticker</span>
+            <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
+            <span style="color:var(--sub);font-size:11px">推荐用 SPY, TSLA, NVDA, META 等高流动性标的</span>
+          </div>
+
+          <div class="row">
+            <span class="label">2. 你的方向看法</span>
+            <button class="opt-btn" data-group="direction" data-value="bullish">📈 长期看涨</button>
+            <button class="opt-btn" data-group="direction" data-value="bearish">📉 长期看跌</button>
+            <button class="opt-btn" data-group="direction" data-value="neutral">↔️ 区间震荡</button>
+          </div>
+
+          <div class="row">
+            <span class="label">3. 策略意图</span>
+            <button class="opt-btn" data-group="intent" data-value="premium">💰 收权利金</button>
+            <button class="opt-btn" data-group="intent" data-value="csp">🎯 准备接货（CSP）</button>
+            <button class="opt-btn" data-group="intent" data-value="covered_call">📤 减仓（Covered Call）</button>
+            <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率</button>
+          </div>
+
+          <div class="row">
+            <span class="label">4. 持仓时长</span>
+            <button class="opt-btn" data-group="timeframe" data-value="2">2 天</button>
+            <button class="opt-btn" data-group="timeframe" data-value="7">1 周</button>
+            <button class="opt-btn" data-group="timeframe" data-value="14">2 周</button>
+            <button class="opt-btn" data-group="timeframe" data-value="30">1 月</button>
+            <button class="opt-btn" data-group="timeframe" data-value="60">2 月</button>
+            <button class="opt-btn" data-group="timeframe" data-value="90">3 月</button>
+          </div>
+
+          <div class="row">
+            <span class="label">5. 风险偏好</span>
+            <button class="opt-btn" data-group="risk" data-value="conservative">🛡 保守（Δ &lt; 0.20）</button>
+            <button class="opt-btn" data-group="risk" data-value="balanced">⚖️ 平衡（Δ 0.20-0.35）</button>
+            <button class="opt-btn" data-group="risk" data-value="aggressive">🔥 激进（Δ &gt; 0.35）</button>
+          </div>
+
+          <div class="submit-row">
+            <button class="cancel" onclick="hideRec()">取消</button>
+            <button class="submit" onclick="submitRec()">🔍 找出最佳</button>
+          </div>
+
+          <div class="rec-result" id="rec-result"></div>
+        </div>
+
         <div class="pos-grid" id="positions"></div>
       </div>
 
@@ -1952,6 +2104,182 @@ async function _initSync() {
   } catch (e) {
     console.warn('initSync failed', e);
   }
+}
+
+// ── 推荐引擎 UI ───────────────────────────────────────────────────────
+const _recDefaults = {
+  direction: 'bullish',
+  intent: 'premium',
+  timeframe: '7',
+  risk: 'balanced',
+};
+const _recSelection = { ...localStorage.getItem('rec_last_choice')
+  ? JSON.parse(localStorage.getItem('rec_last_choice')) : _recDefaults };
+
+function showRec() {
+  const form = document.getElementById('rec-form');
+  form.classList.add('open');
+  document.getElementById('rec-ticker').value =
+    localStorage.getItem('rec_last_ticker') || '';
+  document.getElementById('rec-ticker').focus();
+  _applyRecSelection();
+  // Click handlers
+  document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {
+    btn.onclick = () => {
+      const group = btn.dataset.group;
+      _recSelection[group] = btn.dataset.value;
+      _applyRecSelection();
+    };
+  });
+}
+function hideRec() {
+  document.getElementById('rec-form').classList.remove('open');
+  document.getElementById('rec-result').innerHTML = '';
+}
+function _applyRecSelection() {
+  document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {
+    btn.classList.toggle('selected',
+      _recSelection[btn.dataset.group] === btn.dataset.value);
+  });
+}
+
+async function submitRec() {
+  const ticker = document.getElementById('rec-ticker').value.trim().toUpperCase();
+  if (!ticker) { alert('请输入 ticker'); return; }
+  const body = {
+    action: 'recommend',
+    ticker,
+    direction: _recSelection.direction,
+    intent: _recSelection.intent,
+    timeframe: parseInt(_recSelection.timeframe, 10),
+    risk: _recSelection.risk,
+  };
+  localStorage.setItem('rec_last_ticker', ticker);
+  localStorage.setItem('rec_last_choice', JSON.stringify(_recSelection));
+
+  const out = document.getElementById('rec-result');
+  out.innerHTML = '<div class="loading">🔍 抓取期权链 + 评分中（5-15 秒）...</div>';
+
+  try {
+    const r = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (data.error) {
+      out.innerHTML = '<div class="empty">❌ ' + data.error + '</div>';
+      return;
+    }
+    renderRecResult(data);
+  } catch (e) {
+    out.innerHTML = '<div class="empty">❌ 网络错误: ' + e.message + '</div>';
+  }
+}
+
+function renderRecResult(d) {
+  const c = d.criteria;
+  const strategyDesc = c.is_short
+    ? (c.is_call ? '卖出 Call（看跌或减仓）' : '卖出 Put（看涨或准备接货）')
+    : (c.is_call ? '买入 Call（看多）' : '买入 Put（看空）');
+
+  const summary = `
+    标的 <strong>${d.ticker}</strong> 现价 $${fmt(d.underlying, 2)} ·
+    策略 <strong>${strategyDesc}</strong> ·
+    Δ 区间 ${c.delta_band[0]}-${c.delta_band[1]} ·
+    扫描到期日: ${c.expiries_searched.join(', ')} ·
+    数据时间 ${d.timestamp}
+  `;
+
+  if (!d.candidates.length) {
+    document.getElementById('rec-result').innerHTML = `
+      <div class="summary">${summary}</div>
+      <div class="empty">😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）</div>
+    `;
+    return;
+  }
+
+  const rows = d.candidates.map((opt, i) => {
+    const isShort = c.is_short;
+    return `
+      <tr>
+        <td class="rank">#${i + 1}</td>
+        <td><strong>${opt.ticker} $${opt.strike} ${opt.type.toUpperCase()}</strong><br>
+            <span style="color:var(--sub);font-size:10px">${opt.expiry} (${opt.days}天)</span></td>
+        <td>Mid <strong>$${fmt(opt.mid, 2)}</strong><br>
+            <span style="color:var(--sub);font-size:10px">${fmt(opt.bid,2)} / ${fmt(opt.ask,2)}, spread ${opt.spread_pct}%</span></td>
+        <td>IV <strong>${opt.iv}%</strong><br>
+            <span style="color:var(--sub);font-size:10px">Δ ${opt.delta}</span></td>
+        <td>距行权<br><strong style="color:${Math.abs(opt.moneyness_pct) > 10 ? 'var(--green)' : 'var(--orange)'}">${signed(opt.moneyness_pct, 1)}%</strong></td>
+        ${isShort ? `
+          <td>年化<br><strong style="color:var(--green)">${opt.annualized_yield_pct}%</strong></td>
+          <td>安全概率<br><strong>${opt.prob_safe_pct}%</strong></td>
+          <td>每张抵押<br>$${fmt(opt.collateral_per_contract, 0)}</td>
+          <td>每张收<br><strong style="color:var(--green)">$${fmt(opt.premium_per_contract, 0)}</strong></td>
+        ` : `
+          <td>权利金<br>$${fmt(opt.premium_per_contract, 0)}</td>
+          <td>Δ ${opt.delta}</td>
+          <td colspan="2">每日 Theta $${fmt(opt.theta_per_day, 2)}</td>
+        `}
+        <td><button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">加入持仓</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  const headerExtra = c.is_short
+    ? '<th>距行权</th><th>年化</th><th>安全概率</th><th>抵押</th><th>权利金</th>'
+    : '<th>距行权</th><th>权利金</th><th>Δ</th><th colspan="2">Theta</th>';
+
+  document.getElementById('rec-result').innerHTML = `
+    <div class="summary">${summary}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>排名</th><th>合约</th><th>Mid 价</th><th>IV / Δ</th>
+          ${headerExtra}<th>操作</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="font-size:10px;color:var(--sub);margin-top:8px">
+      💡 评分公式：年化收益 × (1-|Δ|) × 流动性因子。"安全概率"是用 Δ 估算的不到行权价的概率，仅供参考。
+    </div>
+  `;
+}
+
+function addRecToPositions(ticker, type, strike, expiry, mid) {
+  const contracts = prompt('要加几张？（mid 价 $' + mid.toFixed(2) + '/股）', '1');
+  if (!contracts) return;
+  const n = parseInt(contracts, 10);
+  if (isNaN(n) || n < 1) { alert('张数无效'); return; }
+  const sellPrice = parseFloat(prompt('实际成交价 $/股？', mid.toFixed(2)));
+  if (isNaN(sellPrice) || sellPrice < 0) { alert('价格无效'); return; }
+
+  // 合并 / 新建
+  const positions = loadPositions();
+  const today = new Date().toISOString().slice(0, 10);
+  const newId = `${ticker}_${type}_${parseInt(strike)}_${expiry}`;
+  let merged = false;
+  for (const p of positions) {
+    if (p.ticker === ticker && p.type === type &&
+        Math.abs(p.strike - strike) < 1e-6 && p.expiry === expiry) {
+      const total = p.contracts + n;
+      p.sell_price = Math.round((p.sell_price * p.contracts + sellPrice * n) / total * 10000) / 10000;
+      p.contracts = total;
+      merged = true; break;
+    }
+  }
+  if (!merged) {
+    positions.push({
+      ticker, type, strike, expiry,
+      contracts: n, sell_price: sellPrice, trade_date: today,
+    });
+  }
+  savePositions(positions);
+  selectedIds.add(newId);
+  saveSelection();
+  alert((merged ? '✅ 已合并到现有持仓' : '✅ 已新建持仓') + ': ' + ticker + ' $' + strike + ' ' + type);
+  refresh();
 }
 
 // ── 信息卡折叠状态 ─────────────────────────────────────────────────────

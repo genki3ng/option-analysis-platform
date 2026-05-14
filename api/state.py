@@ -625,77 +625,123 @@ def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
 
 
 def _make_verdict(opt: dict, is_short: bool, intent: str, iv_rank: Optional[dict]) -> dict:
-    """生成一句话推荐 verdict"""
+    """生成一句话推荐 verdict（权重评分，严重的优劣权重更大）"""
     pros, cons = [], []
-    # 通用判定
-    if opt["spread_pct"] > 8:
-        cons.append(f"买卖价差大 {opt['spread_pct']:.0f}%（成交可能折价）")
+    weight = 0  # 综合权重：正数 = 偏好，负数 = 不偏好
+
+    # 流动性（通用）
+    if opt["spread_pct"] > 10:
+        cons.append(f"买卖价差大 {opt['spread_pct']:.0f}%（成交可能折价）"); weight -= 2
+    elif opt["spread_pct"] > 5:
+        cons.append(f"买卖价差 {opt['spread_pct']:.0f}%"); weight -= 1
     elif opt["spread_pct"] < 3:
-        pros.append("流动性好（spread 小）")
+        pros.append("流动性好（spread 小）"); weight += 1
 
     if is_short:
         ay = opt["annualized_yield_pct"]
         ps = opt["prob_safe_pct"]
         money = opt["moneyness_pct"]
-        if ay >= 80:
-            pros.append(f"年化 {ay:.0f}%（高收益）")
+
+        # 年化收益
+        if ay >= 100:
+            pros.append(f"年化 {ay:.0f}%（极高收益）"); weight += 3
+        elif ay >= 60:
+            pros.append(f"年化 {ay:.0f}%（高收益）"); weight += 2
         elif ay >= 30:
-            pros.append(f"年化 {ay:.0f}%")
+            pros.append(f"年化 {ay:.0f}%（不错）"); weight += 1
+        elif ay >= 15:
+            pass  # 中性
         else:
-            cons.append(f"年化只有 {ay:.0f}%（偏低）")
+            cons.append(f"年化只有 {ay:.0f}%（偏低）"); weight -= 1
 
-        if ps >= 75:
-            pros.append(f"安全概率 {ps:.0f}%")
-        elif ps < 60:
-            cons.append(f"安全概率 {ps:.0f}%（偏险）")
+        # 安全概率
+        if ps >= 85:
+            pros.append(f"安全概率 {ps:.0f}%（很安全）"); weight += 2
+        elif ps >= 70:
+            pros.append(f"安全概率 {ps:.0f}%"); weight += 1
+        elif ps < 55:
+            cons.append(f"安全概率仅 {ps:.0f}%（偏险）"); weight -= 2
+        elif ps < 65:
+            cons.append(f"安全概率 {ps:.0f}%（一般）"); weight -= 1
 
-        if abs(money) < 2.5:
-            cons.append(f"距行权仅 {abs(money):.1f}%（gamma 风险大）")
+        # 距行权 — gamma 风险（严重，扣分多）
+        if abs(money) < 2:
+            cons.append(f"距行权仅 {abs(money):.1f}%（gamma 风险极大）"); weight -= 3
+        elif abs(money) < 4:
+            cons.append(f"距行权 {abs(money):.1f}%（gamma 偏高）"); weight -= 2
+        elif abs(money) > 10:
+            pros.append(f"距行权 {abs(money):.0f}%（远离危险区）"); weight += 1
 
-        # IV 高 → 卖期权好时机
+        # IV 配合度
         if iv_rank:
-            if iv_rank["iv_rank"] >= 70:
-                pros.append(f"📈 IV 高（rank {iv_rank['iv_rank']:.0f}），适合卖期权")
-            elif iv_rank["iv_rank"] <= 30:
-                cons.append(f"📉 IV 低（rank {iv_rank['iv_rank']:.0f}），权利金偏少")
+            ir = iv_rank["iv_rank"]
+            if ir >= 70:
+                pros.append(f"📈 IV 高（rank {ir:.0f}），卖期权好时机"); weight += 2
+            elif ir >= 50:
+                pros.append(f"📊 IV 中位（rank {ir:.0f}）"); weight += 0
+            elif ir <= 20:
+                cons.append(f"📉 IV 很低（rank {ir:.0f}），权利金偏少"); weight -= 2
+            elif ir <= 35:
+                cons.append(f"📉 IV 低（rank {ir:.0f}）"); weight -= 1
 
     elif intent == "long_leaps":
         lev = opt.get("leverage_x", 0)
         be = opt.get("breakeven_pct", 0)
-        if lev >= 2.5:
-            pros.append(f"杠杆 {lev}x（资金效率高）")
-        if be is not None and be < 8:
-            pros.append(f"盈亏平衡只需涨 {be:.1f}%")
-        elif be is not None and be > 15:
-            cons.append(f"盈亏平衡需涨 {be:.0f}%（偏远）")
 
+        # 杠杆
+        if lev >= 3:
+            pros.append(f"杠杆 {lev}x（资金效率极高）"); weight += 3
+        elif lev >= 2:
+            pros.append(f"杠杆 {lev}x"); weight += 2
+        elif lev < 1.5:
+            cons.append(f"杠杆只 {lev}x（资金效率低）"); weight -= 1
+
+        # 盈亏平衡
+        if be is not None:
+            if be < 5:
+                pros.append(f"盈亏平衡只需涨 {be:.1f}%"); weight += 2
+            elif be < 10:
+                pros.append(f"盈亏平衡涨 {be:.1f}%"); weight += 1
+            elif be > 20:
+                cons.append(f"盈亏平衡需涨 {be:.0f}%（偏远）"); weight -= 2
+            elif be > 12:
+                cons.append(f"盈亏平衡涨 {be:.0f}%"); weight -= 1
+
+        # IV 配合度（买期权希望 IV 低）
         if iv_rank:
-            if iv_rank["iv_rank"] <= 30:
-                pros.append(f"📉 IV 低（rank {iv_rank['iv_rank']:.0f}），买期权便宜")
-            elif iv_rank["iv_rank"] >= 70:
-                cons.append(f"📈 IV 高（rank {iv_rank['iv_rank']:.0f}），买期权偏贵")
+            ir = iv_rank["iv_rank"]
+            if ir <= 25:
+                pros.append(f"📉 IV 很低（rank {ir:.0f}），买期权便宜"); weight += 2
+            elif ir <= 40:
+                pros.append(f"📊 IV 偏低（rank {ir:.0f}）"); weight += 1
+            elif ir >= 70:
+                cons.append(f"📈 IV 高（rank {ir:.0f}），买期权偏贵"); weight -= 2
 
+        # 时间
         if opt["days"] >= 180:
-            pros.append("时间充裕（theta 衰减慢）")
-        elif opt["days"] < 60:
-            cons.append("时间偏短，theta 衰减快")
+            pros.append("时间充裕（theta 衰减慢）"); weight += 1
+        elif opt["days"] < 45:
+            cons.append("时间偏短，theta 衰减快"); weight -= 2
 
     else:  # long_vol etc.
-        if iv_rank and iv_rank["iv_rank"] <= 30:
-            pros.append("IV 低（买期权便宜）")
+        if iv_rank:
+            ir = iv_rank["iv_rank"]
+            if ir <= 30:
+                pros.append("IV 低（买期权便宜）"); weight += 2
+            elif ir >= 70:
+                cons.append("IV 高（买期权偏贵）"); weight -= 2
 
-    # 综合评级
-    score = len(pros) - len(cons)
-    if score >= 3:
-        stars, label, color = "⭐⭐⭐⭐⭐", "强烈推荐", "green"
-    elif score >= 1:
-        stars, label, color = "⭐⭐⭐⭐", "推荐", "green"
-    elif score == 0:
-        stars, label, color = "⭐⭐⭐", "一般", "yellow"
-    elif score == -1:
-        stars, label, color = "⭐⭐", "谨慎", "orange"
+    # 综合评级（基于加权得分，越大越好）
+    if weight >= 5:
+        tier, stars, label, color = 5, "⭐⭐⭐⭐⭐", "强烈推荐", "green"
+    elif weight >= 2:
+        tier, stars, label, color = 4, "⭐⭐⭐⭐", "推荐", "green"
+    elif weight >= -1:
+        tier, stars, label, color = 3, "⭐⭐⭐", "一般", "yellow"
+    elif weight >= -4:
+        tier, stars, label, color = 2, "⭐⭐", "谨慎", "orange"
     else:
-        stars, label, color = "⭐", "不建议", "red"
+        tier, stars, label, color = 1, "⭐", "不建议", "red"
 
     # 一句话总结
     if pros and not cons:
@@ -708,6 +754,8 @@ def _make_verdict(opt: dict, is_short: bool, intent: str, iv_rank: Optional[dict
         one_line = "符合筛选条件，但无突出优劣"
 
     return {
+        "tier": tier,
+        "weight": weight,
         "stars": stars,
         "label": label,
         "color": color,
@@ -856,17 +904,19 @@ def recommend(req: dict) -> dict:
                 "breakeven_pct": breakeven_pct,
             })
 
-    candidates.sort(key=lambda x: -x["score"])
-
-    # 计算 ticker 整体的 IV rank（看其中一个候选的 IV）
+    # 1. 先算 IV rank（用任意候选的 IV 作样本）
     iv_rank = None
     if candidates:
         sample_iv = candidates[0]["iv"] / 100
         iv_rank = _compute_iv_rank(ticker, sample_iv)
 
-    # 为每个候选生成一句话推荐
-    for c in candidates[:10]:
+    # 2. 给每个候选打 verdict（含 tier 1-5）
+    for c in candidates:
         c["verdict"] = _make_verdict(c, is_short, intent, iv_rank)
+
+    # 3. 按 (verdict tier 优先, 原 score 次要) 排序 —
+    #    确保 ⭐⭐⭐⭐⭐ 永远排在 ⭐⭐⭐ 前面
+    candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
 
     return {
         "ticker": ticker,

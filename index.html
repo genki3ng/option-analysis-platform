@@ -2532,11 +2532,20 @@ function showReview() {
     const worst = trades[trades.length - 1];
 
     let verdict = '';
-    if (winRate >= 70 && total > 0) verdict = '🏆 出色 — 胜率高且总盈利';
-    else if (winRate >= 50 && total > 0) verdict = '✅ 不错 — 整体盈利';
-    else if (total > 0) verdict = '🟡 不错 — 胜率偏低但单胜大';
-    else if (winRate >= 50) verdict = '🟠 警惕 — 胜率高但单亏大于单胜';
-    else verdict = '🔴 需调整 — 整体亏损';
+    const ratio = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : 99;
+    if (winRate >= 70 && total > 0 && ratio < 1) {
+      verdict = '⚠️ 注意"赚小亏大"模式 — 胜率虽高，但 1 笔亏损吃掉多笔小赢';
+    } else if (winRate >= 70 && total > 0) {
+      verdict = '🏆 出色 — 胜率高且总盈利';
+    } else if (winRate >= 50 && total > 0) {
+      verdict = '✅ 不错 — 整体盈利';
+    } else if (total > 0) {
+      verdict = '🟡 不错 — 胜率偏低但单胜大';
+    } else if (winRate >= 50) {
+      verdict = '🟠 警惕 — 胜率高但单亏吃掉总盈';
+    } else {
+      verdict = '🔴 需调整 — 整体亏损';
+    }
 
     document.getElementById('review-modal').innerHTML = `
       <h3>📊 复盘报告 <span class="x" onclick="hideReview()">×</span></h3>
@@ -2559,16 +2568,19 @@ function showReview() {
           <div class="v" style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 0, '$')}</div>
         </div>
         <div class="review-stat">
-          <div class="l">平均盈</div>
-          <div class="v" style="color:var(--green)">+$${fmt(avgWin, 0)}</div>
+          <div class="l">${wins.length > 1 ? '平均盈（每笔）' : (wins.length === 1 ? '盈利金额' : '盈利')}</div>
+          <div class="v" style="color:var(--green)">${wins.length ? '+$' + fmt(avgWin, 0) : '—'}</div>
+          ${wins.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${wins.length} 笔</div>` : ''}
         </div>
         <div class="review-stat">
-          <div class="l">平均亏</div>
-          <div class="v" style="color:var(--red)">$${fmt(avgLoss, 0)}</div>
+          <div class="l">${losses.length > 1 ? '平均亏（每笔）' : (losses.length === 1 ? '亏损金额' : '亏损')}</div>
+          <div class="v" style="color:var(--red)">${losses.length ? '$' + fmt(avgLoss, 0) : '—'}</div>
+          ${losses.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${losses.length} 笔</div>` : (losses.length === 1 ? '<div style="font-size:9px;color:var(--sub);margin-top:2px">仅 1 笔</div>' : '')}
         </div>
         <div class="review-stat">
-          <div class="l">盈亏比</div>
-          <div class="v">${avgLoss !== 0 ? Math.abs(avgWin / avgLoss).toFixed(1) : '∞'}x</div>
+          <div class="l">盈亏比 (avg)</div>
+          <div class="v">${avgLoss !== 0 && wins.length ? Math.abs(avgWin / avgLoss).toFixed(1) + 'x' : (wins.length && !losses.length ? '∞' : '—')}</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:2px">${avgLoss !== 0 && wins.length && Math.abs(avgWin/avgLoss) >= 1 ? '✓ 胜>亏' : (avgLoss !== 0 ? '⚠️ 单亏>单胜' : '')}</div>
         </div>
       </div>
 

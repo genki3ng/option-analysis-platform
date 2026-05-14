@@ -628,6 +628,68 @@
   .rec-btn-large .rec-sub {
     font-size: 11px; opacity: 0.85; line-height: 1.4;
   }
+  .review-btn {
+    width: 100%; background: var(--card2);
+    color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; text-align: left;
+    transition: all 0.15s;
+  }
+  .review-btn:hover {
+    border-color: var(--accent); color: var(--accent);
+  }
+  .review-btn .review-sub {
+    display: block; font-size: 11px; color: var(--sub);
+    margin-top: 3px; line-height: 1.4;
+  }
+
+  /* 复盘 modal */
+  .review-modal {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(820px, 94vw); max-height: 90vh;
+    overflow-y: auto; z-index: 1001;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .review-modal.open { display: block; }
+  .review-modal h3 {
+    font-size: 16px; color: var(--text); font-weight: 700;
+    margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .review-modal .x {
+    cursor: pointer; color: var(--sub); font-size: 22px;
+  }
+  .review-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 18px;
+  }
+  .review-stat {
+    background: var(--card2); border-radius: 8px;
+    padding: 12px; text-align: center;
+  }
+  .review-stat .l {
+    font-size: 10px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .review-stat .v {
+    font-size: 20px; font-weight: 800; margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .review-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .review-table th, .review-table td {
+    padding: 8px; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .review-table th {
+    color: var(--sub); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
 
   /* 模态遮罩 */
   .modal-backdrop {
@@ -746,24 +808,131 @@
   .rec-result .summary {
     font-size: 12px; color: var(--sub); margin-bottom: 10px;
   }
-  .rec-result table {
-    width: 100%; border-collapse: collapse; font-size: 12px;
+  /* IV Rank 横幅 */
+  .iv-banner {
+    background: linear-gradient(135deg, rgba(91,141,239,0.08), rgba(167,139,250,0.08));
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 16px; margin: 12px 0;
   }
-  .rec-result th {
-    text-align: left; padding: 8px;
-    background: var(--card2); color: var(--sub);
-    font-size: 10px; text-transform: uppercase;
-    letter-spacing: 0.5px; font-weight: 600;
+  .iv-rank-bar { margin-bottom: 8px; }
+  .iv-rank-track {
+    position: relative; display: block;
+    height: 8px; border-radius: 4px;
+    background: linear-gradient(to right,
+      rgba(74,222,128,0.4) 0%,
+      rgba(250,204,21,0.4) 50%,
+      rgba(248,113,113,0.4) 100%);
   }
-  .rec-result td {
-    padding: 8px; border-bottom: 1px solid var(--line);
+  .iv-rank-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: linear-gradient(to right, var(--green), var(--yellow), var(--red));
+    border-radius: 4px;
+  }
+  .iv-rank-marker {
+    position: absolute; top: -8px; transform: translateX(-50%);
+    color: var(--accent); font-size: 14px;
+    text-shadow: 0 0 4px var(--card);
+  }
+  .iv-text { font-size: 12px; color: var(--sub); line-height: 1.5; }
+  .iv-text strong { color: var(--text); }
+
+  /* 推荐卡片设计 */
+  .rec-cards { display: flex; flex-direction: column; gap: 10px; }
+  .rec-card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px 16px;
+    transition: all 0.15s;
+  }
+  .rec-card:hover { box-shadow: var(--shadow-lg); }
+  .rec-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .rec-rank {
+    font-size: 18px; font-weight: 800;
+    color: var(--accent); flex-shrink: 0;
+    min-width: 36px;
+  }
+  .rec-title { flex: 1; min-width: 0; }
+  .rec-contract {
+    font-size: 14px; font-weight: 600;
+    display: flex; align-items: baseline; gap: 6px;
+    flex-wrap: wrap;
+  }
+  .rec-contract .strike {
+    font-weight: 700; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
-  .rec-result tr:hover { background: var(--card2); }
-  .rec-result .add-btn {
+  .rec-contract .type-tag {
+    font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .rec-contract .type-tag.call { background: rgba(74,222,128,0.18); color: var(--green); }
+  .rec-contract .type-tag.put { background: rgba(251,146,60,0.18); color: var(--orange); }
+  .rec-contract .rec-exp {
+    color: var(--sub); font-size: 11px; font-weight: 400;
+    margin-left: 4px;
+  }
+  .rec-verdict {
+    font-size: 12px; margin-top: 2px; font-weight: 600;
+  }
+  .rec-card .add-btn {
     background: var(--green); color: white; border: none;
-    border-radius: 4px; padding: 4px 10px;
-    font-size: 11px; cursor: pointer; font-weight: 600;
+    border-radius: 6px; padding: 7px 14px;
+    font-size: 12px; cursor: pointer; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rec-oneline {
+    background: var(--card2);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px; border-radius: 4px;
+    font-size: 12px; line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .rec-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px; margin-bottom: 8px;
+  }
+  .kmet {
+    background: var(--card2); border-radius: 6px;
+    padding: 6px 10px; text-align: center;
+  }
+  .kmet-l { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
+  .kmet-v {
+    font-size: 14px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .kmet-v.green { color: var(--green); }
+  .kmet-v.red { color: var(--red); }
+  .kmet-v.accent { color: var(--accent); }
+  .kmet-v.sub { color: var(--sub); font-size: 12px; }
+
+  .rec-details summary {
+    font-size: 11px; color: var(--sub);
+    cursor: pointer; padding: 4px 0;
+    user-select: none;
+  }
+  .rec-details summary:hover { color: var(--accent); }
+  .rec-details[open] summary { color: var(--accent); }
+  .rec-detail-body { padding: 8px 0 4px; }
+  .rec-proscons {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 8px;
+  }
+  .rec-proscons ul { list-style: none; padding: 0; font-size: 11px; }
+  .rec-proscons .pros li { color: var(--green); }
+  .rec-proscons .cons li { color: var(--red); }
+  .rec-fullstat {
+    font-size: 11px; color: var(--sub);
+    background: var(--card2); padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .rec-fullstat code {
+    font-family: "SF Mono", Menlo, monospace;
+    background: var(--card); padding: 1px 4px;
+    border-radius: 3px; color: var(--text);
   }
   .rec-result .rank { font-weight: 700; color: var(--accent); }
   .rec-result .empty {
@@ -1258,6 +1427,10 @@
           <div class="rec-title">🎯 找最佳 Option</div>
           <div class="rec-sub">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
         </button>
+        <button class="review-btn" onclick="showReview()" style="margin-top:8px">
+          <span>📊 复盘报告</span>
+          <span class="review-sub">看你已平仓持仓的胜率、最佳/最差交易</span>
+        </button>
       </div>
 
       <div class="card">
@@ -1269,6 +1442,10 @@
     </div>
   </div>
 </div>
+
+<!-- 📊 复盘报告 modal -->
+<div class="modal-backdrop" id="review-backdrop" onclick="hideReview()"></div>
+<div class="review-modal" id="review-modal"></div>
 
 <!-- 🎯 找最佳 Option 模态框（全局 overlay）-->
 <div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
@@ -2310,6 +2487,121 @@ async function _initSync() {
   }
 }
 
+// ── 复盘报告 ────────────────────────────────────────────────────────
+function showReview() {
+  const d = window._currentData;
+  if (!d) { alert('数据未加载'); return; }
+  const closed = d.positions.filter(p => p.closed && p.close_price !== null && p.close_price !== undefined);
+
+  if (!closed.length) {
+    document.getElementById('review-modal').innerHTML = `
+      <h3>📊 复盘报告 <span class="x" onclick="hideReview()">×</span></h3>
+      <div style="text-align:center;color:var(--sub);padding:40px">
+        还没有平仓的持仓 — 平仓后这里会显示统计。
+      </div>
+    `;
+  } else {
+    const trades = closed.map(p => {
+      const realized = (p.sell_price - p.close_price) * p.contracts * 100;
+      const pnlPct = ((p.sell_price - p.close_price) / p.sell_price) * 100;
+      return { ...p, realized, pnlPct };
+    }).sort((a, b) => b.realized - a.realized);
+
+    const wins = trades.filter(t => t.realized > 0);
+    const losses = trades.filter(t => t.realized < 0);
+    const total = trades.reduce((s, t) => s + t.realized, 0);
+    const winRate = trades.length ? (wins.length / trades.length * 100) : 0;
+    const avgWin = wins.length ? wins.reduce((s, t) => s + t.realized, 0) / wins.length : 0;
+    const avgLoss = losses.length ? losses.reduce((s, t) => s + t.realized, 0) / losses.length : 0;
+    const best = trades[0];
+    const worst = trades[trades.length - 1];
+
+    let verdict = '';
+    if (winRate >= 70 && total > 0) verdict = '🏆 出色 — 胜率高且总盈利';
+    else if (winRate >= 50 && total > 0) verdict = '✅ 不错 — 整体盈利';
+    else if (total > 0) verdict = '🟡 不错 — 胜率偏低但单胜大';
+    else if (winRate >= 50) verdict = '🟠 警惕 — 胜率高但单亏大于单胜';
+    else verdict = '🔴 需调整 — 整体亏损';
+
+    document.getElementById('review-modal').innerHTML = `
+      <h3>📊 复盘报告 <span class="x" onclick="hideReview()">×</span></h3>
+
+      <div style="background:var(--card2);padding:12px 14px;border-radius:8px;margin-bottom:18px;font-size:14px">
+        <strong>${verdict}</strong> · 共 ${trades.length} 笔平仓，累计 <strong style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 2, '$')}</strong>
+      </div>
+
+      <div class="review-grid">
+        <div class="review-stat">
+          <div class="l">总平仓数</div>
+          <div class="v">${trades.length}</div>
+        </div>
+        <div class="review-stat">
+          <div class="l">胜率</div>
+          <div class="v" style="color:${winRate>=60?'var(--green)':winRate>=40?'var(--orange)':'var(--red)'}">${winRate.toFixed(0)}%</div>
+        </div>
+        <div class="review-stat">
+          <div class="l">总实现盈亏</div>
+          <div class="v" style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 0, '$')}</div>
+        </div>
+        <div class="review-stat">
+          <div class="l">平均盈</div>
+          <div class="v" style="color:var(--green)">+$${fmt(avgWin, 0)}</div>
+        </div>
+        <div class="review-stat">
+          <div class="l">平均亏</div>
+          <div class="v" style="color:var(--red)">$${fmt(avgLoss, 0)}</div>
+        </div>
+        <div class="review-stat">
+          <div class="l">盈亏比</div>
+          <div class="v">${avgLoss !== 0 ? Math.abs(avgWin / avgLoss).toFixed(1) : '∞'}x</div>
+        </div>
+      </div>
+
+      ${best ? `
+      <div style="margin-bottom:14px;padding:10px;background:rgba(74,222,128,0.08);border-radius:6px;font-size:12px">
+        🏆 <strong>最佳交易：</strong>${best.label} ·
+        卖 $${fmt(best.sell_price, 2)} → 平 $${fmt(best.close_price, 2)} ·
+        <span style="color:var(--green)">${signed(best.realized, 0, '$')} (+${best.pnlPct.toFixed(0)}%)</span>
+      </div>` : ''}
+      ${worst && worst !== best ? `
+      <div style="margin-bottom:14px;padding:10px;background:rgba(248,113,113,0.08);border-radius:6px;font-size:12px">
+        📉 <strong>最差交易：</strong>${worst.label} ·
+        卖 $${fmt(worst.sell_price, 2)} → 平 $${fmt(worst.close_price, 2)} ·
+        <span style="color:var(--red)">${signed(worst.realized, 0, '$')} (${worst.pnlPct.toFixed(0)}%)</span>
+      </div>` : ''}
+
+      <table class="review-table">
+        <thead>
+          <tr><th>持仓</th><th>卖出 → 平仓</th><th>张数</th><th>实现盈亏</th><th>%</th><th>平仓日</th></tr>
+        </thead>
+        <tbody>
+          ${trades.map(t => `
+            <tr>
+              <td><strong>${t.label}</strong></td>
+              <td>$${fmt(t.sell_price, 2)} → $${fmt(t.close_price, 2)}</td>
+              <td>${t.contracts}</td>
+              <td style="color:${t.realized>=0?'var(--green)':'var(--red)'}">${signed(t.realized, 0, '$')}</td>
+              <td style="color:${t.realized>=0?'var(--green)':'var(--red)'}">${signed(t.pnlPct, 0)}%</td>
+              <td>${t.close_date || '--'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div style="font-size:10px;color:var(--sub);margin-top:14px;line-height:1.6">
+        💡 复盘建议：胜率高+盈亏比 &lt; 1 时容易"赚小亏大"（典型 short premium 翻车）；<br>
+        胜率低但盈亏比 &gt; 2 是趋势/Long 策略常见模式（小亏多胜大）。
+      </div>
+    `;
+  }
+  document.getElementById('review-modal').classList.add('open');
+  document.getElementById('review-backdrop').classList.add('show');
+}
+function hideReview() {
+  document.getElementById('review-modal').classList.remove('open');
+  document.getElementById('review-backdrop').classList.remove('show');
+}
+
 // ── 下拉菜单（导出、同步）─────────────────────────────────────────────
 function toggleDD(btn) {
   const dd = btn.closest('.dropdown');
@@ -2477,9 +2769,45 @@ function renderRecResult(d) {
     数据时间 ${d.timestamp}
   `;
 
+  // IV rank 横幅
+  let ivBanner = '';
+  if (d.iv_rank) {
+    const r = d.iv_rank;
+    let mood = '';
+    if (r.iv_rank >= 70) {
+      mood = c.is_short
+        ? '🔥 IV 偏高 — 卖期权好时机（权利金贵）'
+        : '⚠️ IV 偏高 — 买期权偏贵';
+    } else if (r.iv_rank <= 30) {
+      mood = c.is_short
+        ? '❄️ IV 偏低 — 卖期权权利金少'
+        : '✅ IV 偏低 — 买期权便宜';
+    } else {
+      mood = '🟡 IV 中性';
+    }
+    ivBanner = `
+      <div class="iv-banner">
+        <div class="iv-rank-bar">
+          <span class="iv-rank-track">
+            <span class="iv-rank-fill" style="width:${r.iv_rank}%"></span>
+            <span class="iv-rank-marker" style="left:${r.iv_rank}%">●</span>
+          </span>
+        </div>
+        <div class="iv-text">
+          <strong>${mood}</strong> ·
+          当前 IV ${r.current_iv_pct}% ·
+          近 52 周区间 ${r.rv_52w_low_pct}%-${r.rv_52w_high_pct}% ·
+          IV Rank <strong>${r.iv_rank.toFixed(0)}</strong> /
+          百分位 <strong>${r.iv_percentile.toFixed(0)}%</strong>
+        </div>
+      </div>
+    `;
+  }
+
   if (!d.candidates.length) {
     document.getElementById('rec-result').innerHTML = `
       <div class="summary">${summary}</div>
+      ${ivBanner}
       <div class="empty">😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）</div>
     `;
     return;
@@ -2488,56 +2816,97 @@ function renderRecResult(d) {
   const isShort = c.is_short;
   const isLeaps = c.intent === 'long_leaps';
 
-  const rows = d.candidates.map((opt, i) => {
+  // 新设计：每个候选一张卡（不再用表格），verdict 最显眼
+  const cards = d.candidates.map((opt, i) => {
+    const v = opt.verdict || {};
+    const keyMetrics = isShort
+      ? [
+          { label: '年化收益', val: opt.annualized_yield_pct + '%', color: 'green' },
+          { label: '安全概率', val: opt.prob_safe_pct + '%', color: '' },
+          { label: '每张收', val: '$' + fmt(opt.premium_per_contract, 0), color: 'green' },
+          { label: '每张抵押', val: '$' + fmt(opt.collateral_per_contract, 0), color: 'sub' },
+        ]
+      : isLeaps
+      ? [
+          { label: '杠杆', val: opt.leverage_x + 'x', color: 'accent' },
+          { label: '盈亏平衡', val: signed(opt.breakeven_pct, 1) + '%', color: '' },
+          { label: '每张成本', val: '$' + fmt(opt.premium_per_contract, 0), color: '' },
+          { label: 'Theta/天', val: '-$' + fmt(Math.abs(opt.theta_per_day), 2), color: 'red' },
+        ]
+      : [
+          { label: '每张权利金', val: '$' + fmt(opt.premium_per_contract, 0), color: '' },
+          { label: 'Delta', val: opt.delta, color: '' },
+          { label: 'Theta/天', val: '$' + fmt(opt.theta_per_day, 2), color: '' },
+          { label: 'IV', val: opt.iv + '%', color: '' },
+        ];
+    const metricsHtml = keyMetrics.map(m =>
+      `<div class="kmet"><div class="kmet-l">${m.label}</div><div class="kmet-v ${m.color}">${m.val}</div></div>`
+    ).join('');
+
+    const verdictColor = {
+      green: 'var(--green)', yellow: 'var(--yellow)',
+      orange: 'var(--orange)', red: 'var(--red)',
+    }[v.color] || 'var(--accent)';
+
+    const prosHtml = (v.pros || []).map(p => `<li>✓ ${p}</li>`).join('');
+    const consHtml = (v.cons || []).map(co => `<li>✗ ${co}</li>`).join('');
+
     return `
-      <tr>
-        <td class="rank">#${i + 1}</td>
-        <td><strong>${opt.ticker} $${opt.strike} ${opt.type.toUpperCase()}</strong><br>
-            <span style="color:var(--sub);font-size:10px">${opt.expiry} (${opt.days}天)</span></td>
-        <td>Mid <strong>$${fmt(opt.mid, 2)}</strong><br>
-            <span style="color:var(--sub);font-size:10px">${fmt(opt.bid,2)} / ${fmt(opt.ask,2)}, spread ${opt.spread_pct}%</span></td>
-        <td>IV <strong>${opt.iv}%</strong><br>
-            <span style="color:var(--sub);font-size:10px">Δ ${opt.delta}</span></td>
-        <td>距行权<br><strong style="color:${Math.abs(opt.moneyness_pct) > 10 ? 'var(--green)' : 'var(--orange)'}">${signed(opt.moneyness_pct, 1)}%</strong></td>
-        ${isShort ? `
-          <td>年化<br><strong style="color:var(--green)">${opt.annualized_yield_pct}%</strong></td>
-          <td>安全概率<br><strong>${opt.prob_safe_pct}%</strong></td>
-          <td>每张抵押<br>$${fmt(opt.collateral_per_contract, 0)}</td>
-          <td>每张收<br><strong style="color:var(--green)">$${fmt(opt.premium_per_contract, 0)}</strong></td>
-        ` : isLeaps ? `
-          <td>杠杆<br><strong style="color:var(--accent)">${opt.leverage_x}x</strong></td>
-          <td>盈亏平衡<br><strong>${signed(opt.breakeven_pct, 1)}%</strong></td>
-          <td>每张成本<br>$${fmt(opt.premium_per_contract, 0)}</td>
-          <td>每日 Theta<br><span style="color:var(--red)">-$${fmt(Math.abs(opt.theta_per_day), 2)}</span></td>
-        ` : `
-          <td>权利金<br>$${fmt(opt.premium_per_contract, 0)}</td>
-          <td>Δ ${opt.delta}</td>
-          <td colspan="2">每日 Theta $${fmt(opt.theta_per_day, 2)}</td>
-        `}
-        <td><button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">加入持仓</button></td>
-      </tr>
+      <div class="rec-card">
+        <div class="rec-head">
+          <div class="rec-rank">#${i + 1}</div>
+          <div class="rec-title">
+            <div class="rec-contract">
+              <strong>${opt.ticker}</strong>
+              <span class="strike">$${opt.strike}</span>
+              <span class="type-tag ${opt.type}">${opt.type.toUpperCase()}</span>
+              <span class="rec-exp">exp ${opt.expiry} · ${opt.days} 天</span>
+            </div>
+            <div class="rec-verdict" style="color:${verdictColor}">
+              ${v.stars || ''} <strong>${v.label || ''}</strong>
+            </div>
+          </div>
+          <button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">加入持仓</button>
+        </div>
+
+        <div class="rec-oneline" style="border-left-color:${verdictColor}">
+          ${v.one_line || ''}
+        </div>
+
+        <div class="rec-metrics">
+          ${metricsHtml}
+          <div class="kmet"><div class="kmet-l">Mid 价</div><div class="kmet-v">$${fmt(opt.mid, 2)}</div></div>
+          <div class="kmet"><div class="kmet-l">距行权</div><div class="kmet-v">${signed(opt.moneyness_pct, 1)}%</div></div>
+        </div>
+
+        <details class="rec-details">
+          <summary>展开详细分析</summary>
+          <div class="rec-detail-body">
+            ${prosHtml || consHtml ? `
+              <div class="rec-proscons">
+                ${prosHtml ? `<ul class="pros">${prosHtml}</ul>` : ''}
+                ${consHtml ? `<ul class="cons">${consHtml}</ul>` : ''}
+              </div>
+            ` : ''}
+            <div class="rec-fullstat">
+              Bid/Ask <code>${fmt(opt.bid, 2)} / ${fmt(opt.ask, 2)}</code> ·
+              Spread <code>${opt.spread_pct}%</code> ·
+              IV <code>${opt.iv}%</code> ·
+              Δ <code>${opt.delta}</code> ·
+              ${isLeaps ? `杠杆 <code>${opt.leverage_x}x</code>` : `Theta/天 <code>${fmt(opt.theta_per_day, 2)}</code>`}
+            </div>
+          </div>
+        </details>
+      </div>
     `;
   }).join('');
 
-  const headerExtra = isShort
-    ? '<th>距行权</th><th>年化</th><th>安全概率</th><th>抵押</th><th>权利金</th>'
-    : isLeaps
-      ? '<th>距行权</th><th>杠杆</th><th>盈亏平衡</th><th>每张成本</th><th>Theta</th>'
-      : '<th>距行权</th><th>权利金</th><th>Δ</th><th colspan="2">Theta</th>';
-
   document.getElementById('rec-result').innerHTML = `
     <div class="summary">${summary}</div>
-    <table>
-      <thead>
-        <tr>
-          <th>排名</th><th>合约</th><th>Mid 价</th><th>IV / Δ</th>
-          ${headerExtra}<th>操作</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
+    ${ivBanner}
+    <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">
-      💡 评分公式：年化收益 × (1-|Δ|) × 流动性因子。"安全概率"是用 Δ 估算的不到行权价的概率，仅供参考。
+      💡 评级根据"年化收益、安全概率、流动性、IV rank"等综合判断。点"展开详细分析"看完整指标。
     </div>
   `;
 }

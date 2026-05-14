@@ -582,6 +582,141 @@ def _decide_strategy(direction: str, intent: str):
     return False, True  # neutral 默认 short put
 
 
+def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
+    """用历史 30 天已实现波动率近似 IV rank（粗略但有用）"""
+    if current_iv <= 0:
+        return None
+    try:
+        import yfinance as yf
+        hist = yf.Ticker(ticker).history(period="1y", interval="1d", auto_adjust=True)
+        closes = hist["Close"].dropna().tolist()
+        if len(closes) < 60:
+            return None
+        # 计算 30 天滚动年化已实现波动率
+        rv_series = []
+        for i in range(30, len(closes)):
+            rets = [math.log(closes[j] / closes[j-1])
+                    for j in range(i-29, i+1) if closes[j-1] > 0]
+            if len(rets) < 10:
+                continue
+            mu = sum(rets) / len(rets)
+            var = sum((r - mu) ** 2 for r in rets) / (len(rets) - 1)
+            rv = math.sqrt(var * 252)
+            rv_series.append(rv)
+        if not rv_series:
+            return None
+        rv_low, rv_high = min(rv_series), max(rv_series)
+        rv_now = rv_series[-1]
+        # IV rank 用当前 IV 在 RV 范围里的位置近似
+        iv_rank = max(0, min(100,
+            (current_iv - rv_low) / (rv_high - rv_low) * 100 if rv_high > rv_low else 50))
+        # IV percentile 用当前 IV 比多少天的 RV 高
+        iv_pct = sum(1 for r in rv_series if r < current_iv) / len(rv_series) * 100
+        return {
+            "current_iv_pct": round(current_iv * 100, 1),
+            "rv_30d_now_pct": round(rv_now * 100, 1),
+            "rv_52w_low_pct": round(rv_low * 100, 1),
+            "rv_52w_high_pct": round(rv_high * 100, 1),
+            "iv_rank": round(iv_rank, 0),
+            "iv_percentile": round(iv_pct, 0),
+        }
+    except Exception:
+        return None
+
+
+def _make_verdict(opt: dict, is_short: bool, intent: str, iv_rank: Optional[dict]) -> dict:
+    """生成一句话推荐 verdict"""
+    pros, cons = [], []
+    # 通用判定
+    if opt["spread_pct"] > 8:
+        cons.append(f"买卖价差大 {opt['spread_pct']:.0f}%（成交可能折价）")
+    elif opt["spread_pct"] < 3:
+        pros.append("流动性好（spread 小）")
+
+    if is_short:
+        ay = opt["annualized_yield_pct"]
+        ps = opt["prob_safe_pct"]
+        money = opt["moneyness_pct"]
+        if ay >= 80:
+            pros.append(f"年化 {ay:.0f}%（高收益）")
+        elif ay >= 30:
+            pros.append(f"年化 {ay:.0f}%")
+        else:
+            cons.append(f"年化只有 {ay:.0f}%（偏低）")
+
+        if ps >= 75:
+            pros.append(f"安全概率 {ps:.0f}%")
+        elif ps < 60:
+            cons.append(f"安全概率 {ps:.0f}%（偏险）")
+
+        if abs(money) < 2.5:
+            cons.append(f"距行权仅 {abs(money):.1f}%（gamma 风险大）")
+
+        # IV 高 → 卖期权好时机
+        if iv_rank:
+            if iv_rank["iv_rank"] >= 70:
+                pros.append(f"📈 IV 高（rank {iv_rank['iv_rank']:.0f}），适合卖期权")
+            elif iv_rank["iv_rank"] <= 30:
+                cons.append(f"📉 IV 低（rank {iv_rank['iv_rank']:.0f}），权利金偏少")
+
+    elif intent == "long_leaps":
+        lev = opt.get("leverage_x", 0)
+        be = opt.get("breakeven_pct", 0)
+        if lev >= 2.5:
+            pros.append(f"杠杆 {lev}x（资金效率高）")
+        if be is not None and be < 8:
+            pros.append(f"盈亏平衡只需涨 {be:.1f}%")
+        elif be is not None and be > 15:
+            cons.append(f"盈亏平衡需涨 {be:.0f}%（偏远）")
+
+        if iv_rank:
+            if iv_rank["iv_rank"] <= 30:
+                pros.append(f"📉 IV 低（rank {iv_rank['iv_rank']:.0f}），买期权便宜")
+            elif iv_rank["iv_rank"] >= 70:
+                cons.append(f"📈 IV 高（rank {iv_rank['iv_rank']:.0f}），买期权偏贵")
+
+        if opt["days"] >= 180:
+            pros.append("时间充裕（theta 衰减慢）")
+        elif opt["days"] < 60:
+            cons.append("时间偏短，theta 衰减快")
+
+    else:  # long_vol etc.
+        if iv_rank and iv_rank["iv_rank"] <= 30:
+            pros.append("IV 低（买期权便宜）")
+
+    # 综合评级
+    score = len(pros) - len(cons)
+    if score >= 3:
+        stars, label, color = "⭐⭐⭐⭐⭐", "强烈推荐", "green"
+    elif score >= 1:
+        stars, label, color = "⭐⭐⭐⭐", "推荐", "green"
+    elif score == 0:
+        stars, label, color = "⭐⭐⭐", "一般", "yellow"
+    elif score == -1:
+        stars, label, color = "⭐⭐", "谨慎", "orange"
+    else:
+        stars, label, color = "⭐", "不建议", "red"
+
+    # 一句话总结
+    if pros and not cons:
+        one_line = "✅ 多项优势：" + " · ".join(pros[:2])
+    elif pros and cons:
+        one_line = "⚖️ 优 (" + pros[0] + ")，但 " + cons[0]
+    elif cons and not pros:
+        one_line = "⚠️ " + " · ".join(cons[:2])
+    else:
+        one_line = "符合筛选条件，但无突出优劣"
+
+    return {
+        "stars": stars,
+        "label": label,
+        "color": color,
+        "one_line": one_line,
+        "pros": pros,
+        "cons": cons,
+    }
+
+
 def _find_expiries(ticker: str, target_days: int, n: int = 3):
     """找最接近 target_days 的到期日"""
     try:
@@ -723,10 +858,21 @@ def recommend(req: dict) -> dict:
 
     candidates.sort(key=lambda x: -x["score"])
 
+    # 计算 ticker 整体的 IV rank（看其中一个候选的 IV）
+    iv_rank = None
+    if candidates:
+        sample_iv = candidates[0]["iv"] / 100
+        iv_rank = _compute_iv_rank(ticker, sample_iv)
+
+    # 为每个候选生成一句话推荐
+    for c in candidates[:10]:
+        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank)
+
     return {
         "ticker": ticker,
         "underlying": underlying,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "iv_rank": iv_rank,
         "criteria": {
             "direction": direction,
             "intent": intent,

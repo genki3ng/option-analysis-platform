@@ -808,6 +808,21 @@
   .rec-result .summary {
     font-size: 12px; color: var(--sub); margin-bottom: 10px;
   }
+  /* 免责声明（醒目但不刺眼）*/
+  .disclaimer {
+    background: rgba(250,204,21,0.10);
+    border: 1px solid rgba(202,138,4,0.4);
+    border-left: 3px solid var(--yellow);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .disclaimer strong { color: var(--orange); }
+  :root[data-theme="dark"] .disclaimer { background: rgba(250,204,21,0.06); }
+
   /* IV Rank 横幅 */
   .iv-banner {
     background: linear-gradient(135deg, rgba(91,141,239,0.08), rgba(167,139,250,0.08));
@@ -2592,6 +2607,9 @@ function showReview() {
         💡 复盘建议：胜率高+盈亏比 &lt; 1 时容易"赚小亏大"（典型 short premium 翻车）；<br>
         胜率低但盈亏比 &gt; 2 是趋势/Long 策略常见模式（小亏多胜大）。
       </div>
+      <div class="disclaimer" style="margin-top:12px">
+        ⚠️ <strong>仅供个人复盘参考，不构成投资建议</strong> · For educational use only.
+      </div>
     `;
   }
   document.getElementById('review-modal').classList.add('open');
@@ -2904,9 +2922,16 @@ function renderRecResult(d) {
   document.getElementById('rec-result').innerHTML = `
     <div class="summary">${summary}</div>
     ${ivBanner}
+    <div class="disclaimer">
+      ⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。
+      所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。
+    </div>
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">
       💡 评级根据"年化收益、安全概率、流动性、IV rank"等综合判断。点"展开详细分析"看完整指标。
+    </div>
+    <div class="disclaimer" style="margin-top:8px">
+      ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.
     </div>
   `;
 }

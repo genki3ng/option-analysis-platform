@@ -5,7 +5,6 @@ and educating about options terminology.
 
 **Production URL:** https://option-analysis-platform.vercel.app
 **GitHub:** https://github.com/genki3ng/option-analysis-platform
-**Local Mac app twin:** `~/tsla_monitor/` (different architecture, shared data via Drive)
 
 ## Stack
 
@@ -13,7 +12,7 @@ and educating about options terminology.
 - **Backend:** One Python serverless function `api/state.py` on Vercel
 - **Data:** Browser `localStorage` (no server DB)
 - **Market data:** yfinance (live chains + Greeks) + Massive API (historical price bands)
-- **Cross-device sync:** File System Access API → Google Drive folder
+- **Cross-device sync:** File System Access API → user-picked file or Drive folder
 
 ## Architecture key decisions
 
@@ -23,9 +22,9 @@ The Vercel function is stateless — every `/api/state` POST sends positions and
 gets back computed Greeks/P&L/suggestions.
 
 ### Why two sync modes
-1. `🔗 文件同步` (single JSON file) — web-only users, simple
-2. `📁 文件夹同步` (directory with positions.json + state.json + username.txt)
-   — shares format with local Mac app `monitor.py`
+1. `🔗 文件同步` (single JSON file with all data + metadata) — simplest case
+2. `📁 文件夹同步` (directory with `positions.json` + `state.json` + `username.txt`)
+   — separate files, easier to inspect / version / share
 
 ### Sort-by-tier-first for recommendations
 Verdict tier (⭐⭐⭐⭐⭐ to ⭐) is computed BEFORE sorting. Sort uses
@@ -54,6 +53,8 @@ curl -X POST "https://api.vercel.com/v13/deployments" \
   -H "Content-Type: application/json" \
   --data-binary @/tmp/payload.json
 ```
+
+Or just `git push` to GitHub — Vercel auto-deploys from `main` branch.
 
 `vercel.json` uses legacy v2 `builds` + `routes` format because the auto-detection
 broke with newer Vercel runtime:
@@ -85,7 +86,7 @@ broke with newer Vercel runtime:
 
 ## Data formats
 
-### `positions.json` (array of open positions, shared with local Mac app)
+### `positions.json` (array of open positions)
 ```json
 [
   {
@@ -100,7 +101,7 @@ broke with newer Vercel runtime:
 ]
 ```
 
-### `state.json` (closed position state, shared with local Mac app)
+### `state.json` (closed position state)
 ```json
 {
   "TSLA_call_420_2026-05-08": {
@@ -151,7 +152,10 @@ Examples: `TSLA_call_600_2027-01-15`, `META_put_630_2026-05-29`
 Inside `HTML = """..."""`, `\n` becomes a literal newline character. This
 breaks JS single-quoted strings. Use `String.fromCharCode(10)` or `\\n`.
 
-This bit us twice — once in CSV export (NL constant), once in suggestion details.
+Bit us twice — once in CSV export (NL constant), once in suggestion details.
+(Note: this is no longer a concern in this project since HTML is in a separate
+`.html` file, not embedded in Python. But guard against it if any string ever
+gets embedded.)
 
 ### JS string escape inside HTML attribute templates
 ```js
@@ -171,12 +175,12 @@ Fix: use `builds` + `routes` (legacy v2 format).
 Guard with `if not POSITIONS: return []`.
 
 ### Drive sync overwriting wrong direction
-When user picks a Drive folder via "📁 文件夹同步", the confirm dialog asks:
-- OK = use folder data (overwrite localStorage)
-- Cancel = use localStorage (overwrite folder)
+When user picks a sync target via `🔗 文件同步` or `📁 文件夹同步`, the
+confirm dialog asks:
+- OK = use file/folder data (overwrite localStorage)
+- Cancel = use localStorage (overwrite file/folder)
 
-Be EXTRA careful with wording — wrong choice once nuked positions.json in Drive.
-We added warning that "single loss" doesn't fit the "average" word.
+Be EXTRA careful with wording — wrong choice once nuked positions data.
 
 ### i18n semantic key fallback
 HTML uses `data-i18n="info_b1"` (semantic key) but t() needs to find the
@@ -226,6 +230,10 @@ On page load, `_initSync()` checks IDB and tries to restore connection.
 `queryPermission({mode:'readwrite'})` returns 'granted' if user previously gave
 persistent permission — otherwise needs user gesture to re-grant.
 
+Best UX: store the file/folder inside a synced cloud folder (Google Drive,
+iCloud Drive, Dropbox, etc.) so other devices can pick the same target and
+get auto-synced data.
+
 ## i18n system
 
 Dictionary-based, 3 langs: `zh` (default), `zh_tw`, `en`. Keys can be either:
@@ -246,30 +254,6 @@ needs Python-side i18n or send language code to API.
 FIRST because they're the most foundational. Each topic has `cat`, `sym`, `name`,
 `desc`, `ex`, `care`. EN translations for titles + descriptions in I18N dict.
 
-## Local Mac app twin (`~/tsla_monitor/`)
-
-Original local-first version. Uses tkinter→Tk 8.5 first (broken on macOS),
-then pivoted to a local HTTP server + browser UI.
-
-Shares data with web app via:
-- `~/tsla_monitor/positions.json` → symlink → Drive folder positions.json
-- `~/tsla_monitor/state.json` → symlink → Drive state.json
-
-Local app reads/writes Drive directly. Web app uses File System Access API
-to also read/write the same Drive folder. **Don't run both simultaneously**
-or they race.
-
-Drive path:
-```
-~/Library/CloudStorage/GoogleDrive-congyang@meta.com/My Drive/
-  claude/01_projects/28_personal_project/Options Short Monitor/
-```
-
-Local app can also be packaged as `OptionAnalysisPlatform.app` via `build_app.sh`.
-For colleagues without Python: provides AppleScript launcher with `pip install yfinance`
-fallback paths (system Python, Homebrew, etc.) and avoids Meta's fbcode Python
-(broken pip).
-
 ## Future ideas (not implemented)
 
 - Push notifications when positions hit alerts (need user opt-in + backend)
@@ -281,6 +265,7 @@ fallback paths (system Python, Homebrew, etc.) and avoids Meta's fbcode Python
   N strikes × 30 days = lots of API calls, requires paid Massive tier)
 - Polygon-style WebSocket for tick-level updates
 - Backtest mode: replay a strategy against historical data
+- Server-side i18n for dynamic strings (suggestions, verdicts)
 
 ## Commit conventions
 
@@ -289,17 +274,13 @@ Short imperative commit messages. Examples from history:
 - `Fix rec sort: tier-based primary sort, weighted verdict scoring`
 - `Semantic timeframe buttons + Massive 30d price band integration`
 
-Author: `Cong <cong@local>` (set via `git -c user.email=... -c user.name=...`).
-
 ## When debugging
 
 1. **JS syntax**: `/usr/bin/osascript -l JavaScript /tmp/check.js` — quickly catches
    parser errors before deploying.
 2. **API errors**: Check Vercel deployment "Functions" logs for Python tracebacks.
 3. **Empty page**: Almost always a JS syntax error. Check Console.
-4. **Wrong data on Drive**: Check Drive folder contents directly — symlinks
-   sometimes get truncated by other Claude sessions / sync conflicts.
-5. **Vercel timeout**: Hobby plan defaults to 10s. `maxDuration: 60` allowed.
+4. **Vercel timeout**: Hobby plan defaults to 10s. `maxDuration: 60` allowed.
    yfinance + Massive both have cold-start latency.
 
 ## Quick test script

@@ -976,6 +976,37 @@
     background: var(--card); padding: 1px 4px;
     border-radius: 3px; color: var(--text);
   }
+
+  /* 价位带 — 30 天价格区间 */
+  .price-band {
+    background: var(--card2);
+    padding: 10px 12px; border-radius: 6px;
+    margin: 8px 0; font-size: 11px;
+  }
+  .price-band .pb-title {
+    color: var(--sub); font-size: 10px;
+    margin-bottom: 6px; letter-spacing: 0.3px;
+  }
+  .price-band .pb-track {
+    position: relative; height: 6px;
+    background: linear-gradient(to right,
+      rgba(74,222,128,0.3) 0%,
+      rgba(250,204,21,0.3) 50%,
+      rgba(248,113,113,0.3) 100%);
+    border-radius: 3px; margin: 6px 0;
+  }
+  .price-band .pb-marker {
+    position: absolute; top: -3px;
+    width: 12px; height: 12px;
+    background: white; border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: translateX(-50%);
+  }
+  .price-band .pb-ends {
+    display: flex; justify-content: space-between;
+    color: var(--sub); font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
   .rec-result .rank { font-weight: 700; color: var(--accent); }
   .rec-result .empty {
     text-align: center; color: var(--sub);
@@ -1525,12 +1556,13 @@
 
   <div class="row">
     <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
-    <button class="opt-btn" data-group="timeframe" data-value="2" data-i18n="2 天">2 天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="7" data-i18n="1 周">1 周</button>
-    <button class="opt-btn" data-group="timeframe" data-value="14" data-i18n="2 周">2 周</button>
-    <button class="opt-btn" data-group="timeframe" data-value="30" data-i18n="1 月">1 月</button>
-    <button class="opt-btn" data-group="timeframe" data-value="60" data-i18n="2 月">2 月</button>
-    <button class="opt-btn" data-group="timeframe" data-value="90" data-i18n="3 月">3 月</button>
+    <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="📅 当周 1-5天">📅 当周 1-5天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="📅 下周 6-12天">📅 下周 6-12天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="📅 当月 14-30天">📅 当月 14-30天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="45"  data-i18n="📅 下月 30-60天">📅 下月 30-60天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="90"  data-i18n="📅 季度 60-120天">📅 季度 60-120天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="180" data-i18n="📅 半年 150-240天">📅 半年 150-240天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="📅 LEAPS 1年+">📅 LEAPS 1年+</button>
   </div>
 
   <div class="row">
@@ -1710,7 +1742,13 @@ const I18N = {
     '📤 减仓（Covered Call）': '📤 減倉（Covered Call）',
     '🚀 做多波动率（近期）': '🚀 做多波動率（近期）',
     '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS 股票替代（長期 Long Call）',
-    '2 天': '2 天', '1 周': '1 週', '2 周': '2 週', '1 月': '1 月', '2 月': '2 月', '3 月': '3 月',
+    '📅 当周 1-5天': '📅 當週 1-5天',
+    '📅 下周 6-12天': '📅 下週 6-12天',
+    '📅 当月 14-30天': '📅 當月 14-30天',
+    '📅 下月 30-60天': '📅 下月 30-60天',
+    '📅 季度 60-120天': '📅 季度 60-120天',
+    '📅 半年 150-240天': '📅 半年 150-240天',
+    '📅 LEAPS 1年+': '📅 LEAPS 1年+',
     '🛡 保守（Δ < 0.20）': '🛡 保守（Δ < 0.20）',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ 平衡（Δ 0.20-0.35）',
     '🔥 激进（Δ > 0.35）': '🔥 激進（Δ > 0.35）',
@@ -1885,8 +1923,13 @@ const I18N = {
     '📤 减仓（Covered Call）': '📤 Covered Call',
     '🚀 做多波动率（近期）': '🚀 Long Volatility (near-term)',
     '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS Stock Replacement',
-    '2 天': '2 days', '1 周': '1 week', '2 周': '2 weeks',
-    '1 月': '1 month', '2 月': '2 months', '3 月': '3 months',
+    '📅 当周 1-5天': '📅 This week 1-5d',
+    '📅 下周 6-12天': '📅 Next week 6-12d',
+    '📅 当月 14-30天': '📅 This month 14-30d',
+    '📅 下月 30-60天': '📅 Next month 30-60d',
+    '📅 季度 60-120天': '📅 Quarterly 60-120d',
+    '📅 半年 150-240天': '📅 6 months 150-240d',
+    '📅 LEAPS 1年+': '📅 LEAPS 1y+',
     '🛡 保守（Δ < 0.20）': '🛡 Conservative (Δ < 0.20)',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ Balanced (Δ 0.20-0.35)',
     '🔥 激进（Δ > 0.35）': '🔥 Aggressive (Δ > 0.35)',
@@ -2199,6 +2242,31 @@ function renderTickers(tickers, intradayMap) {
       </div>
     `;
   }).join('');
+}
+
+function renderPriceBand(pb, currentMid) {
+  if (!pb || pb.high <= pb.low) return '';
+  const pos = Math.max(0, Math.min(1, (currentMid - pb.low) / (pb.high - pb.low)));
+  const pct = (pos * 100).toFixed(0);
+  let label;
+  if (pos >= 0.75) label = '🔝 区间高位';
+  else if (pos >= 0.55) label = '↗️ 偏高';
+  else if (pos <= 0.25) label = '🔻 区间低位';
+  else if (pos <= 0.45) label = '↘️ 偏低';
+  else label = '⚖️ 中位';
+  return `
+    <div class="price-band">
+      <div class="pb-title">📊 Massive 30 天历史价位带 · 当前位置 ${pct}% (${label})</div>
+      <div class="pb-track">
+        <div class="pb-marker" style="left:${pct}%" title="当前 mid $${fmt(currentMid,2)}"></div>
+      </div>
+      <div class="pb-ends">
+        <span>低 $${fmt(pb.low, 2)}</span>
+        <span>均 $${fmt(pb.avg, 2)}</span>
+        <span>高 $${fmt(pb.high, 2)}</span>
+      </div>
+    </div>
+  `;
 }
 
 function renderSparkline(points, isUp) {
@@ -3355,6 +3423,7 @@ function renderRecResult(d) {
                 ${consHtml ? `<ul class="cons">${consHtml}</ul>` : ''}
               </div>
             ` : ''}
+            ${opt.price_band ? renderPriceBand(opt.price_band, opt.mid) : ''}
             <div class="rec-fullstat">
               Bid/Ask <code>${fmt(opt.bid, 2)} / ${fmt(opt.ask, 2)}</code> ·
               Spread <code>${opt.spread_pct}%</code> ·

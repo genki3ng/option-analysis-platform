@@ -977,6 +977,80 @@
     border-radius: 3px; color: var(--text);
   }
 
+  /* 📊 Payoff Diagram */
+  .pos-payoff {
+    margin: 8px 14px 0 14px;
+    border-radius: 6px;
+    background: var(--card2);
+  }
+  .pos-payoff summary {
+    padding: 6px 10px; font-size: 11px;
+    color: var(--sub); cursor: pointer; user-select: none;
+    list-style: none;
+  }
+  .pos-payoff summary::-webkit-details-marker { display: none; }
+  .pos-payoff summary:hover { color: var(--accent); }
+  .pos-payoff[open] summary {
+    color: var(--accent);
+    border-bottom: 1px solid var(--line);
+  }
+  .pos-payoff .payoff-body { padding: 8px 4px; }
+  .payoff-svg { width: 100%; height: auto; display: block; }
+
+  /* 📊 财报警告 */
+  .earnings-warn {
+    margin: 6px 14px 0 14px;
+    background: rgba(202,138,4,0.12);
+    border-left: 3px solid var(--yellow);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 11px; line-height: 1.5;
+    color: var(--text);
+  }
+  .earnings-warn strong { color: var(--orange); }
+
+  /* ☀️ Morning Brief */
+  .morning-brief {
+    background: linear-gradient(135deg,
+      rgba(91,141,239,0.08), rgba(167,139,250,0.08));
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .morning-brief .mb-title {
+    font-size: 12px; font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .morning-brief .mb-close {
+    cursor: pointer; color: var(--sub);
+    font-size: 16px; line-height: 1;
+  }
+  .morning-brief ul {
+    margin: 0; padding: 0; list-style: none;
+    font-size: 12px; line-height: 1.7;
+  }
+  .morning-brief li { padding: 2px 0; }
+  .morning-brief.collapsed { display: none; }
+
+  /* 📝 Trade Journal */
+  .journal-btn {
+    background: transparent; border: 1px dashed var(--line);
+    color: var(--sub); font-size: 10px;
+    padding: 3px 8px; border-radius: 4px;
+    cursor: pointer; margin: 0 14px 8px 14px;
+    display: inline-block;
+  }
+  .journal-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .journal-btn.has-notes {
+    background: rgba(91,141,239,0.1); color: var(--accent);
+    border-style: solid;
+  }
+
   /* 📚 期权小白指南 */
   .edu-card .edu-cat-header {
     font-size: 11px; font-weight: 700;
@@ -1367,6 +1441,14 @@
   <div class="info-summary hidden" id="info-summary" onclick="expandInfo()" data-i18n="ℹ️ 数据存储 & 备份说明 — 点击展开">
     ℹ️ 数据存储 & 备份说明 — 点击展开
   </div>
+
+  <div class="morning-brief" id="morning-brief" style="display:none">
+    <div class="mb-title">
+      <span>☀️ <span data-i18n="今日早安">今日早安</span></span>
+      <span class="mb-close" onclick="dismissMorningBrief()">×</span>
+    </div>
+    <ul id="morning-brief-list"></ul>
+  </div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
   <div class="summary">
@@ -1515,6 +1597,9 @@
               <hr>
               <div class="dd-label" data-i18n="导入">导入</div>
               <button onclick="triggerImport()" data-i18n="📂 从 JSON 恢复">📂 从 JSON 恢复</button>
+              <hr>
+              <div class="dd-label" data-i18n="分享">分享</div>
+              <button onclick="generateShareLink()" data-i18n="🔗 生成只读链接">🔗 生成只读链接</button>
             </div>
           </div>
 
@@ -1584,6 +1669,10 @@
 <!-- 📊 复盘报告 modal -->
 <div class="modal-backdrop" id="review-backdrop" onclick="hideReview()"></div>
 <div class="review-modal" id="review-modal"></div>
+
+<!-- 📝 Trade Journal modal -->
+<div class="modal-backdrop" id="journal-backdrop" onclick="hideJournal()"></div>
+<div class="review-modal" id="journal-modal"></div>
 
 <!-- 🎯 找最佳 Option 模态框（全局 overlay）-->
 <div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
@@ -1712,6 +1801,12 @@ const I18N = {
     '点击修改用户名（仅本地显示）': '點擊修改用戶名（僅本地顯示）',
     '📚 期权小白指南': '📚 期權小白指南',
     '不懂某个指标？点开看大白话解释': '不懂某個指標？點開看大白話解釋',
+    '今日早安': '今日早安',
+    '损益曲线': '損益曲線',
+    '分享': '分享',
+    '🔗 生成只读链接': '🔗 產生唯讀連結',
+    '你正在查看一份只读分享快照': '你正在查看一份唯讀分享快照',
+    '打开我自己的': '開啟我自己的',
     // 顶部 4 张卡
     '收到权利金': '收到權利金',
     '当前买回成本': '當前買回成本',
@@ -1895,6 +1990,12 @@ const I18N = {
     '点击修改用户名（仅本地显示）': 'Click to change username (local only)',
     '📚 期权小白指南': '📚 Options 101',
     '不懂某个指标？点开看大白话解释': "Don't know an indicator? Click to expand for plain-English explanation",
+    '今日早安': 'Good Morning',
+    '损益曲线': 'Payoff Diagram',
+    '分享': 'Share',
+    '🔗 生成只读链接': '🔗 Generate read-only link',
+    '你正在查看一份只读分享快照': "You're viewing a read-only shared snapshot",
+    '打开我自己的': 'Open my own',
     // Education topic titles (descriptions stay in zh for v1)
     'Delta · 价格敏感度': 'Delta · Price Sensitivity',
     'Theta · 时间衰减': 'Theta · Time Decay',
@@ -2400,6 +2501,131 @@ function markSrcTip(src) {
   }
 }
 
+// ── Black-Scholes (JS port for payoff diagram) ─────────────────────
+function _erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429;
+  const p = 0.3275911;
+  const t = 1 / (1 + p*x);
+  const y = 1 - ((((a5*t + a4)*t + a3)*t + a2)*t + a1) * t * Math.exp(-x*x);
+  return sign * y;
+}
+function _ncdf(x) { return 0.5 * (1 + _erf(x / Math.SQRT2)); }
+function jsBsCall(S, K, T, r, sigma) {
+  if (T <= 1e-8 || sigma <= 0) return Math.max(S - K, 0);
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  const d2 = d1 - sigma*Math.sqrt(T);
+  return S * _ncdf(d1) - K * Math.exp(-r*T) * _ncdf(d2);
+}
+function jsBsPut(S, K, T, r, sigma) {
+  if (T <= 1e-8 || sigma <= 0) return Math.max(K - S, 0);
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  const d2 = d1 - sigma*Math.sqrt(T);
+  return K * Math.exp(-r*T) * _ncdf(-d2) - S * _ncdf(-d1);
+}
+
+// ── Payoff Diagram ────────────────────────────────────────────────
+function renderPayoffSvg(p) {
+  if (p.closed || !p.underlying) return '';
+  const isCall = p.type === 'call';
+  const isShort = true;  // 所有持仓都是 short (sold to open)
+  const shares = p.contracts * 100;
+  const S0 = p.underlying;
+  const K = p.strike;
+  const T_days = p.days;
+  const T = Math.max(T_days / 365, 1e-6);
+  const r = 0.045;
+  const iv = (p.trade_iv || 30) / 100;
+
+  // X range: 现价 ±25% 或包含 strike
+  const xMin = Math.min(S0 * 0.75, K * 0.9);
+  const xMax = Math.max(S0 * 1.25, K * 1.1);
+  const numPts = 80;
+
+  // 到期 P&L: short = sell_price - intrinsic
+  const expiryPnl = (S) => {
+    const intrinsic = isCall ? Math.max(S - K, 0) : Math.max(K - S, 0);
+    return (p.sell_price - intrinsic) * shares;
+  };
+
+  // 今天 P&L: short = sell_price - mark(at hypothetical S, today's T)
+  const todayPnl = (S) => {
+    const mark = isCall ? jsBsCall(S, K, T, r, iv) : jsBsPut(S, K, T, r, iv);
+    return (p.sell_price - mark) * shares;
+  };
+
+  // 收集点
+  const points = [];
+  for (let i = 0; i <= numPts; i++) {
+    const S = xMin + (xMax - xMin) * i / numPts;
+    points.push({ S, exp: expiryPnl(S), today: todayPnl(S) });
+  }
+
+  let yMin = 0, yMax = 0;
+  for (const pt of points) {
+    yMin = Math.min(yMin, pt.exp, pt.today);
+    yMax = Math.max(yMax, pt.exp, pt.today);
+  }
+  yMin = yMin * 1.1; yMax = yMax * 1.15;
+  if (yMin === yMax) { yMin = -100; yMax = 100; }
+
+  const W = 360, H = 150, PAD = 28;
+  const xToSvg = S => PAD + ((S - xMin) / (xMax - xMin)) * (W - 2*PAD);
+  const yToSvg = pnl => H - PAD - ((pnl - yMin) / (yMax - yMin)) * (H - 2*PAD);
+
+  const expPath = 'M' + points.map(pt =>
+    `${xToSvg(pt.S).toFixed(1)},${yToSvg(pt.exp).toFixed(1)}`).join(' L');
+  const todayPath = 'M' + points.map(pt =>
+    `${xToSvg(pt.S).toFixed(1)},${yToSvg(pt.today).toFixed(1)}`).join(' L');
+
+  const zeroY = yToSvg(0);
+  const currentX = xToSvg(S0);
+  const strikeX = xToSvg(K);
+
+  // 盈亏平衡点
+  let beS = isCall ? K + p.sell_price : K - p.sell_price;
+  const beX = (beS >= xMin && beS <= xMax) ? xToSvg(beS) : null;
+
+  // 当前 P&L 点
+  const currentPnlToday = todayPnl(S0);
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="payoff-svg" preserveAspectRatio="xMidYMid meet">
+      <!-- 零线 -->
+      <line x1="${PAD}" y1="${zeroY}" x2="${W-PAD}" y2="${zeroY}"
+            stroke="var(--sub)" stroke-dasharray="2,3" opacity="0.5"/>
+      <!-- 到期 P&L (蓝实线) -->
+      <path d="${expPath}" stroke="var(--accent)" stroke-width="2" fill="none"/>
+      <!-- 今天 P&L (橙虚线) -->
+      <path d="${todayPath}" stroke="var(--orange)" stroke-width="1.5"
+            fill="none" stroke-dasharray="4,3" opacity="0.85"/>
+      <!-- 当前价线 -->
+      <line x1="${currentX}" y1="${PAD-4}" x2="${currentX}" y2="${H-PAD+4}"
+            stroke="var(--text)" stroke-width="0.8" opacity="0.45"/>
+      <circle cx="${currentX}" cy="${yToSvg(currentPnlToday)}" r="3"
+              fill="white" stroke="var(--orange)" stroke-width="2"/>
+      <!-- Strike 线 -->
+      <line x1="${strikeX}" y1="${PAD-4}" x2="${strikeX}" y2="${H-PAD+4}"
+            stroke="var(--orange)" stroke-width="0.8" opacity="0.5" stroke-dasharray="2,2"/>
+      <!-- BE 线 -->
+      ${beX !== null ? `<line x1="${beX}" y1="${PAD-4}" x2="${beX}" y2="${H-PAD+4}"
+            stroke="var(--green)" stroke-width="0.8" opacity="0.4" stroke-dasharray="3,2"/>` : ''}
+      <!-- 标签 -->
+      <text x="${currentX}" y="${H-8}" text-anchor="middle"
+            font-size="9" fill="var(--text)">$${fmt(S0,0)}</text>
+      <text x="${strikeX}" y="${PAD-2}" text-anchor="middle"
+            font-size="9" fill="var(--orange)">K=${fmt(K,0)}</text>
+      ${beX !== null ? `<text x="${beX}" y="${H-8}" text-anchor="middle"
+            font-size="9" fill="var(--green)">BE=${fmt(beS,0)}</text>` : ''}
+      <text x="${PAD+3}" y="${PAD+10}" font-size="9" fill="var(--green)">最大盈 +$${fmt(yMax/1.15, 0)}</text>
+      <text x="${PAD+3}" y="${H-PAD-4}" font-size="9" fill="var(--red)">${fmt(yMin/1.1, 0)}</text>
+      <text x="${W-PAD-5}" y="${PAD+10}" text-anchor="end" font-size="9" fill="var(--accent)">━ 到期</text>
+      <text x="${W-PAD-5}" y="${PAD+22}" text-anchor="end" font-size="9" fill="var(--orange)">┅ 今天</text>
+    </svg>
+  `;
+}
+
 // ── Ticker 卡片渲染（动态 + 当日 sparkline）─────────────────────────────
 function renderTickers(tickers, intradayMap) {
   const el = document.getElementById('tickers');
@@ -2646,6 +2872,22 @@ function renderPosition(p) {
           <div class="fill" style="width: ${elapsedPct.toFixed(1)}%"></div>
         </div>
       </div>
+
+      <details class="pos-payoff">
+        <summary>📊 ${t('损益曲线')}</summary>
+        <div class="payoff-body">
+          ${renderPayoffSvg(p)}
+        </div>
+      </details>
+
+      <button class="journal-btn ${(getJournalNotes(p.id).length ? 'has-notes' : '')}" onclick="event.stopPropagation();showJournal('${p.id}')">
+        📝 ${getJournalNotes(p.id).length ? `${getJournalNotes(p.id).length} 条笔记` : '记笔记 / 写交易计划'}
+      </button>
+
+      ${p.earnings_before_expiry ? `
+      <div class="earnings-warn">
+        ⚠️ <strong>${p.earnings_date}</strong> 财报（剩 ${p.earnings_days_until} 天）在到期前 — 注意 IV crush
+      </div>` : ''}
 
       <div class="pos-stats">
         <span class="stat" title="${TIPS.delta}">
@@ -3418,6 +3660,164 @@ function renderEduList() {
 }
 // 启动渲染
 document.addEventListener('DOMContentLoaded', renderEduList);
+
+// ── 📝 Trade Journal (notes per position) ─────────────────────────
+// 存在 localStorage 单独的 key，与 positionState 平行
+function _loadJournal() {
+  try {
+    return JSON.parse(localStorage.getItem('journal') || '{}');
+  } catch (e) { return {}; }
+}
+function _saveJournal(j) {
+  localStorage.setItem('journal', JSON.stringify(j));
+}
+function getJournalNotes(pid) {
+  const j = _loadJournal();
+  return j[pid] || [];
+}
+function addJournalNote(pid, text) {
+  if (!text || !text.trim()) return;
+  const j = _loadJournal();
+  if (!j[pid]) j[pid] = [];
+  j[pid].push({
+    date: new Date().toISOString().slice(0, 10),
+    time: new Date().toTimeString().slice(0, 5),
+    text: text.trim(),
+  });
+  _saveJournal(j);
+}
+function deleteJournalNote(pid, idx) {
+  const j = _loadJournal();
+  if (j[pid]) {
+    j[pid].splice(idx, 1);
+    if (!j[pid].length) delete j[pid];
+    _saveJournal(j);
+  }
+}
+
+function showJournal(pid) {
+  const p = (window._currentData?.positions || []).find(x => x.id === pid);
+  if (!p) return;
+  const notes = getJournalNotes(pid);
+  document.getElementById('journal-modal').innerHTML = `
+    <h3>📝 ${p.label} 交易笔记 <span class="x" onclick="hideJournal()">×</span></h3>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:12px">
+      Exp ${p.expiry} · ${p.contracts} 张 · sold $${fmt(p.sell_price, 2)} ·
+      当前 ${signed(p.pnl_pct, 1)}%
+    </div>
+    <textarea id="journal-input" placeholder="记下你的想法：为什么开仓？预期目标？止损线？复盘心得..."
+              style="width:100%;min-height:80px;padding:10px;font-family:inherit;
+                     font-size:13px;border:1px solid var(--line);border-radius:6px;
+                     background:var(--card2);color:var(--text);"></textarea>
+    <div style="margin:10px 0 18px;display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="hideJournal()" style="background:transparent;color:var(--sub);
+              border:1px solid var(--line);padding:7px 14px;border-radius:6px;cursor:pointer">取消</button>
+      <button onclick="_addJournalAndRefresh('${pid}')" style="background:var(--accent);
+              color:white;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:600">
+        + 添加笔记
+      </button>
+    </div>
+    ${notes.length ? `
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px;font-weight:600">
+        历史笔记（${notes.length} 条，倒序）
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto">
+        ${[...notes].reverse().map((n, i) => `
+          <div style="background:var(--card2);padding:10px 12px;border-radius:6px;
+                      border-left:3px solid var(--accent)">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-bottom:4px">
+              <span>${n.date} ${n.time || ''}</span>
+              <span onclick="_delJournalAndRefresh('${pid}', ${notes.length - 1 - i})"
+                    style="cursor:pointer;color:var(--red);font-size:10px">🗑 删除</span>
+            </div>
+            <div style="font-size:12px;line-height:1.5;white-space:pre-wrap">${escapeHtml(n.text)}</div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '<div style="text-align:center;color:var(--sub);font-size:12px;padding:20px">还没有笔记</div>'}
+  `;
+  document.getElementById('journal-modal').classList.add('open');
+  document.getElementById('journal-backdrop').classList.add('show');
+  setTimeout(() => document.getElementById('journal-input')?.focus(), 100);
+}
+
+function hideJournal() {
+  document.getElementById('journal-modal').classList.remove('open');
+  document.getElementById('journal-backdrop').classList.remove('show');
+}
+
+function _addJournalAndRefresh(pid) {
+  const text = document.getElementById('journal-input').value;
+  if (!text.trim()) return;
+  addJournalNote(pid, text);
+  showJournal(pid);  // re-render
+  refresh();  // update button count
+}
+function _delJournalAndRefresh(pid, idx) {
+  if (!confirm('删除这条笔记？')) return;
+  deleteJournalNote(pid, idx);
+  showJournal(pid);
+  refresh();
+}
+
+// ── 🔗 公开分享（URL-encoded readonly view）───────────────────────
+function generateShareLink() {
+  const positions = loadPositions();
+  const state = loadStateMap();
+  // 隐去敏感字段（trade_date 保留，价格保留，username 用通用化的）
+  const snapshot = {
+    v: 1,
+    ts: new Date().toISOString().slice(0, 10),
+    positions: positions,
+    state: state,
+  };
+  const json = JSON.stringify(snapshot);
+  // Base64 URL-safe
+  const b64 = btoa(unescape(encodeURIComponent(json)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const url = `${location.origin}/?share=${b64}`;
+
+  // 检查长度
+  if (url.length > 6000) {
+    alert('持仓数据太多，URL 超长。建议导出 JSON 备份手动分享。');
+    return;
+  }
+
+  // 复制到剪贴板
+  navigator.clipboard.writeText(url).then(() => {
+    alert('✅ 只读分享链接已复制到剪贴板！\n\n任何人打开这个链接可以看到你的持仓快照（含数字），但不能改。\n\n链接长度: ' + url.length + ' 字符');
+  }).catch(() => {
+    prompt('复制以下链接分享：', url);
+  });
+}
+
+function loadFromShare() {
+  const params = new URLSearchParams(location.search);
+  const shareB64 = params.get('share');
+  if (!shareB64) return false;
+  try {
+    const json = decodeURIComponent(escape(atob(
+      shareB64.replace(/-/g, '+').replace(/_/g, '/'))));
+    const snapshot = JSON.parse(json);
+    if (!Array.isArray(snapshot.positions)) throw new Error('格式错误');
+    // 把分享数据载入但不写 localStorage
+    window._sharedSnapshot = snapshot;
+    window._isShareView = true;
+    // 在标题加 banner
+    document.body.classList.add('share-view');
+    document.body.insertAdjacentHTML('afterbegin', `
+      <div style="background:linear-gradient(90deg,#5B8DEF,#A78BFA);color:white;
+                  padding:8px 16px;text-align:center;font-size:13px;font-weight:600">
+        👀 ${t('你正在查看一份只读分享快照')} · ${snapshot.ts}
+        · <a href="${location.origin}/" style="color:white;text-decoration:underline">${t('打开我自己的')}</a>
+      </div>
+    `);
+    return true;
+  } catch (e) {
+    console.warn('share decode failed', e);
+    return false;
+  }
+}
 
 // ── 复盘报告 ────────────────────────────────────────────────────────
 function showReview() {
@@ -4406,7 +4806,35 @@ function rerenderFromCache() {
   if (window._currentData) renderAll(window._currentData);
 }
 
+// ── ☀️ Morning Brief ─────────────────────────────────────────────────
+function renderMorningBrief(brief) {
+  const el = document.getElementById('morning-brief');
+  const list = document.getElementById('morning-brief-list');
+  if (!el || !list) return;
+  // 如果用户今天已经关闭过，就别再显示
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem('mb_dismissed_date') === today) {
+    el.style.display = 'none';
+    return;
+  }
+  if (!brief || !brief.length) {
+    el.style.display = 'none';
+    return;
+  }
+  list.innerHTML = brief.map(line => `<li>${line}</li>`).join('');
+  el.style.display = 'block';
+}
+
+function dismissMorningBrief() {
+  document.getElementById('morning-brief').style.display = 'none';
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem('mb_dismissed_date', today);
+}
+
 function renderAll(d) {
+  // ── 早安 brief
+  renderMorningBrief(d.morning_brief);
+
   // ── yfinance 可用性警告
   const yfWarn = document.getElementById('yf-warn');
   if (yfWarn) yfWarn.classList.toggle('show', d.yfinance_available === false);
@@ -4476,6 +4904,9 @@ function renderAll(d) {
 
 // ── localStorage 数据层 ──────────────────────────────────────────────────
 function loadPositions() {
+  if (window._isShareView && window._sharedSnapshot) {
+    return window._sharedSnapshot.positions || [];
+  }
   try {
     const raw = localStorage.getItem('positions');
     return raw ? JSON.parse(raw) : [];
@@ -4486,6 +4917,9 @@ function savePositions(arr) {
   syncOut();  // 异步写到文件（如已连接）
 }
 function loadStateMap() {
+  if (window._isShareView && window._sharedSnapshot) {
+    return window._sharedSnapshot.state || {};
+  }
   try {
     const raw = localStorage.getItem('positionState');
     return raw ? JSON.parse(raw) : {};
@@ -4532,11 +4966,14 @@ async function refresh() {
   }
 }
 
+// 启动前检查是否是 share view
+loadFromShare();
+
 refresh();
 setInterval(refresh, 30000);
 
-// 启动时检查文件同步连接
-_initSync();
+// 启动时检查文件同步连接（share view 下跳过）
+if (!window._isShareView) _initSync();
 </script>
 </body>
 </html>

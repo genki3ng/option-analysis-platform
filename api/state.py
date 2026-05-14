@@ -19,6 +19,31 @@ RISK_FREE = 0.045
 MASSIVE_KEY = "LGOwbUJ6_VvPovE08rGOwohlCkt6IFeL"
 MASSIVE_BASE = "https://api.massive.com"
 
+# 财报日历（主要标的；yfinance 拿不到时 fallback）
+# 季度财报通常按固定 cycle，这里记下未来 1 年的近似日期
+EARNINGS_DATES = {
+    "TSLA":  [date(2026, 4, 22), date(2026, 7, 22), date(2026, 10, 21), date(2027, 1, 28)],
+    "META":  [date(2026, 4, 30), date(2026, 7, 30), date(2026, 10, 29), date(2027, 1, 29)],
+    "AAPL":  [date(2026, 4, 30), date(2026, 7, 31), date(2026, 10, 30), date(2027, 1, 28)],
+    "GOOGL": [date(2026, 4, 28), date(2026, 7, 28), date(2026, 10, 27), date(2027, 1, 27)],
+    "AMZN":  [date(2026, 5, 1),  date(2026, 7, 31), date(2026, 10, 30), date(2027, 1, 30)],
+    "NVDA":  [date(2026, 5, 27), date(2026, 8, 26), date(2026, 11, 25), date(2027, 2, 24)],
+    "MSFT":  [date(2026, 4, 29), date(2026, 7, 29), date(2026, 10, 28), date(2027, 1, 27)],
+    "SPY":   [],  # ETF 无财报
+    "QQQ":   [],
+    "IWM":   [],
+}
+
+
+def _next_earnings_date(ticker: str, after: date) -> Optional[date]:
+    """返回 ticker 在 after 之后的下一次财报日"""
+    if ticker not in EARNINGS_DATES:
+        return None
+    for d in EARNINGS_DATES[ticker]:
+        if d > after:
+            return d
+    return None
+
 
 # ── Black-Scholes ─────────────────────────────────────────────────────────────
 def _ncdf(x): return 0.5 * (1 + math.erf(x / math.sqrt(2)))
@@ -228,6 +253,13 @@ def position_state(p, today, state, prices, earliest):
     sold_total = p["sell_price"] * shares
     total_days = (p["expiry"] - p["trade_date"]).days
 
+    # 财报警告
+    earnings_date = _next_earnings_date(p["ticker"], today)
+    earnings_before_expiry = (
+        earnings_date is not None and today < earnings_date < p["expiry"]
+    )
+    earnings_days_until = (earnings_date - today).days if earnings_date else None
+
     base = {
         "id": pid,
         "label": f"{p['ticker']} ${p['strike']:.0f} {p['type'].capitalize()}",
@@ -246,6 +278,9 @@ def position_state(p, today, state, prices, earliest):
         "close_date": close_date,
         "close_price": close_price,
         "close_reason": close_reason,
+        "earnings_date": earnings_date.isoformat() if earnings_date else None,
+        "earnings_before_expiry": earnings_before_expiry,
+        "earnings_days_until": earnings_days_until,
     }
 
     if underlying <= 0:
@@ -463,6 +498,20 @@ def position_advice(ps):
     if 0 < days <= 3:
         facts.append(f"⏱️ 仅 {days} 天到期，gamma 风险大")
 
+    # 财报警告
+    if ps.get("earnings_before_expiry"):
+        ed = ps["earnings_date"]
+        eud = ps["earnings_days_until"]
+        if eud is not None and eud >= 0:
+            severity = _max_sev(severity, "warn")
+            if ps["type"] == "put" and ps.get("type") == "put":
+                # Short put 财报后股价跌可能很惨
+                facts.append(f"⚠️ {ed} 财报（剩 {eud} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险")
+            else:
+                facts.append(f"⚠️ {ed} 财报（剩 {eud} 天）在你到期前，注意 IV crush + gamma 风险")
+            if "财报前 1-2 天平仓" not in str(actions):
+                actions.insert(0, "财报前 1-2 天考虑平仓，避免 IV crush")
+
     if not actions:
         actions.append("继续持有让 Theta 累积收益" if pnl_pct >= 0 else "继续持有等时间衰减")
 
@@ -486,11 +535,20 @@ def get_suggestions(positions):
     n_tp = sum(1 for p in active if p["pnl_pct"] >= 80)
     n_close = sum(1 for p in active if 0 <= p["days"] <= 3)
 
+    # Beta-weighted Delta（简化版：直接累加，不调 beta，因为 single-ticker 多）
+    total_delta_shares = sum(p["delta"] * p["contracts"] * 100 for p in active)
+
+    # 财报警告计数
+    n_earnings = sum(1 for p in active if p.get("earnings_before_expiry"))
+
     port_facts = [
         f"{len(active)} 个空头持仓，总浮盈 ${total_pnl:+,.0f}（{total_pct:+.1f}%）",
         f"每日 Theta +${total_theta:.0f}",
         f"已收权利金 ${total_sold:,.0f}",
+        f"📐 组合 Delta 等价 {total_delta_shares:+.0f} 股（{'long' if total_delta_shares > 0 else 'short'}-biased）",
     ]
+    if n_earnings:
+        port_facts.append(f"⚠️ {n_earnings} 个持仓在财报之后到期（IV crush 风险）")
     if n_danger: port_facts.append(f"🚨 {n_danger} 个持仓接近/超行权价")
     if n_tp: port_facts.append(f"🎯 {n_tp} 个持仓达到 80% 利润")
     if n_close: port_facts.append(f"⏱️ {n_close} 个持仓 3 天内到期")
@@ -548,13 +606,19 @@ def compute(payload):
     total_pnl = total_sold - total_mktval
     total_pnl_pct = total_pnl / total_sold * 100 if total_sold else 0
     total_theta = sum(x["daily_theta"] for x in enriched if not x["closed"] and x["days"] >= 0)
+    total_realized = sum(
+        (x["sell_price"] - x["close_price"]) * x["contracts"] * 100
+        for x in enriched
+        if x.get("closed") and x.get("close_price") is not None
+    )
+
+    morning_brief = _generate_morning_brief(enriched, prices, total_pnl - total_realized, total_realized)
 
     return {
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "yfinance_available": _check_yf(),
         "tickers": prices,
         "intraday": intraday,
-        # 向后兼容（前端老代码用到）
         "tsla": prices.get("TSLA", {}),
         "meta": prices.get("META", {}),
         "total_sold": total_sold,
@@ -565,6 +629,7 @@ def compute(payload):
         "positions": enriched,
         "suggestions": suggestions,
         "history": history,
+        "morning_brief": morning_brief,
     }
 
 
@@ -677,8 +742,68 @@ def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
         return None
 
 
+def _backtest_strategy(ticker: str, days_back: int = 90,
+                       sample_dte: int = 7, delta_target: float = 0.25,
+                       is_short_put: bool = True) -> Optional[dict]:
+    """
+    粗略回测：过去 N 天每个交易日卖一笔 sample_dte DTE delta_target Δ 期权，
+    模拟最终结果。返回胜率 + 平均收益。
+    """
+    try:
+        import yfinance as yf
+        hist = yf.Ticker(ticker).history(period="6mo", interval="1d", auto_adjust=True)
+        closes = hist["Close"].dropna().tolist()
+        if len(closes) < 60:
+            return None
+        # 估算每天的隐含波动率（用 20 天 RV 近似）
+        wins, losses = 0, 0
+        total_pnl_pct = 0
+        for i in range(20, len(closes) - sample_dte, 5):  # 每 5 天采样
+            S = closes[i]
+            # 20 天 RV
+            rets = [math.log(closes[j] / closes[j-1]) for j in range(i-19, i+1)]
+            rv = math.sqrt(sum((r - sum(rets)/len(rets))**2 for r in rets) / 19 * 252)
+            if rv <= 0 or rv > 3: continue
+            # 选 strike 让 Delta ≈ delta_target（粗估）
+            # 对于 short put: K = S * exp(-z * sigma * sqrt(T)), z ~ delta_target 反算
+            # 简化：K = S * (1 - sigma * sqrt(T) * delta_target * 2)
+            T = sample_dte / 365
+            offset = rv * math.sqrt(T) * 0.85  # 大约 -0.25 delta
+            K = S * (1 - offset) if is_short_put else S * (1 + offset)
+            # 模拟到期 stock price
+            S_exp = closes[i + sample_dte]
+            # P&L: short put 卖 X 收钱，到期如果 S_exp > K 全收，否则赔 (K - S_exp)
+            premium_pct = offset * 0.3  # 粗估权利金占股价的百分比
+            if is_short_put:
+                if S_exp >= K:
+                    pnl = premium_pct  # 全收权利金
+                    wins += 1
+                else:
+                    pnl = premium_pct - (K - S_exp) / S
+                    losses += 1
+            else:  # short call
+                if S_exp <= K:
+                    pnl = premium_pct
+                    wins += 1
+                else:
+                    pnl = premium_pct - (S_exp - K) / S
+                    losses += 1
+            total_pnl_pct += pnl
+        n = wins + losses
+        if n < 5:
+            return None
+        return {
+            "win_rate": round(wins / n * 100, 0),
+            "avg_pnl_pct": round(total_pnl_pct / n * 100, 1),
+            "n_trades": n,
+        }
+    except Exception:
+        return None
+
+
 def _make_verdict(opt: dict, is_short: bool, intent: str,
-                  iv_rank: Optional[dict], price_band: Optional[dict] = None) -> dict:
+                  iv_rank: Optional[dict], price_band: Optional[dict] = None,
+                  backtest: Optional[dict] = None) -> dict:
     """生成一句话推荐 verdict（权重评分，严重的优劣权重更大）"""
     pros, cons = [], []
     weight = 0  # 综合权重：正数 = 偏好，负数 = 不偏好
@@ -815,6 +940,27 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
                 pros.append("IV 低（买期权便宜）"); weight += 2
             elif ir >= 70:
                 cons.append("IV 高（买期权偏贵）"); weight -= 2
+
+    # 回测信号（如果有）
+    if backtest and backtest.get("n_trades", 0) >= 5:
+        wr = backtest["win_rate"]
+        if wr >= 75:
+            pros.append(f"📊 类似策略 6 个月回测胜率 {wr:.0f}%（{backtest['n_trades']} 次模拟）"); weight += 2
+        elif wr >= 60:
+            pros.append(f"📊 类似策略回测胜率 {wr:.0f}%"); weight += 1
+        elif wr < 45:
+            cons.append(f"📊 类似策略回测胜率仅 {wr:.0f}%，历史上不利"); weight -= 2
+
+    # 财报警告
+    if opt.get("earnings_warning"):
+        ed = opt["earnings_warning"]
+        cons.append(f"⚠️ {ed['date']} 财报（剩 {ed['days']} 天）在到期前，注意 IV crush")
+        weight -= 1
+
+    # Spread 替代方案（短期高风险时建议）
+    if is_short and opt.get("spread_alt"):
+        sa = opt["spread_alt"]
+        pros.append(f"🛡 可考虑改成 Spread (买 ${sa['protect_strike']:.0f} 保护腿)，最大亏损降到 ${sa['max_loss']:,.0f}")
 
     # 综合评级（基于加权得分，越大越好）
     if weight >= 5:
@@ -989,21 +1135,53 @@ def recommend(req: dict) -> dict:
                 "breakeven_pct": breakeven_pct,
             })
 
-    # 1. 先算 IV rank（用任意候选的 IV 作样本）
+    # 1. IV rank
     iv_rank = None
     if candidates:
         sample_iv = candidates[0]["iv"] / 100
         iv_rank = _compute_iv_rank(ticker, sample_iv)
 
-    # 2. 给每个候选打 verdict（不包含价位带，先用静态指标）
-    for c in candidates:
-        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, None)
+    # 2. 回测（per ticker，一次就够）— 估个该方向短卖策略的胜率
+    backtest = _backtest_strategy(
+        ticker, sample_dte=min(max(timeframe, 5), 30),
+        delta_target=sum(delta_band) / 2,
+        is_short_put=(is_short and not is_call),
+    ) if is_short else None
 
-    # 3. 先按 (tier, score) 排序，保留 top 15 候选用于价位带富集
+    # 3. 财报警告（per ticker，一次就够）
+    earnings_date = _next_earnings_date(ticker, today)
+    earnings_warning = None
+    if earnings_date:
+        earnings_days = (earnings_date - today).days
+        if 0 <= earnings_days <= 30:
+            earnings_warning = {"date": earnings_date.isoformat(), "days": earnings_days}
+
+    # 4. 给每个候选打初步 verdict + 算 spread 替代
+    for c in candidates:
+        # 如果到期跨越财报，加 flag
+        exp_d = date.fromisoformat(c["expiry"])
+        if earnings_date and today < earnings_date < exp_d:
+            c["earnings_warning"] = earnings_warning
+
+        # Short option 距行权 < 8% 时，提供 spread 替代信号
+        if is_short and abs(c["moneyness_pct"]) < 8:
+            # 买保护腿在 strike 外 5%
+            if is_call:
+                protect_strike = round(c["strike"] * 1.05, 0)
+            else:
+                protect_strike = round(c["strike"] * 0.95, 0)
+            max_loss = abs(c["strike"] - protect_strike) * 100 * c["contracts"] if c.get("contracts") else abs(c["strike"] - protect_strike) * 100
+            c["spread_alt"] = {
+                "protect_strike": protect_strike,
+                "max_loss": max_loss,
+            }
+
+        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, None, backtest)
+
+    # 5. 排序后保留 top 15，富集 Massive 价位带
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
 
-    # 4. 用 Massive 拉取每个候选的 30 天价位带（最多 15 个 API 调用）
     for c in candidates:
         occ = _build_occ_symbol(c["ticker"],
                                  date.fromisoformat(c["expiry"]),
@@ -1012,10 +1190,9 @@ def recommend(req: dict) -> dict:
         hist = fetch_massive_option_history(occ, days_back=30)
         if hist:
             c["price_band"] = hist
-            # 重新计算 verdict（融入价位带信号）
-            c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, hist)
+            c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, hist, backtest)
 
-    # 5. 再次排序（因为 verdict 可能更新）
+    # 6. 终极排序
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
 
     return {
@@ -1036,6 +1213,63 @@ def recommend(req: dict) -> dict:
         "candidates": candidates[:10],
         "total_examined": len(candidates),
     }
+
+
+def _generate_morning_brief(positions: List[dict], prices: Dict[str, Dict],
+                             total_pnl: float, total_realized: float) -> List[str]:
+    """生成基于规则的每日 brief（非 AI，但是数据驱动且个性化）"""
+    lines = []
+
+    # 1. 今日市场
+    today_chgs = []
+    for tk, info in prices.items():
+        if not info or info.get("prev", 0) == 0: continue
+        pct = (info["price"] - info["prev"]) / info["prev"] * 100
+        arrow = "📈" if pct >= 0 else "📉"
+        today_chgs.append(f"{tk} ${info['price']:.0f} {arrow}{abs(pct):.1f}%")
+    if today_chgs:
+        lines.append("📊 今日市场: " + " · ".join(today_chgs[:4]))
+
+    # 2. 今日组合 P&L
+    active = [p for p in positions if not p["closed"] and p["days"] >= 0]
+    if active:
+        emoji = "🟢" if total_pnl >= 0 else "🔴"
+        lines.append(f"{emoji} 持仓累计浮盈亏 ${total_pnl:+,.0f}"
+                     + (f" · 已实现 ${total_realized:+,.0f}" if total_realized else ""))
+
+    # 3. 财报警告（最近 1 个）
+    earnings_alerts = [p for p in active if p.get("earnings_before_expiry")
+                       and p.get("earnings_days_until", 999) <= 21]
+    if earnings_alerts:
+        e = sorted(earnings_alerts, key=lambda p: p["earnings_days_until"])[0]
+        lines.append(f"⚠️ {e['ticker']} 财报剩 {e['earnings_days_until']} 天 "
+                     f"({e['earnings_date']})，你的 {e['label']} {e['expiry']} 到期跨越 — 留意 IV crush")
+
+    # 4. 利润目标 / 风险（取最紧急的）
+    actionable = [p for p in active if p["pnl_pct"] >= 80]
+    if actionable:
+        a = max(actionable, key=lambda p: p["pnl_pct"])
+        lines.append(f"🎯 {a['label']} 已实现 {a['pnl_pct']:.0f}% 权利金"
+                     f"（${a['pnl']:+,.0f}），可考虑平仓锁利")
+
+    # 5. 即将到期
+    expiring = [p for p in active if p["days"] <= 3]
+    if expiring:
+        e = min(expiring, key=lambda p: p["days"])
+        money = e.get("moneyness", 0)
+        is_call = e["type"] == "call"
+        is_itm = (is_call and money < 0) or (not is_call and money > 0)
+        risk_note = "已 ITM，关注指派风险" if is_itm else f"OTM 距 {abs(money):.1f}%"
+        lines.append(f"⏱️ {e['label']} 剩 {e['days']} 天到期 · {risk_note}")
+
+    # 6. 危险持仓警告
+    danger = [p for p in active if (p["type"] == "call" and p["moneyness"] < 5)
+              or (p["type"] == "put" and p["moneyness"] > -5)]
+    if danger and not any("ITM" in l for l in lines):
+        d = danger[0]
+        lines.append(f"🚨 {d['label']} 距行权仅 {abs(d['moneyness']):.1f}%，gamma 风险大")
+
+    return lines
 
 
 def _check_yf():

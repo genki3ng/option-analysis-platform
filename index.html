@@ -633,42 +633,100 @@
     margin: 4px 0;
   }
 
-  /* 右侧"找最佳 Option"大按钮 */
+  /* 右侧"找最佳 Option"大按钮 — 加强 CTA */
   .rec-btn-large {
     width: 100%;
     background: linear-gradient(135deg, #5B8DEF, #A78BFA);
-    color: white; border: none; border-radius: 10px;
-    padding: 16px 18px;
+    color: white; border: none; border-radius: 12px;
+    padding: 18px 20px;
     cursor: pointer;
     text-align: left;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(91,141,239,0.25);
+    box-shadow: 0 4px 14px rgba(91,141,239,0.3);
+    position: relative;
+    display: flex; align-items: center; gap: 14px;
+    overflow: hidden;
+  }
+  .rec-btn-large::after {
+    content: '→';
+    position: absolute;
+    right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 22px; font-weight: 700;
+    transition: transform 0.2s;
+    opacity: 0.85;
   }
   .rec-btn-large:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(91,141,239,0.35);
-    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(91,141,239,0.45);
+    filter: brightness(1.1);
+  }
+  .rec-btn-large:hover::after {
+    transform: translateY(-50%) translateX(3px);
+    opacity: 1;
+  }
+  .rec-btn-large:active { transform: translateY(0); }
+  .rec-btn-large::before {
+    content: '🎯';
+    font-size: 28px; line-height: 1;
+    flex-shrink: 0;
   }
   .rec-btn-large .rec-title {
-    font-size: 15px; font-weight: 800; margin-bottom: 4px;
+    font-size: 16px; font-weight: 800; margin-bottom: 3px;
+    letter-spacing: -0.3px;
   }
   .rec-btn-large .rec-sub {
-    font-size: 11px; opacity: 0.85; line-height: 1.4;
+    font-size: 11px; opacity: 0.9; line-height: 1.4;
   }
+  .rec-btn-large .rec-text { flex: 1; min-width: 0; padding-right: 24px; }
+
+  /* 复盘报告按钮 — 用次级强调（绿色调，区别于推荐的蓝紫）*/
   .review-btn {
-    width: 100%; background: var(--card2);
-    color: var(--text); border: 1px solid var(--line);
-    border-radius: 10px; padding: 12px 14px;
+    width: 100%;
+    background: linear-gradient(135deg,
+      rgba(74,222,128,0.10), rgba(45,212,191,0.10));
+    color: var(--text);
+    border: 1px solid rgba(45,212,191,0.35);
+    border-radius: 12px;
+    padding: 14px 18px;
     cursor: pointer; text-align: left;
-    transition: all 0.15s;
+    transition: all 0.2s;
+    position: relative;
+    display: flex; align-items: center; gap: 14px;
+    overflow: hidden;
+  }
+  .review-btn::before {
+    content: '📊';
+    font-size: 26px; line-height: 1;
+    flex-shrink: 0;
+  }
+  .review-btn::after {
+    content: '→';
+    position: absolute;
+    right: 16px; top: 50%; transform: translateY(-50%);
+    font-size: 18px; color: var(--teal);
+    transition: transform 0.2s;
+    opacity: 0.7;
   }
   .review-btn:hover {
-    border-color: var(--accent); color: var(--accent);
+    border-color: var(--teal);
+    background: linear-gradient(135deg,
+      rgba(74,222,128,0.18), rgba(45,212,191,0.18));
+    transform: translateY(-1px);
+  }
+  .review-btn:hover::after {
+    transform: translateY(-50%) translateX(3px);
+    opacity: 1;
+    color: var(--teal);
+  }
+  .review-btn .review-title {
+    font-size: 14px; font-weight: 700;
+    color: var(--text); margin-bottom: 2px;
   }
   .review-btn .review-sub {
-    display: block; font-size: 11px; color: var(--sub);
-    margin-top: 3px; line-height: 1.4;
+    font-size: 11px; color: var(--sub);
+    line-height: 1.4;
   }
+  .review-btn .review-text { flex: 1; min-width: 0; padding-right: 24px; }
 
   /* 复盘 modal */
   .review-modal {
@@ -1640,12 +1698,16 @@
     <div class="side">
       <div class="card">
         <button class="rec-btn-large" onclick="showRec()">
-          <div class="rec-title" data-i18n="🎯 找最佳 Option">🎯 找最佳 Option</div>
-          <div class="rec-sub" data-i18n="根据你的看法和风险偏好，从期权链推荐最佳合约">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
+          <div class="rec-text">
+            <div class="rec-title" data-i18n="找最佳 Option">找最佳 Option</div>
+            <div class="rec-sub" data-i18n="根据你的看法和风险偏好，从期权链推荐最佳合约">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
+          </div>
         </button>
-        <button class="review-btn" onclick="showReview()" style="margin-top:8px">
-          <span data-i18n="📊 复盘报告">📊 复盘报告</span>
-          <span class="review-sub" data-i18n="看你已平仓持仓的胜率、最佳/最差交易">看你已平仓持仓的胜率、最佳/最差交易</span>
+        <button class="review-btn" onclick="showReview()" style="margin-top:10px">
+          <div class="review-text">
+            <div class="review-title" data-i18n="复盘报告">复盘报告</div>
+            <div class="review-sub" data-i18n="看你已平仓持仓的胜率、最佳/最差交易">看你已平仓持仓的胜率、最佳/最差交易</div>
+          </div>
         </button>
       </div>
 
@@ -1887,9 +1949,11 @@ const I18N = {
       '從最早交易日起，每天收盤時如果全部平倉的總盈虧。橫軸=日期，縱軸=$',
     // 建议侧栏
     '🎯 找最佳 Option': '🎯 找最佳 Option',
+    '找最佳 Option': '找最佳 Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
       '根據你的看法和風險偏好，從期權鏈推薦最佳合約',
     '📊 复盘报告': '📊 複盤報告',
+    '复盘报告': '複盤報告',
     '看你已平仓持仓的胜率、最佳/最差交易':
       '看你已平倉持倉的勝率、最佳/最差交易',
     '操作建议': '操作建議',
@@ -2169,9 +2233,11 @@ const I18N = {
       'Daily mark-to-market P&L from earliest trade. X=date, Y=$',
     // Sidebar buttons
     '🎯 找最佳 Option': '🎯 Find Best Option',
+    '找最佳 Option': 'Find Best Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
       'Recommends contracts based on your view & risk tolerance',
     '📊 复盘报告': '📊 Review Report',
+    '复盘报告': 'Review Report',
     '看你已平仓持仓的胜率、最佳/最差交易':
       'Win rate, best/worst trades of closed positions',
     '操作建议': 'Action Items',

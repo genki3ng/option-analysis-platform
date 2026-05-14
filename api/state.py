@@ -369,13 +369,33 @@ def portfolio_history(positions, state, prices, today):
         per_pos = {}
         for p in positions:
             if d < p["trade_date"]: continue
+            shares = p["contracts"] * 100
+            sold = p["sell_price"] * shares
+            pid = position_id(p)
+
+            # ── 已平仓：close_date 之后用 realized P&L 锁定（不再用 BS 重估）
+            closed_info = state.get(pid, {})
+            close_date_str = closed_info.get("close_date")
+            close_price = closed_info.get("close_price")
+            if (closed_info.get("closed") and close_date_str and close_price is not None):
+                try:
+                    cd = date.fromisoformat(close_date_str)
+                    if d >= cd:
+                        # 锁定的实际盈亏，不随股价波动
+                        pnl = (p["sell_price"] - float(close_price)) * shares
+                        total_pnl += pnl
+                        total_sold += sold
+                        per_pos[pid] = pnl
+                        continue
+                except Exception:
+                    pass
+
+            # ── 活跃 / 平仓日之前：用 BS 模型计算
             u = get_underlying_at(p["ticker"], d, earliest - timedelta(days=5))
             if u is None: continue
             days_left = (p["expiry"] - d).days
             T = max(days_left / 365.0, 1e-8)
-            iv = pos_iv.get(position_id(p), 0.4)
-            shares = p["contracts"] * 100
-            sold = p["sell_price"] * shares
+            iv = pos_iv.get(pid, 0.4)
 
             if days_left <= 0:
                 mark = max(u - p["strike"], 0) if p["type"] == "call" else max(p["strike"] - u, 0)
@@ -386,7 +406,7 @@ def portfolio_history(positions, state, prices, today):
             pnl = sold - mktval
             total_pnl += pnl
             total_sold += sold
-            per_pos[position_id(p)] = pnl
+            per_pos[pid] = pnl
 
         series.append({
             "date": d_str, "total_pnl": total_pnl,
@@ -399,13 +419,25 @@ def portfolio_history(positions, state, prices, today):
     today_per_pos = {}
     for p in positions:
         if today < p["trade_date"]: continue
+        shares = p["contracts"] * 100
+        sold = p["sell_price"] * shares
+        pid = position_id(p)
+
+        # 已平仓 → 锁定 realized P&L
+        closed_info = state.get(pid, {})
+        close_price = closed_info.get("close_price")
+        if closed_info.get("closed") and close_price is not None:
+            pnl = (p["sell_price"] - float(close_price)) * shares
+            today_pnl += pnl
+            today_sold += sold
+            today_per_pos[pid] = pnl
+            continue
+
         u = prices.get(p["ticker"], {}).get("price", 0)
         if u <= 0: continue
         days_left = (p["expiry"] - today).days
         T = max(days_left / 365.0, 1e-8)
-        iv = pos_iv.get(position_id(p), 0.4)
-        shares = p["contracts"] * 100
-        sold = p["sell_price"] * shares
+        iv = pos_iv.get(pid, 0.4)
         if days_left <= 0:
             mark = max(u - p["strike"], 0) if p["type"] == "call" else max(p["strike"] - u, 0)
         else:
@@ -414,7 +446,7 @@ def portfolio_history(positions, state, prices, today):
         pnl = sold - mktval
         today_pnl += pnl
         today_sold += sold
-        today_per_pos[position_id(p)] = pnl
+        today_per_pos[pid] = pnl
 
     if today_per_pos:
         if series and series[-1]["date"] == today_str:

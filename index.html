@@ -557,12 +557,97 @@
     color: var(--green);
     font-weight: 600;
   }
-  .pos-toolbar button.rec-btn {
-    background: linear-gradient(135deg, #5B8DEF, #A78BFA);
-    color: white; border-color: transparent;
-    font-weight: 700;
+  /* 工具栏分组 + 视觉分隔 */
+  .tb-group {
+    display: inline-flex; align-items: center; gap: 4px;
   }
-  .pos-toolbar button.rec-btn:hover { filter: brightness(1.1); }
+  .tb-sep {
+    width: 1px; height: 22px; background: var(--line);
+    margin: 0 6px;
+  }
+  .pos-toolbar button.small {
+    padding: 4px 10px; font-size: 11px;
+  }
+  /* Dropdown 菜单 */
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu {
+    display: none;
+    position: absolute; top: calc(100% + 4px); left: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    min-width: 220px;
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    padding: 6px;
+  }
+  .dropdown.open > .dropdown-menu { display: block; }
+  .dropdown-menu button {
+    display: block; width: 100%;
+    text-align: left;
+    background: transparent; border: none;
+    padding: 8px 10px;
+    cursor: pointer; font-size: 12px;
+    color: var(--text); border-radius: 5px;
+    font-family: inherit;
+  }
+  .dropdown-menu button:hover { background: var(--card2); }
+  .dropdown-menu .dd-label {
+    font-size: 9px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    padding: 6px 10px 2px; font-weight: 600;
+  }
+  .dropdown-menu .dd-hint {
+    font-size: 10px; color: var(--sub);
+    font-weight: 400; margin-top: 2px;
+  }
+  .dropdown-menu hr {
+    border: none; border-top: 1px solid var(--line);
+    margin: 4px 0;
+  }
+
+  /* 右侧"找最佳 Option"大按钮 */
+  .rec-btn-large {
+    width: 100%;
+    background: linear-gradient(135deg, #5B8DEF, #A78BFA);
+    color: white; border: none; border-radius: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(91,141,239,0.25);
+  }
+  .rec-btn-large:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(91,141,239,0.35);
+    filter: brightness(1.08);
+  }
+  .rec-btn-large .rec-title {
+    font-size: 15px; font-weight: 800; margin-bottom: 4px;
+  }
+  .rec-btn-large .rec-sub {
+    font-size: 11px; opacity: 0.85; line-height: 1.4;
+  }
+
+  /* 模态遮罩 */
+  .modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+  }
+  .modal-backdrop.show { display: block; }
+  .rec-form.modal {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(820px, 94vw);
+    max-height: 90vh; overflow-y: auto;
+    z-index: 1001;
+    margin: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
 
   /* ── 推荐引擎表单 + 结果 ───────────────────────────────────────────── */
   .rec-form {
@@ -1052,86 +1137,75 @@
         </div>
 
         <div class="pos-toolbar">
-          <button class="rec-btn" onclick="showRec()">🎯 找最佳 Option</button>
+          <!-- 主要操作 -->
           <button class="add-btn" onclick="showAdd()">+ 新建持仓</button>
-          <button class="muted" onclick="selectAll(true)">全选</button>
-          <button class="muted" onclick="selectAll(false)">全不选</button>
-          <button class="muted" onclick="exportPositionsCsv()" title="当前持仓快照（Excel 可读）">📥 持仓 CSV</button>
-          <button class="muted" onclick="exportHistoryCsv()" title="每日 P&L 历史">📊 历史 CSV</button>
-          <button class="muted" onclick="exportJSONBackup()" title="完整数据备份（可重新导入）">💾 导出备份</button>
-          <button class="muted" onclick="triggerImport()" title="从备份文件恢复">📂 导入备份</button>
-          <button class="muted" id="sync-btn" onclick="linkSyncFile()" title="连接到单个 JSON 文件（跨设备同步，Chrome/Edge 限定）">🔗 文件同步</button>
-          <button class="muted" onclick="linkSyncDir()" title="连接到文件夹（兼容本地 Mac app 的 positions.json + state.json 格式）">📁 文件夹同步</button>
+
+          <span class="tb-sep"></span>
+
+          <!-- 选择 -->
+          <div class="tb-group">
+            <button class="muted small" onclick="selectAll(true)" title="勾选所有持仓">☑ 全选</button>
+            <button class="muted small" onclick="selectAll(false)" title="取消所有勾选">☐ 全不选</button>
+            <button class="muted small" id="hide-closed-btn" onclick="toggleHideClosed()" title="隐藏 / 显示已平仓持仓"></button>
+          </div>
+
+          <span class="tb-sep"></span>
+
+          <!-- 排序 -->
+          <div class="tb-group">
+            <span class="label-tag">排序</span>
+            <select id="sort-select" onchange="setSortKey(this.value)">
+              <option value="risk_first">⚡ 风险优先</option>
+              <option value="default">📋 交易顺序</option>
+              <option value="pnl_pct_desc">💰 盈亏 % · 高→低</option>
+              <option value="pnl_pct_asc">📉 盈亏 % · 低→高</option>
+              <option value="distance_asc">🎯 距行权 · 近→远</option>
+              <option value="distance_desc">🛡 距行权 · 远→近</option>
+              <option value="days_asc">⏱️ 到期 · 近→远</option>
+              <option value="days_desc">📅 到期 · 远→近</option>
+              <option value="sold_desc">🪙 权利金 · 大→小</option>
+              <option value="theta_desc">⚙️ Theta · 大→小</option>
+            </select>
+          </div>
+
+          <span class="tb-sep"></span>
+
+          <!-- 导入/导出 下拉 -->
+          <div class="dropdown">
+            <button class="muted" onclick="toggleDD(this)" title="导出 / 导入数据">📥 数据 ▾</button>
+            <div class="dropdown-menu">
+              <div class="dd-label">导出</div>
+              <button onclick="exportPositionsCsv()">📊 持仓快照 CSV</button>
+              <button onclick="exportHistoryCsv()">📈 历史 P&amp;L CSV</button>
+              <button onclick="exportJSONBackup()">💾 全量备份 JSON</button>
+              <hr>
+              <div class="dd-label">导入</div>
+              <button onclick="triggerImport()">📂 从 JSON 恢复</button>
+            </div>
+          </div>
+
+          <!-- 同步 下拉 -->
+          <div class="dropdown">
+            <button class="muted" id="sync-btn" onclick="toggleDD(this)" title="文件 / 文件夹同步">🔗 同步 ▾</button>
+            <div class="dropdown-menu">
+              <div class="dd-label">连接到</div>
+              <button onclick="linkSyncFile()">🔗 单个 JSON 文件
+                <div class="dd-hint">网页自用格式</div>
+              </button>
+              <button onclick="linkSyncDir()">📁 文件夹
+                <div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>
+              </button>
+              <hr>
+              <div class="dd-label">仅 Chrome / Edge / Brave</div>
+            </div>
+          </div>
+
           <span id="sync-status" style="font-size:11px;margin-left:4px"></span>
-          <button class="muted" id="hide-closed-btn" onclick="toggleHideClosed()">隐藏已平仓</button>
-          <span class="label-tag">排序</span>
-          <select id="sort-select" onchange="setSortKey(this.value)">
-            <option value="risk_first">⚡ 风险优先（默认）</option>
-            <option value="default">📋 交易顺序</option>
-            <option value="pnl_pct_desc">💰 盈亏 % · 高 → 低</option>
-            <option value="pnl_pct_asc">📉 盈亏 % · 低 → 高</option>
-            <option value="distance_asc">🎯 距行权 · 近 → 远</option>
-            <option value="distance_desc">🛡 距行权 · 远 → 近</option>
-            <option value="days_asc">⏱️ 到期天数 · 近 → 远</option>
-            <option value="days_desc">📅 到期天数 · 远 → 近</option>
-            <option value="sold_desc">🪙 权利金 · 大 → 小</option>
-            <option value="theta_desc">⚙️ Theta · 大 → 小</option>
-          </select>
+
           <span style="flex:1"></span>
-          <span id="sel-count" style="color:var(--sub);">--</span>
+
+          <span id="sel-count" style="color:var(--sub);font-size:11px"></span>
         </div>
-        <div class="rec-form" id="rec-form">
-          <h4>
-            <span>🎯 找最佳 Option（基于实时市场数据评分排名）</span>
-            <span class="x" onclick="hideRec()">×</span>
-          </h4>
-
-          <div class="row">
-            <span class="label">1. 标的 Ticker</span>
-            <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
-            <span style="color:var(--sub);font-size:11px">推荐用 SPY, TSLA, NVDA, META 等高流动性标的</span>
-          </div>
-
-          <div class="row">
-            <span class="label">2. 你的方向看法</span>
-            <button class="opt-btn" data-group="direction" data-value="bullish">📈 长期看涨</button>
-            <button class="opt-btn" data-group="direction" data-value="bearish">📉 长期看跌</button>
-            <button class="opt-btn" data-group="direction" data-value="neutral">↔️ 区间震荡</button>
-          </div>
-
-          <div class="row">
-            <span class="label">3. 策略意图</span>
-            <button class="opt-btn" data-group="intent" data-value="premium">💰 收权利金</button>
-            <button class="opt-btn" data-group="intent" data-value="csp">🎯 准备接货（CSP）</button>
-            <button class="opt-btn" data-group="intent" data-value="covered_call">📤 减仓（Covered Call）</button>
-            <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率</button>
-          </div>
-
-          <div class="row">
-            <span class="label">4. 持仓时长</span>
-            <button class="opt-btn" data-group="timeframe" data-value="2">2 天</button>
-            <button class="opt-btn" data-group="timeframe" data-value="7">1 周</button>
-            <button class="opt-btn" data-group="timeframe" data-value="14">2 周</button>
-            <button class="opt-btn" data-group="timeframe" data-value="30">1 月</button>
-            <button class="opt-btn" data-group="timeframe" data-value="60">2 月</button>
-            <button class="opt-btn" data-group="timeframe" data-value="90">3 月</button>
-          </div>
-
-          <div class="row">
-            <span class="label">5. 风险偏好</span>
-            <button class="opt-btn" data-group="risk" data-value="conservative">🛡 保守（Δ &lt; 0.20）</button>
-            <button class="opt-btn" data-group="risk" data-value="balanced">⚖️ 平衡（Δ 0.20-0.35）</button>
-            <button class="opt-btn" data-group="risk" data-value="aggressive">🔥 激进（Δ &gt; 0.35）</button>
-          </div>
-
-          <div class="submit-row">
-            <button class="cancel" onclick="hideRec()">取消</button>
-            <button class="submit" onclick="submitRec()">🔍 找出最佳</button>
-          </div>
-
-          <div class="rec-result" id="rec-result"></div>
-        </div>
-
         <div class="pos-grid" id="positions"></div>
       </div>
 
@@ -1147,6 +1221,13 @@
 
     <div class="side">
       <div class="card">
+        <button class="rec-btn-large" onclick="showRec()">
+          <div class="rec-title">🎯 找最佳 Option</div>
+          <div class="rec-sub">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
+        </button>
+      </div>
+
+      <div class="card">
         <h3>操作建议
           <span class="h-hint">点击每条展开看详细解释和操作选项</span>
         </h3>
@@ -1154,6 +1235,60 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- 🎯 找最佳 Option 模态框（全局 overlay）-->
+<div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
+<div class="rec-form modal" id="rec-form">
+  <h4>
+    <span>🎯 找最佳 Option（基于实时市场数据评分排名）</span>
+    <span class="x" onclick="hideRec()">×</span>
+  </h4>
+
+  <div class="row">
+    <span class="label">1. 标的 Ticker</span>
+    <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
+    <span style="color:var(--sub);font-size:11px">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
+  </div>
+
+  <div class="row">
+    <span class="label">2. 你的方向看法</span>
+    <button class="opt-btn" data-group="direction" data-value="bullish">📈 长期看涨</button>
+    <button class="opt-btn" data-group="direction" data-value="bearish">📉 长期看跌</button>
+    <button class="opt-btn" data-group="direction" data-value="neutral">↔️ 区间震荡</button>
+  </div>
+
+  <div class="row">
+    <span class="label">3. 策略意图</span>
+    <button class="opt-btn" data-group="intent" data-value="premium">💰 收权利金</button>
+    <button class="opt-btn" data-group="intent" data-value="csp">🎯 准备接货（CSP）</button>
+    <button class="opt-btn" data-group="intent" data-value="covered_call">📤 减仓（Covered Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率</button>
+  </div>
+
+  <div class="row">
+    <span class="label">4. 持仓时长</span>
+    <button class="opt-btn" data-group="timeframe" data-value="2">2 天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="7">1 周</button>
+    <button class="opt-btn" data-group="timeframe" data-value="14">2 周</button>
+    <button class="opt-btn" data-group="timeframe" data-value="30">1 月</button>
+    <button class="opt-btn" data-group="timeframe" data-value="60">2 月</button>
+    <button class="opt-btn" data-group="timeframe" data-value="90">3 月</button>
+  </div>
+
+  <div class="row">
+    <span class="label">5. 风险偏好</span>
+    <button class="opt-btn" data-group="risk" data-value="conservative">🛡 保守（Δ &lt; 0.20）</button>
+    <button class="opt-btn" data-group="risk" data-value="balanced">⚖️ 平衡（Δ 0.20-0.35）</button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive">🔥 激进（Δ &gt; 0.35）</button>
+  </div>
+
+  <div class="submit-row">
+    <button class="cancel" onclick="hideRec()">取消</button>
+    <button class="submit" onclick="submitRec()">🔍 找出最佳</button>
+  </div>
+
+  <div class="rec-result" id="rec-result"></div>
 </div>
 
 <script>
@@ -2033,16 +2168,42 @@ function _showSyncStatus(status, detail) {
 function _updateSyncBtn(linked, filename) {
   const btn = document.getElementById('sync-btn');
   if (!btn) return;
+  const menu = btn.nextElementSibling;  // .dropdown-menu
   if (linked) {
-    btn.textContent = '🔗 已同步: ' + filename;
-    btn.title = '点击查看同步选项';
-    btn.onclick = syncMenu;
+    btn.innerHTML = '🔗 已同步 <span style="opacity:0.7;font-weight:400">▾</span>';
+    btn.title = '已连接: ' + filename;
     btn.classList.add('linked');
+    if (menu) {
+      menu.innerHTML = `
+        <div class="dd-label">已连接</div>
+        <div style="padding:6px 10px;font-size:11px;color:var(--accent);font-weight:600">📂 ${filename}</div>
+        <hr>
+        <button onclick="syncIn()">🔄 从源拉取最新</button>
+        <button onclick="syncOut()">📤 把本地推到源</button>
+        <button onclick="unlinkSync()" style="color:var(--red)">✂️ 断开同步</button>
+        <hr>
+        <div class="dd-label">改连其他</div>
+        <button onclick="(async()=>{await unlinkSync();linkSyncFile();})()">🔗 改连单个 JSON 文件</button>
+        <button onclick="(async()=>{await unlinkSync();linkSyncDir();})()">📁 改连文件夹</button>
+      `;
+    }
   } else {
-    btn.textContent = '🔗 文件同步';
-    btn.title = '连接到 JSON 文件实现跨设备同步（Chrome/Edge 限定）';
-    btn.onclick = linkSyncFile;
+    btn.innerHTML = '🔗 同步 <span style="opacity:0.7;font-weight:400">▾</span>';
+    btn.title = '文件 / 文件夹同步';
     btn.classList.remove('linked');
+    if (menu) {
+      menu.innerHTML = `
+        <div class="dd-label">连接到</div>
+        <button onclick="linkSyncFile()">🔗 单个 JSON 文件
+          <div class="dd-hint">网页自用格式</div>
+        </button>
+        <button onclick="linkSyncDir()">📁 文件夹
+          <div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>
+        </button>
+        <hr>
+        <div class="dd-label">仅 Chrome / Edge / Brave 支持</div>
+      `;
+    }
   }
 }
 
@@ -2106,6 +2267,20 @@ async function _initSync() {
   }
 }
 
+// ── 下拉菜单（导出、同步）─────────────────────────────────────────────
+function toggleDD(btn) {
+  const dd = btn.closest('.dropdown');
+  document.querySelectorAll('.dropdown.open').forEach(d => {
+    if (d !== dd) d.classList.remove('open');
+  });
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
 // ── 推荐引擎 UI ───────────────────────────────────────────────────────
 const _recDefaults = {
   direction: 'bullish',
@@ -2118,12 +2293,13 @@ const _recSelection = { ...localStorage.getItem('rec_last_choice')
 
 function showRec() {
   const form = document.getElementById('rec-form');
+  const bd = document.getElementById('rec-backdrop');
   form.classList.add('open');
+  bd.classList.add('show');
   document.getElementById('rec-ticker').value =
     localStorage.getItem('rec_last_ticker') || '';
   document.getElementById('rec-ticker').focus();
   _applyRecSelection();
-  // Click handlers
   document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {
     btn.onclick = () => {
       const group = btn.dataset.group;
@@ -2134,6 +2310,7 @@ function showRec() {
 }
 function hideRec() {
   document.getElementById('rec-form').classList.remove('open');
+  document.getElementById('rec-backdrop').classList.remove('show');
   document.getElementById('rec-result').innerHTML = '';
 }
 function _applyRecSelection() {

@@ -93,6 +93,33 @@
   }
   .theme-toggle .t-icon { line-height: 1; }
 
+  /* 语言选择器（紧贴 theme-toggle 左侧） */
+  .lang-selector {
+    position: absolute; right: 48px; top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; height: 36px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .lang-selector button {
+    background: transparent; border: none;
+    padding: 0 10px; cursor: pointer;
+    font-size: 11px; font-weight: 600;
+    color: var(--sub); font-family: inherit;
+    transition: all 0.15s;
+    min-width: 32px;
+  }
+  .lang-selector button:hover { color: var(--text); }
+  .lang-selector button.active {
+    background: var(--accent); color: white;
+  }
+  @media (max-width: 720px) {
+    .lang-selector { right: 44px; }
+    .lang-selector button { padding: 0 7px; min-width: 28px; }
+  }
+
   /* 用户身份徽章 — 镜像 theme toggle 但在左侧 */
   .user-badge {
     position: absolute; left: 0; top: 50%;
@@ -1215,64 +1242,64 @@
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="user-badge" id="user-badge" onclick="editUsername()" title="点击修改用户名（仅本地显示）">
+    <div class="user-badge" id="user-badge" onclick="editUsername()" data-i18n-title="点击修改用户名（仅本地显示）" title="点击修改用户名（仅本地显示）">
       <span class="icon">👤</span>
       <span class="name" id="user-name">本地用户</span>
+    </div>
+    <div class="lang-selector" id="lang-selector">
+      <button data-lang="zh">简</button>
+      <button data-lang="zh_tw">繁</button>
+      <button data-lang="en">EN</button>
     </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="切换主题">
       <span class="t-icon">☀️</span>
     </button>
     <h1>Option Analysis Platform</h1>
-    <div class="sub" id="sub">实时 P&L · 自动每 30 秒刷新</div>
+    <div class="sub" id="sub" data-i18n="实时 P&L · 自动每 30 秒刷新">实时 P&L · 自动每 30 秒刷新</div>
   </div>
 
   <div class="info-card" id="info-card">
     <span class="close" onclick="dismissInfo()" title="收起">×</span>
-    <div class="title">ℹ️ 关于这个工具（点 × 收起，以后从底部展开）</div>
-    <ul>
-      <li>📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
-      <li>👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见</li>
-      <li>💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件</li>
-      <li>📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON</li>
-      <li>🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：
-        <ul style="margin:4px 0">
-          <li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li>
-          <li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li>
-        </ul>
-      </li>
-      <li>👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
+    <div class="title" data-i18n-html="ℹ️ &lt;b&gt;关于这个工具&lt;/b&gt;（点 × 收起）">ℹ️ <b>关于这个工具</b>（点 × 收起）</div>
+    <ul id="info-bullets">
+      <li data-i18n-html="info_b1">📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
+      <li data-i18n-html="info_b2">👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见</li>
+      <li data-i18n-html="info_b3">💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件</li>
+      <li data-i18n-html="info_b4">📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON</li>
+      <li data-i18n-html="info_b5">🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li></ul></li>
+      <li data-i18n-html="info_b6">👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
     </ul>
   </div>
-  <div class="info-summary hidden" id="info-summary" onclick="expandInfo()">
+  <div class="info-summary hidden" id="info-summary" onclick="expandInfo()" data-i18n="ℹ️ 数据存储 & 备份说明 — 点击展开">
     ℹ️ 数据存储 & 备份说明 — 点击展开
   </div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
   <div class="summary">
     <div class="item">
-      <div class="lab">收到权利金</div>
+      <div class="lab" data-i18n="收到权利金">收到权利金</div>
       <div class="val" id="t_sold">--</div>
-      <div class="hint">卖出期权时一次性收到的现金。<br>这是你的最大可能利润</div>
+      <div class="hint" data-i18n-html="hint_sold">卖出期权时一次性收到的现金。<br>这是你的最大可能利润</div>
     </div>
     <div class="item">
-      <div class="lab">当前买回成本</div>
+      <div class="lab" data-i18n="当前买回成本">当前买回成本</div>
       <div class="val" id="t_mktval">--</div>
-      <div class="hint">现在花多少钱可以全部买回平仓。<br>越低越好（你赚的越多）</div>
+      <div class="hint" data-i18n-html="hint_mktval">现在花多少钱可以全部买回平仓。<br>越低越好（你赚的越多）</div>
     </div>
     <div class="item">
-      <div class="lab">未实现盈亏</div>
+      <div class="lab" data-i18n="未实现盈亏">未实现盈亏</div>
       <div class="val" id="t_pnl">--</div>
-      <div class="hint">权利金 − 买回成本。<br>还没落袋的浮盈/浮亏</div>
+      <div class="hint" data-i18n-html="hint_pnl">权利金 − 买回成本。<br>还没落袋的浮盈/浮亏</div>
     </div>
     <div class="item">
-      <div class="lab">已实现盈亏</div>
+      <div class="lab" data-i18n="已实现盈亏">已实现盈亏</div>
       <div class="val" id="t_realized">--</div>
-      <div class="hint">已平仓持仓的累计盈亏。<br>已经落袋的钱</div>
+      <div class="hint" data-i18n-html="hint_realized">已平仓持仓的累计盈亏。<br>已经落袋的钱</div>
     </div>
     <div class="item">
-      <div class="lab">每日 Theta 收益</div>
+      <div class="lab" data-i18n="每日 Theta 收益">每日 Theta 收益</div>
       <div class="val green" id="t_theta">--</div>
-      <div class="hint">如果其他都不变，<br>明天到账的钱（时间是空头的朋友）</div>
+      <div class="hint" data-i18n-html="hint_theta">如果其他都不变，<br>明天到账的钱（时间是空头的朋友）</div>
     </div>
   </div>
 
@@ -1287,8 +1314,8 @@
       <div class="tickers" id="tickers"></div>
 
       <div class="card">
-        <h3>持仓明细
-          <span class="h-hint">勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释</span>
+        <h3><span data-i18n="持仓明细">持仓明细</span>
+          <span class="h-hint" data-i18n="勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释">勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释</span>
         </h3>
 
         <!-- 新建持仓表单 -->
@@ -1354,66 +1381,61 @@
         </div>
 
         <div class="pos-toolbar">
-          <!-- 主要操作 -->
-          <button class="add-btn" onclick="showAdd()">+ 新建持仓</button>
+          <button class="add-btn" onclick="showAdd()" data-i18n="+ 新建持仓">+ 新建持仓</button>
 
           <span class="tb-sep"></span>
 
-          <!-- 选择 -->
           <div class="tb-group">
-            <button class="muted small" onclick="selectAll(true)" title="勾选所有持仓">☑ 全选</button>
-            <button class="muted small" onclick="selectAll(false)" title="取消所有勾选">☐ 全不选</button>
-            <button class="muted small" id="hide-closed-btn" onclick="toggleHideClosed()" title="隐藏 / 显示已平仓持仓"></button>
+            <button class="muted small" onclick="selectAll(true)" data-i18n="☑ 全选">☑ 全选</button>
+            <button class="muted small" onclick="selectAll(false)" data-i18n="☐ 全不选">☐ 全不选</button>
+            <button class="muted small" id="hide-closed-btn" onclick="toggleHideClosed()"></button>
           </div>
 
           <span class="tb-sep"></span>
 
-          <!-- 排序 -->
           <div class="tb-group">
-            <span class="label-tag">排序</span>
+            <span class="label-tag" data-i18n="排序">排序</span>
             <select id="sort-select" onchange="setSortKey(this.value)">
-              <option value="risk_first">⚡ 风险优先</option>
-              <option value="default">📋 交易顺序</option>
-              <option value="pnl_pct_desc">💰 盈亏 % · 高→低</option>
-              <option value="pnl_pct_asc">📉 盈亏 % · 低→高</option>
-              <option value="distance_asc">🎯 距行权 · 近→远</option>
-              <option value="distance_desc">🛡 距行权 · 远→近</option>
-              <option value="days_asc">⏱️ 到期 · 近→远</option>
-              <option value="days_desc">📅 到期 · 远→近</option>
-              <option value="sold_desc">🪙 权利金 · 大→小</option>
-              <option value="theta_desc">⚙️ Theta · 大→小</option>
+              <option value="risk_first" data-i18n="⚡ 风险优先">⚡ 风险优先</option>
+              <option value="default" data-i18n="📋 交易顺序">📋 交易顺序</option>
+              <option value="pnl_pct_desc" data-i18n="💰 盈亏 % · 高→低">💰 盈亏 % · 高→低</option>
+              <option value="pnl_pct_asc" data-i18n="📉 盈亏 % · 低→高">📉 盈亏 % · 低→高</option>
+              <option value="distance_asc" data-i18n="🎯 距行权 · 近→远">🎯 距行权 · 近→远</option>
+              <option value="distance_desc" data-i18n="🛡 距行权 · 远→近">🛡 距行权 · 远→近</option>
+              <option value="days_asc" data-i18n="⏱️ 到期 · 近→远">⏱️ 到期 · 近→远</option>
+              <option value="days_desc" data-i18n="📅 到期 · 远→近">📅 到期 · 远→近</option>
+              <option value="sold_desc" data-i18n="🪙 权利金 · 大→小">🪙 权利金 · 大→小</option>
+              <option value="theta_desc" data-i18n="⚙️ Theta · 大→小">⚙️ Theta · 大→小</option>
             </select>
           </div>
 
           <span class="tb-sep"></span>
 
-          <!-- 导入/导出 下拉 -->
           <div class="dropdown">
-            <button class="muted" onclick="toggleDD(this)" title="导出 / 导入数据">📥 数据 ▾</button>
+            <button class="muted" onclick="toggleDD(this)" data-i18n="📥 数据 ▾">📥 数据 ▾</button>
             <div class="dropdown-menu">
-              <div class="dd-label">导出</div>
-              <button onclick="exportPositionsCsv()">📊 持仓快照 CSV</button>
-              <button onclick="exportHistoryCsv()">📈 历史 P&amp;L CSV</button>
-              <button onclick="exportJSONBackup()">💾 全量备份 JSON</button>
+              <div class="dd-label" data-i18n="导出">导出</div>
+              <button onclick="exportPositionsCsv()" data-i18n="📊 持仓快照 CSV">📊 持仓快照 CSV</button>
+              <button onclick="exportHistoryCsv()" data-i18n="📈 历史 P&L CSV">📈 历史 P&L CSV</button>
+              <button onclick="exportJSONBackup()" data-i18n="💾 全量备份 JSON">💾 全量备份 JSON</button>
               <hr>
-              <div class="dd-label">导入</div>
-              <button onclick="triggerImport()">📂 从 JSON 恢复</button>
+              <div class="dd-label" data-i18n="导入">导入</div>
+              <button onclick="triggerImport()" data-i18n="📂 从 JSON 恢复">📂 从 JSON 恢复</button>
             </div>
           </div>
 
-          <!-- 同步 下拉 -->
           <div class="dropdown">
-            <button class="muted" id="sync-btn" onclick="toggleDD(this)" title="文件 / 文件夹同步">🔗 同步 ▾</button>
+            <button class="muted" id="sync-btn" onclick="toggleDD(this)" data-i18n="🔗 同步 ▾">🔗 同步 ▾</button>
             <div class="dropdown-menu">
-              <div class="dd-label">连接到</div>
-              <button onclick="linkSyncFile()">🔗 单个 JSON 文件
+              <div class="dd-label" data-i18n="连接到">连接到</div>
+              <button onclick="linkSyncFile()" data-i18n-html="sync_file_opt">🔗 单个 JSON 文件
                 <div class="dd-hint">网页自用格式</div>
               </button>
-              <button onclick="linkSyncDir()">📁 文件夹
+              <button onclick="linkSyncDir()" data-i18n-html="sync_dir_opt">📁 文件夹
                 <div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>
               </button>
               <hr>
-              <div class="dd-label">仅 Chrome / Edge / Brave</div>
+              <div class="dd-label" data-i18n="仅 Chrome / Edge / Brave">仅 Chrome / Edge / Brave</div>
             </div>
           </div>
 
@@ -1427,8 +1449,8 @@
       </div>
 
       <div class="card">
-        <h3>每日 P&L 走势
-          <span class="h-hint">从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$</span>
+        <h3><span data-i18n="每日 P&L 走势">每日 P&L 走势</span>
+          <span class="h-hint" data-i18n="从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$">从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$</span>
         </h3>
         <div id="chart-wrap"><canvas id="chart"></canvas></div>
       </div>
@@ -1439,18 +1461,18 @@
     <div class="side">
       <div class="card">
         <button class="rec-btn-large" onclick="showRec()">
-          <div class="rec-title">🎯 找最佳 Option</div>
-          <div class="rec-sub">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
+          <div class="rec-title" data-i18n="🎯 找最佳 Option">🎯 找最佳 Option</div>
+          <div class="rec-sub" data-i18n="根据你的看法和风险偏好，从期权链推荐最佳合约">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
         </button>
         <button class="review-btn" onclick="showReview()" style="margin-top:8px">
-          <span>📊 复盘报告</span>
-          <span class="review-sub">看你已平仓持仓的胜率、最佳/最差交易</span>
+          <span data-i18n="📊 复盘报告">📊 复盘报告</span>
+          <span class="review-sub" data-i18n="看你已平仓持仓的胜率、最佳/最差交易">看你已平仓持仓的胜率、最佳/最差交易</span>
         </button>
       </div>
 
       <div class="card">
-        <h3>操作建议
-          <span class="h-hint">点击每条展开看详细解释和操作选项</span>
+        <h3><span data-i18n="操作建议">操作建议</span>
+          <span class="h-hint" data-i18n="点击每条展开看详细解释和操作选项">点击每条展开看详细解释和操作选项</span>
         </h3>
         <div id="sugs"></div>
       </div>
@@ -1466,67 +1488,482 @@
 <div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
 <div class="rec-form modal" id="rec-form">
   <h4>
-    <span>🎯 找最佳 Option（基于实时市场数据评分排名）</span>
+    <span data-i18n="🎯 找最佳 Option（基于实时市场数据评分排名）">🎯 找最佳 Option（基于实时市场数据评分排名）</span>
     <span class="x" onclick="hideRec()">×</span>
   </h4>
 
   <div class="row preset-row">
-    <span class="label">📖 大佬策略模板（一键填表）</span>
-    <button class="preset-btn" data-preset="value_leaps" title="@joely7758521 价值哥风格：大跌时加 LEAPS，长期攒正股">📖 价值哥 LEAPS</button>
-    <button class="preset-btn" data-preset="diamond_hands" title="@Rustallintsla 风格：深度 ITM 长 Call，做股票替代">💎 死多头股票替代</button>
-    <button class="preset-btn" data-preset="csp_wheel" title="经典 Wheel：卖 OTM Put 收权利金，被指派就接货卖 Covered Call">🔄 Wheel 卖跌接货</button>
-    <button class="preset-btn" data-preset="weekly_premium" title="每周 short put / call 收 theta">💰 周收权利金</button>
-    <button class="preset-btn" data-preset="iron_condor_neutral" title="区间震荡：远 OTM short put + short call">↔️ 区间震荡</button>
+    <span class="label" data-i18n="📖 大佬策略模板（一键填表）">📖 大佬策略模板（一键填表）</span>
+    <button class="preset-btn" data-preset="value_leaps" data-i18n="📖 价值哥 LEAPS">📖 价值哥 LEAPS</button>
+    <button class="preset-btn" data-preset="diamond_hands" data-i18n="💎 死多头股票替代">💎 死多头股票替代</button>
+    <button class="preset-btn" data-preset="csp_wheel" data-i18n="🔄 Wheel 卖跌接货">🔄 Wheel 卖跌接货</button>
+    <button class="preset-btn" data-preset="weekly_premium" data-i18n="💰 周收权利金">💰 周收权利金</button>
+    <button class="preset-btn" data-preset="iron_condor_neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
   </div>
 
   <div class="row">
-    <span class="label">1. 标的 Ticker</span>
+    <span class="label" data-i18n="1. 标的 Ticker">1. 标的 Ticker</span>
     <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
-    <span style="color:var(--sub);font-size:11px">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
+    <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
   </div>
 
   <div class="row">
-    <span class="label">2. 你的方向看法</span>
-    <button class="opt-btn" data-group="direction" data-value="bullish">📈 长期看涨</button>
-    <button class="opt-btn" data-group="direction" data-value="bearish">📉 长期看跌</button>
-    <button class="opt-btn" data-group="direction" data-value="neutral">↔️ 区间震荡</button>
+    <span class="label" data-i18n="2. 你的方向看法">2. 你的方向看法</span>
+    <button class="opt-btn" data-group="direction" data-value="bullish" data-i18n="📈 长期看涨">📈 长期看涨</button>
+    <button class="opt-btn" data-group="direction" data-value="bearish" data-i18n="📉 长期看跌">📉 长期看跌</button>
+    <button class="opt-btn" data-group="direction" data-value="neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
   </div>
 
   <div class="row">
-    <span class="label">3. 策略意图</span>
-    <button class="opt-btn" data-group="intent" data-value="premium">💰 收权利金</button>
-    <button class="opt-btn" data-group="intent" data-value="csp">🎯 准备接货（CSP）</button>
-    <button class="opt-btn" data-group="intent" data-value="covered_call">📤 减仓（Covered Call）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_vol">🚀 做多波动率（近期）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_leaps">📖 LEAPS 股票替代（长期 Long Call）</button>
+    <span class="label" data-i18n="3. 策略意图">3. 策略意图</span>
+    <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="💰 收权利金">💰 收权利金</button>
+    <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="🎯 准备接货（CSP）">🎯 准备接货（CSP）</button>
+    <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="📤 减仓（Covered Call）">📤 减仓（Covered Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="🚀 做多波动率（近期）">🚀 做多波动率（近期）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="📖 LEAPS 股票替代（长期 Long Call）">📖 LEAPS 股票替代（长期 Long Call）</button>
   </div>
 
   <div class="row">
-    <span class="label">4. 持仓时长</span>
-    <button class="opt-btn" data-group="timeframe" data-value="2">2 天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="7">1 周</button>
-    <button class="opt-btn" data-group="timeframe" data-value="14">2 周</button>
-    <button class="opt-btn" data-group="timeframe" data-value="30">1 月</button>
-    <button class="opt-btn" data-group="timeframe" data-value="60">2 月</button>
-    <button class="opt-btn" data-group="timeframe" data-value="90">3 月</button>
+    <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
+    <button class="opt-btn" data-group="timeframe" data-value="2" data-i18n="2 天">2 天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="7" data-i18n="1 周">1 周</button>
+    <button class="opt-btn" data-group="timeframe" data-value="14" data-i18n="2 周">2 周</button>
+    <button class="opt-btn" data-group="timeframe" data-value="30" data-i18n="1 月">1 月</button>
+    <button class="opt-btn" data-group="timeframe" data-value="60" data-i18n="2 月">2 月</button>
+    <button class="opt-btn" data-group="timeframe" data-value="90" data-i18n="3 月">3 月</button>
   </div>
 
   <div class="row">
-    <span class="label">5. 风险偏好</span>
-    <button class="opt-btn" data-group="risk" data-value="conservative">🛡 保守（Δ &lt; 0.20）</button>
-    <button class="opt-btn" data-group="risk" data-value="balanced">⚖️ 平衡（Δ 0.20-0.35）</button>
-    <button class="opt-btn" data-group="risk" data-value="aggressive">🔥 激进（Δ &gt; 0.35）</button>
+    <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
+    <button class="opt-btn" data-group="risk" data-value="conservative" data-i18n-html="🛡 保守（Δ &lt; 0.20）">🛡 保守（Δ &lt; 0.20）</button>
+    <button class="opt-btn" data-group="risk" data-value="balanced" data-i18n-html="⚖️ 平衡（Δ 0.20-0.35）">⚖️ 平衡（Δ 0.20-0.35）</button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive" data-i18n-html="🔥 激进（Δ &gt; 0.35）">🔥 激进（Δ &gt; 0.35）</button>
   </div>
 
   <div class="submit-row">
-    <button class="cancel" onclick="hideRec()">取消</button>
-    <button class="submit" onclick="submitRec()">🔍 找出最佳</button>
+    <button class="cancel" onclick="hideRec()" data-i18n="取消">取消</button>
+    <button class="submit" onclick="submitRec()" data-i18n="🔍 找出最佳">🔍 找出最佳</button>
   </div>
 
   <div class="rec-result" id="rec-result"></div>
 </div>
 
 <script>
+// ── i18n 国际化 ───────────────────────────────────────────────────────
+const I18N = {
+  zh_tw: {
+    // 标题 & 信息卡
+    '实时 P&L · 自动每 30 秒刷新': '即時 P&L · 自動每 30 秒刷新',
+    'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>關於這個工具</b>（點 × 收起）',
+    'ℹ️ 数据存储 & 备份说明 — 点击展开': 'ℹ️ 資料儲存 & 備份說明 — 點擊展開',
+    'info_b1': '📥 持倉資料存在 <strong>你自己瀏覽器</strong>的 <span class="key">localStorage</span>，從不上傳伺服器',
+    'info_b2': '👥 其他人打開同一個網址，看到的是 <strong>他們自己</strong> 的資料，互相不可見',
+    'info_b3': '💾 清快取 / 換瀏覽器 / 換裝置會遺失 → 點 <strong>💾 匯出備份</strong> 存 JSON 檔案',
+    'info_b4': '📂 在新瀏覽器恢復 → 點 <strong>📂 匯入備份</strong> 選那個 JSON',
+    'info_b5': '🔗 <strong>跨裝置自動同步</strong>（推薦 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 檔案同步</strong>：選單個 JSON 檔案（適合純網頁用戶）</li><li><strong>📁 資料夾同步</strong>：選 Drive 資料夾 → 讀寫 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>與本地 Mac app 資料完全共享 🌟</strong></li></ul>',
+    'info_b6': '👤 改用戶名（左上角）方便區分多瀏覽器/多裝置的資料',
+    '关于这个工具': '關於這個工具',
+    '点 × 收起，以后从底部展开': '點 × 收起，之後從底部展開',
+    '持仓数据存在': '持倉資料存在',
+    '你自己浏览器': '你自己瀏覽器',
+    '的': '的',
+    '，从不上传服务器': '，從不上傳伺服器',
+    '其他人打开同一个网址，看到的是': '其他人打開同一個網址，看到的是',
+    '他们自己': '他們自己',
+    '的数据，互相不可见': '的資料，互相不可見',
+    '清缓存 / 换浏览器 / 换设备会丢失': '清快取 / 換瀏覽器 / 換裝置會遺失',
+    '→ 点': '→ 點',
+    '导出备份': '匯出備份',
+    '存 JSON 文件': '存 JSON 檔案',
+    '在新浏览器恢复 → 点': '在新瀏覽器恢復 → 點',
+    '导入备份': '匯入備份',
+    '选那个 JSON': '選那個 JSON',
+    '跨设备自动同步': '跨裝置自動同步',
+    '推荐 Chrome/Edge': '推薦 Chrome/Edge',
+    '文件同步': '檔案同步',
+    '：选单个 JSON 文件（适合纯网页用户）': '：選單個 JSON 檔案（適合純網頁用戶）',
+    '文件夹同步': '資料夾同步',
+    '：选 Drive 文件夹 → 读写': '：選 Drive 資料夾 → 讀寫',
+    '与本地 Mac app 数据完全共享': '與本地 Mac app 資料完全共享',
+    '改用户名（左上角）方便区分多浏览器/多设备的数据': '改用戶名（左上角）方便區分多瀏覽器/多裝置的資料',
+    // 用户徽章
+    '本地用户': '本地用戶',
+    '点击修改用户名（仅本地显示）': '點擊修改用戶名（僅本地顯示）',
+    // 顶部 4 张卡
+    '收到权利金': '收到權利金',
+    '当前买回成本': '當前買回成本',
+    '未实现盈亏': '未實現盈虧',
+    '已实现盈亏': '已實現盈虧',
+    '每日 Theta 收益': '每日 Theta 收益',
+    'hint_sold': '賣出期權時一次性收到的現金。<br>這是你最大可能的利潤',
+    'hint_mktval': '現在花多少錢可以全部買回平倉。<br>越低越好（你賺得越多）',
+    'hint_pnl': '權利金 − 買回成本。<br>還沒落袋的浮盈/浮虧',
+    'hint_realized': '已平倉持倉的累計盈虧。<br>已經落袋的錢',
+    'hint_theta': '如果其他都不變，<br>明天到帳的錢（時間是空頭的朋友）',
+    '卖出期权时一次性收到的现金。': '賣出期權時一次性收到的現金。',
+    '这是你的最大可能利润': '這是你最大可能的利潤',
+    '现在花多少钱可以全部买回平仓。': '現在花多少錢可以全部買回平倉。',
+    '越低越好（你赚的越多）': '越低越好（你賺得越多）',
+    '权利金 − 买回成本。': '權利金 − 買回成本。',
+    '还没落袋的浮盈/浮亏': '還沒落袋的浮盈/浮虧',
+    '已平仓持仓的累计盈亏。': '已平倉持倉的累計盈虧。',
+    '已经落袋的钱': '已經落袋的錢',
+    '如果其他都不变，': '如果其他都不變，',
+    '明天到账的钱（时间是空头的朋友）': '明天到帳的錢（時間是空頭的朋友）',
+    // 持仓区
+    '持仓明细': '持倉明細',
+    '勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释':
+      '勾選要納入圖表和建議的持倉。綠邊 = Call，橙邊 = Put。每行小標籤 ⓘ 懸停看解釋',
+    '+ 新建持仓': '+ 新建持倉',
+    '全选': '全選',
+    '全不选': '全不選',
+    '隐藏已平仓': '隱藏已平倉',
+    '显示已平仓': '顯示已平倉',
+    '排序': '排序',
+    '📥 数据 ▾': '📥 資料 ▾',
+    '🔗 同步 ▾': '🔗 同步 ▾',
+    '已选': '已選',
+    '隐藏': '隱藏',
+    '已平仓': '已平倉',
+    '☑ 全选': '☑ 全選',
+    '☐ 全不选': '☐ 全不選',
+    '⚡ 风险优先': '⚡ 風險優先',
+    '📋 交易顺序': '📋 交易順序',
+    '💰 盈亏 % · 高→低': '💰 盈虧 % · 高→低',
+    '📉 盈亏 % · 低→高': '📉 盈虧 % · 低→高',
+    '🎯 距行权 · 近→远': '🎯 距行權 · 近→遠',
+    '🛡 距行权 · 远→近': '🛡 距行權 · 遠→近',
+    '⏱️ 到期 · 近→远': '⏱️ 到期 · 近→遠',
+    '📅 到期 · 远→近': '📅 到期 · 遠→近',
+    '🪙 权利金 · 大→小': '🪙 權利金 · 大→小',
+    '⚙️ Theta · 大→小': '⚙️ Theta · 大→小',
+    '📊 持仓快照 CSV': '📊 持倉快照 CSV',
+    '📈 历史 P&L CSV': '📈 歷史 P&L CSV',
+    '💾 全量备份 JSON': '💾 全量備份 JSON',
+    '📂 从 JSON 恢复': '📂 從 JSON 恢復',
+    'sync_file_opt': '🔗 單個 JSON 檔案<div class="dd-hint">網頁自用格式</div>',
+    'sync_dir_opt': '📁 資料夾<div class="dd-hint">相容本地 Mac app（positions.json + state.json）</div>',
+    '导出': '匯出',
+    '导入': '匯入',
+    '持仓快照 CSV': '持倉快照 CSV',
+    '历史 P&L CSV': '歷史 P&L CSV',
+    '全量备份 JSON': '全量備份 JSON',
+    '从 JSON 恢复': '從 JSON 恢復',
+    '连接到': '連接到',
+    '单个 JSON 文件': '單個 JSON 檔案',
+    '网页自用格式': '網頁自用格式',
+    '文件夹': '資料夾',
+    '兼容本地 Mac app': '相容本地 Mac app',
+    '仅 Chrome / Edge / Brave': '僅 Chrome / Edge / Brave',
+    '已连接': '已連接',
+    '从源拉取最新': '從來源拉取最新',
+    '把本地推到源': '把本地推到來源',
+    '断开同步': '斷開同步',
+    '改连其他': '改連其他',
+    '改连单个 JSON 文件': '改連單個 JSON 檔案',
+    '改连文件夹': '改連資料夾',
+    '同步': '同步',
+    // 图表
+    '每日 P&L 走势': '每日 P&L 走勢',
+    '从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$':
+      '從最早交易日起，每天收盤時如果全部平倉的總盈虧。橫軸=日期，縱軸=$',
+    // 建议侧栏
+    '🎯 找最佳 Option': '🎯 找最佳 Option',
+    '根据你的看法和风险偏好，从期权链推荐最佳合约':
+      '根據你的看法和風險偏好，從期權鏈推薦最佳合約',
+    '📊 复盘报告': '📊 複盤報告',
+    '看你已平仓持仓的胜率、最佳/最差交易':
+      '看你已平倉持倉的勝率、最佳/最差交易',
+    '操作建议': '操作建議',
+    '点击每条展开看详细解释和操作选项': '點擊每條展開看詳細解釋和操作選項',
+    // 持仓卡内
+    'Exp': 'Exp',
+    '浮盈亏': '浮盈虧',
+    '每日 Theta': '每日 Theta',
+    '距行权价': '距行權價',
+    '安全': '安全',
+    '行权': '行權',
+    '时间进度': '時間進度',
+    '剩': '剩',
+    '天': '天',
+    '平仓': '平倉',
+    '🗑 删除': '🗑 刪除',
+    // 推荐模态
+    '🎯 找最佳 Option（基于实时市场数据评分排名）':
+      '🎯 找最佳 Option（基於即時市場資料評分排名）',
+    '📖 大佬策略模板（一键填表）': '📖 大佬策略模板（一鍵填表）',
+    '📖 价值哥 LEAPS': '📖 價值哥 LEAPS',
+    '💎 死多头股票替代': '💎 鐵多頭股票替代',
+    '🔄 Wheel 卖跌接货': '🔄 Wheel 賣跌接貨',
+    '💰 周收权利金': '💰 週收權利金',
+    '↔️ 区间震荡': '↔️ 區間震盪',
+    '1. 标的 Ticker': '1. 標的 Ticker',
+    '2. 你的方向看法': '2. 你的方向看法',
+    '3. 策略意图': '3. 策略意圖',
+    '4. 持仓时长': '4. 持倉時長',
+    '5. 风险偏好': '5. 風險偏好',
+    '📈 长期看涨': '📈 長期看漲',
+    '📉 长期看跌': '📉 長期看跌',
+    '↔️ 区间震荡 ': '↔️ 區間震盪 ',
+    '💰 收权利金': '💰 收權利金',
+    '🎯 准备接货（CSP）': '🎯 準備接貨（CSP）',
+    '📤 减仓（Covered Call）': '📤 減倉（Covered Call）',
+    '🚀 做多波动率（近期）': '🚀 做多波動率（近期）',
+    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS 股票替代（長期 Long Call）',
+    '2 天': '2 天', '1 周': '1 週', '2 周': '2 週', '1 月': '1 月', '2 月': '2 月', '3 月': '3 月',
+    '🛡 保守（Δ < 0.20）': '🛡 保守（Δ < 0.20）',
+    '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ 平衡（Δ 0.20-0.35）',
+    '🔥 激进（Δ > 0.35）': '🔥 激進（Δ > 0.35）',
+    '🛡 保守（Δ &lt; 0.20）': '🛡 保守（Δ &lt; 0.20）',
+    '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ 平衡（Δ 0.20-0.35）',
+    '🔥 激进（Δ &gt; 0.35）': '🔥 激進（Δ &gt; 0.35）',
+    '取消': '取消',
+    '🔍 找出最佳': '🔍 找出最佳',
+    '推荐 SPY, TSLA, NVDA, META 等高流动性标的': '推薦 SPY, TSLA, NVDA, META 等高流動性標的',
+    // 平仓 / 删除
+    '买回价 $/股': '買回價 $/股',
+    '用 Mark': '用 Mark',
+    '预计盈亏': '預計盈虧',
+    '确认平仓': '確認平倉',
+  },
+
+  en: {
+    // Title & info
+    '实时 P&L · 自动每 30 秒刷新': 'Real-time P&L · Auto refresh every 30 s',
+    'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>About this tool</b> (click × to collapse)',
+    'ℹ️ 数据存储 & 备份说明 — 点击展开': 'ℹ️ Data storage & backup info — click to expand',
+    'info_b1': '📥 Position data lives in <strong>your own browser</strong>\'s <span class="key">localStorage</span> — never uploaded to a server',
+    'info_b2': '👥 Others opening the same URL see <strong>their own</strong> data — yours is private',
+    'info_b3': '💾 Clearing cache / switching browser or device will lose data → click <strong>💾 Export Backup</strong> to save a JSON file',
+    'info_b4': '📂 To restore in a new browser → click <strong>📂 Import Backup</strong> and pick that JSON',
+    'info_b5': '🔗 <strong>Cross-device auto-sync</strong> (recommended on Chrome/Edge):<ul style="margin:4px 0"><li><strong>🔗 File Sync</strong>: pick a single JSON file (for web-only users)</li><li><strong>📁 Folder Sync</strong>: pick a Drive folder → reads/writes <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>fully compatible with the local Mac app 🌟</strong></li></ul>',
+    'info_b6': '👤 Set username (top-left) to distinguish data across browsers/devices',
+    '关于这个工具': 'About this tool',
+    '点 × 收起，以后从底部展开': 'Click × to collapse, expand from bottom later',
+    '持仓数据存在': 'Position data lives in',
+    '你自己浏览器': 'your own browser',
+    '的': "'s",
+    '，从不上传服务器': ", never uploaded to a server",
+    '其他人打开同一个网址，看到的是': "Others opening the same URL see",
+    '他们自己': 'their own',
+    '的数据，互相不可见': ' data — yours is private',
+    '清缓存 / 换浏览器 / 换设备会丢失': 'Clearing cache / switching browser or device loses data',
+    '→ 点': '→ Click',
+    '导出备份': 'Export Backup',
+    '存 JSON 文件': 'to save a JSON file',
+    '在新浏览器恢复 → 点': 'To restore in new browser → click',
+    '导入备份': 'Import Backup',
+    '选那个 JSON': 'and pick that JSON',
+    '跨设备自动同步': 'Cross-device auto-sync',
+    '推荐 Chrome/Edge': 'recommended on Chrome/Edge',
+    '文件同步': 'File Sync',
+    '：选单个 JSON 文件（适合纯网页用户）': ': single JSON file (for web-only users)',
+    '文件夹同步': 'Folder Sync',
+    '：选 Drive 文件夹 → 读写': ': pick Drive folder → reads/writes',
+    '与本地 Mac app 数据完全共享': 'fully compatible with local Mac app',
+    '改用户名（左上角）方便区分多浏览器/多设备的数据': 'Set username (top-left) to distinguish data across browsers/devices',
+    '本地用户': 'Local User',
+    '点击修改用户名（仅本地显示）': 'Click to change username (local only)',
+    // Summary cards
+    '收到权利金': 'Premium Received',
+    '当前买回成本': 'Current Buyback Cost',
+    '未实现盈亏': 'Unrealized P&L',
+    '已实现盈亏': 'Realized P&L',
+    '每日 Theta 收益': 'Daily Theta Income',
+    'hint_sold': 'One-time cash from selling options.<br>Your maximum possible profit',
+    'hint_mktval': 'Cost to buy back and close all positions now.<br>Lower is better',
+    'hint_pnl': 'Premium − buyback cost.<br>Unrealized gain/loss',
+    'hint_realized': 'Cumulative P&L from closed positions.<br>Money already in pocket',
+    'hint_theta': 'All else equal,<br>tomorrow\'s gain from time decay',
+    '卖出期权时一次性收到的现金。': 'One-time cash from selling options.',
+    '这是你的最大可能利润': 'Your maximum possible profit',
+    '现在花多少钱可以全部买回平仓。': 'Cost to buy back and close all positions now.',
+    '越低越好（你赚的越多）': 'Lower is better',
+    '权利金 − 买回成本。': 'Premium − buyback cost.',
+    '还没落袋的浮盈/浮亏': 'Unrealized gain/loss',
+    '已平仓持仓的累计盈亏。': 'Cumulative P&L from closed positions.',
+    '已经落袋的钱': 'Money already in pocket',
+    '如果其他都不变，': 'All else equal,',
+    '明天到账的钱（时间是空头的朋友）': "tomorrow's gain from time decay (time is a short's friend)",
+    // Position section
+    '持仓明细': 'Positions',
+    '勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释':
+      'Check to include in chart & suggestions. Green = Call, Orange = Put. Hover ⓘ for explanations',
+    '+ 新建持仓': '+ New Position',
+    '全选': 'Select All',
+    '全不选': 'Deselect All',
+    '隐藏已平仓': 'Hide Closed',
+    '显示已平仓': 'Show Closed',
+    '排序': 'Sort',
+    '📥 数据 ▾': '📥 Data ▾',
+    '🔗 同步 ▾': '🔗 Sync ▾',
+    '已选': 'Selected',
+    '隐藏': 'hidden',
+    '已平仓': 'closed',
+    '☑ 全选': '☑ Select All',
+    '☐ 全不选': '☐ Deselect All',
+    '⚡ 风险优先': '⚡ Risk priority',
+    '📋 交易顺序': '📋 Trade order',
+    '💰 盈亏 % · 高→低': '💰 P&L % · high→low',
+    '📉 盈亏 % · 低→高': '📉 P&L % · low→high',
+    '🎯 距行权 · 近→远': '🎯 Strike · near→far',
+    '🛡 距行权 · 远→近': '🛡 Strike · far→near',
+    '⏱️ 到期 · 近→远': '⏱️ Expiry · near→far',
+    '📅 到期 · 远→近': '📅 Expiry · far→near',
+    '🪙 权利金 · 大→小': '🪙 Premium · large→small',
+    '⚙️ Theta · 大→小': '⚙️ Theta · large→small',
+    '📊 持仓快照 CSV': '📊 Positions CSV',
+    '📈 历史 P&L CSV': '📈 History P&L CSV',
+    '💾 全量备份 JSON': '💾 Full backup JSON',
+    '📂 从 JSON 恢复': '📂 Restore from JSON',
+    'sync_file_opt': '🔗 Single JSON file<div class="dd-hint">Web-only format</div>',
+    'sync_dir_opt': '📁 Folder<div class="dd-hint">Compatible with local Mac app (positions.json + state.json)</div>',
+    '导出': 'Export',
+    '导入': 'Import',
+    '持仓快照 CSV': 'Positions CSV',
+    '历史 P&L CSV': 'History CSV',
+    '全量备份 JSON': 'Full Backup JSON',
+    '从 JSON 恢复': 'Restore from JSON',
+    '连接到': 'Connect to',
+    '单个 JSON 文件': 'Single JSON file',
+    '网页自用格式': 'Web-only format',
+    '文件夹': 'Folder',
+    '兼容本地 Mac app': 'Compatible with local Mac app',
+    '仅 Chrome / Edge / Brave': 'Chrome / Edge / Brave only',
+    '已连接': 'Connected',
+    '从源拉取最新': '🔄 Pull latest from source',
+    '把本地推到源': '📤 Push local to source',
+    '断开同步': '✂️ Disconnect',
+    '改连其他': 'Switch to',
+    '改连单个 JSON 文件': '🔗 another JSON file',
+    '改连文件夹': '📁 another folder',
+    '同步': 'Sync',
+    // Chart
+    '每日 P&L 走势': 'Daily P&L Trend',
+    '从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$':
+      'Daily mark-to-market P&L from earliest trade. X=date, Y=$',
+    // Sidebar buttons
+    '🎯 找最佳 Option': '🎯 Find Best Option',
+    '根据你的看法和风险偏好，从期权链推荐最佳合约':
+      'Recommends contracts based on your view & risk tolerance',
+    '📊 复盘报告': '📊 Review Report',
+    '看你已平仓持仓的胜率、最佳/最差交易':
+      'Win rate, best/worst trades of closed positions',
+    '操作建议': 'Action Items',
+    '点击每条展开看详细解释和操作选项': 'Click each card to expand details and actions',
+    // Position card
+    'Exp': 'Exp',
+    '浮盈亏': 'P&L',
+    '每日 Theta': 'Daily Theta',
+    '距行权价': 'Distance to Strike',
+    '安全': 'safe',
+    '行权': 'Strike',
+    '时间进度': 'Time progress',
+    '剩': 'left',
+    '天': 'days',
+    '平仓': 'Close',
+    '🗑 删除': '🗑 Delete',
+    // Recommendation modal
+    '🎯 找最佳 Option（基于实时市场数据评分排名）':
+      '🎯 Find Best Option (ranked by real-time market data)',
+    '📖 大佬策略模板（一键填表）': '📖 Strategy Presets (one-click fill)',
+    '📖 价值哥 LEAPS': '📖 Value Investor LEAPS',
+    '💎 死多头股票替代': '💎 Diamond Hands Stock Replacement',
+    '🔄 Wheel 卖跌接货': '🔄 Wheel (CSP)',
+    '💰 周收权利金': '💰 Weekly Premium',
+    '↔️ 区间震荡': '↔️ Range-bound',
+    '1. 标的 Ticker': '1. Ticker',
+    '2. 你的方向看法': '2. Direction',
+    '3. 策略意图': '3. Strategy Intent',
+    '4. 持仓时长': '4. Time Horizon',
+    '5. 风险偏好': '5. Risk Profile',
+    '📈 长期看涨': '📈 Long-term Bullish',
+    '📉 长期看跌': '📉 Long-term Bearish',
+    '↔️ 区间震荡 ': '↔️ Range-bound ',
+    '💰 收权利金': '💰 Collect Premium',
+    '🎯 准备接货（CSP）': '🎯 Cash-Secured Put',
+    '📤 减仓（Covered Call）': '📤 Covered Call',
+    '🚀 做多波动率（近期）': '🚀 Long Volatility (near-term)',
+    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS Stock Replacement',
+    '2 天': '2 days', '1 周': '1 week', '2 周': '2 weeks',
+    '1 月': '1 month', '2 月': '2 months', '3 月': '3 months',
+    '🛡 保守（Δ < 0.20）': '🛡 Conservative (Δ < 0.20)',
+    '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ Balanced (Δ 0.20-0.35)',
+    '🔥 激进（Δ > 0.35）': '🔥 Aggressive (Δ > 0.35)',
+    '🛡 保守（Δ &lt; 0.20）': '🛡 Conservative (Δ &lt; 0.20)',
+    '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ Balanced (Δ 0.20-0.35)',
+    '🔥 激进（Δ &gt; 0.35）': '🔥 Aggressive (Δ &gt; 0.35)',
+    '取消': 'Cancel',
+    '🔍 找出最佳': '🔍 Find Best',
+    '推荐 SPY, TSLA, NVDA, META 等高流动性标的': 'Try SPY, TSLA, NVDA, META for high liquidity',
+    // Close form
+    '买回价 $/股': 'Buyback $/share',
+    '用 Mark': 'Use Mark',
+    '预计盈亏': 'Est. P&L',
+    '确认平仓': 'Confirm Close',
+  },
+};
+
+let _lang = localStorage.getItem('lang') || _detectLang();
+
+function _detectLang() {
+  const b = (navigator.language || 'en').toLowerCase();
+  if (b.startsWith('zh-tw') || b.startsWith('zh-hk') || b.startsWith('zh-hant')) return 'zh_tw';
+  if (b.startsWith('zh')) return 'zh';
+  return 'en';
+}
+
+function t(s) {
+  if (_lang === 'zh' || !s) return s;
+  const dict = I18N[_lang];
+  return (dict && dict[s]) || s;
+}
+
+function setLang(lang) {
+  _lang = lang;
+  localStorage.setItem('lang', lang);
+  document.documentElement.lang =
+    lang === 'zh_tw' ? 'zh-TW' : lang === 'en' ? 'en' : 'zh-CN';
+  applyTranslations();
+  // 重新渲染所有动态 UI
+  if (window._currentData) renderAll(window._currentData);
+  // 更新选择器
+  document.querySelectorAll('.lang-selector button').forEach(b =>
+    b.classList.toggle('active', b.dataset.lang === lang));
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    if (key) el.innerHTML = t(key);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.dataset.i18nTitle;
+    if (key) el.title = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (key) el.placeholder = t(key);
+  });
+  // 触发依赖语言的动态元素重渲染
+  if (typeof updateHideClosedBtn === 'function') updateHideClosedBtn();
+}
+
+// 启动应用
+document.documentElement.lang =
+  _lang === 'zh_tw' ? 'zh-TW' : _lang === 'en' ? 'en' : 'zh-CN';
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.lang-selector button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === _lang);
+    b.onclick = () => setLang(b.dataset.lang);
+  });
+  applyTranslations();
+});
+
 // ── 主题（默认白天，localStorage 持久化）──────────────────────────────────
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
@@ -1607,7 +2044,7 @@ function toggleHideClosed() {
 function updateHideClosedBtn() {
   const btn = document.getElementById('hide-closed-btn');
   if (!btn) return;
-  btn.textContent = hideClosed ? '显示已平仓' : '隐藏已平仓';
+  btn.textContent = hideClosed ? t('显示已平仓') : t('隐藏已平仓');
   btn.style.borderColor = hideClosed ? 'var(--accent)' : '';
   btn.style.color = hideClosed ? 'var(--accent)' : '';
 }
@@ -3009,7 +3446,9 @@ applyInfoState();
 
 // ── 用户身份（仅本地展示，区分"这是哪台浏览器的数据"）─────────────────
 function loadUsername() {
-  return localStorage.getItem('username') || '本地用户';
+  const stored = localStorage.getItem('username');
+  if (stored) return stored;
+  return t('本地用户');
 }
 function saveUsername(name) {
   localStorage.setItem('username', name);

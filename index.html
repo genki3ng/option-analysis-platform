@@ -91,6 +91,12 @@
     font-size: 24px; font-weight: 600; margin-bottom: 6px;
     letter-spacing: -0.02em;
   }
+  .header h1 .brand-link {
+    color: inherit; text-decoration: none;
+    transition: color 0.15s;
+    display: inline-block;
+  }
+  .header h1 .brand-link:hover { color: var(--accent); }
   .header .sub {
     color: var(--sub); font-size: 13px;
     letter-spacing: -0.005em;
@@ -1527,7 +1533,7 @@
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="切换主题">
       <span class="t-icon">☀️</span>
     </button>
-    <h1>🏠 <span data-i18n="包租公">包租公</span></h1>
+    <h1><a href="/" class="brand-link" title="回到首页">🏠 <span data-i18n="包租公">包租公</span></a></h1>
     <div class="sub" id="sub" data-i18n="把你的股票租出去 · 每周收租 · 实时监控">把你的股票租出去 · 每周收租 · 实时监控</div>
   </div>
 

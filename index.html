@@ -2121,9 +2121,10 @@
 
   <div class="row">
     <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
-    <button class="opt-btn" data-group="risk" data-value="conservative" data-i18n-html="🛡 保守（Δ &lt; 0.20）">🛡 保守（Δ &lt; 0.20）</button>
-    <button class="opt-btn" data-group="risk" data-value="balanced" data-i18n-html="⚖️ 平衡（Δ 0.20-0.35）">⚖️ 平衡（Δ 0.20-0.35）</button>
-    <button class="opt-btn" data-group="risk" data-value="aggressive" data-i18n-html="🔥 激进（Δ &gt; 0.35）">🔥 激进（Δ &gt; 0.35）</button>
+    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative">🛡 保守</button>
+    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced">⚖️ 平衡</button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive">🔥 激进</button>
+    <span id="risk-hint" style="font-size:11px;color:var(--sub);margin-left:8px"></span>
   </div>
 
   <div class="submit-row">
@@ -4742,6 +4743,38 @@ function _applyRecSelection() {
     btn.classList.toggle('selected',
       _recSelection[btn.dataset.group] === btn.dataset.value);
   });
+  _updateRiskLabels();
+}
+
+// 根据意图动态显示 Delta 区间 — LEAPS 用 0.55-0.90，其它用 0.08-0.50
+const _RISK_BANDS = {
+  long_leaps: {
+    conservative: '0.75-0.90',
+    balanced:     '0.65-0.80',
+    aggressive:   '0.55-0.72',
+    hint: 'LEAPS：Δ 越高越接近正股，杠杆越低',
+  },
+  default: {
+    conservative: '0.08-0.20',
+    balanced:     '0.20-0.35',
+    aggressive:   '0.35-0.50',
+    hint: '卖期权：Δ 越低越安全，权利金越少',
+  },
+};
+function _updateRiskLabels() {
+  const intent = _recSelection.intent;
+  const bands = _RISK_BANDS[intent] || _RISK_BANDS.default;
+  const labels = {
+    conservative: `🛡 保守（Δ ${bands.conservative}）`,
+    balanced:     `⚖️ 平衡（Δ ${bands.balanced}）`,
+    aggressive:   `🔥 激进（Δ ${bands.aggressive}）`,
+  };
+  for (const [k, txt] of Object.entries(labels)) {
+    const el = document.getElementById(`risk-btn-${k}`);
+    if (el) el.textContent = txt;
+  }
+  const hintEl = document.getElementById('risk-hint');
+  if (hintEl) hintEl.textContent = bands.hint;
 }
 
 async function submitRec() {

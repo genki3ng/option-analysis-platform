@@ -1400,17 +1400,28 @@ def recommend(req: dict) -> dict:
     candidates = []
     for exp_str in target_exps:
         chain = fetch_chain(ticker, exp_str)
+
+        # Bug fix: 深度 ITM 期权 yfinance 经常不返回 IV → LEAPS 全被切空
+        # Fallback: 取本 chain 同 type 所有非零 IV 的中位数，缺 IV 的合约借用
+        same_type_ivs = [q["iv"] for (_, t), q in chain.items()
+                         if t == ("call" if is_call else "put") and q["iv"] > 0]
+        fallback_iv = (sorted(same_type_ivs)[len(same_type_ivs) // 2]
+                       if same_type_ivs else 0.30)
+
         for (strike, type_), q in chain.items():
             if (type_ == "call") != is_call:
                 continue
-            if q["bid"] <= 0 or q["mid"] <= 0 or q["iv"] <= 0:
-                continue  # 流动性差或无数据
+            # 只要求 bid+mid 有效；iv 缺失用 fallback（对 LEAPS 深度 ITM 很常见）
+            if q["bid"] <= 0 or q["mid"] <= 0:
+                continue
+            iv = q["iv"] if q["iv"] > 0 else fallback_iv
+            if iv <= 0:
+                continue  # 还是没有 IV（chain 完全无数据）
 
             days = (date.fromisoformat(exp_str) - today).days
             if days < 1:
                 continue
             T = days / 365.0
-            iv = q["iv"]
             mid = q["mid"]
 
             _, delta, theta, vega = price_option(

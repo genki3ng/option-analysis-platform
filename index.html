@@ -2279,6 +2279,24 @@ const I18N = {
     'hint_theta': '如果其他都不变，<br>明天到账的钱（时间是空头的朋友）',
     'sync_file_opt': '🔗 单个 JSON 文件<div class="dd-hint">网页自用格式</div>',
     'sync_dir_opt': '📁 文件夹<div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>',
+  
+    'verdict_expired_otm': '📦 完美收租：到期 OTM 自动归零，全额吃下 ${sold} 权利金。这就是包租公的理想结局。',
+    'verdict_expired_itm': '⚠️ 到期 ITM 被指派/结算。如果你做的是 CSP，现在是 Wheel 的下半场（卖 Covered Call）；如果是 Covered Call，正股被叫走，重新规划。',
+    'verdict_textbook': '📦 教科书级平仓 +{p}%。早平仓锁住 80%+ 利润，比贪到 100% 但翻车强太多。',
+    'verdict_solid': '📬 稳健平仓 +{p}%。50% 利润止盈是包租公经典规则，把剩下 50% 的尾部风险换成下一笔。',
+    'verdict_small_win': '🟢 小赚 +{p}%',
+    'verdict_small_win_early': '，但只走完 {h}% 的持有期，可能平早了——theta 衰减还没吃完。',
+    'verdict_tiny_win': '⚖️ 微利 +{p}%。基本是手续费 + 滑点的对价，下次值得检视是不是入场点位太靠近 strike。',
+    'verdict_small_loss': '🟡 小亏 {p}%。可承受范围；多半是 IV 上行或标的反向小动。',
+    'verdict_mid_loss': '🟠 中度亏损 {p}%。极可能是 Δ 偏高 + 标的反向跳。Short option 的不对称损益就这样咬人。',
+    'verdict_big_loss': '🚨 大额亏损 {p}%。这种规模通常是：跨财报 / 黑天鹅 / 持有到 gamma 爆炸期。建议下次做止损规则。',
+    'lesson_let_theta_run': '下次类似交易：可以让 theta 衰减再多吃一点再走（持有到 60-70%）。',
+    'lesson_100pct_ceiling': '100% 利润 = 你买回的代价比卖出的钱还多——这是平仓信号的天花板，做得对。',
+    'lesson_50pct_rule': '包租公经典规则：50% 利润止盈，回避尾部风险。',
+    'lesson_hard_stop': '设个硬性止损：损失到原权利金 200% 时强制平仓。早 cut 比死扛便宜。',
+    'lesson_delta_too_high': '入场 Δ 偏高 ({d})。下次同方向交易考虑 Δ 0.20-0.25 区间。',
+    'lesson_otm_held_full': '完美 OTM 到期但全程持有 = 把 gamma 风险吃满了。下次到 80% 利润可以提前 cut，避免最后几天剧烈波动。',
+    'lesson_csp_assigned': 'CSP 被指派 = 接货。检查现在的 cost basis 是否还合理，开始 Wheel 下半段（卖 Covered Call）。',
   },
 
   zh_tw: {
@@ -2515,6 +2533,40 @@ const I18N = {
     '请在 Terminal 运行：': '請在 Terminal 執行：',
     '简': '簡',
     '繁': '繁',
+  
+    '手动平仓': '手動平倉',
+    '到期 OTM 自动归零': '到期 OTM 自動歸零',
+    '到期 ITM 自动结算': '到期 ITM 自動結算',
+    '持有': '持有',
+    '计划': '計劃',
+    '卖': '賣',
+    '买回': '買回',
+    '复盘': '複盤',
+    '下次建议': '下次建議',
+    '持有期事件': '持有期事件',
+    '撤销平仓': '撤銷平倉',
+    '原权利金': '原權利金',
+    '开仓': '開倉',
+    '📊 标的财报（持有期内）': '📊 標的財報（持有期內）',
+    'verdict_expired_otm': '📦 完美收租：到期 OTM 自動歸零，全額吃下 ${sold} 權利金。這就是包租公的理想結局。',
+    'verdict_expired_itm': '⚠️ 到期 ITM 被指派/結算。如果你做的是 CSP，現在是 Wheel 的下半場（賣 Covered Call）；如果是 Covered Call，正股被叫走，重新規劃。',
+    'verdict_textbook': '📦 教科書級平倉 +{p}%。早平倉鎖住 80%+ 利潤，比貪到 100% 但翻車強太多。',
+    'verdict_solid': '📬 穩健平倉 +{p}%。50% 利潤止盈是包租公經典規則，把剩下 50% 的尾部風險換成下一筆。',
+    'verdict_small_win': '🟢 小賺 +{p}%',
+    'verdict_small_win_early': '，但只走完 {h}% 的持有期，可能平早了——theta 衰減還沒吃完。',
+    'verdict_tiny_win': '⚖️ 微利 +{p}%。基本是手續費 + 滑點的對價，下次值得檢視是不是入場點位太靠近 strike。',
+    'verdict_small_loss': '🟡 小虧 {p}%。可承受範圍；多半是 IV 上行或標的反向小動。',
+    'verdict_mid_loss': '🟠 中度虧損 {p}%。極可能是 Δ 偏高 + 標的反向跳。Short option 的不對稱損益就這樣咬人。',
+    'verdict_big_loss': '🚨 大額虧損 {p}%。這種規模通常是：跨財報 / 黑天鵝 / 持有到 gamma 爆炸期。建議下次做止損規則。',
+    'lesson_let_theta_run': '下次類似交易：可以讓 theta 衰減再多吃一點再走（持有到 60-70%）。',
+    'lesson_100pct_ceiling': '100% 利潤 = 你買回的代價比賣出的錢還多——這是平倉信號的天花板，做得對。',
+    'lesson_50pct_rule': '包租公經典規則：50% 利潤止盈，迴避尾部風險。',
+    'lesson_hard_stop': '設個硬性止損：損失到原權利金 200% 時強制平倉。早 cut 比死扛便宜。',
+    'lesson_delta_too_high': '入場 Δ 偏高 ({d})。下次同方向交易考慮 Δ 0.20-0.25 區間。',
+    'lesson_otm_held_full': '完美 OTM 到期但全程持有 = 把 gamma 風險吃滿了。下次到 80% 利潤可以提前 cut，避免最後幾天劇烈波動。',
+    'lesson_csp_assigned': 'CSP 被指派 = 接貨。檢查現在的 cost basis 是否還合理，開始 Wheel 下半段（賣 Covered Call）。',
+    '当日 5 分钟线': '當日 5 分鐘線',
+    '重新授权': '重新授權',
   },
 
   en: {
@@ -2843,6 +2895,40 @@ const I18N = {
     '请在 Terminal 运行：': 'Please run in Terminal:',
     '简': '简',
     '繁': '繁',
+  
+    '手动平仓': 'Manual close',
+    '到期 OTM 自动归零': 'Expired OTM (auto)',
+    '到期 ITM 自动结算': 'Expired ITM (auto)',
+    '持有': 'Held',
+    '计划': 'Planned',
+    '卖': 'Sold',
+    '买回': 'Bought back',
+    '复盘': 'Review',
+    '下次建议': 'Next time',
+    '持有期事件': 'Hold-period events',
+    '撤销平仓': 'Undo close',
+    '原权利金': 'Original premium',
+    '开仓': 'Opened',
+    '📊 标的财报（持有期内）': '📊 Earnings during hold period',
+    'verdict_expired_otm': '📦 Textbook landlord exit: expired OTM, full ${sold} premium kept. The ideal outcome.',
+    'verdict_expired_itm': '⚠️ Expired ITM → assigned/settled. If this was a CSP, you\'re in the second half of Wheel (sell Covered Call now). If Covered Call, shares called away — replan.',
+    'verdict_textbook': '📦 Textbook close +{p}%. Locking in 80%+ profit beats greed-induced blowups.',
+    'verdict_solid': '📬 Solid close +{p}%. 50% take-profit is a classic landlord rule — trade the remaining tail risk for the next contract.',
+    'verdict_small_win': '🟢 Small win +{p}%',
+    'verdict_small_win_early': ', but only {h}% of the hold period — likely too early; theta hasn\'t fully decayed.',
+    'verdict_tiny_win': '⚖️ Tiny win +{p}%. Basically pays for commissions + slippage — next time check if entry was too close to strike.',
+    'verdict_small_loss': '🟡 Small loss {p}%. Manageable; usually IV expansion or a small reverse move.',
+    'verdict_mid_loss': '🟠 Mid-size loss {p}%. Most likely high Δ + an underlying reverse jump. Short option asymmetry biting.',
+    'verdict_big_loss': '🚨 Big loss {p}%. This scale usually = earnings cross / black swan / held into gamma blow-up zone. Set a stop-loss rule next time.',
+    'lesson_let_theta_run': 'Next similar trade: let theta decay a bit more (hold to 60-70%).',
+    'lesson_100pct_ceiling': '100% profit = you\'d be paying more to buy back than you sold for — this is the ceiling signal. Well played.',
+    'lesson_50pct_rule': 'Classic landlord rule: 50% take-profit, sidestep the tail risk.',
+    'lesson_hard_stop': 'Set a hard stop: force close at 200% of premium loss. Cutting early beats holding through pain.',
+    'lesson_delta_too_high': 'Entry Δ was high ({d}). Next time on the same direction, consider Δ 0.20-0.25.',
+    'lesson_otm_held_full': 'Perfect OTM expiry but holding the whole way = ate full gamma risk. Next time consider early-cut at 80% profit to avoid late-day chop.',
+    'lesson_csp_assigned': 'CSP assigned = you got the shares. Check whether the cost basis still makes sense; start Wheel second half (sell Covered Call).',
+    '当日 5 分钟线': 'Today 5-min line',
+    '重新授权': 'Re-authorize',
   },
 };
 
@@ -3265,7 +3351,7 @@ function renderTickers(tickers, intradayMap) {
         ${points.length >= 2 ? `
           <div class="tk-times">
             <span>${points[0].t}</span>
-            <span>当日 5 分钟线</span>
+            <span>${t('当日 5 分钟线')}</span>
             <span>${points[points.length-1].t}</span>
           </div>
         ` : ''}
@@ -3655,76 +3741,76 @@ function _closedReview(p) {
   const hold_pct = (days_held != null && planned)
     ? Math.round(days_held / planned * 100) : null;
 
-  // ── 复盘评价
+  // ── 复盘评价 (i18n via t())
   let verdict = '', verdictTone = '';
+  const pnlStr = pnl_pct.toFixed(0);
   if (reason === 'expired_otm') {
-    verdict = `📦 完美收租：到期 OTM 自动归零，全额吃下 $${fmt(p.sold, 0)} 权利金。这就是包租公的理想结局。`;
+    verdict = t('verdict_expired_otm').replace('{sold}', fmt(p.sold, 0));
     verdictTone = 'good';
   } else if (reason === 'expired_itm') {
-    verdict = `⚠️ 到期 ITM 被指派/结算。如果你做的是 CSP，现在是 Wheel 的下半场（卖 Covered Call）；如果是 Covered Call，正股被叫走，重新规划。`;
+    verdict = t('verdict_expired_itm');
     verdictTone = 'warn';
   } else if (pnl_pct >= 80) {
-    verdict = `📦 教科书级平仓 +${pnl_pct.toFixed(0)}%。早平仓锁住 80%+ 利润，比贪到 100% 但翻车强太多。`;
+    verdict = t('verdict_textbook').replace('{p}', pnlStr);
     verdictTone = 'good';
   } else if (pnl_pct >= 50) {
-    verdict = `📬 稳健平仓 +${pnl_pct.toFixed(0)}%。50% 利润止盈是包租公经典规则，把剩下 50% 的尾部风险换成下一笔。`;
+    verdict = t('verdict_solid').replace('{p}', pnlStr);
     verdictTone = 'good';
   } else if (pnl_pct >= 20) {
-    verdict = `🟢 小赚 +${pnl_pct.toFixed(0)}%`
-            + (hold_pct != null && hold_pct < 50
-               ? `，但只走完 ${hold_pct}% 的持有期，可能平早了——theta 衰减还没吃完。`
-               : `。`);
+    const base = t('verdict_small_win').replace('{p}', pnlStr);
+    verdict = (hold_pct != null && hold_pct < 50)
+      ? base + t('verdict_small_win_early').replace('{h}', hold_pct)
+      : base + '。';
     verdictTone = 'good';
   } else if (pnl_pct >= 0) {
-    verdict = `⚖️ 微利 +${pnl_pct.toFixed(0)}%。基本是手续费 + 滑点的对价，下次值得检视是不是入场点位太靠近 strike。`;
+    verdict = t('verdict_tiny_win').replace('{p}', pnlStr);
     verdictTone = '';
   } else if (pnl_pct >= -50) {
-    verdict = `🟡 小亏 ${pnl_pct.toFixed(0)}%。可承受范围；多半是 IV 上行或标的反向小动。`;
+    verdict = t('verdict_small_loss').replace('{p}', pnlStr);
     verdictTone = 'warn';
   } else if (pnl_pct >= -200) {
-    verdict = `🟠 中度亏损 ${pnl_pct.toFixed(0)}%。极可能是 Δ 偏高 + 标的反向跳。Short option 的不对称损益就这样咬人。`;
+    verdict = t('verdict_mid_loss').replace('{p}', pnlStr);
     verdictTone = 'warn';
   } else {
-    verdict = `🚨 大额亏损 ${pnl_pct.toFixed(0)}%。这种规模通常是：跨财报 / 黑天鹅 / 持有到 gamma 爆炸期。建议下次做止损规则。`;
+    verdict = t('verdict_big_loss').replace('{p}', pnlStr);
     verdictTone = 'danger';
   }
 
   // ── 下次建议
   const lessons = [];
   if (realized >= 0 && hold_pct != null && hold_pct < 40) {
-    lessons.push('下次类似交易：可以让 theta 衰减再多吃一点再走（持有到 60-70%）。');
+    lessons.push(t('lesson_let_theta_run'));
   }
   if (pnl_pct >= 100) {
-    lessons.push('100% 利润 = 你买回的代价比卖出的钱还多——这是平仓信号的天花板，做得对。');
+    lessons.push(t('lesson_100pct_ceiling'));
   }
   if (pnl_pct >= 50 && pnl_pct < 100) {
-    lessons.push('包租公经典规则：50% 利润止盈，回避尾部风险。');
+    lessons.push(t('lesson_50pct_rule'));
   }
   if (pnl_pct < -50) {
-    lessons.push('设个硬性止损：损失到原权利金 200% 时强制平仓。早 cut 比死扛便宜。');
+    lessons.push(t('lesson_hard_stop'));
   }
   if (pnl_pct < 0 && p.type === 'call' && p.delta && Math.abs(p.delta) > 0.35) {
-    lessons.push(`入场 Δ 偏高 (${p.delta?.toFixed(2)})。下次同方向交易考虑 Δ 0.20-0.25 区间。`);
+    lessons.push(t('lesson_delta_too_high').replace('{d}', p.delta?.toFixed(2)));
   }
   if (reason === 'expired_otm') {
-    lessons.push('完美 OTM 到期但全程持有 = 把 gamma 风险吃满了。下次到 80% 利润可以提前 cut，避免最后几天剧烈波动。');
+    lessons.push(t('lesson_otm_held_full'));
   }
   if (reason === 'expired_itm' && p.type === 'put') {
-    lessons.push('CSP 被指派 = 接货。检查现在的 cost basis 是否还合理，开始 Wheel 下半段（卖 Covered Call）。');
+    lessons.push(t('lesson_csp_assigned'));
   }
 
-  // ── 关键事件（仅用持仓上现成的字段）
+  // ── 关键事件
   const events = [];
   if (openDate) {
-    events.push({ date: openDate, text: `开仓 · 卖 $${fmt(p.sell_price, 2)}` });
+    events.push({ date: openDate, text: `${t('开仓')} · ${t('卖')} $${fmt(p.sell_price, 2)}` });
   }
   if (p.earnings_date_during_hold) {
-    events.push({ date: p.earnings_date_during_hold,
-                  text: '📊 标的财报（持有期内）' });
+    events.push({ date: p.earnings_date_during_hold, text: t('📊 标的财报（持有期内）') });
   }
   if (p.close_date) {
     events.push({ date: p.close_date,
-                  text: `平仓 · 买回 $${fmt(p.close_price, 2)} (${signed(pnl_pct, 0)}%)` });
+                  text: `${t('平仓')} · ${t('买回')} $${fmt(p.close_price, 2)} (${signed(pnl_pct, 0)}%)` });
   }
 
   return {
@@ -3737,10 +3823,10 @@ function _closedReview(p) {
 function renderClosedPos(p, checked, typeCls, uncheckedCls) {
   const realized = (p.sell_price - (p.close_price || 0)) * p.contracts * 100;
   const reasonLabel = ({
-    manual:      '手动平仓',
-    expired_otm: '到期 OTM 自动归零',
-    expired_itm: '到期 ITM 自动结算',
-  })[p.close_reason] || '已平仓';
+    manual:      t('手动平仓'),
+    expired_otm: t('到期 OTM 自动归零'),
+    expired_itm: t('到期 ITM 自动结算'),
+  })[p.close_reason] || t('已平仓');
   const review = _closedReview(p);
 
   // verdict tint color
@@ -3758,8 +3844,8 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
   const lessonsHtml = review.lessons.map(l => `<li>${l}</li>`).join('');
 
   const holdLine = review.days_held != null
-    ? `${reasonLabel} · 持有 ${review.days_held} 天${review.planned ? ` / 计划 ${review.planned}` : ''} · 平仓 ${p.close_date}`
-    : `${reasonLabel} · 平仓 ${p.close_date}`;
+    ? `${reasonLabel} · ${t('持有')} ${review.days_held} ${t('天')}${review.planned ? ` / ${t('计划')} ${review.planned}` : ''} · ${t('平仓')} ${p.close_date}`
+    : `${reasonLabel} · ${t('平仓')} ${p.close_date}`;
 
   return `
     <div class="pos closed ${uncheckedCls}">
@@ -3770,7 +3856,7 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
           <span class="strike">$${fmt(p.strike, 0)}</span>
           <span class="type-badge ${typeCls}">${p.type}</span>
         </div>
-        <span class="pos-status ${realized >= 0 ? 'good' : 'danger'}">已平仓</span>
+        <span class="pos-status ${realized >= 0 ? 'good' : 'danger'}">${t('已平仓')}</span>
         <span class="pos-pct ${colorOf(realized)}">${signed(realized, 0, '$')}</span>
       </div>
       <div class="pos-meta">${holdLine}</div>
@@ -3778,30 +3864,30 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
       <div class="pos-hero">
         <div class="stat">
           <span class="v ${colorOf(realized)}">${signed(realized, 0, '$')}</span>
-          <span class="l">已实现盈亏 · ${signed(p.pnl_pct, 0)}%</span>
+          <span class="l">${t('已实现盈亏')} · ${signed(p.pnl_pct, 0)}%</span>
         </div>
         <div class="stat">
           <span class="v">$${fmt(p.sold)}</span>
-          <span class="l">原权利金</span>
+          <span class="l">${t('原权利金')}</span>
         </div>
       </div>
 
       <div class="closed-review">
         <div class="cr-section">
           <div class="cr-trade-line">
-            卖 $${fmt(p.sell_price, 2)}  →  买回 $${fmt(p.close_price, 2)}
+            ${t('卖')} $${fmt(p.sell_price, 2)}  →  ${t('买回')} $${fmt(p.close_price, 2)}
             <span class="change ${colorOf(realized)}">${trendArrow} ${signed(p.pnl_pct, 0)}%</span>
           </div>
         </div>
 
         <div class="cr-section">
-          <div class="cr-label">🔍 <span>复盘</span></div>
+          <div class="cr-label">🔍 <span>${t('复盘')}</span></div>
           <div class="cr-body" style="color:${toneColor}">${review.verdict}</div>
         </div>
 
         ${review.lessons.length > 0 ? `
           <div class="cr-section">
-            <div class="cr-label">💡 <span>下次建议</span></div>
+            <div class="cr-label">💡 <span>${t('下次建议')}</span></div>
             <ul class="cr-body" style="padding-left:18px;margin:0">
               ${lessonsHtml}
             </ul>
@@ -3810,13 +3896,13 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
 
         ${review.events.length > 0 ? `
           <div class="cr-section">
-            <div class="cr-label">🗓 <span>持有期事件</span></div>
+            <div class="cr-label">🗓 <span>${t('持有期事件')}</span></div>
             <div class="cr-events">${eventsHtml}</div>
           </div>
         ` : ''}
 
         <div class="cr-actions">
-          <button class="cr-undo" onclick="reopenPos('${p.id}')">撤销平仓</button>
+          <button class="cr-undo" onclick="reopenPos('${p.id}')">${t('撤销平仓')}</button>
         </div>
       </div>
     </div>
@@ -4243,7 +4329,7 @@ async function _initSync() {
         _updateSyncBtn(false);
         const btn = document.getElementById('sync-btn');
         if (btn) {
-          btn.textContent = '🔗 重新授权 ' + dh.name + '/';
+          btn.textContent = '🔗 ' + t('重新授权') + ' ' + dh.name + '/';
           btn.onclick = async () => {
             const r = await dh.requestPermission({ mode: 'readwrite' });
             if (r === 'granted') {
@@ -4269,7 +4355,7 @@ async function _initSync() {
         _updateSyncBtn(false);
         const btn = document.getElementById('sync-btn');
         if (btn) {
-          btn.textContent = '🔗 重新授权 ' + handle.name;
+          btn.textContent = '🔗 ' + t('重新授权') + ' ' + handle.name;
           btn.onclick = async () => {
             if (await _fsaHasPerm(handle)) {
               _syncHandle = handle;
@@ -5965,9 +6051,10 @@ function renderAll(d) {
   document.getElementById('positions').innerHTML =
     visiblePos.map(renderPosition).join('');
   const closedCount = d.positions.filter(p => p.closed).length;
-  const hiddenNote = hideClosed && closedCount ? ` · 隐藏 ${closedCount} 已平仓` : '';
+  const hiddenNote = hideClosed && closedCount
+    ? ` · ${t('隐藏')} ${closedCount} ${t('已平仓')}` : '';
   document.getElementById('sel-count').textContent =
-    `已选 ${selectedIds.size}/${d.positions.length}${hiddenNote}`;
+    `${t('已选')} ${selectedIds.size}/${d.positions.length}${hiddenNote}`;
 
   // 同步 select 元素的当前值
   const selEl = document.getElementById('sort-select');

@@ -721,6 +721,62 @@
   }
   .rec-btn-large .rec-text { flex: 1; min-width: 0; padding-right: 28px; }
 
+  /* 复用上次推荐 — 紧凑次级按钮，仅在有 last_query 时可见 */
+  .rerun-btn {
+    width: 100%;
+    margin-top: 10px;
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    font-family: inherit;
+    letter-spacing: -0.005em;
+  }
+  .rerun-btn:hover {
+    border-color: var(--accent);
+    background: var(--card3);
+  }
+  .rerun-btn::before {
+    content: '↻';
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .rerun-btn::after {
+    content: '→';
+    position: absolute;
+    right: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 13px; color: var(--sub);
+    transition: transform 0.15s, color 0.15s;
+  }
+  .rerun-btn:hover::after {
+    color: var(--accent);
+    transform: translateY(-50%) translateX(2px);
+  }
+  .rerun-btn .rr-text { flex: 1; min-width: 0; padding-right: 18px; }
+  .rerun-btn .rr-label {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+  .rerun-btn .rr-criteria {
+    font-size: 13px; color: var(--text);
+    font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rerun-btn .rr-criteria .ticker {
+    color: var(--accent); font-weight: 600;
+    margin-right: 6px;
+  }
+
   /* 复盘报告按钮 — 次级，描边款，扁平 */
   .review-btn {
     width: 100%;
@@ -1805,6 +1861,7 @@
             <div class="rec-sub" data-i18n="房东视角，给每张合约打分排序">房东视角，给每张合约打分排序</div>
           </div>
         </button>
+        <button class="rerun-btn" id="rerun-btn" onclick="rerunLastRec()" style="display:none"></button>
         <button class="review-btn" onclick="showReview()" style="margin-top:10px">
           <div class="review-text">
             <div class="review-title" data-i18n="复盘报告">复盘报告</div>
@@ -2058,6 +2115,7 @@ const I18N = {
     // 建议侧栏
     '包租公推荐指数': '包租公推薦指數',
     '房东视角，给每张合约打分排序': '房東視角，給每張合約打分排序',
+    '复用上次': '複用上次',
     '🎯 找最佳 Option': '🎯 找最佳 Option',
     '找最佳 Option': '找最佳 Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
@@ -2349,6 +2407,7 @@ const I18N = {
     // Sidebar buttons
     '包租公推荐指数': 'Landlord Rec Index',
     '房东视角，给每张合约打分排序': "Landlord's-eye view — every contract scored & ranked",
+    '复用上次': 'Rerun last',
     '🎯 找最佳 Option': '🎯 Find Best Option',
     '找最佳 Option': 'Find Best Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
@@ -4267,6 +4326,58 @@ function showPresetNote(note) {
   el.textContent = '💡 ' + note;
 }
 
+// ── 复用上次推荐 ─────────────────────────────────────────────────────
+const _INTENT_LABEL = {
+  premium: '收权利金', csp: 'CSP', covered_call: 'Covered Call',
+  long_vol: 'Long Vol', long_leaps: 'LEAPS',
+};
+const _DIRECTION_LABEL = {
+  bullish: '看涨', bearish: '看跌', neutral: '区间',
+};
+const _RISK_LABEL = {
+  conservative: '保守', balanced: '平衡', aggressive: '激进',
+};
+
+function renderRerunBtn() {
+  const btn = document.getElementById('rerun-btn');
+  if (!btn) return;
+  const ticker = localStorage.getItem('rec_last_ticker');
+  const choiceStr = localStorage.getItem('rec_last_choice');
+  if (!ticker || !choiceStr) {
+    btn.style.display = 'none';
+    return;
+  }
+  let choice;
+  try { choice = JSON.parse(choiceStr); } catch (e) { btn.style.display = 'none'; return; }
+  const intent = _INTENT_LABEL[choice.intent] || choice.intent;
+  const dir    = _DIRECTION_LABEL[choice.direction] || choice.direction;
+  const risk   = _RISK_LABEL[choice.risk] || choice.risk;
+  btn.innerHTML = `
+    <div class="rr-text">
+      <div class="rr-label" data-i18n="复用上次">复用上次</div>
+      <div class="rr-criteria">
+        <span class="ticker">${ticker}</span>
+        ${dir} · ${intent} · ${choice.timeframe}d · ${risk}
+      </div>
+    </div>
+  `;
+  btn.style.display = 'flex';
+}
+
+async function rerunLastRec() {
+  const ticker = localStorage.getItem('rec_last_ticker');
+  const choiceStr = localStorage.getItem('rec_last_choice');
+  if (!ticker || !choiceStr) return;
+  let choice; try { choice = JSON.parse(choiceStr); } catch (e) { return; }
+  Object.assign(_recSelection, choice);
+  showRec();
+  document.getElementById('rec-ticker').value = ticker;
+  // 等模态展开完成，立刻提交
+  setTimeout(() => submitRec(), 60);
+}
+
+document.addEventListener('DOMContentLoaded', renderRerunBtn);
+
 function showRec() {
   const form = document.getElementById('rec-form');
   const bd = document.getElementById('rec-backdrop');
@@ -4314,6 +4425,7 @@ async function submitRec() {
   };
   localStorage.setItem('rec_last_ticker', ticker);
   localStorage.setItem('rec_last_choice', JSON.stringify(_recSelection));
+  renderRerunBtn();
 
   const out = document.getElementById('rec-result');
   out.innerHTML = '<div class="loading">🔍 抓取期权链 + 评分中（5-15 秒）...</div>';

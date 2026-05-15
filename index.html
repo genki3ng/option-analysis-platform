@@ -789,6 +789,43 @@
     background: #F0C778;
     transform: translateY(-1px);
   }
+
+  /* 维护模式 — 置灰，不可点击的视觉 */
+  .rec-btn-large.maintenance {
+    background: var(--card2);
+    color: var(--sub);
+    border-color: var(--line);
+    cursor: not-allowed;
+  }
+  .rec-btn-large.maintenance:hover {
+    background: var(--card2);
+    transform: none;
+  }
+  .rec-btn-large.maintenance::after {
+    content: '⏸';
+    color: var(--sub);
+    font-size: 14px;
+  }
+  .rec-btn-large.maintenance:hover::after {
+    transform: translateY(-50%);
+  }
+  .rec-btn-large.maintenance .rec-title {
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .rec-btn-large.maintenance .maint-tag {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(230,184,106,0.10);
+    border: 1px solid rgba(230,184,106,0.30);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
   .rec-btn-large:hover::after {
     transform: translateY(-50%) translateX(2px);
   }
@@ -2026,10 +2063,13 @@
 
     <div class="side">
       <div class="card">
-        <button class="rec-btn-large" onclick="showRec()">
+        <button class="rec-btn-large maintenance" onclick="showRecMaintenance()" title="数据源维护中">
           <div class="rec-text">
-            <div class="rec-title" data-i18n="包租公推荐指数">包租公推荐指数</div>
-            <div class="rec-sub" data-i18n="房东视角，给每张合约打分排序">房东视角，给每张合约打分排序</div>
+            <div class="rec-title">
+              <span data-i18n="包租公推荐指数">包租公推荐指数</span>
+              <span class="maint-tag" data-i18n="维护中">维护中</span>
+            </div>
+            <div class="rec-sub" data-i18n="数据源切换中，预计 5/17 恢复">数据源切换中，预计 5/17 恢复</div>
           </div>
         </button>
         <button class="rerun-btn" id="rerun-btn" onclick="rerunLastRec()" style="display:none"></button>
@@ -2287,6 +2327,8 @@ const I18N = {
     // 建议侧栏
     '包租公推荐指数': '包租公推薦指數',
     '房东视角，给每张合约打分排序': '房東視角，給每張合約打分排序',
+    '维护中': '維護中',
+    '数据源切换中，预计 5/17 恢复': '資料源切換中，預計 5/17 恢復',
     '复用上次': '複用上次',
     '🎯 找最佳 Option': '🎯 找最佳 Option',
     '找最佳 Option': '找最佳 Option',
@@ -2579,6 +2621,8 @@ const I18N = {
     // Sidebar buttons
     '包租公推荐指数': 'Landlord Rec Index',
     '房东视角，给每张合约打分排序': "Landlord's-eye view — every contract scored & ranked",
+    '维护中': 'Down for maintenance',
+    '数据源切换中，预计 5/17 恢复': 'Switching data source — back online ~May 17',
     '复用上次': 'Rerun last',
     '🎯 找最佳 Option': '🎯 Find Best Option',
     '找最佳 Option': 'Find Best Option',
@@ -4671,7 +4715,28 @@ const _RISK_LABEL = {
   conservative: '保守', balanced: '平衡', aggressive: '激进',
 };
 
+// ── 维护模式开关 ─────────────────────────────────────────────────────
+// 上游数据源（Yahoo）限流严重，Schwab API 审批通过后撤掉这个开关。
+const REC_MAINTENANCE = {
+  active: true,
+  until: '2026-05-17',
+  reason: '上游 Yahoo Finance 数据源被限流，正在切换到 Schwab API。预计 5/17 恢复。'
+};
+
+function showRecMaintenance() {
+  alert(
+    '🏠 包租公推荐指数 · 维护中\n\n' +
+    REC_MAINTENANCE.reason + '\n\n' +
+    '期间持仓监控、复盘报告、笔记等功能不受影响。'
+  );
+}
+
 function renderRerunBtn() {
+  if (REC_MAINTENANCE.active) {
+    const btn = document.getElementById('rerun-btn');
+    if (btn) btn.style.display = 'none';
+    return;
+  }
   const btn = document.getElementById('rerun-btn');
   if (!btn) return;
   const ticker = localStorage.getItem('rec_last_ticker');

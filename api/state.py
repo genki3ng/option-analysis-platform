@@ -230,27 +230,33 @@ def _fetch_chain_direct(ticker: str, expiry_str: str) -> Dict:
     return out
 
 
+_cache_chain_ts: Dict[tuple, float] = {}   # chain 缓存时间戳
+CHAIN_CACHE_TTL = 30 * 60   # 30 分钟内成功的 chain 直接复用，避开 Yahoo 限流抖动
+
 def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     """
     {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
 
-    主路径：直接调 Yahoo JSON API，用 curl_cffi 伪装 Chrome
-    备用：yfinance（如果 direct 路径失败）
-    - 最多 retry 2 次，1s 间隔
+    主路径：直接调 Yahoo JSON API + curl_cffi
+    备用：yfinance
+    - 30 分钟 TTL：成功拿到的 chain 反复用，不再被 Yahoo 折磨
     - 仅缓存非空结果
     """
+    import time as _t
     key = (ticker, expiry_str)
-    if key in _cache_chain and _cache_chain[key]:
-        return _cache_chain[key]
+    cached = _cache_chain.get(key)
+    cached_ts = _cache_chain_ts.get(key, 0)
+    if cached and (_t.time() - cached_ts) < CHAIN_CACHE_TTL:
+        return cached
 
     # ── 1. Direct Yahoo API + curl_cffi（最可控）
     for attempt in range(2):
         out = _fetch_chain_direct(ticker, expiry_str)
         if out:
             _cache_chain[key] = out
+            _cache_chain_ts[key] = _t.time()
             return out
         if attempt == 0:
-            import time as _t
             _t.sleep(1.0)
 
     # ── 2. yfinance 兜底（curl_cffi session 偶尔会被它绕开但万一有用）
@@ -277,6 +283,7 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
                 }
         if out:
             _cache_chain[key] = out
+            _cache_chain_ts[key] = _t.time()
             return out
     except Exception:
         pass

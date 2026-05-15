@@ -1,52 +1,32 @@
-# Option Analysis Platform — Web
+# 🏠 包租公 · Landlord
 
-A browser-based dashboard for monitoring short option positions.
-Data lives in your browser's localStorage — fully private, no server-side storage.
+**把你的股票"租"出去，每周收"租金"** —— 期权小白也能上手的 Covered Call / CSP / Wheel 可视化工具。
+
+**Live:** https://trade.congyangwang.com
+**Intro:** https://trade.congyangwang.com/intro
 
 ## Stack
-- **Frontend**: vanilla HTML/CSS/JS, Chart.js via CDN
-- **Backend**: single Python serverless function (`/api/state`)
-- **Market data**: yfinance (Yahoo Finance)
-- **Deploy**: Vercel
+- **Frontend:** vanilla HTML/CSS/JS, Chart.js via CDN
+- **Backend:** Python serverless function (`/api/state`)
+- **Market data:** yfinance (实时 chain) + Massive API (30 天历史价位)
+- **Deploy:** Vercel
 
-## Local dev
+## 核心功能
 
-```bash
-# Install Vercel CLI (one-time)
-npm i -g vercel
+- 📊 实时持仓监控（Greeks、P&L、损益曲线）
+- 🎯 AI 期权推荐（5 步问答 + 5 大佬策略预设）
+- ☀️ 每日早安 Brief（市场 / 持仓 / 风险预警）
+- 📝 Trade Journal 笔记 + 公开分享链接
+- 📚 25 个期权术语小白指南（ITM/OTM/Wheel/LEAPS）
+- 🔗 跨设备同步（File System Access API）
+- 🌍 简中 / 繁中 / English · ☀️ 白天 / 🌙 夜间
 
-# Run locally
-vercel dev
-# → http://localhost:3000
-```
+## 隐私
 
-Or just open `index.html` in a browser — the API will fail (no `/api/state`),
-but you can see the UI shell.
+- 数据全存浏览器 localStorage
+- Vercel function 是无状态的（不存任何 PII）
+- 其他人打开同一网址 → 看到他们自己的数据
 
-## Deploy to Vercel
+## ⚠️ 免责
 
-1. Push this repo to GitHub
-2. Go to [vercel.com/new](https://vercel.com/new)
-3. Import your repo
-4. Click Deploy (defaults work)
-
-Done — get a URL like `your-project.vercel.app`.
-
-## How it works
-
-- **`index.html`**: SPA. Stores positions in `localStorage`. Every 30 s
-  POSTs all positions to `/api/state` to get computed greeks, P&L, history.
-- **`api/state.py`**: Stateless. Takes positions list, fetches Yahoo data,
-  computes Black-Scholes greeks, generates suggestions, returns JSON.
-
-## Privacy
-
-- No database, no analytics, no tracking
-- Each user's positions live only in their own browser
-- The server never sees any user's data persistently (only computes on each request)
-
-## Limitations
-
-- Vercel hobby plan: 30 s function timeout (should be plenty)
-- yfinance scrape-based; Yahoo may rate-limit heavy use
-- localStorage = lose data if you clear browser cache (export CSV regularly!)
+**仅供学习研究，不构成投资建议。** 期权交易有亏损全部本金甚至更多的风险。

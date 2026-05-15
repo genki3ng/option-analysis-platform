@@ -2297,6 +2297,15 @@ const I18N = {
     'lesson_delta_too_high': '入场 Δ 偏高 ({d})。下次同方向交易考虑 Δ 0.20-0.25 区间。',
     'lesson_otm_held_full': '完美 OTM 到期但全程持有 = 把 gamma 风险吃满了。下次到 80% 利润可以提前 cut，避免最后几天剧烈波动。',
     'lesson_csp_assigned': 'CSP 被指派 = 接货。检查现在的 cost basis 是否还合理，开始 Wheel 下半段（卖 Covered Call）。',
+  
+    'review_verdict_small_win_big_loss': '⚠️ 注意"赚小亏大"模式 — 胜率虽高，但 1 笔亏损吃掉多笔小赢',
+    'review_verdict_excellent': '🏆 出色 — 胜率高且总盈利',
+    'review_verdict_good': '✅ 不错 — 整体盈利',
+    'review_verdict_low_wr_big_wins': '🟡 不错 — 胜率偏低但单胜大',
+    'review_verdict_high_wr_negative': '🟠 警惕 — 胜率高但单亏吃掉总盈',
+    'review_verdict_needs_adjust': '🔴 需调整 — 整体亏损',
+    'review_tip_html': '💡 复盘建议：胜率高+盈亏比 &lt; 1 时容易"赚小亏大"（典型 short premium 翻车）；<br>胜率低但盈亏比 &gt; 2 是趋势/Long 策略常见模式（小亏多胜大）。',
+    'review_disclaimer_html': '⚠️ <strong>仅供个人复盘参考，不构成投资建议</strong> · For educational use only.',
   },
 
   zh_tw: {
@@ -2574,6 +2583,40 @@ const I18N = {
     '📅 时间相关': '📅 時間相關',
     '🛠 常见策略': '🛠 常見策略',
     '🎬 操作与事件': '🎬 操作與事件',
+  
+    '数据未加载': '資料未載入',
+    '还没有平仓的持仓 — 平仓后这里会显示统计。': '還沒有平倉的持倉 — 平倉後這裡會顯示統計。',
+    'review_verdict_small_win_big_loss': '⚠️ 注意「賺小虧大」模式 — 勝率雖高，但 1 筆虧損吃掉多筆小贏',
+    'review_verdict_excellent': '🏆 出色 — 勝率高且總盈利',
+    'review_verdict_good': '✅ 不錯 — 整體盈利',
+    'review_verdict_low_wr_big_wins': '🟡 不錯 — 勝率偏低但單勝大',
+    'review_verdict_high_wr_negative': '🟠 警惕 — 勝率高但單虧吃掉總盈',
+    'review_verdict_needs_adjust': '🔴 需調整 — 整體虧損',
+    '共': '共',
+    '笔平仓，累计': '筆平倉，累計',
+    '总平仓数': '總平倉數',
+    '胜率': '勝率',
+    '总实现盈亏': '總實現盈虧',
+    '平均盈（每笔）': '平均盈（每筆）',
+    '盈利金额': '盈利金額',
+    '盈利': '盈利',
+    '笔': '筆',
+    '平均亏（每笔）': '平均虧（每筆）',
+    '亏损金额': '虧損金額',
+    '亏损': '虧損',
+    '仅 1 笔': '僅 1 筆',
+    '盈亏比 (avg)': '盈虧比 (avg)',
+    '✓ 胜>亏': '✓ 勝>虧',
+    '⚠️ 单亏>单胜': '⚠️ 單虧>單勝',
+    '最佳交易：': '最佳交易：',
+    '最差交易：': '最差交易：',
+    '平': '平',
+    '卖出 → 平仓': '賣出 → 平倉',
+    '张数': '張數',
+    '实现盈亏': '實現盈虧',
+    '平仓日': '平倉日',
+    'review_tip_html': '💡 複盤建議：勝率高+盈虧比 &lt; 1 時容易「賺小虧大」（典型 short premium 翻車）；<br>勝率低但盈虧比 &gt; 2 是趨勢/Long 策略常見模式（小虧多勝大）。',
+    'review_disclaimer_html': '⚠️ <strong>僅供個人複盤參考，不構成投資建議</strong> · For educational use only.',
   },
 
   en: {
@@ -2943,6 +2986,40 @@ const I18N = {
     '📅 时间相关': '📅 Time-related',
     '🛠 常见策略': '🛠 Common strategies',
     '🎬 操作与事件': '🎬 Actions & events',
+  
+    '数据未加载': 'Data not loaded',
+    '还没有平仓的持仓 — 平仓后这里会显示统计。': 'No closed positions yet — stats appear here once you close trades.',
+    'review_verdict_small_win_big_loss': '⚠️ "Small wins, big losses" pattern — high win rate, but one loss eats many small wins',
+    'review_verdict_excellent': '🏆 Excellent — high win rate and net positive',
+    'review_verdict_good': '✅ Good — net positive overall',
+    'review_verdict_low_wr_big_wins': '🟡 OK — low win rate but big winners',
+    'review_verdict_high_wr_negative': '🟠 Caution — high win rate but losers eating total profit',
+    'review_verdict_needs_adjust': '🔴 Needs adjustment — net negative',
+    '共': 'Total',
+    '笔平仓，累计': 'closed trades, cumulative',
+    '总平仓数': 'Total closes',
+    '胜率': 'Win rate',
+    '总实现盈亏': 'Total realized P&L',
+    '平均盈（每笔）': 'Avg win (per trade)',
+    '盈利金额': 'Winning amount',
+    '盈利': 'Wins',
+    '笔': 'trades',
+    '平均亏（每笔）': 'Avg loss (per trade)',
+    '亏损金额': 'Loss amount',
+    '亏损': 'Losses',
+    '仅 1 笔': 'Just 1 trade',
+    '盈亏比 (avg)': 'Win/Loss ratio (avg)',
+    '✓ 胜>亏': '✓ Win > Loss',
+    '⚠️ 单亏>单胜': '⚠️ Loss > Win',
+    '最佳交易：': 'Best trade:',
+    '最差交易：': 'Worst trade:',
+    '平': 'Closed',
+    '卖出 → 平仓': 'Sell → Close',
+    '张数': 'Contracts',
+    '实现盈亏': 'Realized P&L',
+    '平仓日': 'Close date',
+    'review_tip_html': '💡 Review tip: high win-rate + W/L ratio &lt; 1 often signals a "small wins, big losses" pattern (classic short-premium blowup);<br>low win-rate + W/L ratio &gt; 2 is common in trend/Long strategies (many small losses, few big wins).',
+    'review_disclaimer_html': '⚠️ <strong>For personal review only — not investment advice</strong> · For educational use only.',
   },
 };
 
@@ -4776,14 +4853,14 @@ function loadFromShare() {
 // ── 复盘报告 ────────────────────────────────────────────────────────
 function showReview() {
   const d = window._currentData;
-  if (!d) { alert('数据未加载'); return; }
+  if (!d) { alert(t('数据未加载')); return; }
   const closed = d.positions.filter(p => p.closed && p.close_price !== null && p.close_price !== undefined);
 
   if (!closed.length) {
     document.getElementById('review-modal').innerHTML = `
-      <h3>📊 复盘报告 <span class="x" onclick="hideReview()">×</span></h3>
+      <h3>${t('📊 复盘报告')} <span class="x" onclick="hideReview()">×</span></h3>
       <div style="text-align:center;color:var(--sub);padding:40px">
-        还没有平仓的持仓 — 平仓后这里会显示统计。
+        ${t('还没有平仓的持仓 — 平仓后这里会显示统计。')}
       </div>
     `;
   } else {
@@ -4805,93 +4882,92 @@ function showReview() {
     let verdict = '';
     const ratio = avgLoss !== 0 ? Math.abs(avgWin / avgLoss) : 99;
     if (winRate >= 70 && total > 0 && ratio < 1) {
-      verdict = '⚠️ 注意"赚小亏大"模式 — 胜率虽高，但 1 笔亏损吃掉多笔小赢';
+      verdict = t('review_verdict_small_win_big_loss');
     } else if (winRate >= 70 && total > 0) {
-      verdict = '🏆 出色 — 胜率高且总盈利';
+      verdict = t('review_verdict_excellent');
     } else if (winRate >= 50 && total > 0) {
-      verdict = '✅ 不错 — 整体盈利';
+      verdict = t('review_verdict_good');
     } else if (total > 0) {
-      verdict = '🟡 不错 — 胜率偏低但单胜大';
+      verdict = t('review_verdict_low_wr_big_wins');
     } else if (winRate >= 50) {
-      verdict = '🟠 警惕 — 胜率高但单亏吃掉总盈';
+      verdict = t('review_verdict_high_wr_negative');
     } else {
-      verdict = '🔴 需调整 — 整体亏损';
+      verdict = t('review_verdict_needs_adjust');
     }
 
     document.getElementById('review-modal').innerHTML = `
-      <h3>📊 复盘报告 <span class="x" onclick="hideReview()">×</span></h3>
+      <h3>${t('📊 复盘报告')} <span class="x" onclick="hideReview()">×</span></h3>
 
       <div style="background:var(--card2);padding:12px 14px;border-radius:8px;margin-bottom:18px;font-size:14px">
-        <strong>${verdict}</strong> · 共 ${trades.length} 笔平仓，累计 <strong style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 2, '$')}</strong>
+        <strong>${verdict}</strong> · ${t('共')} ${trades.length} ${t('笔平仓，累计')} <strong style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 2, '$')}</strong>
       </div>
 
       <div class="review-grid">
         <div class="review-stat">
-          <div class="l">总平仓数</div>
+          <div class="l">${t('总平仓数')}</div>
           <div class="v">${trades.length}</div>
         </div>
         <div class="review-stat">
-          <div class="l">胜率</div>
+          <div class="l">${t('胜率')}</div>
           <div class="v" style="color:${winRate>=60?'var(--green)':winRate>=40?'var(--orange)':'var(--red)'}">${winRate.toFixed(0)}%</div>
         </div>
         <div class="review-stat">
-          <div class="l">总实现盈亏</div>
+          <div class="l">${t('总实现盈亏')}</div>
           <div class="v" style="color:${total>=0?'var(--green)':'var(--red)'}">${signed(total, 0, '$')}</div>
         </div>
         <div class="review-stat">
-          <div class="l">${wins.length > 1 ? '平均盈（每笔）' : (wins.length === 1 ? '盈利金额' : '盈利')}</div>
+          <div class="l">${wins.length > 1 ? t('平均盈（每笔）') : (wins.length === 1 ? t('盈利金额') : t('盈利'))}</div>
           <div class="v" style="color:var(--green)">${wins.length ? '+$' + fmt(avgWin, 0) : '—'}</div>
-          ${wins.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${wins.length} 笔</div>` : ''}
+          ${wins.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${wins.length} ${t('笔')}</div>` : ''}
         </div>
         <div class="review-stat">
-          <div class="l">${losses.length > 1 ? '平均亏（每笔）' : (losses.length === 1 ? '亏损金额' : '亏损')}</div>
+          <div class="l">${losses.length > 1 ? t('平均亏（每笔）') : (losses.length === 1 ? t('亏损金额') : t('亏损'))}</div>
           <div class="v" style="color:var(--red)">${losses.length ? '$' + fmt(avgLoss, 0) : '—'}</div>
-          ${losses.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${losses.length} 笔</div>` : (losses.length === 1 ? '<div style="font-size:9px;color:var(--sub);margin-top:2px">仅 1 笔</div>' : '')}
+          ${losses.length > 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${losses.length} ${t('笔')}</div>` : (losses.length === 1 ? `<div style="font-size:9px;color:var(--sub);margin-top:2px">${t('仅 1 笔')}</div>` : '')}
         </div>
         <div class="review-stat">
-          <div class="l">盈亏比 (avg)</div>
+          <div class="l">${t('盈亏比 (avg)')}</div>
           <div class="v">${avgLoss !== 0 && wins.length ? Math.abs(avgWin / avgLoss).toFixed(1) + 'x' : (wins.length && !losses.length ? '∞' : '—')}</div>
-          <div style="font-size:9px;color:var(--sub);margin-top:2px">${avgLoss !== 0 && wins.length && Math.abs(avgWin/avgLoss) >= 1 ? '✓ 胜>亏' : (avgLoss !== 0 ? '⚠️ 单亏>单胜' : '')}</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:2px">${avgLoss !== 0 && wins.length && Math.abs(avgWin/avgLoss) >= 1 ? t('✓ 胜>亏') : (avgLoss !== 0 ? t('⚠️ 单亏>单胜') : '')}</div>
         </div>
       </div>
 
       ${best ? `
       <div style="margin-bottom:14px;padding:10px;background:rgba(74,222,128,0.08);border-radius:6px;font-size:12px">
-        🏆 <strong>最佳交易：</strong>${best.label} ·
-        卖 $${fmt(best.sell_price, 2)} → 平 $${fmt(best.close_price, 2)} ·
+        🏆 <strong>${t('最佳交易：')}</strong>${best.label} ·
+        ${t('卖')} $${fmt(best.sell_price, 2)} → ${t('平')} $${fmt(best.close_price, 2)} ·
         <span style="color:var(--green)">${signed(best.realized, 0, '$')} (+${best.pnlPct.toFixed(0)}%)</span>
       </div>` : ''}
       ${worst && worst !== best ? `
       <div style="margin-bottom:14px;padding:10px;background:rgba(248,113,113,0.08);border-radius:6px;font-size:12px">
-        📉 <strong>最差交易：</strong>${worst.label} ·
-        卖 $${fmt(worst.sell_price, 2)} → 平 $${fmt(worst.close_price, 2)} ·
+        📉 <strong>${t('最差交易：')}</strong>${worst.label} ·
+        ${t('卖')} $${fmt(worst.sell_price, 2)} → ${t('平')} $${fmt(worst.close_price, 2)} ·
         <span style="color:var(--red)">${signed(worst.realized, 0, '$')} (${worst.pnlPct.toFixed(0)}%)</span>
       </div>` : ''}
 
       <table class="review-table">
         <thead>
-          <tr><th>持仓</th><th>卖出 → 平仓</th><th>张数</th><th>实现盈亏</th><th>%</th><th>平仓日</th></tr>
+          <tr><th>${t('持仓')}</th><th>${t('卖出 → 平仓')}</th><th>${t('张数')}</th><th>${t('实现盈亏')}</th><th>%</th><th>${t('平仓日')}</th></tr>
         </thead>
         <tbody>
-          ${trades.map(t => `
+          ${trades.map(tr => `
             <tr>
-              <td><strong>${t.label}</strong></td>
-              <td>$${fmt(t.sell_price, 2)} → $${fmt(t.close_price, 2)}</td>
-              <td>${t.contracts}</td>
-              <td style="color:${t.realized>=0?'var(--green)':'var(--red)'}">${signed(t.realized, 0, '$')}</td>
-              <td style="color:${t.realized>=0?'var(--green)':'var(--red)'}">${signed(t.pnlPct, 0)}%</td>
-              <td>${t.close_date || '--'}</td>
+              <td><strong>${tr.label}</strong></td>
+              <td>$${fmt(tr.sell_price, 2)} → $${fmt(tr.close_price, 2)}</td>
+              <td>${tr.contracts}</td>
+              <td style="color:${tr.realized>=0?'var(--green)':'var(--red)'}">${signed(tr.realized, 0, '$')}</td>
+              <td style="color:${tr.realized>=0?'var(--green)':'var(--red)'}">${signed(tr.pnlPct, 0)}%</td>
+              <td>${tr.close_date || '--'}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
 
       <div style="font-size:10px;color:var(--sub);margin-top:14px;line-height:1.6">
-        💡 复盘建议：胜率高+盈亏比 &lt; 1 时容易"赚小亏大"（典型 short premium 翻车）；<br>
-        胜率低但盈亏比 &gt; 2 是趋势/Long 策略常见模式（小亏多胜大）。
+        ${t('review_tip_html')}
       </div>
       <div class="disclaimer" style="margin-top:12px">
-        ⚠️ <strong>仅供个人复盘参考，不构成投资建议</strong> · For educational use only.
+        ${t('review_disclaimer_html')}
       </div>
     `;
   }

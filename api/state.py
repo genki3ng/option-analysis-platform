@@ -153,6 +153,8 @@ def _fetch_chain_direct(ticker: str, expiry_str: str) -> Dict:
     """
     直接调 Yahoo 的 options JSON endpoint，用 curl_cffi 伪装 Chrome。
     完全绕开 yfinance 的内部 session，避免被它 reset 成 requests。
+
+    策略：query1 → query2 双 host 尝试，附 Chrome 标准 headers + consent cookie
     """
     session = _get_yf_session()
     if not session:
@@ -165,13 +167,33 @@ def _fetch_chain_direct(ticker: str, expiry_str: str) -> Dict:
     except Exception:
         return {}
 
-    url = f"https://query1.finance.yahoo.com/v7/finance/options/{ticker}?date={ts}"
-    try:
-        r = session.get(url, timeout=8)
-        if r.status_code != 200:
-            return {}
-        data = r.json()
-    except Exception:
+    # Yahoo Finance 经常要求 consent cookie；先注入一份避开 GDPR 重定向
+    cookies = {
+        "EuConsent": "CPwH3IAPwH3IAAOACBENC1CgAP_AAAAAAAYgIwBd_X_fb39j-_5_f_t0eY1P9_7__-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrTPsbk2Mr7NKJ7PEinMbe2dYGH9_n93TuZKY7_____z_v-v_v____f_7-3f3__5_3---_e_V_99zfn9_____9nP___9v-_9______3_79_-AYgIwBd_X_fb39j-_5_f_t0eY1P9_7__-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrTPsbk2Mr7NKJ7PEinMbe2dYGH9_n93TuZKY7_____z_v-v_v____f_7-3f3__5_3---_e_V_99zfn9_____9nP___9v-_9______3_79_-A",
+        "GUC": "AQEABAEAAAAAAA",
+        "A1S": "d=AQABBJ4AAAAAAA",
+    }
+    headers = {
+        "Accept": "application/json,text/plain,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://finance.yahoo.com/",
+        "Origin": "https://finance.yahoo.com",
+    }
+
+    data = None
+    for host in ("query2.finance.yahoo.com", "query1.finance.yahoo.com"):
+        url = f"https://{host}/v7/finance/options/{ticker}?date={ts}"
+        try:
+            r = session.get(url, timeout=8, headers=headers, cookies=cookies)
+            if r.status_code == 200:
+                d_json = r.json()
+                if d_json.get("optionChain", {}).get("result"):
+                    data = d_json
+                    break
+        except Exception:
+            continue
+
+    if data is None:
         return {}
 
     try:
@@ -181,7 +203,7 @@ def _fetch_chain_direct(ticker: str, expiry_str: str) -> Dict:
         options_arr = result[0].get("options", [])
         if not options_arr:
             return {}
-        opt = options_arr[0]   # 单 expiry 查询只返回一项
+        opt = options_arr[0]
     except Exception:
         return {}
 

@@ -865,7 +865,7 @@
         <div class="v">期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。</div>
       </li>
       <li class="reveal">
-        <div class="k">包租公算法 1.0</div>
+        <div class="k">包租公算法 1.1</div>
         <div class="v">房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。</div>
       </li>
       <li class="reveal">
@@ -896,10 +896,10 @@
   </div>
 </section>
 
-<!-- ── 包租公算法 1.0 方法论 ─────────────────────────────────────── -->
+<!-- ── 包租公算法 1.1 方法论 ─────────────────────────────────────── -->
 <section id="algo">
   <div class="wrap">
-    <div class="eyebrow reveal">包租公算法 1.0 · Methodology</div>
+    <div class="eyebrow reveal">包租公算法 1.1 · Methodology</div>
     <h2 class="reveal" style="max-width:820px">不是黑盒，是<br>八个能讲清楚的因子。</h2>
     <p class="lead algo-lede reveal">
       大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。
@@ -1028,11 +1028,14 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">06</span>
-          <span class="f-name">流动性</span>
+          <span class="f-name">流动性 <sup>v1.1</sup></span>
         </div>
         <div class="f-desc">
-          bid-ask spread 占 mid 价的比例。
-          spread &gt; 10% 的合约即便看起来好，<strong>成交会被严重折价</strong>——纸面收益不等于真实收益。
+          <strong>spread × OI × volume 复合分。</strong>
+          spread 决定价差损耗；
+          <strong>OI</strong>（持仓量）决定二级市场深度，&lt;10 直接 ×0.5；
+          <strong>当日 volume</strong> 决定价格新鲜度，今日 0 成交 → 价格 stale。
+          单看 spread 不够——纸面 5% 的 spread + OI 为 0 = 挂单一天不成交。
         </div>
         <div class="f-viz"></div>
       </div>

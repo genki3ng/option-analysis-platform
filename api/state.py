@@ -146,8 +146,11 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
                 last = float(row.get("lastPrice", 0) or 0)
                 mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
                 iv = float(row.get("impliedVolatility", 0) or 0)
+                volume = int(row.get("volume", 0) or 0)
+                oi = int(row.get("openInterest", 0) or 0)
                 out[(float(row["strike"]), type_)] = {
                     "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
+                    "volume": volume, "oi": oi,
                 }
         _cache_chain[key] = out
         return out
@@ -889,8 +892,9 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
 #   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
 # ─────────────────────────────────────────────────────────────────────
 ALGORITHM_NAME = "包租公算法"
-ALGORITHM_VERSION = "1.0"
+ALGORITHM_VERSION = "1.1"
 ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
+# v1.1 changes: 流动性因子从单一 spread% 升级为 spread × OI × volume 复合分
 
 
 def _prob_safe_bs(S: float, K: float, T: float, sigma: float, is_call: bool) -> float:
@@ -945,6 +949,42 @@ def _delta_sweet_factor(abs_delta: float) -> float:
     return 0.5
 
 
+def _liquidity_factor_v11(spread_pct: float, oi: int, volume: int) -> tuple:
+    """
+    包租公算法 1.1：复合流动性 = spread × OI × volume modifier
+    返回 (score, breakdown)
+    Score 范围约 0.25 ~ 1.10。
+
+    单看 spread 不够 —— 一份 spread 看似 5% 但 OI=0 的合约，挂单可能一天不成交。
+    """
+    # 1. Spread 基础分（继承 1.0）
+    spread_score = max(0.4, min(1.0, 1.0 - spread_pct / 40))
+
+    # 2. OI 修正 — 持仓量决定二级市场深度
+    if oi >= 1000:   oi_mod = 1.10   # 充裕
+    elif oi >= 500:  oi_mod = 1.00
+    elif oi >= 200:  oi_mod = 0.95
+    elif oi >= 50:   oi_mod = 0.85
+    elif oi >= 10:   oi_mod = 0.70
+    else:            oi_mod = 0.50   # 几乎无人持有，平仓困难
+
+    # 3. Volume 修正 — 当日交易活跃度
+    if volume >= 200: vol_mod = 1.05
+    elif volume >= 50: vol_mod = 1.00
+    elif volume >= 10: vol_mod = 0.93
+    elif volume >= 1:  vol_mod = 0.82
+    else:              vol_mod = 0.65  # 当日无成交，价差可能很 stale
+
+    score = spread_score * oi_mod * vol_mod
+    return score, {
+        "spread_score": round(spread_score, 2),
+        "oi_mod": oi_mod,
+        "vol_mod": vol_mod,
+        "oi": oi,
+        "volume": volume,
+    }
+
+
 def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool,
                             price_band: Optional[dict]) -> tuple:
     """
@@ -978,6 +1018,8 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     spread_pct = opt["spread_pct"]
     days       = opt["days"]
     abs_delta  = abs(opt["delta"])
+    oi         = opt.get("oi", 0)
+    volume     = opt.get("volume", 0)
 
     # 1. 基础：年化收益（房租）
     base = ay
@@ -1000,8 +1042,8 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
         elif ir <= 20: iv_f = 0.85
         elif ir <= 35: iv_f = 0.93
 
-    # 6. 流动性
-    liq_f = max(0.5, 1.0 - spread_pct / 40)
+    # 6. 流动性（包租公 1.1：spread × OI × volume 复合）
+    liq_f, liq_breakdown = _liquidity_factor_v11(spread_pct, oi, volume)
 
     # 7. 财报跨期：保守 = 硬否决，平衡 = 严重扣分，激进 = 轻微
     earnings_f = 1.0
@@ -1032,6 +1074,7 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
             "delta_factor": round(delta_f, 2),
             "iv_factor": round(iv_f, 2),
             "liquidity_factor": round(liq_f, 2),
+            "liquidity_breakdown": liq_breakdown,
             "earnings_factor": round(earnings_f, 2),
             "backtest_factor": round(bt_f, 2),
         }
@@ -1093,13 +1136,27 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
                     cons.append(f"📊 当前 ${mid:.2f} 在 30d 区间高位（${lo:.2f}-${hi:.2f}），买入偏贵")
                     weight -= 2
 
-    # 流动性（通用）
+    # 流动性（包租公算法 1.1：spread + OI + volume 综合判断）
     if opt["spread_pct"] > 10:
         cons.append(f"买卖价差大 {opt['spread_pct']:.0f}%（成交可能折价）"); weight -= 2
     elif opt["spread_pct"] > 5:
         cons.append(f"买卖价差 {opt['spread_pct']:.0f}%"); weight -= 1
     elif opt["spread_pct"] < 3:
         pros.append("流动性好（spread 小）"); weight += 1
+
+    oi_val = int(opt.get("oi", 0))
+    vol_val = int(opt.get("volume", 0))
+    if oi_val < 10:
+        cons.append(f"OI 仅 {oi_val}（几乎无人持有，平仓困难）"); weight -= 2
+    elif oi_val < 50:
+        cons.append(f"OI 偏低 {oi_val}（二级市场薄）"); weight -= 1
+    elif oi_val >= 1000:
+        pros.append(f"OI {oi_val:,}（持仓量充裕，好进好出）"); weight += 1
+
+    if vol_val == 0:
+        cons.append("今日 0 成交（价格可能 stale）"); weight -= 1
+    elif vol_val >= 200:
+        pros.append(f"今日成交 {vol_val:,}（活跃）"); weight += 1
 
     if is_short:
         ay = opt["annualized_yield_pct"]
@@ -1425,6 +1482,8 @@ def recommend(req: dict) -> dict:
                 "score": round(score, 2),
                 "leverage_x": leverage_x,
                 "breakeven_pct": breakeven_pct,
+                "oi": int(q.get("oi", 0)),
+                "volume": int(q.get("volume", 0)),
             })
 
     # 1. IV rank

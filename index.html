@@ -3039,9 +3039,19 @@ function renderRentComponents(opt) {
     ['📅 DTE 甜蜜区', fmtFactor(sc.dte_factor)],
     ['🎯 Delta 甜蜜区', fmtFactor(sc.delta_factor)],
     ['📈 IV rank', fmtFactor(sc.iv_factor)],
-    ['💧 流动性', fmtFactor(sc.liquidity_factor)],
-    ['📊 回测胜率', fmtFactor(sc.backtest_factor)],
   ];
+  // 流动性：1.1 拆出 OI / volume 子项
+  const lb = sc.liquidity_breakdown;
+  if (lb) {
+    rows.push(['💧 流动性 (spread×OI×vol)', fmtFactor(sc.liquidity_factor)]);
+    rows.push([
+      `　OI / Volume`,
+      `<span class="rc-v" style="opacity:0.75">${lb.oi.toLocaleString()} · ${lb.volume.toLocaleString()}</span>`
+    ]);
+  } else {
+    rows.push(['💧 流动性', fmtFactor(sc.liquidity_factor)]);
+  }
+  rows.push(['📊 回测胜率', fmtFactor(sc.backtest_factor)]);
   if (sc.earnings_factor < 1) {
     rows.push([
       '⚠️ 财报跨期',
@@ -4696,6 +4706,8 @@ function renderRecResult(d) {
             <div class="rec-fullstat">
               Bid/Ask <code>${fmt(opt.bid, 2)} / ${fmt(opt.ask, 2)}</code> ·
               Spread <code>${opt.spread_pct}%</code> ·
+              OI <code>${(opt.oi != null ? opt.oi : 0).toLocaleString()}</code> ·
+              Vol <code>${(opt.volume != null ? opt.volume : 0).toLocaleString()}</code> ·
               IV <code>${opt.iv}%</code> ·
               Δ <code>${opt.delta}</code> ·
               ${isLeaps ? `杠杆 <code>${opt.leverage_x}x</code>` : `Theta/天 <code>${fmt(opt.theta_per_day, 2)}</code>`}

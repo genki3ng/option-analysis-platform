@@ -8,8 +8,6 @@
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
     { "src": "/app/?", "dest": "/index.html" },
-    { "src": "/intro/?", "status": 308, "headers": { "Location": "/" } },
-    { "src": "/", "dest": "/intro.html" },
-    { "src": "/(.+)", "dest": "/$1" }
+    { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }

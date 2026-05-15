@@ -1865,8 +1865,9 @@ def _find_expiries(ticker: str, target_days: int, n: int = 3):
 def recommend(req: dict) -> dict:
     """返回排名后的 option 候选清单"""
     ticker = (req.get("ticker") or "").upper().strip()
+    lang = req.get("lang", "zh")
     if not ticker:
-        return {"error": "请提供 ticker"}
+        return {"error": _T(lang, "请提供 ticker")}
     direction = req.get("direction", "bullish")
     intent = req.get("intent", "premium")
     timeframe = int(req.get("timeframe", 7))
@@ -2244,7 +2245,23 @@ class handler(BaseHTTPRequestHandler):
             body = self.rfile.read(length).decode("utf-8") if length else "{}"
             payload = json.loads(body) if body else {}
             action = payload.get("action", "compute")
-            if action == "recommend":
+            if action == "debug_env":
+                # Safe diagnostic — only returns whether vars are set + length
+                import os as _os
+                result = {
+                    "has_client_id": bool(_os.environ.get("SCHWAB_CLIENT_ID")),
+                    "has_client_secret": bool(_os.environ.get("SCHWAB_CLIENT_SECRET")),
+                    "has_refresh_token": bool(_os.environ.get("SCHWAB_REFRESH_TOKEN")),
+                    "client_id_len": len(_os.environ.get("SCHWAB_CLIENT_ID", "")),
+                    "client_secret_len": len(_os.environ.get("SCHWAB_CLIENT_SECRET", "")),
+                    "refresh_token_len": len(_os.environ.get("SCHWAB_REFRESH_TOKEN", "")),
+                    "module_var_id_len": len(SCHWAB_CLIENT_ID),
+                    "module_var_secret_len": len(SCHWAB_CLIENT_SECRET),
+                    "module_var_refresh_len": len(SCHWAB_REFRESH_TOKEN),
+                    "env_keys_count": len(_os.environ),
+                    "schwab_env_keys": [k for k in _os.environ if "SCHWAB" in k],
+                }
+            elif action == "recommend":
                 result = recommend(payload)
             else:
                 result = compute(payload)

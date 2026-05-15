@@ -2303,6 +2303,10 @@ const I18N = {
     'review_verdict_needs_adjust': '🔴 需调整 — 整体亏损',
     'review_tip_html': '💡 复盘建议：胜率高+盈亏比 &lt; 1 时容易"赚小亏大"（典型 short premium 翻车）；<br>胜率低但盈亏比 &gt; 2 是趋势/Long 策略常见模式（小亏多胜大）。',
     'review_disclaimer_html': '⚠️ <strong>仅供个人复盘参考，不构成投资建议</strong> · For educational use only.',
+  
+    'rec_disclaimer_html': '⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。',
+    'rec_algo_tip_html': '💡 {algo}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。保守模式下财报跨期 = 一律不接。',
+    'earnings_warning_html': '⚠️ <strong>{date}</strong> 财报（剩 {n} 天）在到期前 — 注意 IV crush',
   },
 
   zh_tw: {
@@ -2614,6 +2618,60 @@ const I18N = {
     '平仓日': '平倉日',
     'review_tip_html': '💡 複盤建議：勝率高+盈虧比 &lt; 1 時容易「賺小虧大」（典型 short premium 翻車）；<br>勝率低但盈虧比 &gt; 2 是趨勢/Long 策略常見模式（小虧多勝大）。',
     'review_disclaimer_html': '⚠️ <strong>僅供個人複盤參考，不構成投資建議</strong> · For educational use only.',
+  
+    '卖出 Call（看跌或减仓）': '賣出 Call（看跌或減倉）',
+    '卖出 Put（看涨或准备接货）': '賣出 Put（看漲或準備接貨）',
+    '买入 Call（看多）': '買入 Call（看多）',
+    '买入 Put（看空）': '買入 Put（看空）',
+    '标的': '標的',
+    '现价': '現價',
+    '策略': '策略',
+    '区间': '區間',
+    '扫描到期日:': '掃描到期日:',
+    '数据时间': '資料時間',
+    '🔥 IV 偏高 — 卖期权好时机（权利金贵）': '🔥 IV 偏高 — 賣期權好時機（權利金貴）',
+    '⚠️ IV 偏高 — 买期权偏贵': '⚠️ IV 偏高 — 買期權偏貴',
+    '❄️ IV 偏低 — 卖期权权利金少': '❄️ IV 偏低 — 賣期權權利金少',
+    '✅ IV 偏低 — 买期权便宜': '✅ IV 偏低 — 買期權便宜',
+    '🟡 IV 中性': '🟡 IV 中性',
+    '当前 IV': '當前 IV',
+    '近 52 周区间': '近 52 週區間',
+    '百分位': '百分位',
+    '😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）': '😶 沒找到符合條件的合約（試試放寬風險偏好或換 ticker）',
+    '加入持仓': '加入持倉',
+    'Mid 价': 'Mid 價',
+    '距行权': '距行權',
+    '展开详细分析': '展開詳細分析',
+    '杠杆': '槓桿',
+    'Theta/天': 'Theta/天',
+    '过滤：': '過濾：',
+    '全部': '全部',
+    '😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。': '😶 當前過濾下沒有候選。試試切回「全部」或換其他 ticker。',
+    '评级': '評級',
+    'rec_disclaimer_html': '⚠️ <strong>本工具僅供學習研究，不構成任何投資建議</strong> — 期權交易有虧損全部本金甚至更多的風險。所有推薦基於市場資料 + 數學模型，無法預測未來。決策前請自行驗證 / 諮詢持牌顧問。',
+    'rec_algo_tip_html': '💡 {algo} 綜合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜區</strong>(7-21天) × <strong>Delta 甜蜜區</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流動性</strong>。保守模式下財報跨期 = 一律不接。',
+    '🚨 已 ITM': '🚨 已 ITM',
+    '🚨 接近行权': '🚨 接近行權',
+    '⚠️ 距行权近': '⚠️ 距行權近',
+    '🎯 建议平仓': '🎯 建議平倉',
+    '✅ 可考虑平仓': '✅ 可考慮平倉',
+    '🔻 严重浮亏': '🔻 嚴重浮虧',
+    '📉 浮亏中': '📉 浮虧中',
+    '⏱️ 即将到期': '⏱️ 即將到期',
+    '🟢 健康': '🟢 健康',
+    '条笔记': '條筆記',
+    '记笔记 / 写交易计划': '記筆記 / 寫交易計劃',
+    'earnings_warning_html': '⚠️ <strong>{date}</strong> 財報（剩 {n} 天）在到期前 — 注意 IV crush',
+    '关键信息': '關鍵資訊',
+    '操作选项': '操作選項',
+  
+    '五星房源': '五星房源',
+    '推荐出租': '推薦出租',
+    '一般房源': '一般房源',
+    '谨慎出租': '謹慎出租',
+    '别租': '別租',
+    '谨慎 — 财报跨期': '謹慎 — 財報跨期',
+    '不建议': '不建議',
   },
 
   en: {
@@ -3017,6 +3075,60 @@ const I18N = {
     '平仓日': 'Close date',
     'review_tip_html': '💡 Review tip: high win-rate + W/L ratio &lt; 1 often signals a "small wins, big losses" pattern (classic short-premium blowup);<br>low win-rate + W/L ratio &gt; 2 is common in trend/Long strategies (many small losses, few big wins).',
     'review_disclaimer_html': '⚠️ <strong>For personal review only — not investment advice</strong> · For educational use only.',
+  
+    '卖出 Call（看跌或减仓）': 'Sell Call (bearish or reduce)',
+    '卖出 Put（看涨或准备接货）': 'Sell Put (bullish or get assigned)',
+    '买入 Call（看多）': 'Buy Call (bullish)',
+    '买入 Put（看空）': 'Buy Put (bearish)',
+    '标的': 'Ticker',
+    '现价': 'Price',
+    '策略': 'Strategy',
+    '区间': 'range',
+    '扫描到期日:': 'Scanning expiries:',
+    '数据时间': 'Data time',
+    '🔥 IV 偏高 — 卖期权好时机（权利金贵）': '🔥 IV is high — good time to sell options (rich premium)',
+    '⚠️ IV 偏高 — 买期权偏贵': '⚠️ IV is high — options are expensive to buy',
+    '❄️ IV 偏低 — 卖期权权利金少': '❄️ IV is low — selling options yields little premium',
+    '✅ IV 偏低 — 买期权便宜': '✅ IV is low — options are cheap to buy',
+    '🟡 IV 中性': '🟡 IV is neutral',
+    '当前 IV': 'Current IV',
+    '近 52 周区间': '52w range',
+    '百分位': 'Percentile',
+    '😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）': '😶 No contracts match your criteria (try a wider risk band or different ticker)',
+    '加入持仓': 'Add to positions',
+    'Mid 价': 'Mid',
+    '距行权': 'To strike',
+    '展开详细分析': 'Expand details',
+    '杠杆': 'Leverage',
+    'Theta/天': 'Theta/day',
+    '过滤：': 'Filter:',
+    '全部': 'All',
+    '😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。': '😶 No candidates under this filter. Try All or a different ticker.',
+    '评级': 'Ranking',
+    'rec_disclaimer_html': '⚠️ <strong>This tool is for educational use only — not investment advice</strong> — Options trading carries the risk of losing all or more than your principal. All recommendations are based on market data and mathematical models; they cannot predict the future. Verify on your own / consult a licensed advisor before trading.',
+    'rec_algo_tip_html': '💡 {algo} composite factors: <strong>annualized rent</strong> × <strong>safety</strong>(BS) × <strong>DTE sweet spot</strong>(7-21d) × <strong>Delta sweet spot</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>liquidity</strong>. In conservative mode, earnings-spanning contracts are always rejected.',
+    '🚨 已 ITM': '🚨 Now ITM',
+    '🚨 接近行权': '🚨 Near strike',
+    '⚠️ 距行权近': '⚠️ Approaching strike',
+    '🎯 建议平仓': '🎯 Suggest closing',
+    '✅ 可考虑平仓': '✅ Consider closing',
+    '🔻 严重浮亏': '🔻 Heavy unrealized loss',
+    '📉 浮亏中': '📉 In drawdown',
+    '⏱️ 即将到期': '⏱️ Expiring soon',
+    '🟢 健康': '🟢 Healthy',
+    '条笔记': 'note(s)',
+    '记笔记 / 写交易计划': 'Add note / trade plan',
+    'earnings_warning_html': '⚠️ <strong>{date}</strong> earnings ({n}d away) before your expiry — watch for IV crush',
+    '关键信息': 'Key facts',
+    '操作选项': 'Action options',
+  
+    '五星房源': '⭐⭐⭐⭐⭐ Five-star property',
+    '推荐出租': 'Recommend to rent',
+    '一般房源': 'Mediocre property',
+    '谨慎出租': 'Rent with caution',
+    '别租': 'Don\'t rent',
+    '谨慎 — 财报跨期': 'Caution — earnings span',
+    '不建议': 'Not recommended',
   },
 };
 
@@ -3560,18 +3672,18 @@ function statusOf(p) {
   const isCall = p.type === 'call';
   const m = p.moneyness;
 
-  if (isCall && m < 0)        return { cls: 'danger', label: '🚨 已 ITM' };
-  if (isCall && m < 5)        return { cls: 'danger', label: '🚨 接近行权' };
-  if (isCall && m < 15)       return { cls: 'warn',   label: '⚠️ 距行权近' };
-  if (!isCall && m > 0)       return { cls: 'danger', label: '🚨 已 ITM' };
-  if (!isCall && m > -5)      return { cls: 'danger', label: '🚨 接近行权' };
-  if (!isCall && m > -15)     return { cls: 'warn',   label: '⚠️ 距行权近' };
-  if (p.pnl_pct >= 80)        return { cls: 'good',   label: '🎯 建议平仓' };
-  if (p.pnl_pct >= 50)        return { cls: 'good',   label: '✅ 可考虑平仓' };
-  if (p.pnl_pct < -50)        return { cls: 'danger', label: '🔻 严重浮亏' };
-  if (p.pnl_pct < -20)        return { cls: 'warn',   label: '📉 浮亏中' };
-  if (p.days <= 3)            return { cls: 'info',   label: '⏱️ 即将到期' };
-  return { cls: 'good', label: '🟢 健康' };
+  if (isCall && m < 0)        return { cls: 'danger', label: t('🚨 已 ITM') };
+  if (isCall && m < 5)        return { cls: 'danger', label: t('🚨 接近行权') };
+  if (isCall && m < 15)       return { cls: 'warn',   label: t('⚠️ 距行权近') };
+  if (!isCall && m > 0)       return { cls: 'danger', label: t('🚨 已 ITM') };
+  if (!isCall && m > -5)      return { cls: 'danger', label: t('🚨 接近行权') };
+  if (!isCall && m > -15)     return { cls: 'warn',   label: t('⚠️ 距行权近') };
+  if (p.pnl_pct >= 80)        return { cls: 'good',   label: t('🎯 建议平仓') };
+  if (p.pnl_pct >= 50)        return { cls: 'good',   label: t('✅ 可考虑平仓') };
+  if (p.pnl_pct < -50)        return { cls: 'danger', label: t('🔻 严重浮亏') };
+  if (p.pnl_pct < -20)        return { cls: 'warn',   label: t('📉 浮亏中') };
+  if (p.days <= 3)            return { cls: 'info',   label: t('⏱️ 即将到期') };
+  return { cls: 'good', label: t('🟢 健康') };
 }
 
 function calcSafetyBar(p) {
@@ -3608,7 +3720,7 @@ function renderPosition(p) {
 
   // 行权价 / 现价显示
   const leftLabel = `${p.ticker} $${fmt(p.underlying)}`;
-  const rightLabel = `行权 $${fmt(p.strike, 0)}`;
+  const rightLabel = `${t('行权')} $${fmt(p.strike, 0)}`;
 
   // 平仓表单的预填价（用当前 mark）
   const prefillPrice = fmt(p.mark, 2);
@@ -3637,18 +3749,18 @@ function renderPosition(p) {
       <div class="pos-hero">
         <div class="stat" title="${TIPS.pnl}">
           <span class="v ${colorOf(p.pnl)}">${signed(p.pnl, 0, '$')}</span>
-          <span class="l">浮盈亏</span>
+          <span class="l">${t('浮盈亏')}</span>
         </div>
         <div class="stat" title="${TIPS.theta}">
           <span class="v green">+$${fmt(p.daily_theta, 0)}</span>
-          <span class="l">每日 Theta</span>
+          <span class="l">${t('每日 Theta')}</span>
         </div>
       </div>
 
       <div class="pos-bar">
         <div class="head">
-          <span>距行权价</span>
-          <span class="pct">${signed(bar.safe, 1)}% ${bar.safe >= 0 ? '安全' : 'ITM'}</span>
+          <span>${t('距行权价')}</span>
+          <span class="pct">${signed(bar.safe, 1)}% ${bar.safe >= 0 ? t('安全') : 'ITM'}</span>
         </div>
         <div class="track">
           <div class="marker" style="left: ${bar.pct}%"></div>
@@ -3661,8 +3773,8 @@ function renderPosition(p) {
 
       <div class="pos-time">
         <div class="head">
-          <span>时间进度 ${elapsed}/${p.total_days} 天</span>
-          <span>剩 ${p.days} 天</span>
+          <span>${t('时间进度')} ${elapsed}/${p.total_days} ${t('天')}</span>
+          <span>${t('剩')} ${p.days} ${t('天')}</span>
         </div>
         <div class="track">
           <div class="fill" style="width: ${elapsedPct.toFixed(1)}%"></div>
@@ -3677,12 +3789,12 @@ function renderPosition(p) {
       </details>
 
       <button class="journal-btn ${(getJournalNotes(p.id).length ? 'has-notes' : '')}" onclick="event.stopPropagation();showJournal('${p.id}')">
-        📝 ${getJournalNotes(p.id).length ? `${getJournalNotes(p.id).length} 条笔记` : '记笔记 / 写交易计划'}
+        📝 ${getJournalNotes(p.id).length ? `${getJournalNotes(p.id).length} ${t('条笔记')}` : t('记笔记 / 写交易计划')}
       </button>
 
       ${p.earnings_before_expiry ? `
       <div class="earnings-warn">
-        ⚠️ <strong>${p.earnings_date}</strong> 财报（剩 ${p.earnings_days_until} 天）在到期前 — 注意 IV crush
+        ${t('earnings_warning_html').replace('{date}', p.earnings_date).replace('{n}', p.earnings_days_until)}
       </div>` : ''}
 
       <div class="pos-stats">
@@ -5259,15 +5371,15 @@ function renderRecResult(d) {
   _lastRecData = d;
   const c = d.criteria;
   const strategyDesc = c.is_short
-    ? (c.is_call ? '卖出 Call（看跌或减仓）' : '卖出 Put（看涨或准备接货）')
-    : (c.is_call ? '买入 Call（看多）' : '买入 Put（看空）');
+    ? (c.is_call ? t('卖出 Call（看跌或减仓）') : t('卖出 Put（看涨或准备接货）'))
+    : (c.is_call ? t('买入 Call（看多）') : t('买入 Put（看空）'));
 
   const summary = `
-    标的 <strong>${d.ticker}</strong> 现价 $${fmt(d.underlying, 2)} ·
-    策略 <strong>${strategyDesc}</strong> ·
-    Δ 区间 ${c.delta_band[0]}-${c.delta_band[1]} ·
-    扫描到期日: ${c.expiries_searched.join(', ')} ·
-    数据时间 ${d.timestamp}
+    ${t('标的')} <strong>${d.ticker}</strong> ${t('现价')} $${fmt(d.underlying, 2)} ·
+    ${t('策略')} <strong>${strategyDesc}</strong> ·
+    Δ ${t('区间')} ${c.delta_band[0]}-${c.delta_band[1]} ·
+    ${t('扫描到期日:')} ${c.expiries_searched.join(', ')} ·
+    ${t('数据时间')} ${d.timestamp}
   `;
 
   // IV rank 横幅
@@ -5276,15 +5388,13 @@ function renderRecResult(d) {
     const r = d.iv_rank;
     let mood = '';
     if (r.iv_rank >= 70) {
-      mood = c.is_short
-        ? '🔥 IV 偏高 — 卖期权好时机（权利金贵）'
-        : '⚠️ IV 偏高 — 买期权偏贵';
+      mood = c.is_short ? t('🔥 IV 偏高 — 卖期权好时机（权利金贵）')
+                        : t('⚠️ IV 偏高 — 买期权偏贵');
     } else if (r.iv_rank <= 30) {
-      mood = c.is_short
-        ? '❄️ IV 偏低 — 卖期权权利金少'
-        : '✅ IV 偏低 — 买期权便宜';
+      mood = c.is_short ? t('❄️ IV 偏低 — 卖期权权利金少')
+                        : t('✅ IV 偏低 — 买期权便宜');
     } else {
-      mood = '🟡 IV 中性';
+      mood = t('🟡 IV 中性');
     }
     ivBanner = `
       <div class="iv-banner">
@@ -5296,10 +5406,10 @@ function renderRecResult(d) {
         </div>
         <div class="iv-text">
           <strong>${mood}</strong> ·
-          当前 IV ${r.current_iv_pct}% ·
-          近 52 周区间 ${r.rv_52w_low_pct}%-${r.rv_52w_high_pct}% ·
+          ${t('当前 IV')} ${r.current_iv_pct}% ·
+          ${t('近 52 周区间')} ${r.rv_52w_low_pct}%-${r.rv_52w_high_pct}% ·
           IV Rank <strong>${r.iv_rank.toFixed(0)}</strong> /
-          百分位 <strong>${r.iv_percentile.toFixed(0)}%</strong>
+          ${t('百分位')} <strong>${r.iv_percentile.toFixed(0)}%</strong>
         </div>
       </div>
     `;
@@ -5309,7 +5419,7 @@ function renderRecResult(d) {
     document.getElementById('rec-result').innerHTML = `
       <div class="summary">${summary}</div>
       ${ivBanner}
-      <div class="empty">😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）</div>
+      <div class="empty">${t('😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）')}</div>
     `;
     return;
   }
@@ -5372,13 +5482,13 @@ function renderRecResult(d) {
               <strong>${opt.ticker}</strong>
               <span class="strike">$${opt.strike}</span>
               <span class="type-tag ${opt.type}">${opt.type.toUpperCase()}</span>
-              <span class="rec-exp">exp ${opt.expiry} · ${opt.days} 天</span>
+              <span class="rec-exp">exp ${opt.expiry} · ${opt.days} ${t('天')}</span>
             </div>
             <div class="rec-verdict" style="color:${verdictColor}">
-              ${v.stars || ''} <strong>${v.label || ''}</strong>
+              ${v.stars || ''} <strong>${v.label ? t(v.label) : ''}</strong>
             </div>
           </div>
-          <button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">加入持仓</button>
+          <button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">${t('加入持仓')}</button>
         </div>
 
         <div class="rec-oneline" style="border-left-color:${verdictColor}">
@@ -5387,12 +5497,12 @@ function renderRecResult(d) {
 
         <div class="rec-metrics">
           ${metricsHtml}
-          <div class="kmet"><div class="kmet-l">Mid 价</div><div class="kmet-v">$${fmt(opt.mid, 2)}</div></div>
-          <div class="kmet"><div class="kmet-l">距行权</div><div class="kmet-v">${signed(opt.moneyness_pct, 1)}%</div></div>
+          <div class="kmet"><div class="kmet-l">${t('Mid 价')}</div><div class="kmet-v">$${fmt(opt.mid, 2)}</div></div>
+          <div class="kmet"><div class="kmet-l">${t('距行权')}</div><div class="kmet-v">${signed(opt.moneyness_pct, 1)}%</div></div>
         </div>
 
         <details class="rec-details">
-          <summary>展开详细分析</summary>
+          <summary>${t('展开详细分析')}</summary>
           <div class="rec-detail-body">
             ${prosHtml || consHtml ? `
               <div class="rec-proscons">
@@ -5409,7 +5519,7 @@ function renderRecResult(d) {
               Vol <code>${(opt.volume != null ? opt.volume : 0).toLocaleString()}</code> ·
               IV <code>${opt.iv}%</code> ·
               Δ <code>${opt.delta}</code> ·
-              ${isLeaps ? `杠杆 <code>${opt.leverage_x}x</code>` : `Theta/天 <code>${fmt(opt.theta_per_day, 2)}</code>`}
+              ${isLeaps ? `${t('杠杆')} <code>${opt.leverage_x}x</code>` : `${t('Theta/天')} <code>${fmt(opt.theta_per_day, 2)}</code>`}
             </div>
           </div>
         </details>
@@ -5431,9 +5541,9 @@ function renderRecResult(d) {
   const n5 = tierCount[5], n4plus = tierCount[5] + tierCount[4];
   const tierPills = `
     <div class="tier-filter">
-      <span class="tf-label">过滤：</span>
+      <span class="tf-label">${t('过滤：')}</span>
       <button class="tf-pill ${tierFilter==='all' ? 'active':''}" onclick="setTierFilter('all')">
-        全部 <span class="tf-n">${d.candidates.length}</span>
+        ${t('全部')} <span class="tf-n">${d.candidates.length}</span>
       </button>
       <button class="tf-pill ${tierFilter==='4plus' ? 'active':''}" onclick="setTierFilter('4plus')"
               ${n4plus===0 ? 'disabled':''}>
@@ -5446,7 +5556,7 @@ function renderRecResult(d) {
     </div>
   `;
   const emptyFilterMsg = filteredCandidates.length === 0 ? `
-    <div class="empty">😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。</div>
+    <div class="empty">${t('😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。')}</div>
   ` : '';
 
   document.getElementById('rec-result').innerHTML = `
@@ -5454,15 +5564,13 @@ function renderRecResult(d) {
     <div class="summary">${summary}</div>
     ${ivBanner}
     <div class="disclaimer">
-      ⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。
-      所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。
+      ${t('rec_disclaimer_html')}
     </div>
     ${tierPills}
     ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">
-      💡 ${algo.name || '评级'}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。
-      保守模式下财报跨期 = 一律不接。
+      ${t('rec_algo_tip_html').replace('{algo}', algo.name || t('评级'))}
     </div>
     <div class="disclaimer" style="margin-top:8px">
       ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.
@@ -5986,7 +6094,7 @@ function renderSuggestion(s, expandedSet) {
   const factsHtml = (s.facts || []).map(f =>
     `<li>${escapeHtml(f)}</li>`).join('');
   const actionsHtml = (s.actions || []).length
-    ? `<div class="section-h">操作选项</div><ol>${
+    ? `<div class="section-h">${t('操作选项')}</div><ol>${
         s.actions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ol>`
     : '';
 
@@ -6008,7 +6116,7 @@ function renderSuggestion(s, expandedSet) {
         </div>
       </div>
       <div class="sug-detail">
-        <div class="section-h">关键信息</div>
+        <div class="section-h">${t('关键信息')}</div>
         <ul>${factsHtml}</ul>
         ${actionsHtml}
       </div>

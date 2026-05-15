@@ -512,6 +512,90 @@
     background: rgba(248,113,113,0.18);
   }
 
+  /* Inline edit-form — 改 contracts / sell_price / trade_date */
+  .edit-form {
+    display: none;
+    padding: 14px;
+    border-top: 1px solid var(--line);
+    background: var(--card2);
+    flex-direction: column;
+    gap: 10px;
+  }
+  .edit-form.open { display: flex; }
+  .edit-form .ef-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 8px;
+  }
+  .edit-form .ef-title {
+    font-size: 12px; font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.005em;
+  }
+  .edit-form .ef-hint {
+    font-size: 10.5px; color: var(--sub);
+  }
+  .edit-form .ef-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 480px) {
+    .edit-form .ef-row { grid-template-columns: 1fr; }
+  }
+  .edit-form label {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .edit-form .ef-label {
+    font-size: 10px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .edit-form input {
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--text); border-radius: 5px;
+    padding: 7px 10px; font-size: 13px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+  }
+  .edit-form input:focus { outline: none; border-color: var(--accent); }
+  .edit-form .ef-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+    margin-top: 2px;
+  }
+  .edit-form button {
+    padding: 6px 14px; font-size: 12px; font-weight: 600;
+    border-radius: 5px; cursor: pointer; border: none;
+    font-family: inherit; letter-spacing: -0.005em;
+  }
+  .edit-form .ef-save {
+    background: var(--accent); color: #0A0A0B;
+  }
+  .edit-form .ef-save:hover { background: #F0C778; }
+  .edit-form .ef-cancel {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line);
+  }
+  .edit-form .ef-note {
+    font-size: 10.5px; color: var(--sub);
+    line-height: 1.5;
+    padding-top: 4px;
+    border-top: 1px dashed var(--line);
+  }
+
+  /* edit 按钮 styling — 跟其他 pos-actions 按钮一致 */
+  .pos-actions .edit-btn {
+    background: transparent;
+    color: var(--sub);
+    border: 1px solid var(--line);
+    font-size: 11px;
+  }
+  .pos-actions .edit-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(230,184,106,0.06);
+  }
+
   /* Inline close-form */
   .close-form {
     display: none;
@@ -3378,6 +3462,7 @@ function renderPosition(p) {
 
       <div class="pos-actions">
         <button onclick="showClose('${p.id}')">平仓</button>
+        <button class="edit-btn" onclick="showEdit('${p.id}')" title="改张数或卖价（误操作时用）">✏️ 编辑</button>
         <button class="del-btn" onclick="deletePos('${p.id}')" title="彻底删除（误添加时使用）">🗑 删除</button>
       </div>
 
@@ -3392,11 +3477,41 @@ function renderPosition(p) {
         <button onclick="submitClose('${p.id}')">确认平仓</button>
         <button class="cancel" onclick="hideClose('${p.id}')">取消</button>
       </div>
+
+      <div class="edit-form" id="ef-${p.id}">
+        <div class="ef-head">
+          <span class="ef-title">✏️ 编辑持仓</span>
+          <span class="ef-hint">改错了？这里可以修</span>
+        </div>
+        <div class="ef-row">
+          <label>
+            <span class="ef-label">张数</span>
+            <input type="number" min="1" step="1" id="ef-c-${p.id}" value="${p.contracts}">
+          </label>
+          <label>
+            <span class="ef-label">卖出价 $/股</span>
+            <input type="number" step="0.01" min="0" id="ef-p-${p.id}" value="${p.sell_price}">
+          </label>
+          <label>
+            <span class="ef-label">建仓日</span>
+            <input type="date" id="ef-d-${p.id}" value="${p.trade_date}">
+          </label>
+        </div>
+        <div class="ef-actions">
+          <button class="ef-save" onclick="submitEdit('${p.id}')">保存</button>
+          <button class="ef-cancel" onclick="hideEdit('${p.id}')">取消</button>
+        </div>
+        <div class="ef-note">
+          注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。
+        </div>
+      </div>
     </div>
   `;
 }
 
 function showClose(id) {
+  // 关其他打开的 forms（edit 等）
+  document.querySelectorAll('.edit-form.open').forEach(f => f.classList.remove('open'));
   document.getElementById('cf-' + id).classList.add('open');
   document.getElementById('cp-' + id).focus();
 }
@@ -5386,6 +5501,73 @@ function deletePos(id) {
   if (state[id]) { delete state[id]; saveStateMap(state); }
   selectedIds.delete(id);
   saveSelection();
+  refresh();
+}
+
+// ── 编辑持仓 (改 contracts / sell_price / trade_date) ───────────────
+function showEdit(id) {
+  // 关其他打开的 forms
+  document.querySelectorAll('.close-form.open, .edit-form.open').forEach(f => f.classList.remove('open'));
+  const ef = document.getElementById('ef-' + id);
+  if (!ef) return;
+  ef.classList.add('open');
+  document.getElementById('ef-c-' + id)?.focus();
+}
+
+function hideEdit(id) {
+  document.getElementById('ef-' + id)?.classList.remove('open');
+}
+
+function submitEdit(id) {
+  const cEl = document.getElementById('ef-c-' + id);
+  const pEl = document.getElementById('ef-p-' + id);
+  const dEl = document.getElementById('ef-d-' + id);
+  if (!cEl || !pEl || !dEl) return;
+
+  const newContracts = parseInt(cEl.value, 10);
+  const newPrice = parseFloat(pEl.value);
+  const newDate = dEl.value;
+
+  if (!Number.isFinite(newContracts) || newContracts < 1) {
+    alert('张数必须是 ≥ 1 的整数'); return;
+  }
+  if (!Number.isFinite(newPrice) || newPrice < 0) {
+    alert('卖出价必须是 ≥ 0 的数字'); return;
+  }
+  if (!newDate) {
+    alert('建仓日必填'); return;
+  }
+
+  const positions = loadPositions();
+  const target = positions.find(p => posIdOf(p) === id);
+  if (!target) { alert('没找到这个持仓'); return; }
+
+  // 检查是否真的有变化
+  const changed = (
+    target.contracts !== newContracts ||
+    Math.abs(target.sell_price - newPrice) > 1e-6 ||
+    target.trade_date !== newDate
+  );
+  if (!changed) {
+    hideEdit(id);
+    return;
+  }
+
+  // 摘要 + 确认
+  const changes = [];
+  if (target.contracts !== newContracts)
+    changes.push(`张数：${target.contracts} → ${newContracts}`);
+  if (Math.abs(target.sell_price - newPrice) > 1e-6)
+    changes.push(`卖价：$${target.sell_price} → $${newPrice}`);
+  if (target.trade_date !== newDate)
+    changes.push(`建仓日：${target.trade_date} → ${newDate}`);
+
+  if (!confirm('确认修改？\n\n' + changes.join('\n'))) return;
+
+  target.contracts = newContracts;
+  target.sell_price = newPrice;
+  target.trade_date = newDate;
+  savePositions(positions);
   refresh();
 }
 

@@ -3852,7 +3852,7 @@ function generateShareLink() {
   // Base64 URL-safe
   const b64 = btoa(unescape(encodeURIComponent(json)))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const url = `${location.origin}/?share=${b64}`;
+  const url = `${location.origin}/app?share=${b64}`;
 
   // 检查长度
   if (url.length > 6000) {
@@ -3886,7 +3886,7 @@ function loadFromShare() {
       <div style="background:#E6B86A;color:#0A0A0B;
                   padding:8px 16px;text-align:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">
         👀 ${t('你正在查看一份只读分享快照')} · ${snapshot.ts}
-        · <a href="${location.origin}/" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>
+        · <a href="${location.origin}/app" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>
       </div>
     `);
     return true;

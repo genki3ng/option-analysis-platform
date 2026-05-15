@@ -7,8 +7,9 @@
   ],
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
-    { "src": "/intro/?", "dest": "/intro.html" },
-    { "src": "/", "dest": "/index.html" },
+    { "src": "/app/?", "dest": "/index.html" },
+    { "src": "/intro/?", "status": 308, "headers": { "Location": "/" } },
+    { "src": "/", "dest": "/intro.html" },
     { "src": "/(.+)", "dest": "/$1" }
   ]
 }

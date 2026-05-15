@@ -149,51 +149,116 @@ def _get_yf_session():
         return None
 
 
+def _fetch_chain_direct(ticker: str, expiry_str: str) -> Dict:
+    """
+    直接调 Yahoo 的 options JSON endpoint，用 curl_cffi 伪装 Chrome。
+    完全绕开 yfinance 的内部 session，避免被它 reset 成 requests。
+    """
+    session = _get_yf_session()
+    if not session:
+        return {}
+
+    # Yahoo 接受 unix timestamp（午夜 UTC）
+    try:
+        d = date.fromisoformat(expiry_str)
+        ts = int(datetime(d.year, d.month, d.day).timestamp())
+    except Exception:
+        return {}
+
+    url = f"https://query1.finance.yahoo.com/v7/finance/options/{ticker}?date={ts}"
+    try:
+        r = session.get(url, timeout=8)
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+    except Exception:
+        return {}
+
+    try:
+        result = data.get("optionChain", {}).get("result", [])
+        if not result:
+            return {}
+        options_arr = result[0].get("options", [])
+        if not options_arr:
+            return {}
+        opt = options_arr[0]   # 单 expiry 查询只返回一项
+    except Exception:
+        return {}
+
+    out: Dict = {}
+    for type_, key in (("call", "calls"), ("put", "puts")):
+        for c in opt.get(key, []):
+            try:
+                strike = float(c.get("strike", 0))
+                if strike <= 0:
+                    continue
+                bid = float(c.get("bid", 0) or 0)
+                ask = float(c.get("ask", 0) or 0)
+                last = float(c.get("lastPrice", 0) or 0)
+                mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
+                iv = float(c.get("impliedVolatility", 0) or 0)
+                vol = int(c.get("volume", 0) or 0)
+                oi = int(c.get("openInterest", 0) or 0)
+                out[(strike, type_)] = {
+                    "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
+                    "volume": vol, "oi": oi,
+                }
+            except Exception:
+                continue
+    return out
+
+
 def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     """
     {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
 
-    yfinance 经常被 Yahoo 限流（datacenter IP）。策略：
-    - curl_cffi 伪装成 Chrome（绕过 TLS fingerprint 识别）
+    主路径：直接调 Yahoo JSON API，用 curl_cffi 伪装 Chrome
+    备用：yfinance（如果 direct 路径失败）
     - 最多 retry 2 次，1s 间隔
-    - 仅缓存非空结果（失败不污染 cache，下次还能再试）
-    - 完全失败时返回 {}，让 recommend() 给出友好错误 + 重试按钮
+    - 仅缓存非空结果
     """
     key = (ticker, expiry_str)
     if key in _cache_chain and _cache_chain[key]:
         return _cache_chain[key]
 
-    import yfinance as yf
-    session = _get_yf_session()
+    # ── 1. Direct Yahoo API + curl_cffi（最可控）
     for attempt in range(2):
-        try:
-            t = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
-            if expiry_str not in t.options:
-                return {}   # 真没这个 expiry，立刻返回
-            chain = t.option_chain(expiry_str)
-            out = {}
-            for df, type_ in ((chain.calls, "call"), (chain.puts, "put")):
-                for _, row in df.iterrows():
-                    bid = float(row.get("bid", 0) or 0)
-                    ask = float(row.get("ask", 0) or 0)
-                    last = float(row.get("lastPrice", 0) or 0)
-                    mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
-                    iv = float(row.get("impliedVolatility", 0) or 0)
-                    volume = int(row.get("volume", 0) or 0)
-                    oi = int(row.get("openInterest", 0) or 0)
-                    out[(float(row["strike"]), type_)] = {
-                        "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
-                        "volume": volume, "oi": oi,
-                    }
-            if out:
-                _cache_chain[key] = out
-                return out
-            # 空但无异常 — yfinance 偶尔返回空 DataFrame，retry 一次
-        except Exception:
-            pass
+        out = _fetch_chain_direct(ticker, expiry_str)
+        if out:
+            _cache_chain[key] = out
+            return out
         if attempt == 0:
             import time as _t
             _t.sleep(1.0)
+
+    # ── 2. yfinance 兜底（curl_cffi session 偶尔会被它绕开但万一有用）
+    import yfinance as yf
+    session = _get_yf_session()
+    try:
+        t = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
+        if expiry_str not in t.options:
+            return {}
+        chain = t.option_chain(expiry_str)
+        out = {}
+        for df, type_ in ((chain.calls, "call"), (chain.puts, "put")):
+            for _, row in df.iterrows():
+                bid = float(row.get("bid", 0) or 0)
+                ask = float(row.get("ask", 0) or 0)
+                last = float(row.get("lastPrice", 0) or 0)
+                mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
+                iv = float(row.get("impliedVolatility", 0) or 0)
+                volume = int(row.get("volume", 0) or 0)
+                oi = int(row.get("openInterest", 0) or 0)
+                out[(float(row["strike"]), type_)] = {
+                    "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
+                    "volume": volume, "oi": oi,
+                }
+        if out:
+            _cache_chain[key] = out
+            return out
+    except Exception:
+        pass
+
     return {}
 
 

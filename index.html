@@ -332,20 +332,24 @@
     background: var(--card);
     border-radius: 12px; padding: 0;
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     transition: border-color 0.15s, transform 0.15s;
     overflow: hidden;
   }
   .pos:hover {
-    border-color: var(--accent); transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+    border-color: var(--line-2); transform: translateY(-1px);
   }
   .pos.unchecked { opacity: 0.4; }
-  .pos.call  { border-left-color: var(--green); }
-  .pos.put   { border-left-color: var(--orange); }
-  .pos.danger-status { border-left-color: var(--red); }
-  .pos.warn-status   { border-left-color: var(--yellow); }
-  .pos.good-status   { /* keeps call/put color */ }
+  /* 状态描边整体着色，取代左边粗条 */
+  .pos.danger-status {
+    border-color: rgba(248,113,113,.28);
+    background: rgba(248,113,113,.025);
+  }
+  .pos.danger-status:hover { border-color: rgba(248,113,113,.50); }
+  .pos.warn-status {
+    border-color: rgba(230,184,106,.28);
+    background: rgba(230,184,106,.025);
+  }
+  .pos.warn-status:hover { border-color: rgba(230,184,106,.50); }
 
   .pos-row1 {
     display: flex; align-items: center; gap: 10px;
@@ -995,6 +999,51 @@
   .disclaimer strong { color: var(--orange); }
   :root[data-theme="dark"] .disclaimer { background: rgba(250,204,21,0.06); }
 
+  /* Tier filter pill row */
+  .tier-filter {
+    display: flex; align-items: center; gap: 8px;
+    margin: 14px 0 12px;
+    flex-wrap: wrap;
+  }
+  .tier-filter .tf-label {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-right: 4px;
+  }
+  .tier-filter .tf-pill {
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: -0.005em;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .tier-filter .tf-pill:hover:not(:disabled) {
+    border-color: var(--accent); color: var(--accent);
+  }
+  .tier-filter .tf-pill.active {
+    background: var(--accent);
+    color: #0A0A0B;
+    border-color: var(--accent);
+  }
+  .tier-filter .tf-pill:disabled {
+    opacity: 0.35; cursor: not-allowed;
+  }
+  .tier-filter .tf-n {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+  }
+  .tier-filter .tf-pill.active .tf-n { opacity: 0.9; }
+
   /* 包租公算法徽章 */
   .algo-badge {
     display: flex; align-items: center; gap: 10px;
@@ -1524,16 +1573,29 @@
 
   .sug {
     margin-bottom: 8px; border-radius: 8px;
-    border-left: 3px solid; overflow: hidden;
-    background: var(--card2);
+    border: 1px solid var(--line);
+    background: var(--card);
+    overflow: hidden;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .sug.portfolio { background: rgba(230,184,106,0.06); }
+  .sug:hover { border-color: var(--line-2); }
+  .sug.portfolio { background: var(--card); }
   .sug-head {
-    padding: 10px 12px; cursor: pointer;
-    display: flex; flex-direction: column; gap: 3px;
+    padding: 12px 14px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 4px;
     user-select: none;
   }
-  .sug-head:hover { filter: brightness(1.15); }
+  /* 状态色点：标题前的小圆，替代原来的左边粗条 */
+  .sug-head .ttl::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sub);
+    margin-right: 8px;
+    vertical-align: 1px;
+    flex-shrink: 0;
+  }
   .sug-head .row1 {
     display: flex; align-items: baseline; justify-content: space-between;
     gap: 8px;
@@ -1594,16 +1656,46 @@
     font-variant-numeric: tabular-nums;
     font-family: "SF Mono", Menlo, monospace;
   }
-  .sug.danger  { background: rgba(248,113,113,.10); border-color: var(--red); }
-  .sug.danger .sug-head  { color: var(--red); }
-  .sug.warn    { background: rgba(251,146,60,.10); border-color: var(--orange); }
-  .sug.warn .sug-head    { color: var(--orange); }
-  .sug.caution { background: rgba(250,204,21,.10); border-color: var(--yellow); }
+  /* 状态：细描边整体着色 + 标题前的色点；不再用左边粗条 */
+  .sug.danger {
+    background: rgba(248,113,113,.04);
+    border-color: rgba(248,113,113,.28);
+  }
+  .sug.danger:hover { border-color: rgba(248,113,113,.50); }
+  .sug.danger .sug-head { color: var(--red); }
+  .sug.danger .sug-head .ttl::before { background: var(--red); }
+
+  .sug.warn {
+    background: rgba(230,184,106,.04);
+    border-color: rgba(230,184,106,.28);
+  }
+  .sug.warn:hover { border-color: rgba(230,184,106,.50); }
+  .sug.warn .sug-head { color: var(--orange); }
+  .sug.warn .sug-head .ttl::before { background: var(--orange); }
+
+  .sug.caution {
+    background: rgba(230,184,106,.03);
+    border-color: rgba(230,184,106,.22);
+  }
+  .sug.caution:hover { border-color: rgba(230,184,106,.42); }
   .sug.caution .sug-head { color: var(--yellow); }
-  .sug.good    { background: rgba(74,222,128,.10); border-color: var(--green); }
-  .sug.good .sug-head    { color: var(--green); }
-  .sug.info    { background: rgba(230,184,106,0.10); border-color: var(--accent); }
-  .sug.info .sug-head    { color: var(--accent); }
+  .sug.caution .sug-head .ttl::before { background: var(--yellow); }
+
+  .sug.good {
+    background: rgba(52,211,153,.03);
+    border-color: rgba(52,211,153,.22);
+  }
+  .sug.good:hover { border-color: rgba(52,211,153,.42); }
+  .sug.good .sug-head { color: var(--green); }
+  .sug.good .sug-head .ttl::before { background: var(--green); }
+
+  .sug.info {
+    background: rgba(230,184,106,.03);
+    border-color: rgba(230,184,106,.22);
+  }
+  .sug.info:hover { border-color: rgba(230,184,106,.42); }
+  .sug.info .sug-head { color: var(--accent); }
+  .sug.info .sug-head .ttl::before { background: var(--accent); }
 
   #chart-wrap { height: 320px; position: relative; }
 
@@ -4447,7 +4539,15 @@ async function submitRec() {
   }
 }
 
+// Cache last rec data so tier filter can re-render without re-fetching
+let _lastRecData = null;
+function setTierFilter(val) {
+  localStorage.setItem('rec_tier_filter', val);
+  if (_lastRecData) renderRecResult(_lastRecData);
+}
+
 function renderRecResult(d) {
+  _lastRecData = d;
   const c = d.criteria;
   const strategyDesc = c.is_short
     ? (c.is_call ? '卖出 Call（看跌或减仓）' : '卖出 Put（看涨或准备接货）')
@@ -4508,8 +4608,19 @@ function renderRecResult(d) {
   const isShort = c.is_short;
   const isLeaps = c.intent === 'long_leaps';
 
+  // Tier filter — 包租公视角：只看 ⭐⭐⭐⭐+ 还是全部
+  const tierFilter = localStorage.getItem('rec_tier_filter') || 'all';
+  const tierCount = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  d.candidates.forEach(o => { tierCount[o.verdict?.tier || 3]++; });
+  const filteredCandidates = d.candidates.filter(o => {
+    const t = o.verdict?.tier || 3;
+    if (tierFilter === '5')      return t >= 5;
+    if (tierFilter === '4plus')  return t >= 4;
+    return true;
+  });
+
   // 新设计：每个候选一张卡（不再用表格），verdict 最显眼
-  const cards = d.candidates.map((opt, i) => {
+  const cards = filteredCandidates.map((opt, i) => {
     const v = opt.verdict || {};
     const keyMetrics = isShort
       ? [
@@ -4605,6 +4716,28 @@ function renderRecResult(d) {
     </div>
   ` : '';
 
+  // Tier 过滤 pill 行
+  const n5 = tierCount[5], n4plus = tierCount[5] + tierCount[4];
+  const tierPills = `
+    <div class="tier-filter">
+      <span class="tf-label">过滤：</span>
+      <button class="tf-pill ${tierFilter==='all' ? 'active':''}" onclick="setTierFilter('all')">
+        全部 <span class="tf-n">${d.candidates.length}</span>
+      </button>
+      <button class="tf-pill ${tierFilter==='4plus' ? 'active':''}" onclick="setTierFilter('4plus')"
+              ${n4plus===0 ? 'disabled':''}>
+        ⭐⭐⭐⭐+ <span class="tf-n">${n4plus}</span>
+      </button>
+      <button class="tf-pill ${tierFilter==='5' ? 'active':''}" onclick="setTierFilter('5')"
+              ${n5===0 ? 'disabled':''}>
+        ⭐⭐⭐⭐⭐ <span class="tf-n">${n5}</span>
+      </button>
+    </div>
+  `;
+  const emptyFilterMsg = filteredCandidates.length === 0 ? `
+    <div class="empty">😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。</div>
+  ` : '';
+
   document.getElementById('rec-result').innerHTML = `
     ${algoBadge}
     <div class="summary">${summary}</div>
@@ -4613,6 +4746,8 @@ function renderRecResult(d) {
       ⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。
       所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。
     </div>
+    ${tierPills}
+    ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">
       💡 ${algo.name || '评级'}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。

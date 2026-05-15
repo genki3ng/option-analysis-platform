@@ -126,37 +126,138 @@ def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
     return out
 
 
-def fetch_chain(ticker: str, expiry_str: str) -> Dict:
-    """{(strike, 'call'|'put'): {bid, ask, mid, last, iv}}"""
-    key = (ticker, expiry_str)
-    if key in _cache_chain:
-        return _cache_chain[key]
+# ── Massive rate limiter: 5 calls/min hard cap (free plan) ─────────
+_massive_call_times: List[float] = []
+def _massive_throttle_ok() -> bool:
+    """检查是否还能调用 Massive（5 calls / 60s 滑动窗口）"""
+    import time as _t
+    now = _t.time()
+    # 清理 60s 之前的记录
+    while _massive_call_times and now - _massive_call_times[0] > 60:
+        _massive_call_times.pop(0)
+    return len(_massive_call_times) < 5
+
+
+def _massive_call_record():
+    import time as _t
+    _massive_call_times.append(_t.time())
+
+
+# Massive chain cache — 整 ticker 一次抓全，按 expiry 分发
+_cache_massive_chain: Dict[str, dict] = {}
+
+
+def fetch_chain_massive(ticker: str) -> Optional[dict]:
+    """
+    一次抓取 ticker 全部 option snapshot，缓存内按 (expiry, strike, type) 索引。
+    返回 {expiry: {(strike, type): {bid,ask,mid,iv,volume,oi}}} 或 None（失败/无权限）。
+    Free plan: EOD 数据 + 5 calls/min。
+    """
+    if ticker in _cache_massive_chain:
+        return _cache_massive_chain[ticker]
+    if not _massive_throttle_ok():
+        return None  # 配额用尽，跳过
+
+    # Polygon-style: /v3/snapshot/options/{ticker} 返回全 chain
+    url = f"{MASSIVE_BASE}/v3/snapshot/options/{ticker}?limit=250&apiKey={MASSIVE_KEY}"
     try:
-        import yfinance as yf
-        t = yf.Ticker(ticker)
-        if expiry_str not in t.options:
-            _cache_chain[key] = {}
-            return {}
-        chain = t.option_chain(expiry_str)
-        out = {}
-        for df, type_ in ((chain.calls, "call"), (chain.puts, "put")):
-            for _, row in df.iterrows():
-                bid = float(row.get("bid", 0) or 0)
-                ask = float(row.get("ask", 0) or 0)
-                last = float(row.get("lastPrice", 0) or 0)
-                mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
-                iv = float(row.get("impliedVolatility", 0) or 0)
-                volume = int(row.get("volume", 0) or 0)
-                oi = int(row.get("openInterest", 0) or 0)
-                out[(float(row["strike"]), type_)] = {
-                    "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
-                    "volume": volume, "oi": oi,
-                }
-        _cache_chain[key] = out
-        return out
+        import urllib.request
+        _massive_call_record()
+        with urllib.request.urlopen(url, timeout=8) as resp:
+            data = json.loads(resp.read())
     except Exception:
-        _cache_chain[key] = {}
-        return {}
+        return None
+
+    if data.get("status") not in ("OK", "DELAYED") or not data.get("results"):
+        return None
+
+    by_expiry: Dict[str, dict] = {}
+    for snap in data.get("results", []):
+        det = snap.get("details", {})
+        exp = det.get("expiration_date")
+        K = det.get("strike_price")
+        ctype = det.get("contract_type")
+        if not (exp and K and ctype):
+            continue
+
+        q = snap.get("last_quote", {}) or {}
+        d = snap.get("day", {}) or {}
+        bid = float(q.get("bid", 0) or 0)
+        ask = float(q.get("ask", 0) or 0)
+        mid = float(q.get("midpoint", 0) or 0)
+        if mid <= 0 and bid > 0 and ask > 0:
+            mid = (bid + ask) / 2
+        elif mid <= 0:
+            mid = float(d.get("close", 0) or 0)
+
+        iv = float(snap.get("implied_volatility", 0) or 0)
+        oi = int(snap.get("open_interest", 0) or 0)
+        vol = int(d.get("volume", 0) or 0)
+
+        by_expiry.setdefault(exp, {})[(float(K), ctype.lower())] = {
+            "bid": bid, "ask": ask, "mid": mid, "last": mid, "iv": iv,
+            "volume": vol, "oi": oi,
+        }
+
+    _cache_massive_chain[ticker] = by_expiry
+    return by_expiry
+
+
+def fetch_chain(ticker: str, expiry_str: str) -> Dict:
+    """
+    {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
+
+    策略（包租公算法 1.1.1）：
+    1. yfinance 先试（实时数据，但被 datacenter IP 限流）
+    2. yfinance 空 → 回退 Massive snapshot（EOD 数据，但稳定）
+    3. 只缓存非空结果；失败不污染 cache
+    """
+    key = (ticker, expiry_str)
+    if key in _cache_chain and _cache_chain[key]:
+        return _cache_chain[key]
+
+    # ── 1. yfinance 优先 ────────────────────────────
+    import yfinance as yf
+    for attempt in range(2):
+        try:
+            t = yf.Ticker(ticker)
+            if expiry_str not in t.options:
+                break  # yfinance 也没这个 expiry，直接去 Massive 试
+            chain = t.option_chain(expiry_str)
+            out = {}
+            for df, type_ in ((chain.calls, "call"), (chain.puts, "put")):
+                for _, row in df.iterrows():
+                    bid = float(row.get("bid", 0) or 0)
+                    ask = float(row.get("ask", 0) or 0)
+                    last = float(row.get("lastPrice", 0) or 0)
+                    mid = (bid + ask) / 2 if bid > 0 and ask > 0 else last
+                    iv = float(row.get("impliedVolatility", 0) or 0)
+                    volume = int(row.get("volume", 0) or 0)
+                    oi = int(row.get("openInterest", 0) or 0)
+                    out[(float(row["strike"]), type_)] = {
+                        "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
+                        "volume": volume, "oi": oi, "source": "yf",
+                    }
+            if out:
+                _cache_chain[key] = out
+                return out
+        except Exception:
+            pass
+        if attempt == 0:
+            import time as _t
+            _t.sleep(1.0)
+
+    # ── 2. Massive fallback ─────────────────────────
+    massive = fetch_chain_massive(ticker)
+    if massive and expiry_str in massive:
+        m_chain = massive[expiry_str]
+        # 标记数据源
+        for k in m_chain:
+            m_chain[k]["source"] = "massive"
+        _cache_chain[key] = m_chain
+        return m_chain
+
+    return {}
 
 
 def fetch_option_quote(ticker, expiry, strike, is_call):
@@ -1398,8 +1499,13 @@ def recommend(req: dict) -> dict:
     today = date.today()
 
     candidates = []
+    chain_stats = {"empty_count": 0, "good_count": 0, "total": len(target_exps)}
     for exp_str in target_exps:
         chain = fetch_chain(ticker, exp_str)
+        if chain:
+            chain_stats["good_count"] += 1
+        else:
+            chain_stats["empty_count"] += 1
 
         # Bug fix: 深度 ITM 期权 yfinance 经常不返回 IV / bid / ask（数据稀薄）
         # → LEAPS 整个候选清单被切空。Fallback：
@@ -1425,12 +1531,11 @@ def recommend(req: dict) -> dict:
                 if intent == "long_leaps":
                     intrinsic = max(underlying - strike, 0) if is_call else max(strike - underlying, 0)
                     if intrinsic > 0:
-                        # 深度 ITM 时间价值很少，1.03x 是合理估算
                         mid = intrinsic * 1.03
                     else:
-                        continue   # OTM 且无 quote，真没数据
+                        continue
                 else:
-                    continue       # 卖期权场景仍要求 quote 干净
+                    continue
 
             # IV 缺失：用同 chain 中位数兜底
             iv = q["iv"] if q["iv"] > 0 else fallback_iv
@@ -1512,6 +1617,23 @@ def recommend(req: dict) -> dict:
                 "oi": int(q.get("oi", 0)),
                 "volume": int(q.get("volume", 0)),
             })
+
+    # 数据源失败 — 友好错误（不要让用户看到一个空表格）
+    if not candidates and chain_stats["good_count"] == 0:
+        return {
+            "error": (
+                f"📡 数据源暂时不可用：yfinance + Massive 都没拉到 {ticker} 的 option chain。"
+                f" yfinance 经常被 Yahoo 限流（datacenter IP），Massive 免费层 5 calls/min。"
+                f" 请 1-2 分钟后重试，或换一个常见标的（SPY, AAPL, NVDA）。"
+            ),
+            "error_kind": "data_unavailable",
+            "ticker": ticker,
+            "data_source": {
+                "chains_ok": chain_stats["good_count"],
+                "chains_empty": chain_stats["empty_count"],
+                "total_chains": chain_stats["total"],
+            },
+        }
 
     # 1. IV rank
     iv_rank = None
@@ -1611,6 +1733,11 @@ def recommend(req: dict) -> dict:
         },
         "candidates": candidates[:10],
         "total_examined": len(candidates),
+        "data_source": {
+            "chains_ok": chain_stats["good_count"],
+            "chains_empty": chain_stats["empty_count"],
+            "total_chains": chain_stats["total"],
+        },
     }
 
 

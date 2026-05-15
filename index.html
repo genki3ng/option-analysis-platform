@@ -4803,7 +4803,20 @@ async function submitRec() {
     });
     const data = await r.json();
     if (data.error) {
-      out.innerHTML = '<div class="empty">❌ ' + data.error + '</div>';
+      // 数据源不可用 — 加重试按钮
+      const isDataErr = data.error_kind === 'data_unavailable';
+      out.innerHTML = `
+        <div class="empty" style="text-align:left;line-height:1.7">
+          ${isDataErr ? '📡' : '❌'} ${data.error}
+          ${isDataErr ? `
+            <div style="margin-top:14px;display:flex;gap:10px">
+              <button onclick="submitRec()"
+                style="background:var(--accent);color:#0A0A0B;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">
+                ↻ 立即重试
+              </button>
+            </div>
+          ` : ''}
+        </div>`;
       return;
     }
     renderRecResult(data);

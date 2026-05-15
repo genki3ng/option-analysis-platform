@@ -1161,39 +1161,67 @@
     border-style: solid;
   }
 
-  /* 📚 期权小白指南 */
-  .edu-card .edu-cat-header {
-    font-size: 11px; font-weight: 700;
-    color: var(--accent);
-    margin: 14px 0 6px;
-    padding-top: 8px;
+  /* 📚 期权小白指南 — 分类折叠 */
+  .edu-card .edu-cat {
     border-top: 1px solid var(--line);
-    letter-spacing: 0.3px;
+    margin: 0;
   }
-  .edu-card .edu-cat-header:first-child {
-    margin-top: 0; padding-top: 0; border-top: none;
+  .edu-card .edu-cat:first-child { border-top: none; }
+  .edu-card .edu-cat > summary.edu-cat-header {
+    padding: 12px 4px;
+    cursor: pointer; user-select: none;
+    list-style: none;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    transition: color 0.15s;
   }
-  .edu-card details {
+  .edu-card .edu-cat > summary.edu-cat-header::-webkit-details-marker { display: none; }
+  .edu-card .edu-cat > summary.edu-cat-header::before {
+    content: '▸';
+    color: var(--sub);
+    font-size: 10px;
+    transition: transform 0.2s;
+    display: inline-block;
+    width: 10px;
+  }
+  .edu-card .edu-cat[open] > summary.edu-cat-header::before {
+    transform: rotate(90deg);
+  }
+  .edu-card .edu-cat > summary.edu-cat-header:hover { color: var(--accent); }
+  .edu-card .edu-cat[open] > summary.edu-cat-header { color: var(--accent); }
+  .edu-card .edu-cat-name { flex: 1; }
+  .edu-card .edu-cat-count {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 10px; color: var(--sub);
+    font-weight: 400;
+  }
+  .edu-card .edu-cat-body {
+    padding: 6px 0 12px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  /* 单个术语项 */
+  .edu-card .edu-term {
     border: 1px solid var(--line);
     border-radius: 8px;
-    margin-bottom: 6px;
     overflow: hidden;
     background: var(--card2);
   }
-  .edu-card details[open] {
-    background: var(--card2);
+  .edu-card .edu-term[open] {
     border-color: var(--accent);
   }
-  .edu-card summary {
+  .edu-card .edu-term > summary {
     padding: 9px 12px;
     cursor: pointer; user-select: none;
     font-size: 12px; font-weight: 600;
     list-style: none;
     display: flex; align-items: baseline; gap: 8px;
   }
-  .edu-card summary::-webkit-details-marker { display: none; }
-  .edu-card summary:hover { color: var(--accent); }
-  .edu-card details[open] summary {
+  .edu-card .edu-term > summary::-webkit-details-marker { display: none; }
+  .edu-card .edu-term > summary:hover { color: var(--accent); }
+  .edu-card .edu-term[open] > summary {
     color: var(--accent);
     border-bottom: 1px solid var(--line);
   }
@@ -3815,20 +3843,27 @@ function renderEduList() {
   if (!el) return;
   const groups = _groupByCategory(EDU_TOPICS);
   el.innerHTML = Object.entries(groups).map(([cat, items]) => `
-    <div class="edu-cat-header">${t(cat)}</div>
-    ${items.map(topic => `
-      <details>
-        <summary>
-          <span class="edu-symbol">${topic.sym}</span>
-          <span>${t(topic.name)}</span>
-        </summary>
-        <div class="edu-body">
-          ${t(topic.desc)}
-          <div class="ex">📌 ${t(topic.ex)}</div>
-          <div class="care">💡 ${t(topic.care)}</div>
-        </div>
-      </details>
-    `).join('')}
+    <details class="edu-cat">
+      <summary class="edu-cat-header">
+        <span class="edu-cat-name">${t(cat)}</span>
+        <span class="edu-cat-count">${items.length}</span>
+      </summary>
+      <div class="edu-cat-body">
+        ${items.map(topic => `
+          <details class="edu-term">
+            <summary>
+              <span class="edu-symbol">${topic.sym}</span>
+              <span>${t(topic.name)}</span>
+            </summary>
+            <div class="edu-body">
+              ${t(topic.desc)}
+              <div class="ex">📌 ${t(topic.ex)}</div>
+              <div class="care">💡 ${t(topic.care)}</div>
+            </div>
+          </details>
+        `).join('')}
+      </div>
+    </details>
   `).join('');
 }
 // 启动渲染

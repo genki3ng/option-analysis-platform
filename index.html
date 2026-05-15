@@ -913,6 +913,48 @@
   .disclaimer strong { color: var(--orange); }
   :root[data-theme="dark"] .disclaimer { background: rgba(250,204,21,0.06); }
 
+  /* 包租公算法徽章 */
+  .algo-badge {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+  .algo-badge .algo-name {
+    color: var(--accent); font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .algo-badge .algo-tag {
+    color: var(--sub); font-size: 11px;
+  }
+
+  /* Rent score components panel */
+  .rent-components {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--sub);
+    line-height: 1.7;
+  }
+  .rent-components .rc-row {
+    display: flex; justify-content: space-between;
+    gap: 8px;
+  }
+  .rent-components .rc-k { color: var(--sub); }
+  .rent-components .rc-v {
+    font-family: "SF Mono", Menlo, monospace;
+    color: var(--text); font-variant-numeric: tabular-nums;
+  }
+  .rent-components .rc-v.good { color: var(--green); }
+  .rent-components .rc-v.bad  { color: var(--red); }
+
   /* IV Rank 横幅 */
   .iv-banner {
     background: var(--card2);
@@ -2764,6 +2806,46 @@ function renderPriceBand(pb, currentMid) {
   `;
 }
 
+function renderRentComponents(opt) {
+  // 仅 short 持仓有 score_components
+  const sc = opt.score_components;
+  if (!sc) return '';
+  const fmtFactor = (v) => {
+    let cls = '';
+    if (v >= 1.05) cls = 'good';
+    else if (v < 0.85) cls = 'bad';
+    return `<span class="rc-v ${cls}">×${v.toFixed(2)}</span>`;
+  };
+  const rows = [
+    ['📦 年化租金', `<span class="rc-v">${sc.annualized}%</span>`],
+    ['🛡 安全幂次', `<span class="rc-v">${(sc.safety * 100).toFixed(0)}</span>`],
+    ['📅 DTE 甜蜜区', fmtFactor(sc.dte_factor)],
+    ['🎯 Delta 甜蜜区', fmtFactor(sc.delta_factor)],
+    ['📈 IV rank', fmtFactor(sc.iv_factor)],
+    ['💧 流动性', fmtFactor(sc.liquidity_factor)],
+    ['📊 回测胜率', fmtFactor(sc.backtest_factor)],
+  ];
+  if (sc.earnings_factor < 1) {
+    rows.push([
+      '⚠️ 财报跨期',
+      sc.earnings_factor === 0
+        ? '<span class="rc-v bad">否决 (×0)</span>'
+        : fmtFactor(sc.earnings_factor)
+    ]);
+  }
+  const score = opt.rent_score != null ? opt.rent_score : opt.score;
+  return `
+    <div class="rent-components">
+      <div style="font-weight:600;color:var(--accent);margin-bottom:4px">
+        🏠 包租公分 · ${score}
+      </div>
+      ${rows.map(([k, v]) =>
+        `<div class="rc-row"><span class="rc-k">${k}</span>${v}</div>`
+      ).join('')}
+    </div>
+  `;
+}
+
 function renderSparkline(points, isUp) {
   if (!points || points.length < 2) {
     return '<div class="tk-empty" style="height:48px;padding:14px 0;">非交易时段或无分钟级数据</div>';
@@ -4313,6 +4395,7 @@ function renderRecResult(d) {
               </div>
             ` : ''}
             ${opt.price_band ? renderPriceBand(opt.price_band, opt.mid) : ''}
+            ${renderRentComponents(opt)}
             <div class="rec-fullstat">
               Bid/Ask <code>${fmt(opt.bid, 2)} / ${fmt(opt.ask, 2)}</code> ·
               Spread <code>${opt.spread_pct}%</code> ·
@@ -4326,7 +4409,17 @@ function renderRecResult(d) {
     `;
   }).join('');
 
+  // 包租公算法 1.0 — 算法版本徽章
+  const algo = d.algorithm || {};
+  const algoBadge = algo.name ? `
+    <div class="algo-badge">
+      <span class="algo-name">🏠 ${algo.name} ${algo.version}</span>
+      ${algo.tagline ? `<span class="algo-tag">${algo.tagline}</span>` : ''}
+    </div>
+  ` : '';
+
   document.getElementById('rec-result').innerHTML = `
+    ${algoBadge}
     <div class="summary">${summary}</div>
     ${ivBanner}
     <div class="disclaimer">
@@ -4335,7 +4428,8 @@ function renderRecResult(d) {
     </div>
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">
-      💡 评级根据"年化收益、安全概率、流动性、IV rank"等综合判断。点"展开详细分析"看完整指标。
+      💡 ${algo.name || '评级'}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。
+      保守模式下财报跨期 = 一律不接。
     </div>
     <div class="disclaimer" style="margin-top:8px">
       ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.

@@ -833,12 +833,191 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
         return None
 
 
+# ─────────────────────────────────────────────────────────────────────
+# 包租公算法 1.0 — Landlord Algorithm 1.0
+#
+# 设计原则（房东视角）：
+#   1. 收稳定的周租 — 不追高赌注，追胜率
+#   2. 不闹事的房客 — 安全度优先（N(d2) 真实概率）
+#   3. 甜蜜区 DTE   — 7-21 天为佳（周租周期）
+#   4. 甜蜜区 Delta — 0.15-0.30 为佳（既能收租又不易被指派）
+#   5. 不养事儿精  — 财报跨期对保守派直接否决，对激进派扣分
+#   6. 资金效率    — 年化收益 × 安全幂次 × 流动性
+#   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
+# ─────────────────────────────────────────────────────────────────────
+ALGORITHM_NAME = "包租公算法"
+ALGORITHM_VERSION = "1.0"
+ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
+
+
+def _prob_safe_bs(S: float, K: float, T: float, sigma: float, is_call: bool) -> float:
+    """
+    用 BS 模型算"到期安全"的真实概率（百分比 0-100）。
+    Short call: 安全 = S_T < K, 概率 = N(-d2)
+    Short put : 安全 = S_T > K, 概率 = N(d2)
+    """
+    if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
+        return 0.0
+    try:
+        d2 = (math.log(S / K) + (RISK_FREE - 0.5 * sigma * sigma) * T) / (sigma * math.sqrt(T))
+    except (ValueError, ZeroDivisionError):
+        return 0.0
+    # Short call 安全 = 标的低于 strike：P(S_T < K) = N(-d2)
+    # Short put  安全 = 标的高于 strike：P(S_T > K) = N(d2)
+    return (_ncdf(-d2) if is_call else _ncdf(d2)) * 100
+
+
+def _dte_sweet_factor(days: int) -> float:
+    """
+    DTE 甜蜜区加成：14 天为峰值，<5 或 >35 衰减。
+    Returns 0.5 ~ 1.2 multiplier.
+    """
+    if days <= 0:
+        return 0.5
+    if days < 5:
+        return 0.65 + 0.07 * days       # 5→1.0
+    if days <= 21:
+        # 7-21 天为甜蜜区，14 天最甜
+        return 1.0 + 0.2 * max(0, 1 - abs(days - 14) / 7)
+    if days <= 35:
+        return 1.0 - (days - 21) / 28   # 21→1.0, 35→0.5
+    return 0.5
+
+
+def _delta_sweet_factor(abs_delta: float) -> float:
+    """
+    Delta 甜蜜区加成：0.22 为峰值。
+    < 0.10 收太少；> 0.40 风险大。
+    Returns 0.6 ~ 1.15.
+    """
+    if abs_delta <= 0:
+        return 0.6
+    if abs_delta < 0.10:
+        return 0.6 + abs_delta * 4      # 0.10→1.0
+    if abs_delta <= 0.30:
+        # 0.10-0.30 甜蜜区，0.22 最甜
+        return 1.0 + 0.15 * max(0, 1 - abs(abs_delta - 0.22) / 0.12)
+    if abs_delta <= 0.45:
+        return 1.0 - (abs_delta - 0.30) / 0.30   # 0.30→1.0, 0.45→0.5
+    return 0.5
+
+
+def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool,
+                            price_band: Optional[dict]) -> tuple:
+    """
+    Wheel 友好度：对 CSP，strike 是否在历史合理位置？
+    若 strike 显著低于 30d 均价 → 被指派 = 好价位接货
+    Returns (factor, signal_text or None)
+    """
+    if not is_csp:
+        return 1.0, None
+    # Strike 相对当前价的折扣
+    discount = (underlying - strike) / underlying * 100  # %
+    if discount >= 10:
+        return 1.10, f"📦 即便被指派，{strike:.0f} 是 -{discount:.0f}% 接货价（划算）"
+    if discount >= 5:
+        return 1.05, None
+    if discount < 2:
+        # strike 太接近现价 → 被指派概率大且没便宜
+        return 0.92, None
+    return 1.0, None
+
+
+def _landlord_score(opt: dict, is_csp: bool, underlying: float,
+                     iv_rank: Optional[dict], backtest: Optional[dict],
+                     earnings_cross: bool, risk: str) -> dict:
+    """
+    包租公分（rent_score）— 综合"周租"质量评分。
+    返回 {"score": float, "components": {...}}，components 用于解释。
+    """
+    ay         = max(0, opt["annualized_yield_pct"])   # 年化租金 %
+    prob_safe  = max(0, min(100, opt["prob_safe_pct"])) / 100  # 0-1
+    spread_pct = opt["spread_pct"]
+    days       = opt["days"]
+    abs_delta  = abs(opt["delta"])
+
+    # 1. 基础：年化收益（房租）
+    base = ay
+
+    # 2. 安全度幂次 — 安全压倒一切
+    safety = prob_safe ** 1.5
+
+    # 3. DTE 甜蜜区
+    dte_f = _dte_sweet_factor(days)
+
+    # 4. Delta 甜蜜区
+    delta_f = _delta_sweet_factor(abs_delta)
+
+    # 5. IV rank 加成（IV 高 = 多收租）
+    iv_f = 1.0
+    if iv_rank and "iv_rank" in iv_rank:
+        ir = iv_rank["iv_rank"]
+        if ir >= 70:   iv_f = 1.20
+        elif ir >= 50: iv_f = 1.08
+        elif ir <= 20: iv_f = 0.85
+        elif ir <= 35: iv_f = 0.93
+
+    # 6. 流动性
+    liq_f = max(0.5, 1.0 - spread_pct / 40)
+
+    # 7. 财报跨期：保守 = 硬否决，平衡 = 严重扣分，激进 = 轻微
+    earnings_f = 1.0
+    if earnings_cross:
+        if risk == "conservative":
+            earnings_f = 0.0           # 包租公保守派：财报房客一律不租
+        elif risk == "balanced":
+            earnings_f = 0.55
+        else:
+            earnings_f = 0.78
+
+    # 8. 回测胜率加成
+    bt_f = 1.0
+    if backtest and backtest.get("n_trades", 0) >= 5:
+        wr = backtest["win_rate"]
+        if wr >= 75: bt_f = 1.12
+        elif wr >= 60: bt_f = 1.04
+        elif wr < 45: bt_f = 0.85
+
+    score = base * safety * dte_f * delta_f * iv_f * liq_f * earnings_f * bt_f
+
+    return {
+        "score": round(score, 2),
+        "components": {
+            "annualized": round(ay, 1),
+            "safety": round(safety, 3),
+            "dte_factor": round(dte_f, 2),
+            "delta_factor": round(delta_f, 2),
+            "iv_factor": round(iv_f, 2),
+            "liquidity_factor": round(liq_f, 2),
+            "earnings_factor": round(earnings_f, 2),
+            "backtest_factor": round(bt_f, 2),
+        }
+    }
+
+
 def _make_verdict(opt: dict, is_short: bool, intent: str,
                   iv_rank: Optional[dict], price_band: Optional[dict] = None,
-                  backtest: Optional[dict] = None) -> dict:
-    """生成一句话推荐 verdict（权重评分，严重的优劣权重更大）"""
+                  backtest: Optional[dict] = None, risk: str = "balanced",
+                  is_csp: bool = False, underlying: float = 0) -> dict:
+    """生成一句话推荐 verdict（包租公算法 1.0 — 房东视角，损失厌恶）"""
     pros, cons = [], []
     weight = 0  # 综合权重：正数 = 偏好，负数 = 不偏好
+
+    # ── 包租公专属信号 #1：Wheel 友好（CSP strike 是否好接货价）
+    if is_csp and underlying > 0:
+        _, wf_signal = _wheel_friendly_factor(opt["strike"], underlying, True, price_band)
+        if wf_signal:
+            pros.append(wf_signal); weight += 2
+
+    # ── 包租公专属信号 #2：DTE 甜蜜区（7-21 天）
+    if is_short and opt.get("days"):
+        d = opt["days"]
+        if 7 <= d <= 21:
+            pros.append(f"📅 {d} 天到期，周租甜蜜区"); weight += 1
+        elif d < 5:
+            cons.append(f"📅 仅 {d} 天，gamma 风险大"); weight -= 2
+        elif d > 35:
+            cons.append(f"📅 {d} 天太长，钱躺得久"); weight -= 1
 
     # ── Massive 历史价位带信号（最近 30 天）
     if price_band:
@@ -983,38 +1162,71 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         elif wr < 45:
             cons.append(f"📊 类似策略回测胜率仅 {wr:.0f}%，历史上不利"); weight -= 2
 
-    # 财报警告
+    # 财报警告 — 包租公算法 1.0：保守派 = 硬否决，平衡派 = 重扣，激进派 = 轻扣
+    earnings_veto = False
     if opt.get("earnings_warning"):
         ed = opt["earnings_warning"]
-        cons.append(f"⚠️ {ed['date']} 财报（剩 {ed['days']} 天）在到期前，注意 IV crush")
-        weight -= 1
+        if is_short and risk == "conservative":
+            cons.append(f"🚫 {ed['date']} 财报跨期（剩 {ed['days']} 天）— 包租公保守派不接此单")
+            weight -= 5
+            earnings_veto = True
+        elif is_short and risk == "balanced":
+            cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天），IV crush 风险")
+            weight -= 3
+        else:
+            cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天）")
+            weight -= 2
 
     # Spread 替代方案（短期高风险时建议）
     if is_short and opt.get("spread_alt"):
         sa = opt["spread_alt"]
         pros.append(f"🛡 可考虑改成 Spread (买 ${sa['protect_strike']:.0f} 保护腿)，最大亏损降到 ${sa['max_loss']:,.0f}")
 
-    # 综合评级（基于加权得分，越大越好）
-    if weight >= 5:
-        tier, stars, label, color = 5, "⭐⭐⭐⭐⭐", "强烈推荐", "green"
-    elif weight >= 2:
-        tier, stars, label, color = 4, "⭐⭐⭐⭐", "推荐", "green"
-    elif weight >= -1:
-        tier, stars, label, color = 3, "⭐⭐⭐", "一般", "yellow"
-    elif weight >= -4:
-        tier, stars, label, color = 2, "⭐⭐", "谨慎", "orange"
-    else:
-        tier, stars, label, color = 1, "⭐", "不建议", "red"
+    # 损失厌恶：cons 数量 ≥ pros 时再扣一分（包租公房东最讨厌"麻烦")
+    if len(cons) > len(pros):
+        weight -= 1
 
-    # 一句话总结
-    if pros and not cons:
-        one_line = "✅ 多项优势：" + " · ".join(pros[:2])
-    elif pros and cons:
-        one_line = "⚖️ 优 (" + pros[0] + ")，但 " + cons[0]
-    elif cons and not pros:
-        one_line = "⚠️ " + " · ".join(cons[:2])
+    # 综合评级（基于加权得分，越大越好）
+    if earnings_veto:
+        # 财报硬否决：不会超过 2 星
+        tier, stars, label, color = (
+            (2, "⭐⭐", "谨慎 — 财报跨期", "orange")
+            if weight >= -6 else (1, "⭐", "不建议", "red")
+        )
+    elif weight >= 6:
+        tier, stars, label, color = 5, "⭐⭐⭐⭐⭐", "五星房源", "green"
+    elif weight >= 3:
+        tier, stars, label, color = 4, "⭐⭐⭐⭐", "推荐出租", "green"
+    elif weight >= 0:
+        tier, stars, label, color = 3, "⭐⭐⭐", "一般房源", "yellow"
+    elif weight >= -3:
+        tier, stars, label, color = 2, "⭐⭐", "谨慎出租", "orange"
     else:
-        one_line = "符合筛选条件，但无突出优劣"
+        tier, stars, label, color = 1, "⭐", "别租", "red"
+
+    # 一句话总结 — 包租公口吻
+    if is_short:
+        if tier == 5:
+            voice = "📦 收稳定的周租，房客很少闹事"
+        elif tier == 4:
+            voice = "📬 不错的房子，建议出租"
+        elif tier == 3:
+            voice = "🏚 一般房源，看你心情"
+        elif tier == 2:
+            voice = "⚠️ 房客有风险，谨慎"
+        else:
+            voice = "🚫 这房子别租"
+    else:
+        voice = ""
+
+    if pros and not cons:
+        one_line = (voice + " · " if voice else "✅ ") + " · ".join(pros[:2])
+    elif pros and cons:
+        one_line = (voice + " · " if voice else "⚖️ ") + pros[0] + "，但 " + cons[0]
+    elif cons and not pros:
+        one_line = (voice + " · " if voice else "⚠️ ") + " · ".join(cons[:2])
+    else:
+        one_line = voice or "符合筛选条件，但无突出优劣"
 
     return {
         "tier": tier,
@@ -1025,6 +1237,7 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         "one_line": one_line,
         "pros": pros,
         "cons": cons,
+        "earnings_veto": earnings_veto,
     }
 
 
@@ -1116,12 +1329,16 @@ def recommend(req: dict) -> dict:
             annualized = 0
             if is_short and collateral > 0 and days > 0:
                 annualized = (premium / collateral) * (365 / days) * 100
-            prob_safe = (1 - abs_delta) * 100  # 粗估安全概率
+            # 包租公算法 1.0：真实 BS P(safe expiry)，而不是 1-|delta|
+            if is_short:
+                prob_safe = _prob_safe_bs(underlying, strike, T, iv, is_call)
+            else:
+                prob_safe = (1 - abs_delta) * 100
 
             # 综合评分
             liquidity_factor = max(0.3, 1.0 - spread_pct / 50)
             if is_short:
-                # Short: 年化收益 × 安全度 × 流动性
+                # 占位 — 真实 rent_score 在加完 earnings 信息后算（在循环外）
                 score = annualized * (prob_safe / 100) * liquidity_factor
             elif intent == "long_leaps":
                 # LEAPS Long Call: 杠杆 × 时间 × 便宜度 × 流动性
@@ -1188,11 +1405,15 @@ def recommend(req: dict) -> dict:
         if 0 <= earnings_days <= 30:
             earnings_warning = {"date": earnings_date.isoformat(), "days": earnings_days}
 
-    # 4. 给每个候选打初步 verdict + 算 spread 替代
+    # CSP 标记：short put + 标的看涨/接货意图
+    is_csp = (is_short and not is_call)
+
+    # 4. 给每个候选打初步 verdict + 算 spread 替代 + 包租公分
     for c in candidates:
         # 如果到期跨越财报，加 flag
         exp_d = date.fromisoformat(c["expiry"])
-        if earnings_date and today < earnings_date < exp_d:
+        earnings_cross = bool(earnings_date and today < earnings_date < exp_d)
+        if earnings_cross:
             c["earnings_warning"] = earnings_warning
 
         # Short option 距行权 < 8% 时，提供 spread 替代信号
@@ -1208,7 +1429,17 @@ def recommend(req: dict) -> dict:
                 "max_loss": max_loss,
             }
 
-        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, None, backtest)
+        # 包租公算法 1.0：替换原 score 为 rent_score（仅 short）
+        if is_short:
+            ls = _landlord_score(c, is_csp, underlying, iv_rank, backtest,
+                                  earnings_cross, risk)
+            c["rent_score"] = ls["score"]
+            c["score_components"] = ls["components"]
+            c["score"] = ls["score"]   # 排序统一用 rent_score
+
+        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, None,
+                                      backtest, risk=risk, is_csp=is_csp,
+                                      underlying=underlying)
 
     # 5. 排序后保留 top 15，富集 Massive 价位带
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
@@ -1222,7 +1453,9 @@ def recommend(req: dict) -> dict:
         hist = fetch_massive_option_history(occ, days_back=30)
         if hist:
             c["price_band"] = hist
-            c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, hist, backtest)
+            c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, hist,
+                                          backtest, risk=risk, is_csp=is_csp,
+                                          underlying=underlying)
 
     # 6. 终极排序
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
@@ -1231,6 +1464,11 @@ def recommend(req: dict) -> dict:
         "ticker": ticker,
         "underlying": underlying,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "algorithm": {
+            "name": ALGORITHM_NAME,
+            "version": ALGORITHM_VERSION,
+            "tagline": ALGORITHM_TAGLINE,
+        },
         "iv_rank": iv_rank,
         "criteria": {
             "direction": direction,

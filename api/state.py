@@ -311,6 +311,119 @@ def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
     return out
 
 
+# ── Schwab API (primary data source) ───────────────────────────────
+# 用 refresh_token 换 access_token（access 缓存 25 分钟，refresh 7 天有效）
+import os
+SCHWAB_CLIENT_ID = os.environ.get("SCHWAB_CLIENT_ID", "")
+SCHWAB_CLIENT_SECRET = os.environ.get("SCHWAB_CLIENT_SECRET", "")
+SCHWAB_REFRESH_TOKEN = os.environ.get("SCHWAB_REFRESH_TOKEN", "")
+SCHWAB_TOKEN_URL = "https://api.schwabapi.com/v1/oauth/token"
+SCHWAB_API_BASE = "https://api.schwabapi.com"
+
+_schwab_access_token: Optional[str] = None
+_schwab_token_expires_at: float = 0
+
+
+def _schwab_get_access_token() -> Optional[str]:
+    """换 access_token，缓存 25 分钟。失败返回 None。"""
+    global _schwab_access_token, _schwab_token_expires_at
+    import time as _t
+    if _schwab_access_token and _t.time() < _schwab_token_expires_at:
+        return _schwab_access_token
+    if not (SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET and SCHWAB_REFRESH_TOKEN):
+        return None
+
+    import base64, urllib.parse
+    auth = base64.b64encode(f"{SCHWAB_CLIENT_ID}:{SCHWAB_CLIENT_SECRET}".encode()).decode()
+    body = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": SCHWAB_REFRESH_TOKEN,
+    }).encode()
+    req = urllib.request.Request(
+        SCHWAB_TOKEN_URL, data=body,
+        headers={
+            "Authorization": f"Basic {auth}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=8) as r:
+            d = json.loads(r.read())
+        _schwab_access_token = d.get("access_token")
+        # Schwab access_token = 1800s; cache for 25 min to be safe
+        _schwab_token_expires_at = _t.time() + 25 * 60
+        return _schwab_access_token
+    except Exception as e:
+        print(f"[schwab] token refresh failed: {e}")
+        return None
+
+
+def fetch_chain_schwab(ticker: str, expiry_str: str) -> Dict:
+    """
+    用 Schwab Market Data API 拉 option chain，按 expiry 过滤。
+    返回 {(strike, 'call'|'put'): {...}} 或 {} 失败。
+    """
+    tok = _schwab_get_access_token()
+    if not tok:
+        return {}
+    url = (
+        f"{SCHWAB_API_BASE}/marketdata/v1/chains"
+        f"?symbol={ticker}"
+        f"&fromDate={expiry_str}&toDate={expiry_str}"
+        f"&includeUnderlyingQuote=false"
+    )
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {tok}",
+            "Accept": "application/json",
+        })
+    try:
+        with urllib.request.urlopen(req, timeout=8) as r:
+            data = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        print(f"[schwab] chain {ticker} {expiry_str} HTTP {e.code}: {e.read().decode()[:200]}")
+        return {}
+    except Exception as e:
+        print(f"[schwab] chain {ticker} {expiry_str}: {e}")
+        return {}
+
+    if data.get("status") != "SUCCESS":
+        return {}
+
+    out: Dict = {}
+    # Schwab returns callExpDateMap / putExpDateMap, keyed by "YYYY-MM-DD:DTE"
+    for type_, mapkey in (("call", "callExpDateMap"), ("put", "putExpDateMap")):
+        exp_map = data.get(mapkey) or {}
+        for exp_key, strikes_dict in exp_map.items():
+            # exp_key format: "2026-05-22:7" — only date prefix matters
+            if not exp_key.startswith(expiry_str):
+                continue
+            for strike_str, contracts in strikes_dict.items():
+                if not contracts:
+                    continue
+                c = contracts[0]  # array of len 1 typically
+                try:
+                    strike = float(strike_str)
+                    bid = float(c.get("bid", 0) or 0)
+                    ask = float(c.get("ask", 0) or 0)
+                    last = float(c.get("last", 0) or 0)
+                    mark = float(c.get("mark", 0) or 0)
+                    mid = mark if mark > 0 else ((bid + ask) / 2 if bid > 0 and ask > 0 else last)
+                    iv = float(c.get("volatility", 0) or 0)
+                    if iv > 5:   # Schwab returns IV as percent
+                        iv = iv / 100
+                    vol = int(c.get("totalVolume", 0) or 0)
+                    oi = int(c.get("openInterest", 0) or 0)
+                    out[(strike, type_)] = {
+                        "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
+                        "volume": vol, "oi": oi,
+                    }
+                except Exception:
+                    continue
+    return out
+
+
 # ── yfinance + curl_cffi UA 伪装 ─────────────────────────────────
 # yfinance 默认用 requests 库，Yahoo 能识别出来限流。
 # curl_cffi 能伪装 Chrome 的 TLS fingerprint + HTTP/2 frames，绕开识别。
@@ -420,9 +533,10 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     """
     {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
 
-    主路径：直接调 Yahoo JSON API + curl_cffi
-    备用：yfinance
-    - 30 分钟 TTL：成功拿到的 chain 反复用，不再被 Yahoo 折磨
+    主路径：Schwab Market Data API（实时、稳定，需要 OAuth refresh token）
+    备用 1：Yahoo direct JSON + curl_cffi（被限流是常态）
+    备用 2：yfinance
+    - 30 分钟 TTL：成功拿到的 chain 反复用
     - 仅缓存非空结果
     """
     import time as _t
@@ -432,10 +546,21 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     if cached and (_t.time() - cached_ts) < CHAIN_CACHE_TTL:
         return cached
 
-    # ── 1. Direct Yahoo API + curl_cffi（最可控）
+    # ── 1. Schwab API（实时、稳定）
+    out = fetch_chain_schwab(ticker, expiry_str)
+    if out:
+        for v in out.values():
+            v["source"] = "schwab"
+        _cache_chain[key] = out
+        _cache_chain_ts[key] = _t.time()
+        return out
+
+    # ── 2. Yahoo direct + curl_cffi
     for attempt in range(2):
         out = _fetch_chain_direct(ticker, expiry_str)
         if out:
+            for v in out.values():
+                v["source"] = "yahoo"
             _cache_chain[key] = out
             _cache_chain_ts[key] = _t.time()
             return out

@@ -2147,13 +2147,10 @@
 
     <div class="side">
       <div class="card">
-        <button class="rec-btn-large maintenance" onclick="showRecMaintenance()" title="数据源维护中">
+        <button class="rec-btn-large" onclick="showRec()">
           <div class="rec-text">
-            <div class="rec-title">
-              <span data-i18n="包租公推荐指数">包租公推荐指数</span>
-              <span class="maint-tag" data-i18n="维护中">维护中</span>
-            </div>
-            <div class="rec-sub" data-i18n="数据源切换中，预计 5/17 恢复">数据源切换中，预计 5/17 恢复</div>
+            <div class="rec-title" data-i18n="包租公推荐指数">包租公推荐指数</div>
+            <div class="rec-sub" data-i18n="房东视角，给每张合约打分排序">房东视角，给每张合约打分排序</div>
           </div>
         </button>
         <button class="rerun-btn" id="rerun-btn" onclick="rerunLastRec()" style="display:none"></button>
@@ -5079,9 +5076,9 @@ const _RISK_LABEL = {
 // ── 维护模式开关 ─────────────────────────────────────────────────────
 // 上游数据源（Yahoo）限流严重，Schwab API 审批通过后撤掉这个开关。
 const REC_MAINTENANCE = {
-  active: true,
+  active: false,   // Schwab API 已接入主路径
   until: '2026-05-17',
-  reason: '上游 Yahoo Finance 数据源被限流，正在切换到 Schwab API。预计 5/17 恢复。'
+  reason: '上游 Yahoo Finance 数据源被限流，正在切换到 Schwab API。'
 };
 
 function showRecMaintenance() {

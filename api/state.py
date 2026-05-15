@@ -107,12 +107,14 @@ def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
     out = {}
     try:
         import yfinance as yf
+        session = _get_yf_session()
         for tk in set(tickers):
             if tk in _cache_prices:
                 out[tk] = _cache_prices[tk]
                 continue
             try:
-                fi = yf.Ticker(tk).fast_info
+                ticker_obj = yf.Ticker(tk, session=session) if session else yf.Ticker(tk)
+                fi = ticker_obj.fast_info
                 out[tk] = {
                     "price": float(fi.last_price),
                     "prev": float(fi.previous_close),
@@ -126,11 +128,33 @@ def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
     return out
 
 
+# ── yfinance + curl_cffi UA 伪装 ─────────────────────────────────
+# yfinance 默认用 requests 库，Yahoo 能识别出来限流。
+# curl_cffi 能伪装 Chrome 的 TLS fingerprint + HTTP/2 frames，绕开识别。
+_yf_session = None  # 延迟初始化，复用整个 function 实例
+
+def _get_yf_session():
+    """返回 Chrome-impersonated curl_cffi session，失败则返回 None（让 yf 用默认）"""
+    global _yf_session
+    if _yf_session is False:
+        return None
+    if _yf_session is not None:
+        return _yf_session
+    try:
+        from curl_cffi import requests as cffi_requests
+        _yf_session = cffi_requests.Session(impersonate="chrome")
+        return _yf_session
+    except Exception:
+        _yf_session = False
+        return None
+
+
 def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     """
     {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
 
-    yfinance 经常被 Yahoo 限流（datacenter IP），尤其是远期到期日。策略：
+    yfinance 经常被 Yahoo 限流（datacenter IP）。策略：
+    - curl_cffi 伪装成 Chrome（绕过 TLS fingerprint 识别）
     - 最多 retry 2 次，1s 间隔
     - 仅缓存非空结果（失败不污染 cache，下次还能再试）
     - 完全失败时返回 {}，让 recommend() 给出友好错误 + 重试按钮
@@ -140,9 +164,10 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
         return _cache_chain[key]
 
     import yfinance as yf
+    session = _get_yf_session()
     for attempt in range(2):
         try:
-            t = yf.Ticker(ticker)
+            t = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
             if expiry_str not in t.options:
                 return {}   # 真没这个 expiry，立刻返回
             chain = t.option_chain(expiry_str)
@@ -188,7 +213,8 @@ def fetch_intraday(ticker: str) -> List[Dict]:
         return _cache_intraday[ticker]
     try:
         import yfinance as yf
-        t = yf.Ticker(ticker)
+        session = _get_yf_session()
+        t = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
         hist = t.history(period="1d", interval="5m", prepost=False)
         out = []
         for idx, row in hist.iterrows():
@@ -210,7 +236,9 @@ def fetch_history(ticker: str, start: date) -> Dict[str, float]:
         return _cache_hist[key]
     try:
         import yfinance as yf
-        df = yf.Ticker(ticker).history(
+        session = _get_yf_session()
+        ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
+        df = ticker_obj.history(
             start=start.isoformat(),
             end=(date.today() + timedelta(days=1)).isoformat(),
             auto_adjust=True,
@@ -797,7 +825,9 @@ def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
         return None
     try:
         import yfinance as yf
-        hist = yf.Ticker(ticker).history(period="1y", interval="1d", auto_adjust=True)
+        session = _get_yf_session()
+        ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
+        hist = ticker_obj.history(period="1y", interval="1d", auto_adjust=True)
         closes = hist["Close"].dropna().tolist()
         if len(closes) < 60:
             return None
@@ -842,7 +872,9 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
     """
     try:
         import yfinance as yf
-        hist = yf.Ticker(ticker).history(period="6mo", interval="1d", auto_adjust=True)
+        session = _get_yf_session()
+        ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
+        hist = ticker_obj.history(period="6mo", interval="1d", auto_adjust=True)
         closes = hist["Close"].dropna().tolist()
         if len(closes) < 60:
             return None
@@ -1358,7 +1390,9 @@ def _find_expiries(ticker: str, target_days: int, n: int = 3):
     """找最接近 target_days 的到期日"""
     try:
         import yfinance as yf
-        exps = yf.Ticker(ticker).options
+        session = _get_yf_session()
+        ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
+        exps = ticker_obj.options
         today = date.today()
         scored = []
         for e in exps:

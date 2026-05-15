@@ -1746,8 +1746,8 @@
       <div class="card">
         <button class="rec-btn-large" onclick="showRec()">
           <div class="rec-text">
-            <div class="rec-title" data-i18n="找最佳 Option">找最佳 Option</div>
-            <div class="rec-sub" data-i18n="根据你的看法和风险偏好，从期权链推荐最佳合约">根据你的看法和风险偏好，从期权链推荐最佳合约</div>
+            <div class="rec-title" data-i18n="包租公推荐指数">包租公推荐指数</div>
+            <div class="rec-sub" data-i18n="房东视角，给每张合约打分排序">房东视角，给每张合约打分排序</div>
           </div>
         </button>
         <button class="review-btn" onclick="showReview()" style="margin-top:10px">
@@ -1783,11 +1783,11 @@
 <div class="modal-backdrop" id="journal-backdrop" onclick="hideJournal()"></div>
 <div class="review-modal" id="journal-modal"></div>
 
-<!-- 🎯 找最佳 Option 模态框（全局 overlay）-->
+<!-- 🏠 包租公推荐指数 模态框（全局 overlay）-->
 <div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
 <div class="rec-form modal" id="rec-form">
   <h4>
-    <span data-i18n="🎯 找最佳 Option（基于实时市场数据评分排名）">🎯 找最佳 Option（基于实时市场数据评分排名）</span>
+    <span data-i18n="🏠 包租公推荐指数 · 给每张合约打分">🏠 包租公推荐指数 · 给每张合约打分</span>
     <span class="x" onclick="hideRec()">×</span>
   </h4>
 
@@ -1998,6 +1998,8 @@ const I18N = {
     '从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$':
       '從最早交易日起，每天收盤時如果全部平倉的總盈虧。橫軸=日期，縱軸=$',
     // 建议侧栏
+    '包租公推荐指数': '包租公推薦指數',
+    '房东视角，给每张合约打分排序': '房東視角，給每張合約打分排序',
     '🎯 找最佳 Option': '🎯 找最佳 Option',
     '找最佳 Option': '找最佳 Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
@@ -2021,6 +2023,8 @@ const I18N = {
     '平仓': '平倉',
     '🗑 删除': '🗑 刪除',
     // 推荐模态
+    '🏠 包租公推荐指数 · 给每张合约打分':
+      '🏠 包租公推薦指數 · 給每張合約打分',
     '🎯 找最佳 Option（基于实时市场数据评分排名）':
       '🎯 找最佳 Option（基於即時市場資料評分排名）',
     '📖 大佬策略模板（一键填表）': '📖 大佬策略模板（一鍵填表）',
@@ -2285,6 +2289,8 @@ const I18N = {
     '从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$':
       'Daily mark-to-market P&L from earliest trade. X=date, Y=$',
     // Sidebar buttons
+    '包租公推荐指数': 'Landlord Rec Index',
+    '房东视角，给每张合约打分排序': "Landlord's-eye view — every contract scored & ranked",
     '🎯 找最佳 Option': '🎯 Find Best Option',
     '找最佳 Option': 'Find Best Option',
     '根据你的看法和风险偏好，从期权链推荐最佳合约':
@@ -2308,6 +2314,8 @@ const I18N = {
     '平仓': 'Close',
     '🗑 删除': '🗑 Delete',
     // Recommendation modal
+    '🏠 包租公推荐指数 · 给每张合约打分':
+      '🏠 Landlord Rec Index · every contract scored',
     '🎯 找最佳 Option（基于实时市场数据评分排名）':
       '🎯 Find Best Option (ranked by real-time market data)',
     '📖 大佬策略模板（一键填表）': '📖 Strategy Presets (one-click fill)',

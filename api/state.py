@@ -327,16 +327,22 @@ _schwab_access_token: Optional[str] = None
 _schwab_token_expires_at: float = 0
 
 
+_schwab_last_err: Optional[str] = None
+
 def _schwab_get_access_token() -> Optional[str]:
     """换 access_token，缓存 25 分钟。失败返回 None。"""
-    global _schwab_access_token, _schwab_token_expires_at
+    global _schwab_access_token, _schwab_token_expires_at, _schwab_last_err
     import time as _t
     if _schwab_access_token and _t.time() < _schwab_token_expires_at:
         return _schwab_access_token
-    if not (SCHWAB_CLIENT_ID and SCHWAB_CLIENT_SECRET and SCHWAB_REFRESH_TOKEN):
-        return None
+    if not SCHWAB_CLIENT_ID:
+        _schwab_last_err = "missing SCHWAB_CLIENT_ID env"; return None
+    if not SCHWAB_CLIENT_SECRET:
+        _schwab_last_err = "missing SCHWAB_CLIENT_SECRET env"; return None
+    if not SCHWAB_REFRESH_TOKEN:
+        _schwab_last_err = "missing SCHWAB_REFRESH_TOKEN env"; return None
 
-    import base64, urllib.parse
+    import base64
     auth = base64.b64encode(f"{SCHWAB_CLIENT_ID}:{SCHWAB_CLIENT_SECRET}".encode()).decode()
     body = urllib.parse.urlencode({
         "grant_type": "refresh_token",
@@ -353,11 +359,16 @@ def _schwab_get_access_token() -> Optional[str]:
         with urllib.request.urlopen(req, timeout=8) as r:
             d = json.loads(r.read())
         _schwab_access_token = d.get("access_token")
-        # Schwab access_token = 1800s; cache for 25 min to be safe
         _schwab_token_expires_at = _t.time() + 25 * 60
+        _schwab_last_err = None
         return _schwab_access_token
+    except urllib.error.HTTPError as e:
+        _schwab_last_err = f"token HTTP {e.code}: {e.read().decode()[:200]}"
+        print(f"[schwab] {_schwab_last_err}")
+        return None
     except Exception as e:
-        print(f"[schwab] token refresh failed: {e}")
+        _schwab_last_err = f"token exception: {type(e).__name__}: {e}"
+        print(f"[schwab] {_schwab_last_err}")
         return None
 
 
@@ -366,6 +377,7 @@ def fetch_chain_schwab(ticker: str, expiry_str: str) -> Dict:
     用 Schwab Market Data API 拉 option chain，按 expiry 过滤。
     返回 {(strike, 'call'|'put'): {...}} 或 {} 失败。
     """
+    global _schwab_last_err
     tok = _schwab_get_access_token()
     if not tok:
         return {}
@@ -385,10 +397,12 @@ def fetch_chain_schwab(ticker: str, expiry_str: str) -> Dict:
         with urllib.request.urlopen(req, timeout=8) as r:
             data = json.loads(r.read())
     except urllib.error.HTTPError as e:
-        print(f"[schwab] chain {ticker} {expiry_str} HTTP {e.code}: {e.read().decode()[:200]}")
+        _schwab_last_err = f"chain {ticker} {expiry_str} HTTP {e.code}: {e.read().decode()[:200]}"
+        print(f"[schwab] {_schwab_last_err}")
         return {}
     except Exception as e:
-        print(f"[schwab] chain {ticker} {expiry_str}: {e}")
+        _schwab_last_err = f"chain {ticker} {expiry_str}: {type(e).__name__}: {e}"
+        print(f"[schwab] {_schwab_last_err}")
         return {}
 
     if data.get("status") != "SUCCESS":
@@ -2007,8 +2021,8 @@ def recommend(req: dict) -> dict:
         return {
             "error": (
                 f"📡 暂时拉不到 {ticker} 的 option chain。"
-                f" 上游数据（yfinance）经常被 Yahoo 限流，尤其是远期到期日和冷门标的。"
-                f" 请 1-2 分钟后重试，或换一个流动性更好的标的（SPY、AAPL、NVDA）。"
+                f" 数据源临时不可用 — 请 1-2 分钟后重试，或换一个高流动性标的"
+                f"（SPY、AAPL、NVDA、TSLA）。"
             ),
             "error_kind": "data_unavailable",
             "ticker": ticker,
@@ -2016,6 +2030,7 @@ def recommend(req: dict) -> dict:
                 "chains_ok": chain_stats["good_count"],
                 "chains_empty": chain_stats["empty_count"],
                 "total_chains": chain_stats["total"],
+                "schwab_last_err": _schwab_last_err,
             },
         }
 

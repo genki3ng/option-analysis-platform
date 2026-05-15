@@ -19,6 +19,189 @@ RISK_FREE = 0.045
 MASSIVE_KEY = "LGOwbUJ6_VvPovE08rGOwohlCkt6IFeL"
 MASSIVE_BASE = "https://api.massive.com"
 
+# ── i18n: translation tables for server-rendered strings ───────────
+# Keyed by simplified Chinese (source). For static labels, value is plain text.
+# For templates with placeholders ({key}), use .format(**vars) at call site.
+TRANS_EN = {
+    # Morning brief
+    "📊 今日市场:": "📊 Today:",
+    "🟢 持仓累计浮盈亏": "🟢 Portfolio P&L",
+    "🔴 持仓累计浮盈亏": "🔴 Portfolio P&L",
+    "已实现": "Realized",
+    "财报剩": "earnings in",
+    "天": "d",
+    "天到期": "d to expiry",
+    "到期跨越 — 留意 IV crush": "expires across earnings — watch IV crush",
+    "已实现 {pct}% 权利金": "already at {pct}% of premium",
+    "可考虑平仓锁利": "consider closing to lock in profit",
+    "剩 {days} 天到期 · {note}": "{days}d to expiry · {note}",
+    "已 ITM，关注指派风险": "Now ITM — watch assignment risk",
+    "OTM 距 {pct}%": "OTM by {pct}%",
+    "距行权仅 {pct}%，gamma 风险大": "Only {pct}% from strike — high gamma risk",
+    # Suggestion status
+    "🟢 持仓健康": "🟢 Healthy",
+    "🚨 Call 已 ITM": "🚨 Call is ITM",
+    "🚨 Put 已 ITM": "🚨 Put is ITM",
+    "🚨 接近行权（ATM）": "🚨 Near strike (ATM)",
+    "⚠️ 距行权较近": "⚠️ Approaching strike",
+    "🎯 强烈建议平仓": "🎯 Strongly recommend closing",
+    "✅ 可考虑平仓": "✅ Consider closing",
+    "🟢 组合健康": "🟢 Portfolio healthy",
+    # Card labels
+    "组合总览": "Portfolio Overview",
+    "{n} 持仓 · 实时聚合": "{n} positions · live aggregation",
+    "🚨 {n} 个需评估": "🚨 {n} need review",
+    "🎯 {n} 个建议平仓": "🎯 {n} suggested to close",
+    "集中度": "Concentration",
+    "{tk} 占 {pct}%": "{tk} = {pct}%",
+    "{n} 个空头持仓，总浮盈 ${pnl} ({pct}%)": "{n} short positions, total P&L ${pnl} ({pct}%)",
+    "每日 Theta": "Daily Theta",
+    "已收权利金": "Premium collected",
+    "📐 组合 Delta 等价 {d} 股（{bias}-biased）": "📐 Portfolio Delta ≈ {d} shares ({bias}-biased)",
+    "🏘 集中度：{tk} 占 {pct}%（共 {n} 个标的）": "🏘 Concentration: {tk} = {pct}% (across {n} tickers)",
+    "⚠️ {n} 个持仓在财报之后到期（IV crush 风险）": "⚠️ {n} positions expire after earnings (IV-crush risk)",
+    "🚨 {n} 个持仓接近/超行权价": "🚨 {n} positions near/past strike",
+    "🎯 {n} 个持仓达到 80% 利润": "🎯 {n} positions at 80% profit",
+    "⏱️ {n} 个持仓 3 天内到期": "⏱️ {n} positions expire within 3 days",
+    # Position advice
+    "Exp {exp} · {n} 张 · 剩 {d} 天": "Exp {exp} · {n} contracts · {d}d left",
+    "OTM 安全区": "OTM safe zone",
+    "ITM 风险区": "ITM danger zone",
+    "{tk} 现价 ${px}，行权价 ${k}（距 {money}%，{label}）":
+      "{tk} at ${px}, strike ${k} ({money}%, {label})",
+    "剩余 {days} 天到期，{n} 张合约": "{days}d to expiry, {n} contracts",
+    "现在买回需 ${bb}，浮盈亏 ${pnl} ({pct}%)": "Buyback cost ${bb}, P&L ${pnl} ({pct}%)",
+    "⚡ 标的 > 行权价，到期需交付 {n} 股": "⚡ Stock > strike, must deliver {n} shares at expiry",
+    "⚡ 到期被指派需 ${cash} 接 {n} 股": "⚡ Assignment requires ${cash} to buy {n} shares",
+    "立即买回（${bb}，{verb} ${amt}）": "Buy back now (${bb}, {verb} ${amt})",
+    "锁利": "lock in",
+    "止损": "stop loss",
+    "💰 已实现 {pct}% 权利金（${pnl}）": "💰 Already at {pct}% of premium (${pnl})",
+    "立即买回 ${px}/股 锁利 ${pnl}": "Buy back at ${px}/sh, lock in ${pnl}",
+    "买回 ${px}/股 锁利 ${pnl}": "Buy back at ${px}/sh, lock in ${pnl}",
+    "📉 浮亏 ${amt}（>50% 权利金）": "📉 Unrealized loss ${amt} (>50% of premium)",
+    "📉 浮亏 ${amt}": "📉 Unrealized loss ${amt}",
+    "⏱️ 仅 {days} 天到期，gamma 风险大": "⏱️ Only {days}d left — high gamma risk",
+    "⚠️ {date} 财报（剩 {n} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险":
+      "⚠️ {date} earnings ({n}d away) before your expiry. IV spikes pre-earnings then crushes post; short put = both directional + IV risk",
+    "⚠️ {date} 财报（剩 {n} 天）在你到期前，注意 IV crush + gamma 风险":
+      "⚠️ {date} earnings ({n}d away) before your expiry — watch IV crush + gamma",
+    "财报前 1-2 天考虑平仓，避免 IV crush": "Close 1-2 days before earnings to avoid IV crush",
+    "继续持有让 Theta 累积收益": "Hold to let Theta accumulate",
+    "继续持有等时间衰减": "Hold and wait for time decay",
+    # Concentration card
+    "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 Concentration too high · {tk} = {pct}%",
+    "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ Concentration high · {tk} = {pct}%",
+    "💡 集中度提醒 · {tk} 占 {pct}%": "💡 Concentration notice · {tk} = {pct}%",
+    "集中度 · {tk}": "Concentration · {tk}",
+    "{pct}% / 共 {n} 标的": "{pct}% / {n} tickers",
+    "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。":
+      "Nearly all exposure on one ticker. A 10% single-day drop could trigger assignment across the board.",
+    "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。":
+      "Over 60% exposure to one ticker. Consider rotating tickers next time to spread the risk.",
+    "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。":
+      "Over half on one ticker. Landlord's rule of thumb: 3-5 tickers is steadier.",
+    "当前 {tk} 抵押暴露 ${exp}": "{tk} collateral exposure ${exp}",
+    "组合总抵押暴露 ${exp}": "Total collateral exposure ${exp}",
+    "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。":
+      "💡 If that ticker tanks, IV spikes, or earnings blow up — there's no cushion.",
+}
+
+TRANS_TW = {
+    "📊 今日市场:": "📊 今日市場:",
+    "🟢 持仓累计浮盈亏": "🟢 持倉累計浮盈虧",
+    "🔴 持仓累计浮盈亏": "🔴 持倉累計浮盈虧",
+    "已实现": "已實現",
+    "财报剩": "財報剩",
+    "天": "天",
+    "天到期": "天到期",
+    "到期跨越 — 留意 IV crush": "到期跨越 — 留意 IV crush",
+    "已实现 {pct}% 权利金": "已實現 {pct}% 權利金",
+    "可考虑平仓锁利": "可考慮平倉鎖利",
+    "剩 {days} 天到期 · {note}": "剩 {days} 天到期 · {note}",
+    "已 ITM，关注指派风险": "已 ITM，關注指派風險",
+    "OTM 距 {pct}%": "OTM 距 {pct}%",
+    "距行权仅 {pct}%，gamma 风险大": "距行權僅 {pct}%，gamma 風險大",
+    "🟢 持仓健康": "🟢 持倉健康",
+    "🚨 Call 已 ITM": "🚨 Call 已 ITM",
+    "🚨 Put 已 ITM": "🚨 Put 已 ITM",
+    "🚨 接近行权（ATM）": "🚨 接近行權（ATM）",
+    "⚠️ 距行权较近": "⚠️ 距行權較近",
+    "🎯 强烈建议平仓": "🎯 強烈建議平倉",
+    "✅ 可考虑平仓": "✅ 可考慮平倉",
+    "🟢 组合健康": "🟢 組合健康",
+    "组合总览": "組合總覽",
+    "{n} 持仓 · 实时聚合": "{n} 持倉 · 即時聚合",
+    "🚨 {n} 个需评估": "🚨 {n} 個需評估",
+    "🎯 {n} 个建议平仓": "🎯 {n} 個建議平倉",
+    "集中度": "集中度",
+    "{tk} 占 {pct}%": "{tk} 佔 {pct}%",
+    "{n} 个空头持仓，总浮盈 ${pnl} ({pct}%)": "{n} 個空頭持倉，總浮盈 ${pnl} ({pct}%)",
+    "每日 Theta": "每日 Theta",
+    "已收权利金": "已收權利金",
+    "📐 组合 Delta 等价 {d} 股（{bias}-biased）": "📐 組合 Delta 等價 {d} 股（{bias}-biased）",
+    "🏘 集中度：{tk} 占 {pct}%（共 {n} 个标的）": "🏘 集中度：{tk} 佔 {pct}%（共 {n} 個標的）",
+    "⚠️ {n} 个持仓在财报之后到期（IV crush 风险）": "⚠️ {n} 個持倉在財報之後到期（IV crush 風險）",
+    "🚨 {n} 个持仓接近/超行权价": "🚨 {n} 個持倉接近/超行權價",
+    "🎯 {n} 个持仓达到 80% 利润": "🎯 {n} 個持倉達到 80% 利潤",
+    "⏱️ {n} 个持仓 3 天内到期": "⏱️ {n} 個持倉 3 天內到期",
+    "Exp {exp} · {n} 张 · 剩 {d} 天": "Exp {exp} · {n} 張 · 剩 {d} 天",
+    "OTM 安全区": "OTM 安全區",
+    "ITM 风险区": "ITM 風險區",
+    "{tk} 现价 ${px}，行权价 ${k}（距 {money}%，{label}）":
+      "{tk} 現價 ${px}，行權價 ${k}（距 {money}%，{label}）",
+    "剩余 {days} 天到期，{n} 张合约": "剩餘 {days} 天到期，{n} 張合約",
+    "现在买回需 ${bb}，浮盈亏 ${pnl} ({pct}%)": "現在買回需 ${bb}，浮盈虧 ${pnl} ({pct}%)",
+    "⚡ 标的 > 行权价，到期需交付 {n} 股": "⚡ 標的 > 行權價，到期需交付 {n} 股",
+    "⚡ 到期被指派需 ${cash} 接 {n} 股": "⚡ 到期被指派需 ${cash} 接 {n} 股",
+    "立即买回（${bb}，{verb} ${amt}）": "立即買回（${bb}，{verb} ${amt}）",
+    "锁利": "鎖利",
+    "止损": "止損",
+    "💰 已实现 {pct}% 权利金（${pnl}）": "💰 已實現 {pct}% 權利金（${pnl}）",
+    "立即买回 ${px}/股 锁利 ${pnl}": "立即買回 ${px}/股 鎖利 ${pnl}",
+    "买回 ${px}/股 锁利 ${pnl}": "買回 ${px}/股 鎖利 ${pnl}",
+    "📉 浮亏 ${amt}（>50% 权利金）": "📉 浮虧 ${amt}（>50% 權利金）",
+    "📉 浮亏 ${amt}": "📉 浮虧 ${amt}",
+    "⏱️ 仅 {days} 天到期，gamma 风险大": "⏱️ 僅 {days} 天到期，gamma 風險大",
+    "⚠️ {date} 财报（剩 {n} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险":
+      "⚠️ {date} 財報（剩 {n} 天）在你到期前，財報前 IV 通常飆升、後 IV crush；賣 put 同時承擔方向 + IV 風險",
+    "⚠️ {date} 财报（剩 {n} 天）在你到期前，注意 IV crush + gamma 风险":
+      "⚠️ {date} 財報（剩 {n} 天）在你到期前，注意 IV crush + gamma 風險",
+    "财报前 1-2 天考虑平仓，避免 IV crush": "財報前 1-2 天考慮平倉，避免 IV crush",
+    "继续持有让 Theta 累积收益": "繼續持有讓 Theta 累積收益",
+    "继续持有等时间衰减": "繼續持有等時間衰減",
+    "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 集中度過高 · {tk} 佔 {pct}%",
+    "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ 集中度偏高 · {tk} 佔 {pct}%",
+    "💡 集中度提醒 · {tk} 占 {pct}%": "💡 集中度提醒 · {tk} 佔 {pct}%",
+    "集中度 · {tk}": "集中度 · {tk}",
+    "{pct}% / 共 {n} 标的": "{pct}% / 共 {n} 標的",
+    "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。":
+      "幾乎全部押在一個標的上。這個 ticker 單日大跌 10% 你可能就被全員指派。",
+    "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。":
+      "超過六成暴露在一個標的。考慮下次推薦時換個 ticker，分散一下房產。",
+    "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。":
+      "過半暴露在單一標的。包租公經驗：3-5 個標的左右更穩。",
+    "当前 {tk} 抵押暴露 ${exp}": "當前 {tk} 抵押暴露 ${exp}",
+    "组合总抵押暴露 ${exp}": "組合總抵押暴露 ${exp}",
+    "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。":
+      "💡 一只標的大跌、IV 飆升、財報暴雷 — 全靠它一個，沒有緩衝。",
+}
+
+def _T(lang: str, key: str, **vars) -> str:
+    """Translate + interpolate. Falls back to zh source if missing."""
+    if lang == "en":
+        s = TRANS_EN.get(key, key)
+    elif lang in ("zh_tw", "zh-TW", "zh-tw"):
+        s = TRANS_TW.get(key, key)
+    else:
+        s = key
+    if vars:
+        try:
+            s = s.format(**vars)
+        except (KeyError, IndexError):
+            pass
+    return s
+
 # 财报日历（主要标的；yfinance 拿不到时 fallback）
 # 季度财报通常按固定 cycle，这里记下未来 1 年的近似日期
 EARNINGS_DATES = {
@@ -603,7 +786,7 @@ def _max_sev(a, b):
     return a if order.get(a, 0) >= order.get(b, 0) else b
 
 
-def position_advice(ps):
+def position_advice(ps, lang: str = "zh"):
     days = ps["days"]
     if days < 0 or ps["closed"]:
         return None
@@ -614,59 +797,77 @@ def position_advice(ps):
     shares = ps["contracts"] * 100
     buyback_total = mark * shares
     severity = "good"
-    status = "🟢 持仓健康"
+    status = _T(lang, "🟢 持仓健康")
     facts, actions = [], []
 
     is_otm = (is_call and money > 0) or ((not is_call) and money < 0)
-    moneyness_label = "OTM 安全区" if is_otm else "ITM 风险区"
-    facts.append(f"{ps['ticker']} 现价 ${underlying:.2f}，行权价 ${strike:.0f}（距 {money:+.1f}%，{moneyness_label}）")
-    facts.append(f"剩余 {days} 天到期，{ps['contracts']} 张合约")
-    facts.append(f"现在买回需 ${buyback_total:,.0f}，浮盈亏 ${pnl:+,.0f} ({pnl_pct:+.1f}%)")
+    money_label = _T(lang, "OTM 安全区") if is_otm else _T(lang, "ITM 风险区")
+    facts.append(_T(lang, "{tk} 现价 ${px}，行权价 ${k}（距 {money}%，{label}）",
+                    tk=ps['ticker'], px=f"{underlying:.2f}", k=f"{strike:.0f}",
+                    money=f"{money:+.1f}", label=money_label))
+    facts.append(_T(lang, "剩余 {days} 天到期，{n} 张合约", days=days, n=ps['contracts']))
+    facts.append(_T(lang, "现在买回需 ${bb}，浮盈亏 ${pnl} ({pct}%)",
+                    bb=f"{buyback_total:,.0f}", pnl=f"{pnl:+,.0f}", pct=f"{pnl_pct:+.1f}"))
 
-    pnl_word = "锁利" if pnl >= 0 else "止损"
+    pnl_verb = _T(lang, "锁利") if pnl >= 0 else _T(lang, "止损")
     pnl_amt = abs(pnl)
+    buy_back_action = _T(lang, "立即买回（${bb}，{verb} ${amt}）",
+                          bb=f"{buyback_total:,.0f}", verb=pnl_verb, amt=f"{pnl_amt:,.0f}")
 
     if is_call:
         if money < 0:
-            severity = _max_sev(severity, "danger"); status = "🚨 Call 已 ITM"
-            facts.append(f"⚡ 标的 > 行权价，到期需交付 {shares} 股")
-            actions += [f"立即买回（${buyback_total:,.0f}，{pnl_word} ${pnl_amt:,.0f}）", "Roll up", "买保护 Call"]
+            severity = _max_sev(severity, "danger")
+            status = _T(lang, "🚨 Call 已 ITM")
+            facts.append(_T(lang, "⚡ 标的 > 行权价，到期需交付 {n} 股", n=shares))
+            actions += [buy_back_action, "Roll up", "Buy protective Call" if lang == "en" else "买保护 Call"]
         elif money < 5:
-            severity = _max_sev(severity, "danger"); status = "🚨 接近行权（ATM）"
-            actions += [f"立即买回（${buyback_total:,.0f}，{pnl_word} ${pnl_amt:,.0f}）", "Roll up"]
+            severity = _max_sev(severity, "danger")
+            status = _T(lang, "🚨 接近行权（ATM）")
+            actions += [buy_back_action, "Roll up"]
         elif money < 15:
-            severity = _max_sev(severity, "warn"); status = "⚠️ 距行权较近"
+            severity = _max_sev(severity, "warn")
+            status = _T(lang, "⚠️ 距行权较近")
     else:
         cash_need = strike * shares
         if money > 0:
-            severity = _max_sev(severity, "danger"); status = "🚨 Put 已 ITM"
-            facts.append(f"⚡ 到期被指派需 ${cash_need:,.0f} 接 {shares} 股")
-            actions += [f"立即买回（${buyback_total:,.0f}，{pnl_word} ${pnl_amt:,.0f}）", "Roll 到下月", "接受指派"]
+            severity = _max_sev(severity, "danger")
+            status = _T(lang, "🚨 Put 已 ITM")
+            facts.append(_T(lang, "⚡ 到期被指派需 ${cash} 接 {n} 股",
+                            cash=f"{cash_need:,.0f}", n=shares))
+            actions += [buy_back_action,
+                        "Roll to next month" if lang == "en" else "Roll 到下月",
+                        "Accept assignment" if lang == "en" else "接受指派"]
         elif money > -5:
-            severity = _max_sev(severity, "danger"); status = "🚨 接近行权（ATM）"
-            actions += [f"立即买回（${buyback_total:,.0f}，{pnl_word} ${pnl_amt:,.0f}）", "Roll 到下月"]
+            severity = _max_sev(severity, "danger")
+            status = _T(lang, "🚨 接近行权（ATM）")
+            actions += [buy_back_action,
+                        "Roll to next month" if lang == "en" else "Roll 到下月"]
         elif money > -15:
-            severity = _max_sev(severity, "warn"); status = "⚠️ 距行权较近"
+            severity = _max_sev(severity, "warn")
+            status = _T(lang, "⚠️ 距行权较近")
 
     if pnl_pct >= 80:
-        if severity == "good": status = "🎯 强烈建议平仓"
-        facts.append(f"💰 已实现 {pnl_pct:.0f}% 权利金（${pnl:,.0f}）")
-        ac = f"立即买回 ${mark:.2f}/股 锁利 ${pnl:,.0f}"
+        if severity == "good":
+            status = _T(lang, "🎯 强烈建议平仓")
+        facts.append(_T(lang, "💰 已实现 {pct}% 权利金（${pnl}）",
+                        pct=f"{pnl_pct:.0f}", pnl=f"{pnl:,.0f}"))
+        ac = _T(lang, "立即买回 ${px}/股 锁利 ${pnl}", px=f"{mark:.2f}", pnl=f"{pnl:,.0f}")
         if ac not in actions: actions.insert(0, ac)
     elif pnl_pct >= 50:
         if severity == "good":
-            status = "✅ 可考虑平仓"
-            actions.insert(0, f"买回 ${mark:.2f}/股 锁利 ${pnl:,.0f}")
+            status = _T(lang, "✅ 可考虑平仓")
+            actions.insert(0, _T(lang, "买回 ${px}/股 锁利 ${pnl}",
+                                  px=f"{mark:.2f}", pnl=f"{pnl:,.0f}"))
 
     if pnl_pct < -50:
         severity = _max_sev(severity, "danger")
-        facts.append(f"📉 浮亏 ${-pnl:,.0f}（>50% 权利金）")
+        facts.append(_T(lang, "📉 浮亏 ${amt}（>50% 权利金）", amt=f"{-pnl:,.0f}"))
     elif pnl_pct < -20:
         severity = _max_sev(severity, "warn")
-        facts.append(f"📉 浮亏 ${-pnl:,.0f}")
+        facts.append(_T(lang, "📉 浮亏 ${amt}", amt=f"{-pnl:,.0f}"))
 
     if 0 < days <= 3:
-        facts.append(f"⏱️ 仅 {days} 天到期，gamma 风险大")
+        facts.append(_T(lang, "⏱️ 仅 {days} 天到期，gamma 风险大", days=days))
 
     # 财报警告
     if ps.get("earnings_before_expiry"):
@@ -674,27 +875,33 @@ def position_advice(ps):
         eud = ps["earnings_days_until"]
         if eud is not None and eud >= 0:
             severity = _max_sev(severity, "warn")
-            if ps["type"] == "put" and ps.get("type") == "put":
-                # Short put 财报后股价跌可能很惨
-                facts.append(f"⚠️ {ed} 财报（剩 {eud} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险")
+            if ps["type"] == "put":
+                facts.append(_T(lang,
+                    "⚠️ {date} 财报（剩 {n} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险",
+                    date=ed, n=eud))
             else:
-                facts.append(f"⚠️ {ed} 财报（剩 {eud} 天）在你到期前，注意 IV crush + gamma 风险")
-            if "财报前 1-2 天平仓" not in str(actions):
-                actions.insert(0, "财报前 1-2 天考虑平仓，避免 IV crush")
+                facts.append(_T(lang,
+                    "⚠️ {date} 财报（剩 {n} 天）在你到期前，注意 IV crush + gamma 风险",
+                    date=ed, n=eud))
+            earn_action = _T(lang, "财报前 1-2 天考虑平仓，避免 IV crush")
+            if earn_action not in actions:
+                actions.insert(0, earn_action)
 
     if not actions:
-        actions.append("继续持有让 Theta 累积收益" if pnl_pct >= 0 else "继续持有等时间衰减")
+        actions.append(_T(lang, "继续持有让 Theta 累积收益") if pnl_pct >= 0
+                       else _T(lang, "继续持有等时间衰减"))
 
     return {
         "position_id": ps["id"], "label": ps["label"],
-        "subtitle": f"Exp {ps['expiry']} · {ps['contracts']} 张 · 剩 {days} 天",
+        "subtitle": _T(lang, "Exp {exp} · {n} 张 · 剩 {d} 天",
+                       exp=ps['expiry'], n=ps['contracts'], d=days),
         "type": severity, "status": status,
         "pnl": pnl, "pnl_pct": pnl_pct,
         "facts": facts, "actions": actions,
     }
 
 
-def get_suggestions(positions):
+def get_suggestions(positions, lang: str = "zh"):
     cards = []
     active = [p for p in positions if not p["closed"] and p["days"] >= 0]
     total_pnl = sum(p["pnl"] for p in active)
@@ -705,14 +912,9 @@ def get_suggestions(positions):
     n_tp = sum(1 for p in active if p["pnl_pct"] >= 80)
     n_close = sum(1 for p in active if 0 <= p["days"] <= 3)
 
-    # Beta-weighted Delta（简化版：直接累加，不调 beta，因为 single-ticker 多）
     total_delta_shares = sum(p["delta"] * p["contracts"] * 100 for p in active)
-
-    # 财报警告计数
     n_earnings = sum(1 for p in active if p.get("earnings_before_expiry"))
 
-    # 包租公视角：持仓集中度 — 单一 ticker 的抵押金占比
-    #   short option 用 strike × contracts × 100 估算"如果全部被指派"的暴露
     ticker_exposure: Dict[str, float] = {}
     for p in active:
         tkr = p.get("ticker") or "?"
@@ -727,62 +929,75 @@ def get_suggestions(positions):
         top_concentration = top_exposure / total_exposure * 100
 
     port_facts = [
-        f"{len(active)} 个空头持仓，总浮盈 ${total_pnl:+,.0f}（{total_pct:+.1f}%）",
-        f"每日 Theta +${total_theta:.0f}",
-        f"已收权利金 ${total_sold:,.0f}",
-        f"📐 组合 Delta 等价 {total_delta_shares:+.0f} 股（{'long' if total_delta_shares > 0 else 'short'}-biased）",
+        _T(lang, "{n} 个空头持仓，总浮盈 ${pnl} ({pct}%)",
+           n=len(active), pnl=f"{total_pnl:+,.0f}", pct=f"{total_pct:+.1f}"),
+        f"{_T(lang, '每日 Theta')} +${total_theta:.0f}",
+        f"{_T(lang, '已收权利金')} ${total_sold:,.0f}",
+        _T(lang, "📐 组合 Delta 等价 {d} 股（{bias}-biased）",
+           d=f"{total_delta_shares:+.0f}", bias='long' if total_delta_shares > 0 else 'short'),
     ]
     if len(ticker_exposure) > 1:
-        port_facts.append(f"🏘 集中度：{top_ticker} 占 {top_concentration:.0f}%（共 {len(ticker_exposure)} 个标的）")
+        port_facts.append(_T(lang, "🏘 集中度：{tk} 占 {pct}%（共 {n} 个标的）",
+                              tk=top_ticker, pct=f"{top_concentration:.0f}", n=len(ticker_exposure)))
     if n_earnings:
-        port_facts.append(f"⚠️ {n_earnings} 个持仓在财报之后到期（IV crush 风险）")
-    if n_danger: port_facts.append(f"🚨 {n_danger} 个持仓接近/超行权价")
-    if n_tp: port_facts.append(f"🎯 {n_tp} 个持仓达到 80% 利润")
-    if n_close: port_facts.append(f"⏱️ {n_close} 个持仓 3 天内到期")
+        port_facts.append(_T(lang, "⚠️ {n} 个持仓在财报之后到期（IV crush 风险）", n=n_earnings))
+    if n_danger:
+        port_facts.append(_T(lang, "🚨 {n} 个持仓接近/超行权价", n=n_danger))
+    if n_tp:
+        port_facts.append(_T(lang, "🎯 {n} 个持仓达到 80% 利润", n=n_tp))
+    if n_close:
+        port_facts.append(_T(lang, "⏱️ {n} 个持仓 3 天内到期", n=n_close))
 
     if n_danger > 0:
-        port_sev, port_status = "danger", f"🚨 {n_danger} 个需评估"
+        port_sev = "danger"
+        port_status = _T(lang, "🚨 {n} 个需评估", n=n_danger)
     elif n_tp > 0:
-        port_sev, port_status = "good", f"🎯 {n_tp} 个建议平仓"
+        port_sev = "good"
+        port_status = _T(lang, "🎯 {n} 个建议平仓", n=n_tp)
     else:
-        port_sev, port_status = "good", "🟢 组合健康"
+        port_sev = "good"
+        port_status = _T(lang, "🟢 组合健康")
 
     cards.append({
-        "position_id": None, "label": "组合总览",
-        "subtitle": f"{len(active)} 持仓 · 实时聚合",
+        "position_id": None, "label": _T(lang, "组合总览"),
+        "subtitle": _T(lang, "{n} 持仓 · 实时聚合", n=len(active)),
         "type": port_sev, "status": port_status,
         "pnl": total_pnl, "pnl_pct": total_pct,
         "facts": port_facts, "actions": [],
     })
 
-    # 集中度警告 — 包租公说"别把所有租客都放在一栋楼"
+    # 集中度警告
     if top_concentration >= 50 and len(ticker_exposure) >= 2:
         if top_concentration >= 75:
-            sev, status = "danger", f"🚨 集中度过高 · {top_ticker} 占 {top_concentration:.0f}%"
-            advice = "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。"
+            sev = "danger"
+            status = _T(lang, "🚨 集中度过高 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。")
         elif top_concentration >= 60:
-            sev, status = "warn", f"⚠️ 集中度偏高 · {top_ticker} 占 {top_concentration:.0f}%"
-            advice = "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。"
+            sev = "warn"
+            status = _T(lang, "⚠️ 集中度偏高 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。")
         else:
-            sev, status = "caution", f"💡 集中度提醒 · {top_ticker} 占 {top_concentration:.0f}%"
-            advice = "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。"
+            sev = "caution"
+            status = _T(lang, "💡 集中度提醒 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。")
         cards.append({
             "position_id": None,
-            "label": f"集中度 · {top_ticker}",
-            "subtitle": f"{top_concentration:.0f}% / 共 {len(ticker_exposure)} 标的",
+            "label": _T(lang, "集中度 · {tk}", tk=top_ticker),
+            "subtitle": _T(lang, "{pct}% / 共 {n} 标的", pct=f"{top_concentration:.0f}", n=len(ticker_exposure)),
             "type": sev, "status": status,
             "pnl": 0, "pnl_pct": 0,
             "facts": [
                 advice,
-                f"当前 {top_ticker} 抵押暴露 ${ticker_exposure[top_ticker]:,.0f}",
-                f"组合总抵押暴露 ${total_exposure:,.0f}",
-                "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。",
+                _T(lang, "当前 {tk} 抵押暴露 ${exp}",
+                   tk=top_ticker, exp=f"{ticker_exposure[top_ticker]:,.0f}"),
+                _T(lang, "组合总抵押暴露 ${exp}", exp=f"{total_exposure:,.0f}"),
+                _T(lang, "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。"),
             ],
             "actions": [],
         })
 
     for ps in positions:
-        adv = position_advice(ps)
+        adv = position_advice(ps, lang=lang)
         if adv: cards.append(adv)
     return cards
 
@@ -791,6 +1006,7 @@ def get_suggestions(positions):
 def compute(payload):
     positions_raw = payload.get("positions", [])
     state = payload.get("state", {})
+    lang = payload.get("lang", "zh")
 
     if not positions_raw:
         return {
@@ -812,7 +1028,7 @@ def compute(payload):
 
     enriched = [position_state(p, today, state, prices, earliest) for p in positions]
     history = portfolio_history(positions, state, prices, today)
-    suggestions = get_suggestions(enriched)
+    suggestions = get_suggestions(enriched, lang=lang)
 
     total_sold = sum(x["sold"] for x in enriched)
     total_mktval = sum(x["mktval"] for x in enriched)
@@ -825,7 +1041,7 @@ def compute(payload):
         if x.get("closed") and x.get("close_price") is not None
     )
 
-    morning_brief = _generate_morning_brief(enriched, prices, total_pnl - total_realized, total_realized)
+    morning_brief = _generate_morning_brief(enriched, prices, total_pnl - total_realized, total_realized, lang=lang)
 
     return {
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -1782,7 +1998,8 @@ def recommend(req: dict) -> dict:
 
 
 def _generate_morning_brief(positions: List[dict], prices: Dict[str, Dict],
-                             total_pnl: float, total_realized: float) -> List[str]:
+                             total_pnl: float, total_realized: float,
+                             lang: str = "zh") -> List[str]:
     """生成基于规则的每日 brief（非 AI，但是数据驱动且个性化）"""
     lines = []
 
@@ -1794,29 +2011,35 @@ def _generate_morning_brief(positions: List[dict], prices: Dict[str, Dict],
         arrow = "📈" if pct >= 0 else "📉"
         today_chgs.append(f"{tk} ${info['price']:.0f} {arrow}{abs(pct):.1f}%")
     if today_chgs:
-        lines.append("📊 今日市场: " + " · ".join(today_chgs[:4]))
+        lines.append(_T(lang, "📊 今日市场:") + " " + " · ".join(today_chgs[:4]))
 
     # 2. 今日组合 P&L
     active = [p for p in positions if not p["closed"] and p["days"] >= 0]
     if active:
-        emoji = "🟢" if total_pnl >= 0 else "🔴"
-        lines.append(f"{emoji} 持仓累计浮盈亏 ${total_pnl:+,.0f}"
-                     + (f" · 已实现 ${total_realized:+,.0f}" if total_realized else ""))
+        emoji_key = "🟢 持仓累计浮盈亏" if total_pnl >= 0 else "🔴 持仓累计浮盈亏"
+        line = f"{_T(lang, emoji_key)} ${total_pnl:+,.0f}"
+        if total_realized:
+            line += f" · {_T(lang, '已实现')} ${total_realized:+,.0f}"
+        lines.append(line)
 
     # 3. 财报警告（最近 1 个）
     earnings_alerts = [p for p in active if p.get("earnings_before_expiry")
                        and p.get("earnings_days_until", 999) <= 21]
     if earnings_alerts:
         e = sorted(earnings_alerts, key=lambda p: p["earnings_days_until"])[0]
-        lines.append(f"⚠️ {e['ticker']} 财报剩 {e['earnings_days_until']} 天 "
-                     f"({e['earnings_date']})，你的 {e['label']} {e['expiry']} 到期跨越 — 留意 IV crush")
+        lines.append(
+            f"⚠️ {e['ticker']} {_T(lang, '财报剩')} {e['earnings_days_until']} {_T(lang, '天')} "
+            f"({e['earnings_date']}), {e['label']} {e['expiry']} "
+            f"{_T(lang, '到期跨越 — 留意 IV crush')}"
+        )
 
-    # 4. 利润目标 / 风险（取最紧急的）
+    # 4. 利润目标 / 风险
     actionable = [p for p in active if p["pnl_pct"] >= 80]
     if actionable:
         a = max(actionable, key=lambda p: p["pnl_pct"])
-        lines.append(f"🎯 {a['label']} 已实现 {a['pnl_pct']:.0f}% 权利金"
-                     f"（${a['pnl']:+,.0f}），可考虑平仓锁利")
+        achieved = _T(lang, "已实现 {pct}% 权利金", pct=f"{a['pnl_pct']:.0f}")
+        consider = _T(lang, "可考虑平仓锁利")
+        lines.append(f"🎯 {a['label']} {achieved} (${a['pnl']:+,.0f}), {consider}")
 
     # 5. 即将到期
     expiring = [p for p in active if p["days"] <= 3]
@@ -1825,15 +2048,15 @@ def _generate_morning_brief(positions: List[dict], prices: Dict[str, Dict],
         money = e.get("moneyness", 0)
         is_call = e["type"] == "call"
         is_itm = (is_call and money < 0) or (not is_call and money > 0)
-        risk_note = "已 ITM，关注指派风险" if is_itm else f"OTM 距 {abs(money):.1f}%"
-        lines.append(f"⏱️ {e['label']} 剩 {e['days']} 天到期 · {risk_note}")
+        risk_note = _T(lang, "已 ITM，关注指派风险") if is_itm else _T(lang, "OTM 距 {pct}%", pct=f"{abs(money):.1f}")
+        lines.append(f"⏱️ {e['label']} " + _T(lang, "剩 {days} 天到期 · {note}", days=e['days'], note=risk_note))
 
     # 6. 危险持仓警告
     danger = [p for p in active if (p["type"] == "call" and p["moneyness"] < 5)
               or (p["type"] == "put" and p["moneyness"] > -5)]
     if danger and not any("ITM" in l for l in lines):
         d = danger[0]
-        lines.append(f"🚨 {d['label']} 距行权仅 {abs(d['moneyness']):.1f}%，gamma 风险大")
+        lines.append(f"🚨 {d['label']} " + _T(lang, "距行权仅 {pct}%，gamma 风险大", pct=f"{abs(d['moneyness']):.1f}"))
 
     return lines
 

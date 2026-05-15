@@ -2567,6 +2567,13 @@ const I18N = {
     'lesson_csp_assigned': 'CSP 被指派 = 接貨。檢查現在的 cost basis 是否還合理，開始 Wheel 下半段（賣 Covered Call）。',
     '当日 5 分钟线': '當日 5 分鐘線',
     '重新授权': '重新授權',
+  
+    '🎯 价位关系（最基础）': '🎯 價位關係（最基礎）',
+    '💰 报价与价格': '💰 報價與價格',
+    '🧮 关键指标': '🧮 關鍵指標',
+    '📅 时间相关': '📅 時間相關',
+    '🛠 常见策略': '🛠 常見策略',
+    '🎬 操作与事件': '🎬 操作與事件',
   },
 
   en: {
@@ -2929,6 +2936,13 @@ const I18N = {
     'lesson_csp_assigned': 'CSP assigned = you got the shares. Check whether the cost basis still makes sense; start Wheel second half (sell Covered Call).',
     '当日 5 分钟线': 'Today 5-min line',
     '重新授权': 'Re-authorize',
+  
+    '🎯 价位关系（最基础）': '🎯 Price relationships (basics)',
+    '💰 报价与价格': '💰 Quotes & prices',
+    '🧮 关键指标': '🧮 Key metrics',
+    '📅 时间相关': '📅 Time-related',
+    '🛠 常见策略': '🛠 Common strategies',
+    '🎬 操作与事件': '🎬 Actions & events',
   },
 };
 
@@ -2958,8 +2972,10 @@ function setLang(lang) {
   document.documentElement.lang =
     lang === 'zh_tw' ? 'zh-TW' : lang === 'en' ? 'en' : 'zh-CN';
   applyTranslations();
-  // 重新渲染所有动态 UI
+  // 重新渲染所有动态 UI（用现有 data 立即响应）
   if (window._currentData) renderAll(window._currentData);
+  // 触发后端 refresh：server-side 翻译的 morning brief / 建议卡 会跟语言走
+  if (typeof refresh === 'function') refresh();
   // 更新选择器
   document.querySelectorAll('.lang-selector button').forEach(b =>
     b.classList.toggle('active', b.dataset.lang === lang));
@@ -6125,7 +6141,7 @@ async function refresh() {
     const r = await fetch('/api/state', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ positions, state }),
+      body: JSON.stringify({ positions, state, lang: _lang || 'zh' }),
     });
     if (!r.ok) {
       const txt = await r.text();

@@ -126,103 +126,25 @@ def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
     return out
 
 
-# ── Massive rate limiter: 5 calls/min hard cap (free plan) ─────────
-_massive_call_times: List[float] = []
-def _massive_throttle_ok() -> bool:
-    """检查是否还能调用 Massive（5 calls / 60s 滑动窗口）"""
-    import time as _t
-    now = _t.time()
-    # 清理 60s 之前的记录
-    while _massive_call_times and now - _massive_call_times[0] > 60:
-        _massive_call_times.pop(0)
-    return len(_massive_call_times) < 5
-
-
-def _massive_call_record():
-    import time as _t
-    _massive_call_times.append(_t.time())
-
-
-# Massive chain cache — 整 ticker 一次抓全，按 expiry 分发
-_cache_massive_chain: Dict[str, dict] = {}
-
-
-def fetch_chain_massive(ticker: str) -> Optional[dict]:
-    """
-    一次抓取 ticker 全部 option snapshot，缓存内按 (expiry, strike, type) 索引。
-    返回 {expiry: {(strike, type): {bid,ask,mid,iv,volume,oi}}} 或 None（失败/无权限）。
-    Free plan: EOD 数据 + 5 calls/min。
-    """
-    if ticker in _cache_massive_chain:
-        return _cache_massive_chain[ticker]
-    if not _massive_throttle_ok():
-        return None  # 配额用尽，跳过
-
-    # Polygon-style: /v3/snapshot/options/{ticker} 返回全 chain
-    url = f"{MASSIVE_BASE}/v3/snapshot/options/{ticker}?limit=250&apiKey={MASSIVE_KEY}"
-    try:
-        import urllib.request
-        _massive_call_record()
-        with urllib.request.urlopen(url, timeout=8) as resp:
-            data = json.loads(resp.read())
-    except Exception:
-        return None
-
-    if data.get("status") not in ("OK", "DELAYED") or not data.get("results"):
-        return None
-
-    by_expiry: Dict[str, dict] = {}
-    for snap in data.get("results", []):
-        det = snap.get("details", {})
-        exp = det.get("expiration_date")
-        K = det.get("strike_price")
-        ctype = det.get("contract_type")
-        if not (exp and K and ctype):
-            continue
-
-        q = snap.get("last_quote", {}) or {}
-        d = snap.get("day", {}) or {}
-        bid = float(q.get("bid", 0) or 0)
-        ask = float(q.get("ask", 0) or 0)
-        mid = float(q.get("midpoint", 0) or 0)
-        if mid <= 0 and bid > 0 and ask > 0:
-            mid = (bid + ask) / 2
-        elif mid <= 0:
-            mid = float(d.get("close", 0) or 0)
-
-        iv = float(snap.get("implied_volatility", 0) or 0)
-        oi = int(snap.get("open_interest", 0) or 0)
-        vol = int(d.get("volume", 0) or 0)
-
-        by_expiry.setdefault(exp, {})[(float(K), ctype.lower())] = {
-            "bid": bid, "ask": ask, "mid": mid, "last": mid, "iv": iv,
-            "volume": vol, "oi": oi,
-        }
-
-    _cache_massive_chain[ticker] = by_expiry
-    return by_expiry
-
-
 def fetch_chain(ticker: str, expiry_str: str) -> Dict:
     """
     {(strike, 'call'|'put'): {bid, ask, mid, last, iv, volume, oi}}
 
-    策略（包租公算法 1.1.1）：
-    1. yfinance 先试（实时数据，但被 datacenter IP 限流）
-    2. yfinance 空 → 回退 Massive snapshot（EOD 数据，但稳定）
-    3. 只缓存非空结果；失败不污染 cache
+    yfinance 经常被 Yahoo 限流（datacenter IP），尤其是远期到期日。策略：
+    - 最多 retry 2 次，1s 间隔
+    - 仅缓存非空结果（失败不污染 cache，下次还能再试）
+    - 完全失败时返回 {}，让 recommend() 给出友好错误 + 重试按钮
     """
     key = (ticker, expiry_str)
     if key in _cache_chain and _cache_chain[key]:
         return _cache_chain[key]
 
-    # ── 1. yfinance 优先 ────────────────────────────
     import yfinance as yf
     for attempt in range(2):
         try:
             t = yf.Ticker(ticker)
             if expiry_str not in t.options:
-                break  # yfinance 也没这个 expiry，直接去 Massive 试
+                return {}   # 真没这个 expiry，立刻返回
             chain = t.option_chain(expiry_str)
             out = {}
             for df, type_ in ((chain.calls, "call"), (chain.puts, "put")):
@@ -236,27 +158,17 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
                     oi = int(row.get("openInterest", 0) or 0)
                     out[(float(row["strike"]), type_)] = {
                         "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
-                        "volume": volume, "oi": oi, "source": "yf",
+                        "volume": volume, "oi": oi,
                     }
             if out:
                 _cache_chain[key] = out
                 return out
+            # 空但无异常 — yfinance 偶尔返回空 DataFrame，retry 一次
         except Exception:
             pass
         if attempt == 0:
             import time as _t
             _t.sleep(1.0)
-
-    # ── 2. Massive fallback ─────────────────────────
-    massive = fetch_chain_massive(ticker)
-    if massive and expiry_str in massive:
-        m_chain = massive[expiry_str]
-        # 标记数据源
-        for k in m_chain:
-            m_chain[k]["source"] = "massive"
-        _cache_chain[key] = m_chain
-        return m_chain
-
     return {}
 
 
@@ -1623,7 +1535,7 @@ def recommend(req: dict) -> dict:
         return {
             "error": (
                 f"📡 暂时拉不到 {ticker} 的 option chain。"
-                f" 上游数据源（yfinance）经常被限流，尤其是远期到期日。"
+                f" 上游数据（yfinance）经常被 Yahoo 限流，尤其是远期到期日和冷门标的。"
                 f" 请 1-2 分钟后重试，或换一个流动性更好的标的（SPY、AAPL、NVDA）。"
             ),
             "error_kind": "data_unavailable",

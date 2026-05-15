@@ -573,12 +573,29 @@ def get_suggestions(positions):
     # 财报警告计数
     n_earnings = sum(1 for p in active if p.get("earnings_before_expiry"))
 
+    # 包租公视角：持仓集中度 — 单一 ticker 的抵押金占比
+    #   short option 用 strike × contracts × 100 估算"如果全部被指派"的暴露
+    ticker_exposure: Dict[str, float] = {}
+    for p in active:
+        tkr = p.get("ticker") or "?"
+        strike = p.get("strike", 0)
+        contracts = p.get("contracts", 1)
+        exposure = strike * contracts * 100
+        ticker_exposure[tkr] = ticker_exposure.get(tkr, 0) + exposure
+    total_exposure = sum(ticker_exposure.values())
+    top_ticker, top_concentration = None, 0
+    if total_exposure > 0 and ticker_exposure:
+        top_ticker, top_exposure = max(ticker_exposure.items(), key=lambda kv: kv[1])
+        top_concentration = top_exposure / total_exposure * 100
+
     port_facts = [
         f"{len(active)} 个空头持仓，总浮盈 ${total_pnl:+,.0f}（{total_pct:+.1f}%）",
         f"每日 Theta +${total_theta:.0f}",
         f"已收权利金 ${total_sold:,.0f}",
         f"📐 组合 Delta 等价 {total_delta_shares:+.0f} 股（{'long' if total_delta_shares > 0 else 'short'}-biased）",
     ]
+    if len(ticker_exposure) > 1:
+        port_facts.append(f"🏘 集中度：{top_ticker} 占 {top_concentration:.0f}%（共 {len(ticker_exposure)} 个标的）")
     if n_earnings:
         port_facts.append(f"⚠️ {n_earnings} 个持仓在财报之后到期（IV crush 风险）")
     if n_danger: port_facts.append(f"🚨 {n_danger} 个持仓接近/超行权价")
@@ -599,6 +616,32 @@ def get_suggestions(positions):
         "pnl": total_pnl, "pnl_pct": total_pct,
         "facts": port_facts, "actions": [],
     })
+
+    # 集中度警告 — 包租公说"别把所有租客都放在一栋楼"
+    if top_concentration >= 50 and len(ticker_exposure) >= 2:
+        if top_concentration >= 75:
+            sev, status = "danger", f"🚨 集中度过高 · {top_ticker} 占 {top_concentration:.0f}%"
+            advice = "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。"
+        elif top_concentration >= 60:
+            sev, status = "warn", f"⚠️ 集中度偏高 · {top_ticker} 占 {top_concentration:.0f}%"
+            advice = "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。"
+        else:
+            sev, status = "caution", f"💡 集中度提醒 · {top_ticker} 占 {top_concentration:.0f}%"
+            advice = "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。"
+        cards.append({
+            "position_id": None,
+            "label": f"集中度 · {top_ticker}",
+            "subtitle": f"{top_concentration:.0f}% / 共 {len(ticker_exposure)} 标的",
+            "type": sev, "status": status,
+            "pnl": 0, "pnl_pct": 0,
+            "facts": [
+                advice,
+                f"当前 {top_ticker} 抵押暴露 ${ticker_exposure[top_ticker]:,.0f}",
+                f"组合总抵押暴露 ${total_exposure:,.0f}",
+                "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。",
+            ],
+            "actions": [],
+        })
 
     for ps in positions:
         adv = position_advice(ps)

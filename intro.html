@@ -66,6 +66,38 @@
   }
   nav .cta:hover { background: white; transform: translateY(-1px); }
 
+  /* 语言切换 pill — 跟 app 一致风格 */
+  nav .lang-pills {
+    display: flex;
+    border: 1px solid var(--line-2);
+    border-radius: 16px;
+    overflow: hidden;
+    height: 32px;
+  }
+  nav .lang-pills button {
+    background: transparent;
+    border: none;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: color 0.15s, background 0.15s;
+    min-width: 32px;
+  }
+  nav .lang-pills button:hover { color: var(--text); }
+  nav .lang-pills button.active {
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  nav .right { display: flex; align-items: center; gap: 14px; }
+  @media (max-width: 540px) {
+    nav .lang-pills button { padding: 0 8px; min-width: 28px; }
+  }
+
   /* ── Layout primitives ─────────────────────────── */
   .wrap {
     max-width: 1080px;
@@ -658,24 +690,27 @@
     </span>
     <span>包租公 · Landlord</span>
   </a>
-  <a href="/app" class="cta">进入应用 ↗</a>
+  <div class="right">
+    <div class="lang-pills" role="group" aria-label="Language">
+      <button data-lang="zh" onclick="setLang('zh')">简</button>
+      <button data-lang="zh_tw" onclick="setLang('zh_tw')">繁</button>
+      <button data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+    <a href="/app" class="cta" data-i18n>进入应用 ↗</a>
+  </div>
 </nav>
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow reveal">Theta gang · 期权房东</div>
-    <h1 class="display reveal">
-      把你的股票<br>
+    <div class="eyebrow reveal" data-i18n>Theta gang · 期权房东</div>
+    <h1 class="display reveal" data-i18n-html>把你的股票<br>
       <span class="accent">"租"出去</span>，<br>
-      每周收租。
-    </h1>
-    <p class="lead reveal">
-      华尔街叫它 covered call。我们叫它当包租公。<br>
-      一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。
-    </p>
+      每周收租。</h1>
+    <p class="lead reveal" data-i18n-html>华尔街叫它 covered call。我们叫它当包租公。<br>
+      一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。</p>
     <div class="hero-actions reveal">
-      <a href="/app" class="btn-primary">进入应用 →</a>
-      <a href="#concept" class="btn-link">先看看是怎么回事 <span class="arr">↓</span></a>
+      <a href="/app" class="btn-primary" data-i18n>进入应用 →</a>
+      <a href="#concept" class="btn-link" data-i18n-html>先看看是怎么回事 <span class="arr">↓</span></a>
     </div>
   </div>
 
@@ -690,62 +725,41 @@
   <div class="wrap">
     <div class="definition split">
       <div class="head reveal">
-        <div class="eyebrow">三个词</div>
-        <h2>看懂"包租公"<br>只需 60 秒。</h2>
-        <p style="font-size:15px;margin-top:12px">
-          期权交易里最稳定的几种玩法，都是"当房东收租"的变体。
-        </p>
+        <div class="eyebrow" data-i18n>三个词</div>
+        <h2 data-i18n-html>看懂"包租公"<br>只需 60 秒。</h2>
+        <p style="font-size:15px;margin-top:12px" data-i18n>期权交易里最稳定的几种玩法，都是"当房东收租"的变体。</p>
       </div>
 
       <div class="terms">
         <div class="term reveal">
           <div class="name">
             <span class="label">Covered Call</span>
-            <span class="cn">出租型</span>
+            <span class="cn" data-i18n>出租型</span>
           </div>
-          <p class="desc">
-            你手里有 100 股 TSLA。卖出一张 <strong>更高价的 call 期权</strong>，
-            等于答应别人："如果一个月内 TSLA 涨到这个价，你来用这个价买走我的股票。"
-            对方为这个"承诺"付你<strong>权利金</strong>，相当于<strong>租金</strong>。
-          </p>
-          <div class="example">
-            TSLA 现价 <span class="v">$440</span><br>
+          <p class="desc" data-i18n-html>你手里有 100 股 TSLA。卖出一张 <strong>更高价的 call 期权</strong>，等于答应别人："如果一个月内 TSLA 涨到这个价，你来用这个价买走我的股票。"对方为这个"承诺"付你<strong>权利金</strong>，相当于<strong>租金</strong>。</p>
+          <div class="example" data-i18n-html>TSLA 现价 <span class="v">$440</span><br>
             你卖 1 张 $460 Call · 30 天 · 收 <span class="g">$300</span><br>
-            一个月后：TSLA 没涨过 $460 → 收益 <span class="g">+$300</span>，股票还在
-          </div>
+            一个月后：TSLA 没涨过 $460 → 收益 <span class="g">+$300</span>，股票还在</div>
         </div>
 
         <div class="term reveal">
           <div class="name">
             <span class="label">Cash-Secured Put</span>
-            <span class="cn">承诺型</span>
+            <span class="cn" data-i18n>承诺型</span>
           </div>
-          <p class="desc">
-            你想低价买入 TSLA。卖出一张 <strong>更低价的 put 期权</strong>，
-            等于答应别人："如果一个月内 TSLA 跌到这个价，我用这个价买你的股票。"
-            对方付你<strong>权利金</strong>当"等待费"。
-          </p>
-          <div class="example">
-            TSLA 现价 <span class="v">$440</span><br>
+          <p class="desc" data-i18n-html>你想低价买入 TSLA。卖出一张 <strong>更低价的 put 期权</strong>，等于答应别人："如果一个月内 TSLA 跌到这个价，我用这个价买你的股票。"对方付你<strong>权利金</strong>当"等待费"。</p>
+          <div class="example" data-i18n-html>TSLA 现价 <span class="v">$440</span><br>
             你卖 1 张 $400 Put · 30 天 · 收 <span class="g">$500</span><br>
-            一个月后：TSLA 没跌破 $400 → 收益 <span class="g">+$500</span>，等下一笔
-          </div>
+            一个月后：TSLA 没跌破 $400 → 收益 <span class="g">+$500</span>，等下一笔</div>
         </div>
 
         <div class="term reveal">
           <div class="name">
             <span class="label">Wheel</span>
-            <span class="cn">循环</span>
+            <span class="cn" data-i18n>循环</span>
           </div>
-          <p class="desc">
-            把上面两个串起来。<strong>先卖 Put 等接货</strong> → 真接到了就<strong>卖 Covered Call</strong>
-            → 被叫走 → 再卖 Put。每一步都在收钱，<strong>下跌不慌，上涨也赚</strong>。
-          </p>
-          <div class="example">
-            Put 收 <span class="g">$500</span> → 被指派接货 100 股
-            → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 涨幅 × 100 = <span class="g">+$2000</span>
-            → 再卖 Put...
-          </div>
+          <p class="desc" data-i18n-html>把上面两个串起来。<strong>先卖 Put 等接货</strong> → 真接到了就<strong>卖 Covered Call</strong> → 被叫走 → 再卖 Put。每一步都在收钱，<strong>下跌不慌，上涨也赚</strong>。</p>
+          <div class="example" data-i18n-html>Put 收 <span class="g">$500</span> → 被指派接货 100 股 → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 涨幅 × 100 = <span class="g">+$2000</span> → 再卖 Put...</div>
         </div>
       </div>
     </div>
@@ -754,12 +768,9 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow reveal">实际界面</div>
-    <h2 class="reveal" style="max-width:720px">每一张"出租合约"，<br>都在你看得见的地方。</h2>
-    <p class="lead reveal" style="margin-bottom:0">
-      实时市场价 · Greeks · 距行权距离 · 财报警告 · 30 天价位带 ——
-      不需要打开三个网站。
-    </p>
+    <div class="eyebrow reveal" data-i18n>实际界面</div>
+    <h2 class="reveal" style="max-width:720px" data-i18n-html>每一张"出租合约"，<br>都在你看得见的地方。</h2>
+    <p class="lead reveal" style="margin-bottom:0" data-i18n>实时市场价 · Greeks · 距行权距离 · 财报警告 · 30 天价位带 —— 不需要打开三个网站。</p>
 
     <div class="product-frame reveal">
       <div class="titlebar">
@@ -771,23 +782,23 @@
       <div class="body">
         <div class="stat-row">
           <div class="cell">
-            <div class="l">收到租金</div>
+            <div class="l" data-i18n>收到租金</div>
             <div class="v">$28,071</div>
           </div>
           <div class="cell">
-            <div class="l">买回成本</div>
+            <div class="l" data-i18n>买回成本</div>
             <div class="v">$24,247</div>
           </div>
           <div class="cell">
-            <div class="l">浮盈亏</div>
+            <div class="l" data-i18n>浮盈亏</div>
             <div class="v" style="color:var(--green)">+$3,824</div>
           </div>
           <div class="cell">
-            <div class="l">已实现</div>
+            <div class="l" data-i18n>已实现</div>
             <div class="v" style="color:var(--green)">+$712</div>
           </div>
           <div class="cell">
-            <div class="l">每日 Theta</div>
+            <div class="l" data-i18n>每日 Theta</div>
             <div class="v" style="color:var(--green)">+$531</div>
           </div>
         </div>
@@ -796,25 +807,25 @@
           <div class="pos-row">
             <div>
               <div class="ticker">TSLA $600 <span class="tag call">CALL</span></div>
-              <div class="meta">Exp 2027-01-15 · 10× · 254 天</div>
+              <div class="meta" data-i18n>Exp 2027-01-15 · 10× · 254 天</div>
             </div>
-            <div class="stat">距行权 <span class="v">+54%</span></div>
+            <div class="stat" data-i18n-html>距行权 <span class="v">+54%</span></div>
             <div class="stat">Δ <span class="v">0.128</span></div>
             <div class="pnl up">+4.1%</div>
           </div>
           <div class="pos-row">
             <div>
               <div class="ticker">META $630 <span class="tag put">PUT</span></div>
-              <div class="meta">Exp 2026-05-29 · 1× · 22 天 · ⚠ 财报 5/24</div>
+              <div class="meta" data-i18n>Exp 2026-05-29 · 1× · 22 天 · ⚠ 财报 5/24</div>
             </div>
-            <div class="stat">距行权 <span class="v">-2.8%</span></div>
+            <div class="stat" data-i18n-html>距行权 <span class="v">-2.8%</span></div>
             <div class="stat">Δ <span class="v">-0.45</span></div>
             <div class="pnl up">+11%</div>
           </div>
           <div class="pos-row">
             <div>
               <div class="ticker">TSLA $400 <span class="tag put">PUT</span></div>
-              <div class="meta">Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平仓</div>
+              <div class="meta" data-i18n>Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平仓</div>
             </div>
             <div class="stat">Mark <span class="v">$0.09</span></div>
             <div class="stat">Δ <span class="v">-0.04</span></div>
@@ -828,26 +839,26 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow reveal">使用流程</div>
-    <h2 class="reveal" style="max-width:680px">三步当上包租公。</h2>
+    <div class="eyebrow reveal" data-i18n>使用流程</div>
+    <h2 class="reveal" style="max-width:680px" data-i18n>三步当上包租公。</h2>
 
     <div class="steps">
       <div class="step reveal">
         <div>
-          <h3>录入你的"房产"</h3>
-          <p>从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。</p>
+          <h3 data-i18n>录入你的"房产"</h3>
+          <p data-i18n-html>从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。</p>
         </div>
       </div>
       <div class="step reveal">
         <div>
-          <h3>看见每一份"租约"</h3>
-          <p>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。</p>
+          <h3 data-i18n>看见每一份"租约"</h3>
+          <p data-i18n>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。</p>
         </div>
       </div>
       <div class="step reveal">
         <div>
-          <h3>用包租公推荐指数找下一套</h3>
-          <p>告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。</p>
+          <h3 data-i18n>用包租公推荐指数找下一套</h3>
+          <p data-i18n-html>告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。</p>
         </div>
       </div>
     </div>
@@ -856,41 +867,41 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow reveal">配套能力</div>
-    <h2 class="reveal" style="max-width:680px">不仅看清现状，<br>还能优化决策。</h2>
+    <div class="eyebrow reveal" data-i18n>配套能力</div>
+    <h2 class="reveal" style="max-width:680px" data-i18n-html>不仅看清现状，<br>还能优化决策。</h2>
 
     <ul class="caps">
       <li class="reveal">
-        <div class="k">实时市场数据</div>
-        <div class="v">期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。</div>
+        <div class="k" data-i18n>实时市场数据</div>
+        <div class="v" data-i18n>期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。</div>
       </li>
       <li class="reveal">
-        <div class="k">包租公算法 1.1</div>
-        <div class="v">房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。</div>
+        <div class="k" data-i18n>包租公算法 1.1</div>
+        <div class="v" data-i18n-html>房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。</div>
       </li>
       <li class="reveal">
-        <div class="k">财报 + IV crush 警告</div>
-        <div class="v">持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。</div>
+        <div class="k" data-i18n>财报 + IV crush 警告</div>
+        <div class="v" data-i18n>持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。</div>
       </li>
       <li class="reveal">
-        <div class="k">损益曲线 (Payoff)</div>
-        <div class="v">每个持仓一张 SVG，蓝实线 = 到期，橙虚线 = 今天。<code>BE</code> 盈亏平衡点标注。</div>
+        <div class="k" data-i18n>损益曲线 (Payoff)</div>
+        <div class="v" data-i18n-html>每个持仓一张 SVG，蓝实线 = 到期，橙虚线 = 今天。<code>BE</code> 盈亏平衡点标注。</div>
       </li>
       <li class="reveal">
-        <div class="k">复盘 / 笔记 / 分享</div>
-        <div class="v">已平仓持仓的胜率、盈亏比、最佳最差。每个持仓可记笔记。生成只读分享链接。</div>
+        <div class="k" data-i18n>复盘 / 笔记 / 分享</div>
+        <div class="v" data-i18n>已平仓持仓的胜率、盈亏比、最佳最差。每个持仓可记笔记。生成只读分享链接。</div>
       </li>
       <li class="reveal">
-        <div class="k">期权小白指南</div>
-        <div class="v">25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。</div>
+        <div class="k" data-i18n>期权小白指南</div>
+        <div class="v" data-i18n>25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。</div>
       </li>
       <li class="reveal">
-        <div class="k">跨设备同步</div>
-        <div class="v">浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。</div>
+        <div class="k" data-i18n>跨设备同步</div>
+        <div class="v" data-i18n>浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。</div>
       </li>
       <li class="reveal">
-        <div class="k">三语 · 双主题</div>
-        <div class="v">简中 / 繁中 / English 一键切换 · 白天 / 夜间模式 · 全响应式。</div>
+        <div class="k" data-i18n>三语 · 双主题</div>
+        <div class="v" data-i18n>简中 / 繁中 / English 一键切换 · 白天 / 夜间模式 · 全响应式。</div>
       </li>
     </ul>
   </div>
@@ -899,34 +910,30 @@
 <!-- ── 包租公算法 1.1 方法论 ─────────────────────────────────────── -->
 <section id="algo">
   <div class="wrap">
-    <div class="eyebrow reveal">包租公算法 1.1 · Methodology</div>
-    <h2 class="reveal" style="max-width:820px">不是黑盒，是<br>八个能讲清楚的因子。</h2>
-    <p class="lead algo-lede reveal">
-      大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。
-      <strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——
-      <strong>稳定的周租 &gt; 一次性的暴利</strong>。
-    </p>
+    <div class="eyebrow reveal" data-i18n>包租公算法 1.1 · Methodology</div>
+    <h2 class="reveal" style="max-width:820px" data-i18n-html>不是黑盒，是<br>八个能讲清楚的因子。</h2>
+    <p class="lead algo-lede reveal" data-i18n-html>大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。</p>
 
     <!-- Formula -->
     <div class="formula reveal">
-      <span class="f-label">包租公分</span>
+      <span class="f-label" data-i18n>包租公分</span>
       <span class="f-eq">=</span>
       <span class="f-body">
-        <span class="f-term">年化租金</span>
+        <span class="f-term" data-i18n>年化租金</span>
         <span class="f-x">×</span>
-        <span class="f-term">安全度<sup>1.5</sup></span>
+        <span class="f-term" data-i18n-html>安全度<sup>1.5</sup></span>
         <span class="f-x">×</span>
-        <span class="f-term">DTE 甜蜜区</span>
+        <span class="f-term" data-i18n>DTE 甜蜜区</span>
         <span class="f-x">×</span>
-        <span class="f-term">Delta 甜蜜区</span>
+        <span class="f-term" data-i18n>Delta 甜蜜区</span>
         <span class="f-x">×</span>
-        <span class="f-term">IV rank</span>
+        <span class="f-term" data-i18n>IV rank</span>
         <span class="f-x">×</span>
-        <span class="f-term">流动性</span>
+        <span class="f-term" data-i18n>流动性</span>
         <span class="f-x">×</span>
-        <span class="f-term">财报因子</span>
+        <span class="f-term" data-i18n>财报因子</span>
         <span class="f-x">×</span>
-        <span class="f-term">回测胜率</span>
+        <span class="f-term" data-i18n>回测胜率</span>
       </span>
     </div>
 
@@ -936,38 +943,27 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">01</span>
-          <span class="f-name">年化租金</span>
+          <span class="f-name" data-i18n>年化租金</span>
         </div>
-        <div class="f-desc">
-          <code>premium ÷ collateral × (365 / days)</code>。
-          把每笔卖期权折算成"全年租金回报率"，让 7 天和 30 天的合约能<strong>横向比较</strong>。
-          基础值越大，房子越值得出租。
-        </div>
+        <div class="f-desc" data-i18n-html><code>premium ÷ collateral × (365 / days)</code>。把每笔卖期权折算成"全年租金回报率"，让 7 天和 30 天的合约能<strong>横向比较</strong>。基础值越大，房子越值得出租。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">02</span>
-          <span class="f-name">安全度<sup>1.5</sup></span>
+          <span class="f-name" data-i18n-html>安全度<sup>1.5</sup></span>
         </div>
-        <div class="f-desc">
-          用 Black-Scholes 算到期"安全过关"的真实概率 <code>N(d2)</code>，而不是市面常见的 <code>1 − |Δ|</code> 粗估。
-          再开 <strong>1.5 次幂</strong>强调损失厌恶——房东最怕房客闹事。
-        </div>
+        <div class="f-desc" data-i18n-html>用 Black-Scholes 算到期"安全过关"的真实概率 <code>N(d2)</code>，而不是市面常见的 <code>1 − |Δ|</code> 粗估。再开 <strong>1.5 次幂</strong>强调损失厌恶——房东最怕房客闹事。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">03</span>
-          <span class="f-name">DTE 甜蜜区</span>
+          <span class="f-name" data-i18n>DTE 甜蜜区</span>
         </div>
-        <div class="f-desc">
-          <strong>14 天到期 = 峰值 1.20×。</strong>
-          7-21 天是周租周期，资金流转最快。
-          &lt;5 天 gamma 风险骤增；&gt;35 天钱躺得太久、灵活度差。
-        </div>
+        <div class="f-desc" data-i18n-html><strong>14 天到期 = 峰值 1.20×。</strong> 7-21 天是周租周期，资金流转最快。&lt;5 天 gamma 风险骤增；&gt;35 天钱躺得太久、灵活度差。</div>
         <div class="f-viz">
           <svg viewBox="0 0 260 70" aria-hidden="true">
             <line x1="10" y1="38" x2="250" y2="38" stroke="#1C1C1F" stroke-width="1" stroke-dasharray="2,3"/>
@@ -988,13 +984,9 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">04</span>
-          <span class="f-name">Delta 甜蜜区</span>
+          <span class="f-name" data-i18n>Delta 甜蜜区</span>
         </div>
-        <div class="f-desc">
-          <strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong>
-          0.15-0.30 是奶牛区——既能收到合理租金、又不容易被指派。
-          Δ &lt; 0.10 收得太少（保险费太怂），Δ &gt; 0.40 风险溢出。
-        </div>
+        <div class="f-desc" data-i18n-html><strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong> 0.15-0.30 是奶牛区——既能收到合理租金、又不容易被指派。Δ &lt; 0.10 收得太少（保险费太怂），Δ &gt; 0.40 风险溢出。</div>
         <div class="f-viz">
           <svg viewBox="0 0 260 70" aria-hidden="true">
             <line x1="10" y1="38" x2="250" y2="38" stroke="#1C1C1F" stroke-width="1" stroke-dasharray="2,3"/>
@@ -1015,55 +1007,36 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">05</span>
-          <span class="f-name">IV rank</span>
+          <span class="f-name" data-i18n>IV rank</span>
         </div>
-        <div class="f-desc">
-          用过去 52 周的<strong>实现波动率分布</strong>算当前 IV 的百分位。
-          IV rank ≥ 70 → <code>×1.20</code>（权利金贵，多收租）；
-          ≤ 20 → <code>×0.85</code>（保险费太便宜，不值）。
-        </div>
+        <div class="f-desc" data-i18n-html>用过去 52 周的<strong>实现波动率分布</strong>算当前 IV 的百分位。IV rank ≥ 70 → <code>×1.20</code>（权利金贵，多收租）；≤ 20 → <code>×0.85</code>（保险费太便宜，不值）。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">06</span>
-          <span class="f-name">流动性 <sup>v1.1</sup></span>
+          <span class="f-name" data-i18n-html>流动性 <sup>v1.1</sup></span>
         </div>
-        <div class="f-desc">
-          <strong>spread × OI × volume 复合分。</strong>
-          spread 决定价差损耗；
-          <strong>OI</strong>（持仓量）决定二级市场深度，&lt;10 直接 ×0.5；
-          <strong>当日 volume</strong> 决定价格新鲜度，今日 0 成交 → 价格 stale。
-          单看 spread 不够——纸面 5% 的 spread + OI 为 0 = 挂单一天不成交。
-        </div>
+        <div class="f-desc" data-i18n-html><strong>spread × OI × volume 复合分。</strong> spread 决定价差损耗；<strong>OI</strong>（持仓量）决定二级市场深度，&lt;10 直接 ×0.5；<strong>当日 volume</strong> 决定价格新鲜度，今日 0 成交 → 价格 stale。单看 spread 不够——纸面 5% 的 spread + OI 为 0 = 挂单一天不成交。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">07</span>
-          <span class="f-name">财报因子</span>
+          <span class="f-name" data-i18n>财报因子</span>
         </div>
-        <div class="f-desc">
-          合约到期日跨越下次财报 →
-          <strong>保守模式硬否决</strong>（<code>×0</code>，tier 封顶 2 星），
-          平衡模式 <code>×0.55</code>，激进模式 <code>×0.78</code>。
-          IV crush 一夜归零的故事见太多了。
-        </div>
+        <div class="f-desc" data-i18n-html>合约到期日跨越下次财报 → <strong>保守模式硬否决</strong>（<code>×0</code>，tier 封顶 2 星），平衡模式 <code>×0.55</code>，激进模式 <code>×0.78</code>。IV crush 一夜归零的故事见太多了。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">08</span>
-          <span class="f-name">回测胜率</span>
+          <span class="f-name" data-i18n>回测胜率</span>
         </div>
-        <div class="f-desc">
-          过去 6 个月类似策略（同 ticker、同 DTE、同 delta target）的模拟胜率。
-          ≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。
-          历史不重复，但常常压韵。
-        </div>
+        <div class="f-desc" data-i18n-html>过去 6 个月类似策略（同 ticker、同 DTE、同 delta target）的模拟胜率。≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。历史不重复，但常常压韵。</div>
         <div class="f-viz"></div>
       </div>
 
@@ -1071,12 +1044,12 @@
 
     <!-- Design principles -->
     <div class="principles reveal">
-      <div class="p-label">设计原则</div>
+      <div class="p-label" data-i18n>设计原则</div>
       <div class="p-list">
-        <div><span class="p-n">01</span><span><span class="em">稳定的周租 &gt; 一次性的暴利。</span> 包租公分对"高年化但低胜率"的合约不感冒。</span></div>
-        <div><span class="p-n">02</span><span><span class="em">损失厌恶。</span> cons 数量超过 pros 时，额外扣 1 分——房东最讨厌麻烦。</span></div>
-        <div><span class="p-n">03</span><span><span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。</span></div>
-        <div><span class="p-n">04</span><span><span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。</span></div>
+        <div><span class="p-n">01</span><span data-i18n-html><span class="em">稳定的周租 &gt; 一次性的暴利。</span> 包租公分对"高年化但低胜率"的合约不感冒。</span></div>
+        <div><span class="p-n">02</span><span data-i18n-html><span class="em">损失厌恶。</span> cons 数量超过 pros 时，额外扣 1 分——房东最讨厌麻烦。</span></div>
+        <div><span class="p-n">03</span><span data-i18n-html><span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。</span></div>
+        <div><span class="p-n">04</span><span data-i18n-html><span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。</span></div>
       </div>
     </div>
   </div>
@@ -1086,25 +1059,20 @@
   <div class="wrap">
     <div class="two-col">
       <div class="copy reveal">
-        <div class="eyebrow">数据归你</div>
-        <h2>不开账户，<br>不传服务器。</h2>
-        <p>
-          所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。
-          其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。
-        </p>
-        <p>
-          后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。
-        </p>
+        <div class="eyebrow" data-i18n>数据归你</div>
+        <h2 data-i18n-html>不开账户，<br>不传服务器。</h2>
+        <p data-i18n-html>所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。</p>
+        <p data-i18n>后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。</p>
       </div>
       <div class="reveal">
         <ul class="privacy-list">
-          <li>无需注册账号</li>
-          <li>无需绑定券商</li>
-          <li>无需输入任何身份信息</li>
-          <li>数据加密存储在你的浏览器</li>
-          <li>可一键导出 JSON 备份</li>
-          <li>可断开同步随时清除</li>
-          <li>开源代码（GitHub）</li>
+          <li data-i18n>无需注册账号</li>
+          <li data-i18n>无需绑定券商</li>
+          <li data-i18n>无需输入任何身份信息</li>
+          <li data-i18n>数据加密存储在你的浏览器</li>
+          <li data-i18n>可一键导出 JSON 备份</li>
+          <li data-i18n>可断开同步随时清除</li>
+          <li data-i18n>开源代码（GitHub）</li>
         </ul>
       </div>
     </div>
@@ -1113,12 +1081,9 @@
 
 <section class="final">
   <div class="wrap">
-    <h2 class="reveal">
-      准备好<br>
-      <span style="color:var(--accent)">当包租公</span>了吗？
-    </h2>
-    <p class="reveal">无需注册。30 秒上手。免费使用。</p>
-    <a href="/app" class="btn-primary reveal">进入应用 →</a>
+    <h2 class="reveal" data-i18n-html>准备好<br><span style="color:var(--accent)">当包租公</span>了吗？</h2>
+    <p class="reveal" data-i18n>无需注册。30 秒上手。免费使用。</p>
+    <a href="/app" class="btn-primary reveal" data-i18n>进入应用 →</a>
   </div>
 </section>
 
@@ -1127,26 +1092,260 @@
     <div class="row">
       <div>
         <div style="color:var(--text);font-weight:500;margin-bottom:8px">包租公 · Landlord</div>
-        <div>把你的股票租出去，每周收租。</div>
+        <div data-i18n>把你的股票租出去，每周收租。</div>
       </div>
       <div style="display:flex;gap:24px">
-        <a href="/app">应用</a>
+        <a href="/app" data-i18n>应用</a>
         <a href="https://github.com/genki3ng/baozugong">GitHub</a>
       </div>
     </div>
 
-    <div class="disclaimer">
-      <strong>⚠ 免责声明 / Disclaimer</strong><br>
-      本工具仅供学习研究，<strong>不构成任何投资建议</strong>。
-      期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。
-      决策前请自行验证 / 咨询持牌顾问。<br><br>
-      Not financial advice. For educational use only. Options trading involves substantial risk of loss.
-      Always consult a licensed advisor before making investment decisions.
-    </div>
+    <div class="disclaimer" data-i18n-html><strong>⚠ 免责声明 / Disclaimer</strong><br>本工具仅供学习研究，<strong>不构成任何投资建议</strong>。期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.</div>
   </div>
 </footer>
 
 <script>
+  // ── i18n (Chinese-as-key) ───────────────────────────────────────────
+  const I18N = {
+    zh_tw: {
+      // Nav
+      '进入应用 ↗': '進入應用 ↗',
+      '进入应用 →': '進入應用 →',
+      // Hero
+      'Theta gang · 期权房东': 'Theta gang · 期權房東',
+      '把你的股票<br>\n      <span class="accent">"租"出去</span>，<br>\n      每周收租。': '把你的股票<br>\n      <span class="accent">「租」出去</span>，<br>\n      每週收租。',
+      '华尔街叫它 covered call。我们叫它当包租公。<br>\n      一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。': '華爾街叫它 covered call。我們叫它當包租公。<br>\n      一個工具看清你的「房產」：現在收了多少租金、租約什麼時候到期、有沒有違約風險。',
+      '先看看是怎么回事 <span class="arr">↓</span>': '先看看是怎麼回事 <span class="arr">↓</span>',
+      // Concept
+      '三个词': '三個詞',
+      '看懂"包租公"<br>只需 60 秒。': '看懂「包租公」<br>只需 60 秒。',
+      '期权交易里最稳定的几种玩法，都是"当房东收租"的变体。': '期權交易裡最穩定的幾種玩法，都是「當房東收租」的變體。',
+      '出租型': '出租型',
+      '承诺型': '承諾型',
+      '循环': '循環',
+      '你手里有 100 股 TSLA。卖出一张 <strong>更高价的 call 期权</strong>，等于答应别人："如果一个月内 TSLA 涨到这个价，你来用这个价买走我的股票。"对方为这个"承诺"付你<strong>权利金</strong>，相当于<strong>租金</strong>。': '你手裡有 100 股 TSLA。賣出一張 <strong>更高價的 call 期權</strong>，等於答應別人：「如果一個月內 TSLA 漲到這個價，你來用這個價買走我的股票。」對方為這個「承諾」付你<strong>權利金</strong>，相當於<strong>租金</strong>。',
+      'TSLA 现价 <span class="v">$440</span><br>\n            你卖 1 张 $460 Call · 30 天 · 收 <span class="g">$300</span><br>\n            一个月后：TSLA 没涨过 $460 → 收益 <span class="g">+$300</span>，股票还在': 'TSLA 現價 <span class="v">$440</span><br>\n            你賣 1 張 $460 Call · 30 天 · 收 <span class="g">$300</span><br>\n            一個月後：TSLA 沒漲過 $460 → 收益 <span class="g">+$300</span>，股票還在',
+      '你想低价买入 TSLA。卖出一张 <strong>更低价的 put 期权</strong>，等于答应别人："如果一个月内 TSLA 跌到这个价，我用这个价买你的股票。"对方付你<strong>权利金</strong>当"等待费"。': '你想低價買入 TSLA。賣出一張 <strong>更低價的 put 期權</strong>，等於答應別人：「如果一個月內 TSLA 跌到這個價，我用這個價買你的股票。」對方付你<strong>權利金</strong>當「等待費」。',
+      'TSLA 现价 <span class="v">$440</span><br>\n            你卖 1 张 $400 Put · 30 天 · 收 <span class="g">$500</span><br>\n            一个月后：TSLA 没跌破 $400 → 收益 <span class="g">+$500</span>，等下一笔': 'TSLA 現價 <span class="v">$440</span><br>\n            你賣 1 張 $400 Put · 30 天 · 收 <span class="g">$500</span><br>\n            一個月後：TSLA 沒跌破 $400 → 收益 <span class="g">+$500</span>，等下一筆',
+      '把上面两个串起来。<strong>先卖 Put 等接货</strong> → 真接到了就<strong>卖 Covered Call</strong> → 被叫走 → 再卖 Put。每一步都在收钱，<strong>下跌不慌，上涨也赚</strong>。': '把上面兩個串起來。<strong>先賣 Put 等接貨</strong> → 真接到了就<strong>賣 Covered Call</strong> → 被叫走 → 再賣 Put。每一步都在收錢，<strong>下跌不慌，上漲也賺</strong>。',
+      'Put 收 <span class="g">$500</span> → 被指派接货 100 股 → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 涨幅 × 100 = <span class="g">+$2000</span> → 再卖 Put...': 'Put 收 <span class="g">$500</span> → 被指派接貨 100 股 → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 漲幅 × 100 = <span class="g">+$2000</span> → 再賣 Put...',
+      // Product preview
+      '实际界面': '實際介面',
+      '每一张"出租合约"，<br>都在你看得见的地方。': '每一張「出租合約」，<br>都在你看得見的地方。',
+      '实时市场价 · Greeks · 距行权距离 · 财报警告 · 30 天价位带 —— 不需要打开三个网站。': '即時市場價 · Greeks · 距行權距離 · 財報警告 · 30 天價位帶 —— 不需要打開三個網站。',
+      '收到租金': '收到租金',
+      '买回成本': '買回成本',
+      '浮盈亏': '浮盈虧',
+      '已实现': '已實現',
+      '每日 Theta': '每日 Theta',
+      'Exp 2027-01-15 · 10× · 254 天': 'Exp 2027-01-15 · 10× · 254 天',
+      'Exp 2026-05-29 · 1× · 22 天 · ⚠ 财报 5/24': 'Exp 2026-05-29 · 1× · 22 天 · ⚠ 財報 5/24',
+      'Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平仓': 'Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平倉',
+      '距行权 <span class="v">+54%</span>': '距行權 <span class="v">+54%</span>',
+      '距行权 <span class="v">-2.8%</span>': '距行權 <span class="v">-2.8%</span>',
+      // Steps
+      '使用流程': '使用流程',
+      '三步当上包租公。': '三步當上包租公。',
+      '录入你的"房产"': '錄入你的「房產」',
+      '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。': '從券商複製 OCC 合約代碼（例如 <code>TSLA260515P00400000</code>）貼進來，自動解析。同一張合約多次賣出會自動按張數加權合併。',
+      '看见每一份"租约"': '看見每一份「租約」',
+      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。': '每個持倉自動顯示：即時 Mark、Δ、Θ、距行權距離、損益曲線、操作建議、Massive 30 天價位帶、每日 P&L 曲線。臨近財報會主動警告。',
+      '用包租公推荐指数找下一套': '用包租公推薦指數找下一套',
+      '告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。': '告訴系統你的看法（看漲/看跌/區間）、意圖（收權利金/CSP/Wheel/LEAPS）、時間窗口、風險偏好，<strong>包租公推薦指數</strong>會從期權鏈裡給每張合約打分排序。⭐⭐⭐⭐⭐ 永遠在最前。',
+      // Capabilities
+      '配套能力': '配套能力',
+      '不仅看清现状，<br>还能优化决策。': '不僅看清現狀，<br>還能優化決策。',
+      '实时市场数据': '即時市場資料',
+      '期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。': '期權 mark 優先從 yfinance 即時拉取，BS 模型保底；Massive API 提供 30 天歷史價位帶。',
+      '包租公算法 1.1': '包租公演算法 1.1',
+      '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。': '房東視角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜區 × Delta 甜蜜區 × IV rank × 流動性</strong>。保守模式下，跨財報合約 = 一律不接。⭐⭐⭐⭐⭐ 永遠在前。',
+      '财报 + IV crush 警告': '財報 + IV crush 警告',
+      '持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。': '持倉到期跨越財報 → 自動 flag。推薦時跨財報的合約扣分 + 提示提前平倉。',
+      '损益曲线 (Payoff)': '損益曲線 (Payoff)',
+      '每个持仓一张 SVG，蓝实线 = 到期，橙虚线 = 今天。<code>BE</code> 盈亏平衡点标注。': '每個持倉一張 SVG，藍實線 = 到期，橙虛線 = 今天。<code>BE</code> 盈虧平衡點標註。',
+      '复盘 / 笔记 / 分享': '複盤 / 筆記 / 分享',
+      '已平仓持仓的胜率、盈亏比、最佳最差。每个持仓可记笔记。生成只读分享链接。': '已平倉持倉的勝率、盈虧比、最佳最差。每個持倉可記筆記。生成只讀分享連結。',
+      '期权小白指南': '期權小白指南',
+      '25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。': '25 個核心術語（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白話 + 實例 + 實戰建議。',
+      '跨设备同步': '跨設備同步',
+      '浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。': '瀏覽器 File System Access API 連到 Google Drive 資料夾 → 多設備共用同一份資料。',
+      '三语 · 双主题': '三語 · 雙主題',
+      '简中 / 繁中 / English 一键切换 · 白天 / 夜间模式 · 全响应式。': '簡中 / 繁中 / English 一鍵切換 · 白天 / 夜間模式 · 全響應式。',
+      // Algorithm
+      '包租公算法 1.1 · Methodology': '包租公演算法 1.1 · Methodology',
+      '不是黑盒，是<br>八个能讲清楚的因子。': '不是黑盒，是<br>八個能講清楚的因子。',
+      '大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。': '大部分期權工具只看年化收益和 delta，結果你看到的「高回報」經常踩坑。<strong>包租公演算法</strong>把每筆賣期權當成「出租一套房」——<strong>穩定的週租 &gt; 一次性的暴利</strong>。',
+      '包租公分': '包租公分',
+      '年化租金': '年化租金',
+      '安全度<sup>1.5</sup>': '安全度<sup>1.5</sup>',
+      'DTE 甜蜜区': 'DTE 甜蜜區',
+      'Delta 甜蜜区': 'Delta 甜蜜區',
+      'IV rank': 'IV rank',
+      '流动性': '流動性',
+      '财报因子': '財報因子',
+      '回测胜率': '回測勝率',
+      '流动性 <sup>v1.1</sup>': '流動性 <sup>v1.1</sup>',
+      '<code>premium ÷ collateral × (365 / days)</code>。把每笔卖期权折算成"全年租金回报率"，让 7 天和 30 天的合约能<strong>横向比较</strong>。基础值越大，房子越值得出租。': '<code>premium ÷ collateral × (365 / days)</code>。把每筆賣期權折算成「全年租金回報率」，讓 7 天和 30 天的合約能<strong>橫向比較</strong>。基礎值越大，房子越值得出租。',
+      '用 Black-Scholes 算到期"安全过关"的真实概率 <code>N(d2)</code>，而不是市面常见的 <code>1 − |Δ|</code> 粗估。再开 <strong>1.5 次幂</strong>强调损失厌恶——房东最怕房客闹事。': '用 Black-Scholes 算到期「安全過關」的真實機率 <code>N(d2)</code>，而不是市面常見的 <code>1 − |Δ|</code> 粗估。再開 <strong>1.5 次冪</strong>強調損失厭惡——房東最怕房客鬧事。',
+      '<strong>14 天到期 = 峰值 1.20×。</strong> 7-21 天是周租周期，资金流转最快。&lt;5 天 gamma 风险骤增；&gt;35 天钱躺得太久、灵活度差。': '<strong>14 天到期 = 峰值 1.20×。</strong> 7-21 天是週租週期，資金流轉最快。&lt;5 天 gamma 風險驟增；&gt;35 天錢躺得太久、靈活度差。',
+      '<strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong> 0.15-0.30 是奶牛区——既能收到合理租金、又不容易被指派。Δ &lt; 0.10 收得太少（保险费太怂），Δ &gt; 0.40 风险溢出。': '<strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong> 0.15-0.30 是奶牛區——既能收到合理租金、又不容易被指派。Δ &lt; 0.10 收得太少（保險費太慫），Δ &gt; 0.40 風險溢出。',
+      '用过去 52 周的<strong>实现波动率分布</strong>算当前 IV 的百分位。IV rank ≥ 70 → <code>×1.20</code>（权利金贵，多收租）；≤ 20 → <code>×0.85</code>（保险费太便宜，不值）。': '用過去 52 週的<strong>實現波動率分佈</strong>算當前 IV 的百分位。IV rank ≥ 70 → <code>×1.20</code>（權利金貴，多收租）；≤ 20 → <code>×0.85</code>（保險費太便宜，不值）。',
+      '<strong>spread × OI × volume 复合分。</strong> spread 决定价差损耗；<strong>OI</strong>（持仓量）决定二级市场深度，&lt;10 直接 ×0.5；<strong>当日 volume</strong> 决定价格新鲜度，今日 0 成交 → 价格 stale。单看 spread 不够——纸面 5% 的 spread + OI 为 0 = 挂单一天不成交。': '<strong>spread × OI × volume 複合分。</strong> spread 決定價差損耗；<strong>OI</strong>（持倉量）決定二級市場深度，&lt;10 直接 ×0.5；<strong>當日 volume</strong> 決定價格新鮮度，今日 0 成交 → 價格 stale。單看 spread 不夠——紙面 5% 的 spread + OI 為 0 = 掛單一天不成交。',
+      '合约到期日跨越下次财报 → <strong>保守模式硬否决</strong>（<code>×0</code>，tier 封顶 2 星），平衡模式 <code>×0.55</code>，激进模式 <code>×0.78</code>。IV crush 一夜归零的故事见太多了。': '合約到期日跨越下次財報 → <strong>保守模式硬否決</strong>（<code>×0</code>，tier 封頂 2 星），平衡模式 <code>×0.55</code>，激進模式 <code>×0.78</code>。IV crush 一夜歸零的故事見太多了。',
+      '过去 6 个月类似策略（同 ticker、同 DTE、同 delta target）的模拟胜率。≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。历史不重复，但常常压韵。': '過去 6 個月類似策略（同 ticker、同 DTE、同 delta target）的模擬勝率。≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。歷史不重複，但常常押韻。',
+      '设计原则': '設計原則',
+      '<span class="em">稳定的周租 &gt; 一次性的暴利。</span> 包租公分对"高年化但低胜率"的合约不感冒。': '<span class="em">穩定的週租 &gt; 一次性的暴利。</span> 包租公分對「高年化但低勝率」的合約不感冒。',
+      '<span class="em">损失厌恶。</span> cons 数量超过 pros 时，额外扣 1 分——房东最讨厌麻烦。': '<span class="em">損失厭惡。</span> cons 數量超過 pros 時，額外扣 1 分——房東最討厭麻煩。',
+      '<span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。': '<span class="em">保守 = 真保守。</span> 跨財報合約在保守模式下直接否決，不給「我評估一下」的機會。',
+      '<span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。': '<span class="em">一個數字就夠。</span> 包租公分把 8 個因子壓成一個可比較的標量，但展開就能看清每一項的貢獻。',
+      // Privacy
+      '数据归你': '資料歸你',
+      '不开账户，<br>不传服务器。': '不開帳戶，<br>不傳伺服器。',
+      '所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。': '所有持倉資料存在你自己瀏覽器的 <code style="color:var(--accent)">localStorage</code> 裡。其他人打開同一個網址，看到的是<strong>他們自己</strong>的資料，互相不可見。',
+      '后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。': '後端 Serverless 函式完全無狀態：每次請求處理完即釋放，不存任何 PII。',
+      '无需注册账号': '無需註冊帳號',
+      '无需绑定券商': '無需綁定券商',
+      '无需输入任何身份信息': '無需輸入任何身份資訊',
+      '数据加密存储在你的浏览器': '資料加密儲存在你的瀏覽器',
+      '可一键导出 JSON 备份': '可一鍵匯出 JSON 備份',
+      '可断开同步随时清除': '可斷開同步隨時清除',
+      '开源代码（GitHub）': '開源代碼（GitHub）',
+      // Final + Footer
+      '准备好<br><span style="color:var(--accent)">当包租公</span>了吗？': '準備好<br><span style="color:var(--accent)">當包租公</span>了嗎？',
+      '无需注册。30 秒上手。免费使用。': '無需註冊。30 秒上手。免費使用。',
+      '把你的股票租出去，每周收租。': '把你的股票租出去，每週收租。',
+      '应用': '應用',
+      '<strong>⚠ 免责声明 / Disclaimer</strong><br>本工具仅供学习研究，<strong>不构成任何投资建议</strong>。期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.': '<strong>⚠ 免責聲明 / Disclaimer</strong><br>本工具僅供學習研究，<strong>不構成任何投資建議</strong>。期權交易有虧損全部本金甚至更多的風險。所有資料 / 推薦基於市場資料 + 數學模型，無法預測未來。決策前請自行驗證 / 諮詢持牌顧問。<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.',
+    },
+    en: {
+      '进入应用 ↗': 'Open app ↗',
+      '进入应用 →': 'Open app →',
+      'Theta gang · 期权房东': 'Theta gang · the options landlord',
+      '把你的股票<br>\n      <span class="accent">"租"出去</span>，<br>\n      每周收租。': 'Rent your stocks<br><span class="accent">out for income</span>,<br>every single week.',
+      '华尔街叫它 covered call。我们叫它当包租公。<br>\n      一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。': 'Wall Street calls it covered call. We call it being the landlord.<br>One tool to see your "properties": rent collected, lease expiry, default risk — all in one view.',
+      '先看看是怎么回事 <span class="arr">↓</span>': 'See how it works <span class="arr">↓</span>',
+      '三个词': 'Three words',
+      '看懂"包租公"<br>只需 60 秒。': 'Get the "Landlord"<br>in 60 seconds.',
+      '期权交易里最稳定的几种玩法，都是"当房东收租"的变体。': 'The most stable plays in options trading are all variants of being a landlord collecting rent.',
+      '出租型': 'Lease',
+      '承诺型': 'Promise',
+      '循环': 'Cycle',
+      '你手里有 100 股 TSLA。卖出一张 <strong>更高价的 call 期权</strong>，等于答应别人："如果一个月内 TSLA 涨到这个价，你来用这个价买走我的股票。"对方为这个"承诺"付你<strong>权利金</strong>，相当于<strong>租金</strong>。': 'You own 100 shares of TSLA. Sell one <strong>higher-strike call</strong> — you\'re saying: "If TSLA hits this price within a month, you can buy my shares at this price." They pay you a <strong>premium</strong> for that promise — that\'s your <strong>rent</strong>.',
+      'TSLA 现价 <span class="v">$440</span><br>\n            你卖 1 张 $460 Call · 30 天 · 收 <span class="g">$300</span><br>\n            一个月后：TSLA 没涨过 $460 → 收益 <span class="g">+$300</span>，股票还在': 'TSLA at <span class="v">$440</span><br>Sell 1 × $460 Call · 30 days · collect <span class="g">$300</span><br>One month later: TSLA stayed below $460 → P&L <span class="g">+$300</span>, shares intact',
+      '你想低价买入 TSLA。卖出一张 <strong>更低价的 put 期权</strong>，等于答应别人："如果一个月内 TSLA 跌到这个价，我用这个价买你的股票。"对方付你<strong>权利金</strong>当"等待费"。': 'You want to buy TSLA at a discount. Sell one <strong>lower-strike put</strong> — you\'re saying: "If TSLA drops to this price within a month, I\'ll buy your shares at this price." They pay you a <strong>premium</strong> as a "waiting fee."',
+      'TSLA 现价 <span class="v">$440</span><br>\n            你卖 1 张 $400 Put · 30 天 · 收 <span class="g">$500</span><br>\n            一个月后：TSLA 没跌破 $400 → 收益 <span class="g">+$500</span>，等下一笔': 'TSLA at <span class="v">$440</span><br>Sell 1 × $400 Put · 30 days · collect <span class="g">$500</span><br>One month later: TSLA stayed above $400 → P&L <span class="g">+$500</span>, ready for the next trade',
+      '把上面两个串起来。<strong>先卖 Put 等接货</strong> → 真接到了就<strong>卖 Covered Call</strong> → 被叫走 → 再卖 Put。每一步都在收钱，<strong>下跌不慌，上涨也赚</strong>。': 'Stitch the two together. <strong>Sell a Put, wait for assignment</strong> → if assigned, <strong>sell a Covered Call</strong> → if called away, sell another Put. Every step collects premium. <strong>Stay calm on dips, profit on rallies.</strong>',
+      'Put 收 <span class="g">$500</span> → 被指派接货 100 股 → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 涨幅 × 100 = <span class="g">+$2000</span> → 再卖 Put...': 'Put collects <span class="g">$500</span> → assigned 100 shares → CC collects <span class="g">$300</span> → called away with +$20 move × 100 = <span class="g">+$2000</span> → sell another Put...',
+      '实际界面': 'The actual UI',
+      '每一张"出租合约"，<br>都在你看得见的地方。': 'Every "rental contract",<br>where you can see it.',
+      '实时市场价 · Greeks · 距行权距离 · 财报警告 · 30 天价位带 —— 不需要打开三个网站。': 'Live mark · Greeks · distance to strike · earnings warning · 30-day price band — no need to open three websites.',
+      '收到租金': 'Rent collected',
+      '买回成本': 'Buyback cost',
+      '浮盈亏': 'Unrealized P&L',
+      '已实现': 'Realized',
+      '每日 Theta': 'Daily Theta',
+      'Exp 2027-01-15 · 10× · 254 天': 'Exp 2027-01-15 · 10× · 254 days',
+      'Exp 2026-05-29 · 1× · 22 天 · ⚠ 财报 5/24': 'Exp 2026-05-29 · 1× · 22 days · ⚠ Earnings 5/24',
+      'Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平仓': 'Exp 2026-05-15 · 3× · 3 days · 🎯 Near take-profit',
+      '距行权 <span class="v">+54%</span>': 'To strike <span class="v">+54%</span>',
+      '距行权 <span class="v">-2.8%</span>': 'To strike <span class="v">-2.8%</span>',
+      '使用流程': 'How it works',
+      '三步当上包租公。': 'Three steps to landlord.',
+      '录入你的"房产"': 'Enter your "properties"',
+      '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。': 'Copy the OCC contract code from your broker (e.g. <code>TSLA260515P00400000</code>) and paste it in. Auto-parsed. Same contract sold multiple times is auto-merged with weighted-average pricing.',
+      '看见每一份"租约"': 'See every "lease"',
+      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。': 'Each position shows live Mark, Δ, Θ, distance to strike, payoff curve, action suggestions, 30-day price band, daily P&L curve. Auto-warns on approaching earnings.',
+      '用包租公推荐指数找下一套': 'Find the next one with the Landlord Rec Index',
+      '告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。': 'Tell the system your view (bullish/bearish/neutral), intent (premium/CSP/Wheel/LEAPS), time horizon, risk tolerance — the <strong>Landlord Rec Index</strong> scores and ranks every contract in the chain. ⭐⭐⭐⭐⭐ always first.',
+      '配套能力': 'Capabilities',
+      '不仅看清现状，<br>还能优化决策。': 'Not just clarity —<br>better decisions, too.',
+      '实时市场数据': 'Live market data',
+      '期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。': 'Option marks pulled live from yfinance, with Black-Scholes as fallback. Massive API provides 30-day historical price bands.',
+      '包租公算法 1.1': 'Landlord Algorithm 1.1',
+      '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。': 'Landlord\'s-eye ranking: <strong>annualized rent × safety(BS) × DTE sweet spot × Delta sweet spot × IV rank × liquidity</strong>. In conservative mode, contracts spanning earnings = always rejected. ⭐⭐⭐⭐⭐ always first.',
+      '财报 + IV crush 警告': 'Earnings + IV crush warnings',
+      '持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。': 'Positions expiring after earnings → auto-flagged. Recommendations penalize earnings-spanning contracts and suggest early close.',
+      '损益曲线 (Payoff)': 'Payoff diagrams',
+      '每个持仓一张 SVG，蓝实线 = 到期，橙虚线 = 今天。<code>BE</code> 盈亏平衡点标注。': 'One SVG per position. Blue solid = at expiry, orange dashed = today. <code>BE</code> = breakeven marker.',
+      '复盘 / 笔记 / 分享': 'Review / Notes / Share',
+      '已平仓持仓的胜率、盈亏比、最佳最差。每个持仓可记笔记。生成只读分享链接。': 'Win rate, P&L ratio, best/worst trades of closed positions. Per-position notes. Read-only share links.',
+      '期权小白指南': 'Options 101 guide',
+      '25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。': '25 core terms (ITM/OTM/ATM/CSP/Wheel/LEAPS…) explained plainly with examples and practical tips.',
+      '跨设备同步': 'Cross-device sync',
+      '浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。': 'Browser File System Access API connects to your Google Drive folder → multiple devices share the same data.',
+      '三语 · 双主题': 'Tri-lingual · Dual theme',
+      '简中 / 繁中 / English 一键切换 · 白天 / 夜间模式 · 全响应式。': 'Simplified / Traditional Chinese / English toggle · Light / Dark mode · Fully responsive.',
+      '包租公算法 1.1 · Methodology': 'Landlord Algorithm 1.1 · Methodology',
+      '不是黑盒，是<br>八个能讲清楚的因子。': 'Not a black box —<br>eight factors we can explain.',
+      '大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。': 'Most options tools only look at annualized yield and delta — and the "high returns" you see often turn into landmines. The <strong>Landlord Algorithm</strong> treats every short option as "renting out a property": <strong>stable weekly rent &gt; one-time windfall</strong>.',
+      '包租公分': 'Landlord Score',
+      '年化租金': 'Annualized rent',
+      '安全度<sup>1.5</sup>': 'Safety<sup>1.5</sup>',
+      'DTE 甜蜜区': 'DTE sweet spot',
+      'Delta 甜蜜区': 'Delta sweet spot',
+      'IV rank': 'IV rank',
+      '流动性': 'Liquidity',
+      '财报因子': 'Earnings factor',
+      '回测胜率': 'Backtest win-rate',
+      '流动性 <sup>v1.1</sup>': 'Liquidity <sup>v1.1</sup>',
+      '<code>premium ÷ collateral × (365 / days)</code>。把每笔卖期权折算成"全年租金回报率"，让 7 天和 30 天的合约能<strong>横向比较</strong>。基础值越大，房子越值得出租。': '<code>premium ÷ collateral × (365 / days)</code>. Converts each short option into an annualized rent-yield so 7-day and 30-day contracts can be <strong>compared apples-to-apples</strong>. Higher base = better property.',
+      '用 Black-Scholes 算到期"安全过关"的真实概率 <code>N(d2)</code>，而不是市面常见的 <code>1 − |Δ|</code> 粗估。再开 <strong>1.5 次幂</strong>强调损失厌恶——房东最怕房客闹事。': 'Use Black-Scholes to compute the actual probability of safe expiry <code>N(d2)</code> — not the rough <code>1 − |Δ|</code> approximation common elsewhere. Then raise to the <strong>1.5th power</strong> to emphasize loss aversion — landlords hate trouble.',
+      '<strong>14 天到期 = 峰值 1.20×。</strong> 7-21 天是周租周期，资金流转最快。&lt;5 天 gamma 风险骤增；&gt;35 天钱躺得太久、灵活度差。': '<strong>14 DTE = peak 1.20×.</strong> 7-21 days is the weekly rent cycle — fastest capital rotation. &lt;5 days gamma risk explodes; &gt;35 days money sits too long, less flexibility.',
+      '<strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong> 0.15-0.30 是奶牛区——既能收到合理租金、又不容易被指派。Δ &lt; 0.10 收得太少（保险费太怂），Δ &gt; 0.40 风险溢出。': '<strong>|Δ| ≈ 0.22 = peak 1.15×.</strong> 0.15-0.30 is the cash-cow zone — collect reasonable rent without easy assignment. Δ &lt; 0.10 = too little premium (insurance too cheap); Δ &gt; 0.40 = risk overflow.',
+      '用过去 52 周的<strong>实现波动率分布</strong>算当前 IV 的百分位。IV rank ≥ 70 → <code>×1.20</code>（权利金贵，多收租）；≤ 20 → <code>×0.85</code>（保险费太便宜，不值）。': 'Use 52-week <strong>realized-vol distribution</strong> to compute the IV percentile. IV rank ≥ 70 → <code>×1.20</code> (premium is rich, more rent). ≤ 20 → <code>×0.85</code> (insurance too cheap, not worth it).',
+      '<strong>spread × OI × volume 复合分。</strong> spread 决定价差损耗；<strong>OI</strong>（持仓量）决定二级市场深度，&lt;10 直接 ×0.5；<strong>当日 volume</strong> 决定价格新鲜度，今日 0 成交 → 价格 stale。单看 spread 不够——纸面 5% 的 spread + OI 为 0 = 挂单一天不成交。': '<strong>Composite of spread × OI × volume.</strong> Spread sets price slippage; <strong>OI</strong> (open interest) determines market depth — &lt;10 = ×0.5 instantly; <strong>today\'s volume</strong> reflects price freshness — 0 trades today = stale. Spread alone deceives: a paper 5% spread + OI of 0 = order sits all day unfilled.',
+      '合约到期日跨越下次财报 → <strong>保守模式硬否决</strong>（<code>×0</code>，tier 封顶 2 星），平衡模式 <code>×0.55</code>，激进模式 <code>×0.78</code>。IV crush 一夜归零的故事见太多了。': 'Contract expiring after the next earnings → <strong>conservative mode = hard veto</strong> (<code>×0</code>, tier capped at 2 stars). Balanced mode <code>×0.55</code>, aggressive <code>×0.78</code>. We\'ve seen too many "premium went to zero overnight" stories.',
+      '过去 6 个月类似策略（同 ticker、同 DTE、同 delta target）的模拟胜率。≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。历史不重复，但常常压韵。': 'Simulated win-rate for similar strategies (same ticker, DTE, delta target) over the past 6 months. ≥ 75% → <code>×1.12</code>; &lt; 45% → <code>×0.85</code>. History doesn\'t repeat, but it often rhymes.',
+      '设计原则': 'Design principles',
+      '<span class="em">稳定的周租 &gt; 一次性的暴利。</span> 包租公分对"高年化但低胜率"的合约不感冒。': '<span class="em">Stable weekly rent &gt; one-time windfall.</span> Landlord Score isn\'t impressed by high-yield-low-win-rate contracts.',
+      '<span class="em">损失厌恶。</span> cons 数量超过 pros 时，额外扣 1 分——房东最讨厌麻烦。': '<span class="em">Loss aversion.</span> When cons outnumber pros, extra −1 weight applied — landlords hate hassle.',
+      '<span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。': '<span class="em">Conservative means conservative.</span> Earnings-spanning contracts are auto-rejected in conservative mode — no "let me think about it" room.',
+      '<span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。': '<span class="em">One number is enough.</span> Landlord Score compresses 8 factors into a comparable scalar — expandable to inspect each contribution.',
+      '数据归你': 'Your data, yours',
+      '不开账户，<br>不传服务器。': 'No account.<br>No server upload.',
+      '所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。': 'All position data lives in your browser\'s <code style="color:var(--accent)">localStorage</code>. Anyone else opening the same URL sees <strong>their own</strong> data — no cross-visibility.',
+      '后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。': 'The backend Serverless function is fully stateless — released after each request, no PII stored.',
+      '无需注册账号': 'No account signup',
+      '无需绑定券商': 'No broker linking',
+      '无需输入任何身份信息': 'No identity info required',
+      '数据加密存储在你的浏览器': 'Encrypted-at-rest in your browser',
+      '可一键导出 JSON 备份': 'One-click JSON export',
+      '可断开同步随时清除': 'Disconnect sync, wipe anytime',
+      '开源代码（GitHub）': 'Open source (GitHub)',
+      '准备好<br><span style="color:var(--accent)">当包租公</span>了吗？': 'Ready to be<br><span style="color:var(--accent)">the landlord</span>?',
+      '无需注册。30 秒上手。免费使用。': 'No signup. 30 seconds to start. Free.',
+      '把你的股票租出去，每周收租。': 'Rent your stocks. Collect weekly.',
+      '应用': 'App',
+      '<strong>⚠ 免责声明 / Disclaimer</strong><br>本工具仅供学习研究，<strong>不构成任何投资建议</strong>。期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.': '<strong>⚠ Disclaimer</strong><br>This tool is for educational and research purposes only and <strong>does not constitute investment advice</strong>. Options trading involves the risk of losing all or more of your principal. All data and recommendations are based on market data and mathematical models — they cannot predict the future. Always verify and consult a licensed advisor before making decisions.<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.',
+    },
+  };
+
+  function setLang(lang) {
+    localStorage.setItem('lang', lang);
+    applyLang(lang);
+  }
+
+  function applyLang(lang) {
+    document.documentElement.lang = lang === 'zh_tw' ? 'zh-TW' : (lang === 'en' ? 'en' : 'zh');
+    const dict = I18N[lang] || {};
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      if (!el.dataset.i18nOrig) el.dataset.i18nOrig = el.textContent.trim();
+      const k = el.dataset.i18nOrig;
+      el.textContent = dict[k] || k;
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      if (!el.dataset.i18nOrig) el.dataset.i18nOrig = el.innerHTML.trim();
+      const k = el.dataset.i18nOrig;
+      el.innerHTML = dict[k] || k;
+    });
+    document.querySelectorAll('.lang-pills button').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+  }
+
+  // 启动时立即应用语言
+  applyLang(localStorage.getItem('lang') || 'zh');
+
   // Nav scroll state
   addEventListener('scroll', () => {
     document.getElementById('nav').classList.toggle('scrolled', scrollY > 8);

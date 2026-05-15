@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "regions": ["sfo1"],
+  "regions": ["fra1"],
   "builds": [
     { "src": "api/state.py", "use": "@vercel/python" },
     { "src": "index.html", "use": "@vercel/static" },

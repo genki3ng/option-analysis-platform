@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>包租公 · Landlord — 把你的股票租出去，每周收租</title>
+<title data-i18n="包租公 · Landlord — 把你的股票租出去，每周收租">包租公 · Landlord — 把你的股票租出去，每周收租</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -1920,11 +1920,11 @@
   <div class="header">
     <div class="user-badge" id="user-badge" onclick="editUsername()" data-i18n-title="点击修改用户名（仅本地显示）" title="点击修改用户名（仅本地显示）">
       <span class="icon">👤</span>
-      <span class="name" id="user-name">本地用户</span>
+      <span class="name" id="user-name" data-i18n="本地用户">本地用户</span>
     </div>
     <div class="lang-selector" id="lang-selector">
-      <button data-lang="zh">简</button>
-      <button data-lang="zh_tw">繁</button>
+      <button data-lang="zh" data-i18n="简">简</button>
+      <button data-lang="zh_tw" data-i18n="繁">繁</button>
       <button data-lang="en">EN</button>
     </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="切换主题">
@@ -1936,13 +1936,13 @@
 
   <div class="info-card" id="info-card">
     <span class="close" onclick="dismissInfo()" title="收起">×</span>
-    <div class="title" data-i18n-html="ℹ️ &lt;b&gt;关于这个工具&lt;/b&gt;（点 × 收起）">ℹ️ <b>关于这个工具</b>（点 × 收起）</div>
+    <div class="title" data-i18n-html="ℹ️ &lt;b&gt;关于这个工具&lt;/b&gt;（点 × 收起）">ℹ️ <b data-i18n="关于这个工具">关于这个工具</b>（点 × 收起）</div>
     <ul id="info-bullets">
-      <li data-i18n-html="info_b1">📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
-      <li data-i18n-html="info_b2">👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见</li>
-      <li data-i18n-html="info_b3">💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件</li>
-      <li data-i18n-html="info_b4">📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON</li>
-      <li data-i18n-html="info_b5">🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li></ul></li>
+      <li data-i18n-html="info_b1">📥 持仓数据存在 <strong data-i18n="你自己浏览器">你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
+      <li data-i18n-html="info_b2">👥 其他人打开同一个网址，看到的是 <strong data-i18n="他们自己">他们自己</strong> 的数据，互相不可见</li>
+      <li data-i18n-html="info_b3">💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong data-i18n="💾 导出备份">💾 导出备份</strong> 存 JSON 文件</li>
+      <li data-i18n-html="info_b4">📂 在新浏览器恢复 → 点 <strong data-i18n="📂 导入备份">📂 导入备份</strong> 选那个 JSON</li>
+      <li data-i18n-html="info_b5">🔗 <strong data-i18n="跨设备自动同步">跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong data-i18n="🔗 文件同步">🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong data-i18n="📁 文件夹同步">📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong data-i18n="与本地 Mac app 数据完全共享 🌟">与本地 Mac app 数据完全共享 🌟</strong></li></ul></li>
       <li data-i18n-html="info_b6">👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
     </ul>
   </div>
@@ -1988,7 +1988,7 @@
   </div>
 
   <div class="yf-warning" id="yf-warn">
-    <div class="title">⚠️ 市场数据库 (yfinance) 不可用</div>
+    <div class="title" data-i18n="⚠️ 市场数据库 (yfinance) 不可用">⚠️ 市场数据库 (yfinance) 不可用</div>
     无法拉取实时报价，所有持仓显示为卖出价基准（盈亏=0）。<br>
     请在 Terminal 运行：<code>python3 -m pip install --user yfinance</code> 然后重启本应用。
   </div>
@@ -2005,26 +2005,26 @@
         <!-- 新建持仓表单 -->
         <div class="add-form" id="add-form">
           <h4>
-            <span>新建空头持仓</span>
+            <span data-i18n="新建空头持仓">新建空头持仓</span>
             <span class="x" onclick="hideAdd()">×</span>
           </h4>
 
           <div class="occ-row">
-            <label>粘贴 OCC 合约代码（自动解析）</label>
+            <label data-i18n="粘贴 OCC 合约代码（自动解析）">粘贴 OCC 合约代码（自动解析）</label>
             <input id="occ-input" type="text" placeholder="例如: TSLA260515P00385000"
                    oninput="parseOcc(this.value)">
-            <div class="hint">从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike</div>
+            <div class="hint" data-i18n="从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike">从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike</div>
           </div>
 
-          <div class="divider">─ 或手动填写 ─</div>
+          <div class="divider" data-i18n="─ 或手动填写 ─">─ 或手动填写 ─</div>
 
           <div class="grid">
             <div class="field">
-              <label>标的 Ticker</label>
+              <label data-i18n="标的 Ticker">标的 Ticker</label>
               <input id="add-ticker" type="text" placeholder="TSLA" oninput="updateAddPreview()">
             </div>
             <div class="field">
-              <label>类型</label>
+              <label data-i18n="类型">类型</label>
               <div class="type-radios">
                 <label><input type="radio" name="add-type" value="call" onchange="updateAddPreview()"><span>Call</span></label>
                 <label><input type="radio" name="add-type" value="put" checked onchange="updateAddPreview()"><span>Put</span></label>
@@ -2035,32 +2035,32 @@
               <input id="add-strike" type="number" step="0.5" placeholder="385" oninput="updateAddPreview()">
             </div>
             <div class="field">
-              <label>到期日</label>
+              <label data-i18n="到期日">到期日</label>
               <input id="add-expiry" type="date" oninput="updateAddPreview()">
             </div>
             <div class="field">
-              <label>合约张数</label>
+              <label data-i18n="合约张数">合约张数</label>
               <input id="add-contracts" type="number" step="1" min="1" placeholder="1" oninput="updateAddPreview()">
             </div>
             <div class="field">
-              <label>卖出价 $/股</label>
+              <label data-i18n="卖出价 $/股">卖出价 $/股</label>
               <input id="add-price" type="number" step="0.01" placeholder="3.45" oninput="updateAddPreview()">
             </div>
             <div class="field">
-              <label>交易日（默认今天）</label>
+              <label data-i18n="交易日（默认今天）">交易日（默认今天）</label>
               <input id="add-tradedate" type="date">
             </div>
           </div>
 
           <div class="preview" id="add-preview">
-            <span class="lab">填写完所有必填字段后这里会显示预览</span>
+            <span class="lab" data-i18n="填写完所有必填字段后这里会显示预览">填写完所有必填字段后这里会显示预览</span>
           </div>
 
           <div class="err" id="add-err"></div>
 
           <div class="actions">
-            <button class="cancel" onclick="hideAdd()">取消</button>
-            <button class="submit" id="add-submit" onclick="submitAdd()">✓ 添加持仓</button>
+            <button class="cancel" onclick="hideAdd()" data-i18n="取消">取消</button>
+            <button class="submit" id="add-submit" onclick="submitAdd()" data-i18n="✓ 添加持仓">✓ 添加持仓</button>
           </div>
         </div>
 
@@ -2116,10 +2116,10 @@
             <div class="dropdown-menu">
               <div class="dd-label" data-i18n="连接到">连接到</div>
               <button onclick="linkSyncFile()" data-i18n-html="sync_file_opt">🔗 单个 JSON 文件
-                <div class="dd-hint">网页自用格式</div>
+                <div class="dd-hint" data-i18n="网页自用格式">网页自用格式</div>
               </button>
               <button onclick="linkSyncDir()" data-i18n-html="sync_dir_opt">📁 文件夹
-                <div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>
+                <div class="dd-hint" data-i18n="兼容本地 Mac app（positions.json + state.json）">兼容本地 Mac app（positions.json + state.json）</div>
               </button>
               <hr>
               <div class="dd-label" data-i18n="仅 Chrome / Edge / Brave">仅 Chrome / Edge / Brave</div>
@@ -2245,9 +2245,9 @@
 
   <div class="row">
     <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
-    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative">🛡 保守</button>
-    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced">⚖️ 平衡</button>
-    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive">🔥 激进</button>
+    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative" data-i18n="🛡 保守">🛡 保守</button>
+    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced" data-i18n="⚖️ 平衡">⚖️ 平衡</button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive" data-i18n="🔥 激进">🔥 激进</button>
     <span id="risk-hint" style="font-size:11px;color:var(--sub);margin-left:8px"></span>
   </div>
 
@@ -2321,6 +2321,7 @@ const I18N = {
     '改用户名（左上角）方便区分多浏览器/多设备的数据': '改用戶名（左上角）方便區分多瀏覽器/多裝置的資料',
     // 用户徽章
     '本地用户': '本地用戶',
+    '包租公 · Landlord — 把你的股票租出去，每周收租': '包租公 · Landlord — 把你的股票租出去，每週收租',
     '点击修改用户名（仅本地显示）': '點擊修改用戶名（僅本地顯示）',
     '📚 期权小白指南': '📚 期權小白指南',
     '不懂某个指标？点开看大白话解释': '不懂某個指標？點開看大白話解釋',
@@ -2481,6 +2482,39 @@ const I18N = {
     '用 Mark': '用 Mark',
     '预计盈亏': '預計盈虧',
     '确认平仓': '確認平倉',
+  
+    '💾 导出备份': '💾 匯出備份',
+    '📂 导入备份': '📂 匯入備份',
+    '🔗 文件同步': '🔗 檔案同步',
+    '📁 文件夹同步': '📁 資料夾同步',
+    '与本地 Mac app 数据完全共享 🌟': '與本地 Mac app 資料完全共享 🌟',
+    '⚠️ 市场数据库 (yfinance) 不可用': '⚠️ 市場資料庫 (yfinance) 不可用',
+    '新建空头持仓': '新建空頭持倉',
+    '粘贴 OCC 合约代码（自动解析）': '貼上 OCC 合約代碼（自動解析）',
+    '从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike': '從 Schwab / IBKR 等券商複製貼上即可，格式：標的+YYMMDD+C/P+8位Strike',
+    '─ 或手动填写 ─': '─ 或手動填寫 ─',
+    '标的 Ticker': '標的 Ticker',
+    '类型': '類型',
+    '到期日': '到期日',
+    '合约张数': '合約張數',
+    '卖出价 $/股': '賣出價 $/股',
+    '交易日（默认今天）': '交易日（預設今天）',
+    '填写完所有必填字段后这里会显示预览': '填寫完所有必填欄位後這裡會顯示預覽',
+    '✓ 添加持仓': '✓ 新增持倉',
+    '兼容本地 Mac app（positions.json + state.json）': '相容本地 Mac app（positions.json + state.json）',
+    '🛡 保守': '🛡 保守',
+    '⚖️ 平衡': '⚖️ 平衡',
+    '🔥 激进': '🔥 激進',
+    '📥 持仓数据存在': '持倉資料存在',
+    '💾 清缓存 / 换浏览器 / 换设备会丢失 → 点': '💾 清快取 / 換瀏覽器 / 換設備會丟失 → 點',
+    '📂 在新浏览器恢复 → 点': '📂 在新瀏覽器恢復 → 點',
+    '👤 改用户名（左上角）方便区分多浏览器/多设备的数据': '👤 改使用者名稱（左上角）方便區分多瀏覽器/多設備的資料',
+    '👥 其他人打开同一个网址，看到的是': '👥 其他人打開同一個網址，看到的是',
+    '（推荐 Chrome/Edge）：': '（推薦 Chrome/Edge）：',
+    '然后重启本应用。': '然後重啟本應用。',
+    '请在 Terminal 运行：': '請在 Terminal 執行：',
+    '简': '簡',
+    '繁': '繁',
   },
 
   en: {
@@ -2522,6 +2556,7 @@ const I18N = {
     '与本地 Mac app 数据完全共享': 'fully compatible with local Mac app',
     '改用户名（左上角）方便区分多浏览器/多设备的数据': 'Set username (top-left) to distinguish data across browsers/devices',
     '本地用户': 'Local User',
+    '包租公 · Landlord — 把你的股票租出去，每周收租': '包租公 · Landlord — Rent out your stocks, collect rent weekly',
     '点击修改用户名（仅本地显示）': 'Click to change username (local only)',
     '📚 期权小白指南': '📚 Options 101',
     '不懂某个指标？点开看大白话解释': "Don't know an indicator? Click to expand for plain-English explanation",
@@ -2775,6 +2810,39 @@ const I18N = {
     '用 Mark': 'Use Mark',
     '预计盈亏': 'Est. P&L',
     '确认平仓': 'Confirm Close',
+  
+    '💾 导出备份': '💾 Export backup',
+    '📂 导入备份': '📂 Import backup',
+    '🔗 文件同步': '🔗 File sync',
+    '📁 文件夹同步': '📁 Folder sync',
+    '与本地 Mac app 数据完全共享 🌟': 'Full data parity with the local Mac app 🌟',
+    '⚠️ 市场数据库 (yfinance) 不可用': '⚠️ Market data (yfinance) unavailable',
+    '新建空头持仓': 'New short position',
+    '粘贴 OCC 合约代码（自动解析）': 'Paste OCC contract code (auto-parse)',
+    '从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike': 'Copy/paste from Schwab / IBKR etc. Format: ticker+YYMMDD+C/P+8-digit strike',
+    '─ 或手动填写 ─': '─ or fill manually ─',
+    '标的 Ticker': 'Ticker',
+    '类型': 'Type',
+    '到期日': 'Expiry',
+    '合约张数': 'Contracts',
+    '卖出价 $/股': 'Sell price $/share',
+    '交易日（默认今天）': 'Trade date (default today)',
+    '填写完所有必填字段后这里会显示预览': 'Preview appears here after all required fields are filled',
+    '✓ 添加持仓': '✓ Add position',
+    '兼容本地 Mac app（positions.json + state.json）': 'Compatible with local Mac app (positions.json + state.json)',
+    '🛡 保守': '🛡 Conservative',
+    '⚖️ 平衡': '⚖️ Balanced',
+    '🔥 激进': '🔥 Aggressive',
+    '📥 持仓数据存在': 'Position data lives in',
+    '💾 清缓存 / 换浏览器 / 换设备会丢失 → 点': '💾 Lost if you clear cache / change browser / switch device — use',
+    '📂 在新浏览器恢复 → 点': '📂 To restore in a new browser — use',
+    '👤 改用户名（左上角）方便区分多浏览器/多设备的数据': '👤 Change username (top-left) to distinguish data across browsers/devices',
+    '👥 其他人打开同一个网址，看到的是': '👥 Others opening the same URL see',
+    '（推荐 Chrome/Edge）：': ' (recommended Chrome/Edge):',
+    '然后重启本应用。': 'then restart this app.',
+    '请在 Terminal 运行：': 'Please run in Terminal:',
+    '简': '简',
+    '繁': '繁',
   },
 };
 

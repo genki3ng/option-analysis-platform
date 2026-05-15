@@ -4,694 +4,612 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>包租公 · Landlord — 把你的股票租出去，每周收租</title>
-<meta name="description" content="包租公：把你的股票"租出去"，每周收"租金"。Cover Call、CSP、Wheel 策略的可视化工具，期权小白也能上手。">
+<meta name="description" content="包租公：把股票'租'出去（Covered Call / CSP），每周收'租金'。期权新手友好的可视化工具。">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
 
   :root {
-    --bg: #0A0A14;
-    --bg-2: #0F0F1F;
-    --card: rgba(255,255,255,0.04);
-    --card-hover: rgba(255,255,255,0.07);
-    --border: rgba(255,255,255,0.08);
-    --text: #F0F0F8;
-    --sub: #8B8BA0;
-    --primary: #5B8DEF;
-    --secondary: #A78BFA;
-    --green: #4ADE80;
-    --red: #F87171;
-    --orange: #FB923C;
-    --yellow: #FACC15;
+    --bg:      #0A0A0B;
+    --bg-2:    #101012;
+    --line:    #1C1C1F;
+    --line-2:  #2A2A2E;
+    --text:    #EDEDEC;
+    --muted:   #888889;
+    --dim:     #5A5A5C;
+    --accent:  #E6B86A;
+    --accent-2:#B89255;
+    --green:   #34D399;
+    --red:     #F87171;
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                 "Helvetica Neue", "PingFang SC", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
+    font-family: -apple-system, "SF Pro Text", "Inter",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    font-feature-settings: "ss01", "cv01";
   }
 
-  /* 全局背景渐变 */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(circle at 20% 10%, rgba(91,141,239,0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 30%, rgba(167,139,250,0.12) 0%, transparent 50%),
-      radial-gradient(circle at 50% 80%, rgba(74,222,128,0.08) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Nav */
+  /* ── Nav ─────────────────────────────────────────── */
   nav {
-    position: fixed; top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 16px 32px;
-    background: rgba(10,10,20,0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    padding: 18px max(24px, 5vw);
+    background: rgba(10,10,11,0.72);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border-bottom: 1px solid transparent;
     display: flex; justify-content: space-between; align-items: center;
-    transition: all 0.3s;
+    transition: border-color 0.2s;
   }
+  nav.scrolled { border-bottom-color: var(--line); }
   nav .logo {
-    font-size: 18px; font-weight: 800;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -0.3px;
+    font-size: 15px; font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text); text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
   }
-  nav .nav-cta {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white; padding: 9px 20px;
-    border-radius: 100px; text-decoration: none;
-    font-weight: 600; font-size: 14px;
-    transition: all 0.2s;
-    box-shadow: 0 4px 16px rgba(91,141,239,0.3);
+  nav .logo .glyph {
+    width: 22px; height: 22px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 11px; font-weight: 700;
   }
-  nav .nav-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 22px rgba(91,141,239,0.5);
-  }
-
-  /* Hero */
-  .hero {
-    position: relative; z-index: 1;
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
-    padding: 100px 24px 80px;
-    text-align: center;
-  }
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(91,141,239,0.1);
-    border: 1px solid rgba(91,141,239,0.3);
-    padding: 6px 14px; border-radius: 100px;
-    font-size: 12px; color: var(--primary);
-    margin-bottom: 24px;
-    animation: fadeInUp 0.6s ease 0.1s both;
-  }
-  .hero-badge .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.5); }
-  }
-
-  .hero h1 {
-    font-size: clamp(40px, 7vw, 84px);
-    font-weight: 900;
-    line-height: 1.05;
-    letter-spacing: -2px;
-    margin-bottom: 24px;
-    max-width: 900px;
-    animation: fadeInUp 0.6s ease 0.2s both;
-  }
-  .hero h1 .gradient {
-    background: linear-gradient(135deg, var(--primary), var(--secondary) 50%, #F472B6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .hero .sub {
-    font-size: clamp(16px, 2vw, 20px);
-    color: var(--sub);
-    max-width: 640px;
-    margin-bottom: 36px;
-    animation: fadeInUp 0.6s ease 0.3s both;
-  }
-
-  .hero-ctas {
-    display: flex; gap: 14px; flex-wrap: wrap;
-    justify-content: center;
-    margin-bottom: 56px;
-    animation: fadeInUp 0.6s ease 0.4s both;
-  }
-  .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 14px 28px; border-radius: 100px;
-    font-weight: 600; font-size: 15px;
+  nav .cta {
+    font-size: 13px; font-weight: 500;
+    color: var(--bg); background: var(--text);
+    padding: 8px 14px; border-radius: 6px;
     text-decoration: none;
-    transition: all 0.2s;
-    cursor: pointer; border: none;
-    font-family: inherit;
+    transition: background 0.15s, transform 0.15s;
+  }
+  nav .cta:hover { background: white; transform: translateY(-1px); }
+
+  /* ── Layout primitives ─────────────────────────── */
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 max(24px, 5vw);
+  }
+  section {
+    padding: 120px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  /* ── Typography ────────────────────────────────── */
+  h1, h2, h3 {
+    color: var(--text);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 24px;
+  }
+  .display {
+    font-size: clamp(44px, 7vw, 88px);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  h2 {
+    font-size: clamp(32px, 4.2vw, 52px);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+  h3 {
+    font-size: 22px;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+  }
+  p {
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  p strong, p b { color: var(--text); font-weight: 500; }
+  .lead {
+    font-size: 21px;
+    color: var(--muted);
+    line-height: 1.55;
+    max-width: 640px;
+  }
+  code, .mono {
+    font-family: "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 0.92em;
+  }
+
+  /* ── Hero ──────────────────────────────────────── */
+  .hero {
+    padding: 140px 0 80px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero .display {
+    max-width: 880px;
+    margin-bottom: 32px;
+  }
+  .hero .display .accent { color: var(--accent); }
+  .hero .lead {
+    margin-bottom: 48px;
+  }
+  .hero-actions {
+    display: flex; align-items: center; gap: 28px;
+    flex-wrap: wrap;
   }
   .btn-primary {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    box-shadow: 0 8px 24px rgba(91,141,239,0.4);
+    background: var(--text); color: var(--bg);
+    padding: 13px 22px;
+    border-radius: 8px;
+    font-size: 15px; font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
   }
   .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(91,141,239,0.55);
+    background: white;
+    transform: translateY(-1px);
   }
-  .btn-secondary {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
+  .btn-link {
+    color: var(--text); font-size: 15px;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    border-bottom: 1px solid var(--line-2);
+    padding-bottom: 2px;
+    transition: border-color 0.15s, color 0.15s;
   }
-  .btn-secondary:hover {
-    background: var(--card-hover);
-    border-color: rgba(255,255,255,0.15);
+  .btn-link:hover { color: var(--accent); border-color: var(--accent); }
+  .btn-link .arr { transition: transform 0.15s; }
+  .btn-link:hover .arr { transform: translateX(2px); }
+
+  /* Hero ticker tape — subtle horizontal scroll */
+  .ticker-tape {
+    margin-top: 80px;
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+    position: relative;
+  }
+  .ticker-tape::before, .ticker-tape::after {
+    content: '';
+    position: absolute; top: 0; bottom: 0;
+    width: 80px; pointer-events: none; z-index: 2;
+  }
+  .ticker-tape::before { left: 0; background: linear-gradient(to right, var(--bg), transparent); }
+  .ticker-tape::after  { right: 0; background: linear-gradient(to left, var(--bg), transparent); }
+  .ticker-track {
+    display: flex; gap: 56px;
+    animation: scroll 30s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-track .item {
+    display: inline-flex; align-items: baseline; gap: 10px;
+    font-size: 14px;
+  }
+  .ticker-track .sym { color: var(--muted); font-weight: 500; }
+  .ticker-track .px {
+    color: var(--text); font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .ticker-track .chg {
+    font-size: 12px; font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .ticker-track .up { color: var(--green); }
+  .ticker-track .down { color: var(--red); }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+  /* ── Definition section (Stripe style) ─────────── */
+  .definition {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 80px;
   }
-
-  /* Hero 实时股票卡片 */
-  .live-tickers {
-    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
-    margin-top: 16px;
-    animation: fadeInUp 0.8s ease 0.6s both;
+  @media (min-width: 800px) {
+    .definition.split { grid-template-columns: 280px 1fr; gap: 96px; }
   }
-  .live-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 18px;
-    min-width: 140px;
-    backdrop-filter: blur(20px);
+  .definition .head h2 {
+    font-size: 36px;
+    margin-bottom: 16px;
   }
-  .live-card .lc-tk { font-size: 11px; color: var(--sub); font-weight: 600; }
-  .live-card .lc-px { font-size: 18px; font-weight: 700; margin-top: 2px;
-                       font-variant-numeric: tabular-nums; }
-  .live-card .lc-chg { font-size: 11px; margin-top: 2px;
-                        font-variant-numeric: tabular-nums; }
-  .lc-up { color: var(--green); }
-  .lc-down { color: var(--red); }
-
-  /* Section base */
-  section {
-    position: relative; z-index: 1;
-    padding: 100px 24px;
+  .term {
+    padding: 32px 0;
+    border-top: 1px solid var(--line);
   }
-  .container {
-    max-width: 1200px; margin: 0 auto;
-  }
-  .section-head {
-    text-align: center; margin-bottom: 60px;
-  }
-  .section-tag {
-    display: inline-block;
-    color: var(--primary);
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+  .term:first-child { border-top: none; padding-top: 0; }
+  .term .name {
+    display: flex; align-items: baseline; gap: 14px;
     margin-bottom: 12px;
   }
-  .section-title {
-    font-size: clamp(28px, 4.5vw, 48px);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -1px;
-    margin-bottom: 14px;
+  .term .name .label {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(230,184,106,0.08);
+    padding: 3px 8px; border-radius: 4px;
+    border: 1px solid rgba(230,184,106,0.2);
+    letter-spacing: 0.02em;
   }
-  .section-sub {
-    color: var(--sub);
-    font-size: clamp(15px, 1.6vw, 18px);
-    max-width: 680px; margin: 0 auto;
+  .term .name .cn {
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.015em;
   }
+  .term .desc {
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.65;
+    margin-bottom: 16px;
+    max-width: 680px;
+  }
+  .term .example {
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: var(--dim);
+    padding: 14px 18px;
+    background: var(--bg-2);
+    border-left: 2px solid var(--line-2);
+    border-radius: 0 4px 4px 0;
+    line-height: 1.7;
+    max-width: 680px;
+  }
+  .term .example .v { color: var(--text); }
+  .term .example .g { color: var(--green); }
 
-  /* Features grid */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 24px;
-  }
-  .feature {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 28px;
-    transition: all 0.3s;
-    backdrop-filter: blur(20px);
-    position: relative;
+  /* ── Product preview (real-looking dashboard) ──── */
+  .product-frame {
+    margin-top: 56px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
     overflow: hidden;
   }
-  .feature::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg,
-      transparent 0%,
-      rgba(91,141,239,0.05) 50%,
-      transparent 100%);
-    opacity: 0; transition: opacity 0.3s;
+  .product-frame .titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(0,0,0,0.2);
   }
-  .feature:hover {
-    transform: translateY(-4px);
-    border-color: rgba(91,141,239,0.3);
-    background: var(--card-hover);
+  .product-frame .dots {
+    display: flex; gap: 6px;
   }
-  .feature:hover::before { opacity: 1; }
-  .feature .icon {
-    width: 52px; height: 52px;
-    border-radius: 12px;
-    background: linear-gradient(135deg,
-      rgba(91,141,239,0.15),
-      rgba(167,139,250,0.15));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(91,141,239,0.2);
+  .product-frame .dot {
+    width: 11px; height: 11px; border-radius: 50%;
   }
-  .feature h3 {
-    font-size: 18px; font-weight: 700;
-    margin-bottom: 8px;
+  .product-frame .dot.r { background: #ff5f57; }
+  .product-frame .dot.y { background: #febc2e; }
+  .product-frame .dot.g { background: #28c840; }
+  .product-frame .url {
+    margin-left: 16px;
+    font-size: 12px;
+    color: var(--dim);
+    font-family: "SF Mono", Menlo, monospace;
   }
-  .feature p {
-    color: var(--sub);
-    font-size: 14px;
-    line-height: 1.6;
+  .product-frame .body {
+    padding: 32px;
   }
-
-  /* Dashboard preview */
-  .dashboard-section {
-    overflow: hidden;
-  }
-  .dashboard-preview {
-    background: linear-gradient(180deg, var(--bg-2), transparent);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 24px;
-    max-width: 1000px; margin: 0 auto;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
-  }
-  .dash-summary {
+  .stat-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-    padding: 16px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 12px;
-  }
-  .dash-summary .item .lab {
-    font-size: 9px; color: var(--sub);
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .dash-summary .item .val {
-    font-size: 18px; font-weight: 800;
-    margin-top: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  .dash-pos-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-  }
-  .dash-pos {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 14px;
-    border-left: 3px solid;
-    transition: transform 0.2s;
+    overflow: hidden;
+    margin-bottom: 24px;
   }
-  .dash-pos:hover { transform: translateY(-2px); }
-  .dash-pos.call { border-left-color: var(--green); }
-  .dash-pos.put { border-left-color: var(--orange); }
-  .dash-pos.danger { border-left-color: var(--red); }
-  .dash-pos .head {
-    display: flex; justify-content: space-between;
-    margin-bottom: 8px;
+  @media (max-width: 720px) {
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
   }
-  .dash-pos .ticker { font-weight: 700; font-size: 14px; }
-  .dash-pos .pnl {
-    font-weight: 700; font-size: 13px;
+  .stat-row .cell {
+    padding: 18px;
+    border-right: 1px solid var(--line);
+  }
+  .stat-row .cell:last-child { border-right: none; }
+  .stat-row .cell .l {
+    font-size: 11px; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .stat-row .cell .v {
+    font-size: 22px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .pos-list {
+    display: flex; flex-direction: column; gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .pos-row {
+    background: var(--bg-2);
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 0.6fr;
+    align-items: center;
+    gap: 16px;
+  }
+  @media (max-width: 720px) {
+    .pos-row { grid-template-columns: 1fr 1fr; }
+  }
+  .pos-row .meta {
+    font-size: 11px; color: var(--dim); margin-top: 4px;
+  }
+  .pos-row .ticker {
+    font-size: 14px; font-weight: 500;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .pos-row .tag {
+    font-size: 9px;
+    padding: 1px 5px; border-radius: 3px;
+    font-weight: 600; letter-spacing: 0.04em;
+  }
+  .pos-row .tag.call { background: rgba(52,211,153,0.1); color: var(--green); }
+  .pos-row .tag.put  { background: rgba(230,184,106,0.1); color: var(--accent); }
+  .pos-row .stat {
+    font-size: 13px; color: var(--muted);
+    font-family: "SF Mono", Menlo, monospace;
     font-variant-numeric: tabular-nums;
   }
-  .dash-pos .meta {
-    font-size: 11px; color: var(--sub);
-    margin-bottom: 8px;
+  .pos-row .stat .v { color: var(--text); }
+  .pos-row .pnl {
+    text-align: right; font-size: 14px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", Menlo, monospace;
   }
-  .dash-pos .stat-row {
-    display: flex; justify-content: space-between;
-    font-size: 11px; color: var(--sub);
+  .pos-row .pnl.up { color: var(--green); }
+  .pos-row .pnl.down { color: var(--red); }
+  .pos-row .status {
+    text-align: right; font-size: 11px;
+    color: var(--muted);
   }
-  .dash-pos .stat-row .v { color: var(--text); font-weight: 600; }
-  .dash-status {
-    display: inline-block; padding: 2px 6px;
-    border-radius: 4px; font-size: 9px;
-    font-weight: 700;
-  }
-  .dash-status.good { background: rgba(74,222,128,0.15); color: var(--green); }
-  .dash-status.warn { background: rgba(250,204,21,0.15); color: var(--yellow); }
-  .dash-status.danger { background: rgba(248,113,113,0.15); color: var(--red); }
 
-  /* How it works */
+  /* ── Steps ─────────────────────────────────────── */
   .steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 32px;
-    position: relative;
+    counter-reset: step;
+    max-width: 760px;
   }
   .step {
-    text-align: center;
-  }
-  .step-num {
-    width: 56px; height: 56px;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 800;
-    margin: 0 auto 20px;
-    box-shadow: 0 8px 24px rgba(91,141,239,0.4);
-  }
-  .step h3 {
-    font-size: 19px; font-weight: 700;
-    margin-bottom: 10px;
-  }
-  .step p {
-    color: var(--sub);
-    font-size: 14px;
-  }
-
-  /* Stats */
-  .stats {
-    background: linear-gradient(135deg,
-      rgba(91,141,239,0.06),
-      rgba(167,139,250,0.06));
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 48px 32px;
-    text-align: center;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: 60px 1fr;
+    gap: 24px;
+    padding: 36px 0;
+    border-top: 1px solid var(--line);
+  }
+  .step:first-child { border-top: none; padding-top: 0; }
+  .step::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .step h3 { margin-bottom: 10px; }
+  .step p { font-size: 16px; }
+
+  /* ── Capabilities list (no cards/circles) ─────── */
+  .caps {
+    list-style: none;
+    max-width: 760px;
+    border-top: 1px solid var(--line);
+  }
+  .caps li {
+    border-bottom: 1px solid var(--line);
+    padding: 24px 0;
+    display: grid;
+    grid-template-columns: 200px 1fr;
     gap: 32px;
   }
-  .stat .num {
-    font-size: clamp(34px, 5vw, 52px);
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: -1.5px;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
+  @media (max-width: 720px) {
+    .caps li { grid-template-columns: 1fr; gap: 8px; }
   }
-  .stat .lab {
-    color: var(--sub);
-    font-size: 13px;
-    margin-top: 8px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+  .caps li .k {
+    color: var(--text);
+    font-size: 15px; font-weight: 500;
+    letter-spacing: -0.01em;
   }
-
-  /* CTA section */
-  .cta-section {
-    text-align: center;
-    padding: 120px 24px;
-    background: linear-gradient(135deg,
-      rgba(91,141,239,0.08),
-      rgba(167,139,250,0.08));
-    margin: 60px 24px;
-    border-radius: 24px;
-    border: 1px solid var(--border);
-  }
-  .cta-section h2 {
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 16px;
-    letter-spacing: -1.5px;
-  }
-  .cta-section p {
-    color: var(--sub);
-    font-size: 18px;
-    margin-bottom: 32px;
-    max-width: 600px;
-    margin-left: auto; margin-right: auto;
-  }
-
-  /* Footer */
-  footer {
-    padding: 40px 24px;
-    text-align: center;
-    color: var(--sub);
-    font-size: 12px;
-    border-top: 1px solid var(--border);
-    position: relative; z-index: 1;
-  }
-  footer a { color: var(--primary); text-decoration: none; }
-  .disclaimer {
-    max-width: 800px; margin: 0 auto;
-    background: rgba(202,138,4,0.08);
-    border: 1px solid rgba(202,138,4,0.25);
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-bottom: 24px;
-    font-size: 11px;
-    color: rgba(250,204,21,0.9);
+  .caps li .v {
+    color: var(--muted); font-size: 15px;
     line-height: 1.6;
   }
-  .disclaimer strong { color: var(--orange); }
+  .caps li .v code {
+    color: var(--accent);
+    background: rgba(230,184,106,0.06);
+    padding: 1px 5px; border-radius: 3px;
+  }
 
-  /* Scroll animations */
+  /* ── Two-column sections (Stripe alternating) ─── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 48px;
+    align-items: start;
+  }
+  @media (min-width: 800px) {
+    .two-col { grid-template-columns: 1fr 1fr; gap: 80px; }
+  }
+  .two-col .copy h2 { font-size: 36px; margin-bottom: 16px; }
+  .two-col .copy p { margin-bottom: 16px; }
+
+  /* ── Privacy block ─────────────────────────────── */
+  .privacy-list {
+    list-style: none;
+    margin-top: 24px;
+  }
+  .privacy-list li {
+    padding: 10px 0;
+    color: var(--muted);
+    font-size: 15px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .privacy-list li::before {
+    content: '→';
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+
+  /* ── Final CTA ─────────────────────────────────── */
+  .final {
+    text-align: center;
+    padding: 160px 0;
+    border-bottom: none;
+  }
+  .final h2 {
+    font-size: clamp(36px, 5vw, 56px);
+    max-width: 720px; margin: 0 auto 24px;
+  }
+  .final p {
+    max-width: 540px; margin: 0 auto 40px;
+    font-size: 18px;
+  }
+  .final .btn-primary {
+    padding: 16px 28px; font-size: 16px;
+  }
+
+  /* ── Footer ────────────────────────────────────── */
+  footer {
+    padding: 60px 0 80px;
+    border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--dim);
+  }
+  footer .row {
+    display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 24px; margin-bottom: 32px;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+  .disclaimer {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    color: var(--dim);
+    font-size: 12px; line-height: 1.7;
+    max-width: 720px;
+  }
+  .disclaimer strong { color: var(--accent); font-weight: 500; }
+
+  /* Subtle reveal */
   .reveal {
-    opacity: 0; transform: translateY(30px);
-    transition: opacity 0.7s, transform 0.7s;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
   }
   .reveal.visible {
     opacity: 1; transform: translateY(0);
-  }
-
-  @media (max-width: 720px) {
-    nav { padding: 12px 16px; }
-    nav .nav-cta { padding: 7px 14px; font-size: 13px; }
-    section { padding: 60px 16px; }
-    .hero { padding: 80px 16px 50px; }
-    .feature { padding: 24px; }
   }
 </style>
 </head>
 <body>
 
 <nav id="nav">
-  <a href="#" class="logo">🏠 包租公 · Landlord</a>
-  <a href="/" class="nav-cta">立即收租 →</a>
+  <a href="#" class="logo">
+    <span class="glyph">包</span>
+    <span>包租公 · Landlord</span>
+  </a>
+  <a href="/" class="cta">进入应用 ↗</a>
 </nav>
 
-<section class="hero">
-  <div class="hero-badge">
-    <span class="dot"></span>
-    <span>实时数据 · 智能推荐 · 完全免费</span>
-  </div>
-
-  <h1>
-    把你的股票<br>
-    <span class="gradient">"租"出去，每周收租</span>
-  </h1>
-
-  <p class="sub">
-    包租公帮你看清每一张已"出租"的期权（Covered Call / CSP / Wheel）：现在收了多少租金、什么时候到期、被指派概率多大。<br>
-    <strong style="color:var(--text)">期权小白也能秒懂的可视化工具。</strong>
-  </p>
-
-  <div class="hero-ctas">
-    <a href="/" class="btn btn-primary">
-      <span>🏠 进入包租公（免费）</span>
-    </a>
-    <a href="#features" class="btn btn-secondary">
-      <span>这是个啥 ↓</span>
-    </a>
-  </div>
-
-  <div class="live-tickers" id="live-tickers">
-    <!-- 实时填充 -->
-  </div>
-</section>
-
-<section style="padding:80px 24px;background:linear-gradient(180deg,transparent,rgba(91,141,239,0.04),transparent)">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-tag">小白先看这里</div>
-      <h2 class="section-title">"包租公" 是什么意思？</h2>
-    </div>
-    <div style="max-width:760px;margin:0 auto;font-size:17px;line-height:1.9;color:var(--text)" class="reveal">
-      <p style="margin-bottom:24px">
-        你买股票后，可以把它"<strong style="color:var(--primary)">租</strong>"给别人，每周收"租金"。这就是 <strong>Covered Call</strong>。
-      </p>
-      <p style="margin-bottom:24px">
-        你还没买股票？那你可以"答应别人，未来某个低价买"，每周也能收"<strong style="color:var(--primary)">承诺金</strong>"。这就是 <strong>Cash-Secured Put</strong>。
-      </p>
-      <p style="margin-bottom:24px">
-        无论哪种 — <strong style="color:var(--green)">你都是房东，每周/每月收一笔现金</strong>。这就是华尔街的 "<strong>theta gang</strong>"，巴菲特用了一辈子的玩法。
-      </p>
-      <p style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:32px">
-        <strong>包租公</strong> 帮你做的：
-      </p>
-      <ul style="list-style:none;padding:0;margin-top:12px">
-        <li style="background:var(--card);padding:14px 20px;border-radius:10px;margin-bottom:8px;border-left:3px solid var(--primary)">
-          🏠 <strong>看清每套"房产"的状态</strong>：现在收了多少租金、剩多少天到期、租客违约概率多大
-        </li>
-        <li style="background:var(--card);padding:14px 20px;border-radius:10px;margin-bottom:8px;border-left:3px solid var(--secondary)">
-          🎯 <strong>智能找下一套出租</strong>：根据你的看法和风险偏好，从期权链推荐最佳合约
-        </li>
-        <li style="background:var(--card);padding:14px 20px;border-radius:10px;margin-bottom:8px;border-left:3px solid var(--green)">
-          ⚠️ <strong>风险预警</strong>：财报临近、价格逼近行权、被指派风险，主动提醒
-        </li>
-        <li style="background:var(--card);padding:14px 20px;border-radius:10px;border-left:3px solid var(--yellow)">
-          📚 <strong>小白指南</strong>：25 个期权术语大白话解释，ITM/OTM 不再蒙圈
-        </li>
-      </ul>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow reveal">Theta gang · 期权房东</div>
+    <h1 class="display reveal">
+      把你的股票<br>
+      <span class="accent">"租"出去</span>，<br>
+      每周收租。
+    </h1>
+    <p class="lead reveal">
+      华尔街叫它 covered call。我们叫它当包租公。<br>
+      一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。
+    </p>
+    <div class="hero-actions reveal">
+      <a href="/" class="btn-primary">进入应用 →</a>
+      <a href="#concept" class="btn-link">先看看是怎么回事 <span class="arr">↓</span></a>
     </div>
   </div>
-</section>
 
-<section id="features">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-tag">包租公功能</div>
-      <h2 class="section-title">不只是收租，而是<span style="background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">收得明白</span></h2>
-      <p class="section-sub">从单套出租到全屋管理，从希腊字母到大白话解释，把"包租公"需要的工具全装进了一个网页。</p>
-    </div>
-
-    <div class="features">
-      <div class="feature reveal">
-        <div class="icon">📊</div>
-        <h3>实时持仓监控</h3>
-        <p>每 30 秒自动刷新。期权 Mark 价从 yfinance 实时拉取（最准）；BS 模型保底。Delta、Theta、IV 一目了然。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">🎯</div>
-        <h3>AI 期权推荐</h3>
-        <p>5 步问答 + 5 大佬策略预设（价值哥 LEAPS / Wheel / 周收权利金…）→ 从期权链评分排名，⭐⭐⭐⭐⭐ 强烈推荐永远在最前。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">📈</div>
-        <h3>损益曲线图</h3>
-        <p>每个持仓都有 Payoff Diagram，蓝实线 = 到期，橙虚线 = 今天。一眼看出最大盈、最大亏、盈亏平衡点。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">☀️</div>
-        <h3>每日早安 Brief</h3>
-        <p>个性化早间播报：今日市场、持仓累计盈亏、利润目标、风险预警、财报提醒 —— 一段话掌握全局。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">📚</div>
-        <h3>期权小白指南</h3>
-        <p>25 个核心术语分 6 类（价位关系/Greeks/报价/时间/操作/策略）。ITM、OTM、Wheel、LEAPS 全是大白话+实例+实战建议。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">📊</div>
-        <h3>复盘报告</h3>
-        <p>胜率、盈亏比、最佳/最差交易、累计实现盈亏。系统会警告"赚小亏大"模式 — 别让一次大亏吞掉多次小赢。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">💾</div>
-        <h3>跨设备同步</h3>
-        <p>数据全存浏览器（私有）。需要跨设备？点 🔗 同步连到 Google Drive 文件夹 → 走 Drive 自家同步。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">🌍</div>
-        <h3>多语言 + 主题</h3>
-        <p>简中 / 繁中 / English 一键切换。白天 / 夜间双主题。响应式设计，手机、平板、桌面都好用。</p>
-      </div>
-
-      <div class="feature reveal">
-        <div class="icon">🔒</div>
-        <h3>隐私优先</h3>
-        <p>不上传任何持仓数据。所有数据在你浏览器的 localStorage。<strong>其他人打开同一网址看到的是他们自己的数据</strong>。</p>
-      </div>
+  <div class="ticker-tape reveal">
+    <div class="ticker-track" id="ticker-track">
+      <!-- 占位，JS 填充实时数据 -->
     </div>
   </div>
-</section>
+</header>
 
-<section class="dashboard-section">
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-tag">SEE IT IN ACTION</div>
-      <h2 class="section-title">数据 + 智能 = <span style="background:linear-gradient(135deg,var(--green),var(--primary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">更好的决策</span></h2>
-      <p class="section-sub">实时市场数据驱动每一个评分，让你看见数字背后的故事。</p>
-    </div>
-
-    <div class="dashboard-preview reveal">
-      <div class="dash-summary">
-        <div class="item">
-          <div class="lab">收到权利金</div>
-          <div class="val" style="color:#fff">$28,071</div>
-        </div>
-        <div class="item">
-          <div class="lab">当前买回成本</div>
-          <div class="val" style="color:#fff">$24,247</div>
-        </div>
-        <div class="item">
-          <div class="lab">未实现盈亏</div>
-          <div class="val" style="color:var(--green)">+$3,824</div>
-        </div>
-        <div class="item">
-          <div class="lab">已实现盈亏</div>
-          <div class="val" style="color:var(--green)">+$712</div>
-        </div>
-        <div class="item">
-          <div class="lab">每日 Theta</div>
-          <div class="val" style="color:var(--green)">+$531</div>
-        </div>
+<section id="concept">
+  <div class="wrap">
+    <div class="definition split">
+      <div class="head reveal">
+        <div class="eyebrow">三个词</div>
+        <h2>看懂"包租公"<br>只需 60 秒。</h2>
+        <p style="font-size:15px;margin-top:12px">
+          期权交易里最稳定的几种玩法，都是"当房东收租"的变体。
+        </p>
       </div>
 
-      <div class="dash-pos-grid">
-        <div class="dash-pos call">
-          <div class="head">
-            <div>
-              <span class="ticker">TSLA $600 Call</span>
-              <span class="dash-status good">🟢 健康</span>
-            </div>
-            <div class="pnl" style="color:var(--green)">+4.1%</div>
+      <div class="terms">
+        <div class="term reveal">
+          <div class="name">
+            <span class="label">Covered Call</span>
+            <span class="cn">出租型</span>
           </div>
-          <div class="meta">Exp 2027-01-15 · 10× · 254 天</div>
-          <div class="stat-row"><span>距行权</span><span class="v" style="color:var(--green)">+54%</span></div>
-          <div class="stat-row"><span>Delta</span><span class="v">0.128</span></div>
+          <p class="desc">
+            你手里有 100 股 TSLA。卖出一张 <strong>更高价的 call 期权</strong>，
+            等于答应别人："如果一个月内 TSLA 涨到这个价，你来用这个价买走我的股票。"
+            对方为这个"承诺"付你<strong>权利金</strong>，相当于<strong>租金</strong>。
+          </p>
+          <div class="example">
+            TSLA 现价 <span class="v">$440</span><br>
+            你卖 1 张 $460 Call · 30 天 · 收 <span class="g">$300</span><br>
+            一个月后：TSLA 没涨过 $460 → 收益 <span class="g">+$300</span>，股票还在
+          </div>
         </div>
 
-        <div class="dash-pos put danger">
-          <div class="head">
-            <div>
-              <span class="ticker">META $630 Put</span>
-              <span class="dash-status danger">🚨 Put ITM</span>
-            </div>
-            <div class="pnl" style="color:var(--green)">+11%</div>
+        <div class="term reveal">
+          <div class="name">
+            <span class="label">Cash-Secured Put</span>
+            <span class="cn">承诺型</span>
           </div>
-          <div class="meta">Exp 2026-05-29 · 1× · 22 天</div>
-          <div class="stat-row"><span>距行权</span><span class="v" style="color:var(--orange)">-2.8%</span></div>
-          <div class="stat-row"><span>财报警告</span><span class="v" style="color:var(--yellow)">⚠️ 5/24</span></div>
+          <p class="desc">
+            你想低价买入 TSLA。卖出一张 <strong>更低价的 put 期权</strong>，
+            等于答应别人："如果一个月内 TSLA 跌到这个价，我用这个价买你的股票。"
+            对方付你<strong>权利金</strong>当"等待费"。
+          </p>
+          <div class="example">
+            TSLA 现价 <span class="v">$440</span><br>
+            你卖 1 张 $400 Put · 30 天 · 收 <span class="g">$500</span><br>
+            一个月后：TSLA 没跌破 $400 → 收益 <span class="g">+$500</span>，等下一笔
+          </div>
         </div>
 
-        <div class="dash-pos put">
-          <div class="head">
-            <div>
-              <span class="ticker">TSLA $400 Put</span>
-              <span class="dash-status good">🎯 接近平仓</span>
-            </div>
-            <div class="pnl" style="color:var(--green)">+94%</div>
+        <div class="term reveal">
+          <div class="name">
+            <span class="label">Wheel</span>
+            <span class="cn">循环</span>
           </div>
-          <div class="meta">Exp 2026-05-15 · 3× · 3 天</div>
-          <div class="stat-row"><span>Mark</span><span class="v">$0.09</span></div>
-          <div class="stat-row"><span>建议</span><span class="v" style="color:var(--green)">锁利</span></div>
+          <p class="desc">
+            把上面两个串起来。<strong>先卖 Put 等接货</strong> → 真接到了就<strong>卖 Covered Call</strong>
+            → 被叫走 → 再卖 Put。每一步都在收钱，<strong>下跌不慌，上涨也赚</strong>。
+          </p>
+          <div class="example">
+            Put 收 <span class="g">$500</span> → 被指派接货 100 股
+            → CC 收 <span class="g">$300</span> → 股票被叫走 + $20 涨幅 × 100 = <span class="g">+$2000</span>
+            → 再卖 Put...
+          </div>
         </div>
       </div>
     </div>
@@ -699,95 +617,233 @@
 </section>
 
 <section>
-  <div class="container">
-    <div class="section-head reveal">
-      <div class="section-tag">HOW IT WORKS</div>
-      <h2 class="section-title">3 步开始</h2>
-      <p class="section-sub">不需要注册，不需要绑卡。打开网页就能用。</p>
+  <div class="wrap">
+    <div class="eyebrow reveal">实际界面</div>
+    <h2 class="reveal" style="max-width:720px">每一张"出租合约"，<br>都在你看得见的地方。</h2>
+    <p class="lead reveal" style="margin-bottom:0">
+      实时市场价 · Greeks · 距行权距离 · 财报警告 · 30 天价位带 ——
+      不需要打开三个网站。
+    </p>
+
+    <div class="product-frame reveal">
+      <div class="titlebar">
+        <div class="dots">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        </div>
+        <div class="url">trade.congyangwang.com</div>
+      </div>
+      <div class="body">
+        <div class="stat-row">
+          <div class="cell">
+            <div class="l">收到租金</div>
+            <div class="v">$28,071</div>
+          </div>
+          <div class="cell">
+            <div class="l">买回成本</div>
+            <div class="v">$24,247</div>
+          </div>
+          <div class="cell">
+            <div class="l">浮盈亏</div>
+            <div class="v" style="color:var(--green)">+$3,824</div>
+          </div>
+          <div class="cell">
+            <div class="l">已实现</div>
+            <div class="v" style="color:var(--green)">+$712</div>
+          </div>
+          <div class="cell">
+            <div class="l">每日 Theta</div>
+            <div class="v" style="color:var(--green)">+$531</div>
+          </div>
+        </div>
+
+        <div class="pos-list">
+          <div class="pos-row">
+            <div>
+              <div class="ticker">TSLA $600 <span class="tag call">CALL</span></div>
+              <div class="meta">Exp 2027-01-15 · 10× · 254 天</div>
+            </div>
+            <div class="stat">距行权 <span class="v">+54%</span></div>
+            <div class="stat">Δ <span class="v">0.128</span></div>
+            <div class="pnl up">+4.1%</div>
+          </div>
+          <div class="pos-row">
+            <div>
+              <div class="ticker">META $630 <span class="tag put">PUT</span></div>
+              <div class="meta">Exp 2026-05-29 · 1× · 22 天 · ⚠ 财报 5/24</div>
+            </div>
+            <div class="stat">距行权 <span class="v">-2.8%</span></div>
+            <div class="stat">Δ <span class="v">-0.45</span></div>
+            <div class="pnl up">+11%</div>
+          </div>
+          <div class="pos-row">
+            <div>
+              <div class="ticker">TSLA $400 <span class="tag put">PUT</span></div>
+              <div class="meta">Exp 2026-05-15 · 3× · 3 天 · 🎯 接近平仓</div>
+            </div>
+            <div class="stat">Mark <span class="v">$0.09</span></div>
+            <div class="stat">Δ <span class="v">-0.04</span></div>
+            <div class="pnl up">+94%</div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow reveal">使用流程</div>
+    <h2 class="reveal" style="max-width:680px">三步当上包租公。</h2>
 
     <div class="steps">
       <div class="step reveal">
-        <div class="step-num">1</div>
-        <h3>录入你的持仓</h3>
-        <p>点 "+ 新建持仓"，粘贴 OCC 代码（如 TSLA260515P00400000）自动解析，或手动填。<br><br>同一合约多次卖出自动加权合并。</p>
+        <div>
+          <h3>录入你的"房产"</h3>
+          <p>从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。</p>
+        </div>
       </div>
       <div class="step reveal">
-        <div class="step-num">2</div>
-        <h3>看实时分析</h3>
-        <p>每个持仓自动显示 Mark、Δ、Θ、距行权、损益曲线、操作建议、每日 P&L 图。<br><br>财报临近、距行权过近会主动警告。</p>
+        <div>
+          <h3>看见每一份"租约"</h3>
+          <p>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。</p>
+        </div>
       </div>
       <div class="step reveal">
-        <div class="step-num">3</div>
-        <h3>找下一笔</h3>
-        <p>点 🎯 找最佳 Option，告诉系统你想做什么（收权利金 / Wheel / LEAPS）→ 看排名候选 → 一键加入持仓。</p>
+        <div>
+          <h3>找下一套出租</h3>
+          <p>告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，从期权链里排序推荐最佳合约。⭐⭐⭐⭐⭐ 永远在最前。</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <section>
-  <div class="container">
-    <div class="stats reveal">
-      <div class="stat">
-        <div class="num">25</div>
-        <div class="lab">期权术语</div>
+  <div class="wrap">
+    <div class="eyebrow reveal">配套能力</div>
+    <h2 class="reveal" style="max-width:680px">不仅看清现状，<br>还能优化决策。</h2>
+
+    <ul class="caps">
+      <li class="reveal">
+        <div class="k">实时市场数据</div>
+        <div class="v">期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">智能评分排序</div>
+        <div class="v">综合年化、安全概率、IV rank、流动性、回测胜率、历史价位带等 10+ 信号 → ⭐⭐⭐⭐⭐ tier 排序。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">财报 + IV crush 警告</div>
+        <div class="v">持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">损益曲线 (Payoff)</div>
+        <div class="v">每个持仓一张 SVG，蓝实线 = 到期，橙虚线 = 今天。<code>BE</code> 盈亏平衡点标注。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">复盘 / 笔记 / 分享</div>
+        <div class="v">已平仓持仓的胜率、盈亏比、最佳最差。每个持仓可记笔记。生成只读分享链接。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">期权小白指南</div>
+        <div class="v">25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">跨设备同步</div>
+        <div class="v">浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。</div>
+      </li>
+      <li class="reveal">
+        <div class="k">三语 · 双主题</div>
+        <div class="v">简中 / 繁中 / English 一键切换 · 白天 / 夜间模式 · 全响应式。</div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="two-col">
+      <div class="copy reveal">
+        <div class="eyebrow">数据归你</div>
+        <h2>不开账户，<br>不传服务器。</h2>
+        <p>
+          所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。
+          其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。
+        </p>
+        <p>
+          后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。
+        </p>
       </div>
-      <div class="stat">
-        <div class="num">3</div>
-        <div class="lab">语言</div>
-      </div>
-      <div class="stat">
-        <div class="num">10+</div>
-        <div class="lab">智能信号</div>
-      </div>
-      <div class="stat">
-        <div class="num">$0</div>
-        <div class="lab">永久免费</div>
+      <div class="reveal">
+        <ul class="privacy-list">
+          <li>无需注册账号</li>
+          <li>无需绑定券商</li>
+          <li>无需输入任何身份信息</li>
+          <li>数据加密存储在你的浏览器</li>
+          <li>可一键导出 JSON 备份</li>
+          <li>可断开同步随时清除</li>
+          <li>开源代码（GitHub）</li>
+        </ul>
       </div>
     </div>
   </div>
 </section>
 
-<div class="cta-section reveal">
-  <h2>准备好当<span style="background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">包租公</span>了吗？</h2>
-  <p>30 秒上手，每周开始收"租金"。无需注册，免费使用。</p>
-  <a href="/" class="btn btn-primary" style="font-size:17px;padding:16px 36px">
-    🏠 立即开始收租 →
-  </a>
-</div>
+<section class="final">
+  <div class="wrap">
+    <h2 class="reveal">
+      准备好<br>
+      <span style="color:var(--accent)">当包租公</span>了吗？
+    </h2>
+    <p class="reveal">无需注册。30 秒上手。免费使用。</p>
+    <a href="/" class="btn-primary reveal">进入应用 →</a>
+  </div>
+</section>
 
 <footer>
-  <div class="disclaimer">
-    ⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。
-    所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br>
-    Not financial advice. For educational use only. Options trading involves substantial risk.
-  </div>
-  <div>
-    Built with ❤️ by <a href="https://github.com/genki3ng">@genki3ng</a> ·
-    Data via yfinance + Massive API · Open source on
-    <a href="https://github.com/genki3ng/option-analysis-platform">GitHub</a>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <div style="color:var(--text);font-weight:500;margin-bottom:8px">包租公 · Landlord</div>
+        <div>把你的股票租出去，每周收租。</div>
+      </div>
+      <div style="display:flex;gap:24px">
+        <a href="/">应用</a>
+        <a href="https://github.com/genki3ng/option-analysis-platform">GitHub</a>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>⚠ 免责声明 / Disclaimer</strong><br>
+      本工具仅供学习研究，<strong>不构成任何投资建议</strong>。
+      期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。
+      决策前请自行验证 / 咨询持牌顾问。<br><br>
+      Not financial advice. For educational use only. Options trading involves substantial risk of loss.
+      Always consult a licensed advisor before making investment decisions.
+    </div>
   </div>
 </footer>
 
 <script>
-  // Nav 滚动效果
-  window.addEventListener('scroll', () => {
-    document.getElementById('nav').style.background =
-      window.scrollY > 20 ? 'rgba(10,10,20,0.92)' : 'rgba(10,10,20,0.7)';
+  // Nav scroll state
+  addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', scrollY > 8);
   });
 
-  // Scroll-reveal 动画
+  // Reveal animation
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      if (e.isIntersecting) e.target.classList.add('visible');
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
     });
-  }, { threshold: 0.15 });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-  // Hero 实时股票
-  async function loadLiveTickers() {
-    const tickers = ['TSLA', 'META', 'NVDA', 'SPY'];
+  // Live ticker tape
+  async function loadTicker() {
+    const tickers = ['TSLA', 'META', 'NVDA', 'AAPL', 'GOOGL', 'AMZN', 'SPY'];
     try {
       const r = await fetch('/api/state', {
         method: 'POST',
@@ -802,27 +858,28 @@
         })
       });
       const d = await r.json();
-      const html = tickers.map(t => {
+      const items = tickers.map(t => {
         const info = d.tickers?.[t];
         if (!info || !info.price) return '';
         const chg = info.price - (info.prev || info.price);
         const pct = info.prev ? chg / info.prev * 100 : 0;
-        const cls = chg >= 0 ? 'lc-up' : 'lc-down';
-        const arrow = chg >= 0 ? '▲' : '▼';
+        const cls = chg >= 0 ? 'up' : 'down';
+        const sign = chg >= 0 ? '+' : '';
         return `
-          <div class="live-card">
-            <div class="lc-tk">${t}</div>
-            <div class="lc-px">$${info.price.toFixed(2)}</div>
-            <div class="lc-chg ${cls}">${arrow} ${Math.abs(pct).toFixed(2)}%</div>
+          <div class="item">
+            <span class="sym">${t}</span>
+            <span class="px">$${info.price.toFixed(2)}</span>
+            <span class="chg ${cls}">${sign}${pct.toFixed(2)}%</span>
           </div>
         `;
-      }).join('');
-      document.getElementById('live-tickers').innerHTML = html;
+      }).filter(Boolean).join('');
+      // Duplicate for seamless scroll
+      document.getElementById('ticker-track').innerHTML = items + items;
     } catch (e) {
-      console.warn('live ticker load failed', e);
+      console.warn('ticker load failed', e);
     }
   }
-  loadLiveTickers();
+  loadTicker();
 </script>
 
 </body>

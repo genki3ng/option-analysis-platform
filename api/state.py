@@ -1622,9 +1622,9 @@ def recommend(req: dict) -> dict:
     if not candidates and chain_stats["good_count"] == 0:
         return {
             "error": (
-                f"📡 数据源暂时不可用：yfinance + Massive 都没拉到 {ticker} 的 option chain。"
-                f" yfinance 经常被 Yahoo 限流（datacenter IP），Massive 免费层 5 calls/min。"
-                f" 请 1-2 分钟后重试，或换一个常见标的（SPY, AAPL, NVDA）。"
+                f"📡 暂时拉不到 {ticker} 的 option chain。"
+                f" 上游数据源（yfinance）经常被限流，尤其是远期到期日。"
+                f" 请 1-2 分钟后重试，或换一个流动性更好的标的（SPY、AAPL、NVDA）。"
             ),
             "error_kind": "data_unavailable",
             "ticker": ticker,

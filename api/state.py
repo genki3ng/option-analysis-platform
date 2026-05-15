@@ -1401,8 +1401,10 @@ def recommend(req: dict) -> dict:
     for exp_str in target_exps:
         chain = fetch_chain(ticker, exp_str)
 
-        # Bug fix: 深度 ITM 期权 yfinance 经常不返回 IV → LEAPS 全被切空
-        # Fallback: 取本 chain 同 type 所有非零 IV 的中位数，缺 IV 的合约借用
+        # Bug fix: 深度 ITM 期权 yfinance 经常不返回 IV / bid / ask（数据稀薄）
+        # → LEAPS 整个候选清单被切空。Fallback：
+        #   IV → chain 同 type 非零 IV 的中位数
+        #   Mid → intrinsic value × 1.05 兜底（对 long_leaps 必要）
         same_type_ivs = [q["iv"] for (_, t), q in chain.items()
                          if t == ("call" if is_call else "put") and q["iv"] > 0]
         fallback_iv = (sorted(same_type_ivs)[len(same_type_ivs) // 2]
@@ -1411,18 +1413,29 @@ def recommend(req: dict) -> dict:
         for (strike, type_), q in chain.items():
             if (type_ == "call") != is_call:
                 continue
-            # 只要求 bid+mid 有效；iv 缺失用 fallback（对 LEAPS 深度 ITM 很常见）
-            if q["bid"] <= 0 or q["mid"] <= 0:
-                continue
-            iv = q["iv"] if q["iv"] > 0 else fallback_iv
-            if iv <= 0:
-                continue  # 还是没有 IV（chain 完全无数据）
 
             days = (date.fromisoformat(exp_str) - today).days
             if days < 1:
                 continue
             T = days / 365.0
+
+            # Mid 价：先用真实 bid/ask，缺失时对 LEAPS 用 intrinsic 兜底
             mid = q["mid"]
+            if mid <= 0:
+                if intent == "long_leaps":
+                    intrinsic = max(underlying - strike, 0) if is_call else max(strike - underlying, 0)
+                    if intrinsic > 0:
+                        # 深度 ITM 时间价值很少，1.03x 是合理估算
+                        mid = intrinsic * 1.03
+                    else:
+                        continue   # OTM 且无 quote，真没数据
+                else:
+                    continue       # 卖期权场景仍要求 quote 干净
+
+            # IV 缺失：用同 chain 中位数兜底
+            iv = q["iv"] if q["iv"] > 0 else fallback_iv
+            if iv <= 0:
+                continue
 
             _, delta, theta, vega = price_option(
                 underlying, strike, T, RISK_FREE, iv, is_call)
@@ -1430,8 +1443,11 @@ def recommend(req: dict) -> dict:
             if not (delta_band[0] <= abs_delta <= delta_band[1]):
                 continue
 
-            spread = q["ask"] - q["bid"]
-            spread_pct = spread / mid * 100 if mid else 100
+            if q["bid"] > 0 and q["ask"] > 0:
+                spread = q["ask"] - q["bid"]
+                spread_pct = spread / mid * 100 if mid else 100
+            else:
+                spread_pct = 8.0  # 缺真实报价时的保守估计（非交易时段常见）
 
             shares = 100
             premium = mid * shares

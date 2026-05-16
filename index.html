@@ -2679,6 +2679,16 @@ const I18N = {
     '保守': '保守',
     '平衡': '平衡',
     '激进': '激進',
+  
+    '编辑': '編輯',
+    '删除': '刪除',
+    '改张数或卖价（误操作时用）': '改張數或賣價（誤操作時用）',
+    '彻底删除（误添加时使用）': '徹底刪除（誤添加時使用）',
+    '编辑持仓': '編輯持倉',
+    '改错了？这里可以修': '改錯了？這裡可以修',
+    '建仓日': '建倉日',
+    '保存': '儲存',
+    '注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。': '注：改 ticker / strike / 類型 / 到期日請用 🗑 刪除 + 重新添加。',
   },
 
   en: {
@@ -3143,6 +3153,16 @@ const I18N = {
     '保守': 'Conservative',
     '平衡': 'Balanced',
     '激进': 'Aggressive',
+  
+    '编辑': 'Edit',
+    '删除': 'Delete',
+    '改张数或卖价（误操作时用）': 'Change contracts or sell price (use for mistakes)',
+    '彻底删除（误添加时使用）': 'Permanently delete (use for mis-entry)',
+    '编辑持仓': 'Edit position',
+    '改错了？这里可以修': 'Made a mistake? Fix it here',
+    '建仓日': 'Trade date',
+    '保存': 'Save',
+    '注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。': 'Note: to change ticker / strike / type / expiry, use 🗑 Delete + re-add.',
   },
 };
 
@@ -3831,48 +3851,48 @@ function renderPosition(p) {
       </div>
 
       <div class="pos-actions">
-        <button onclick="showClose('${p.id}')">平仓</button>
-        <button class="edit-btn" onclick="showEdit('${p.id}')" title="改张数或卖价（误操作时用）">✏️ 编辑</button>
-        <button class="del-btn" onclick="deletePos('${p.id}')" title="彻底删除（误添加时使用）">🗑 删除</button>
+        <button onclick="showClose('${p.id}')">${t('平仓')}</button>
+        <button class="edit-btn" onclick="showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
+        <button class="del-btn" onclick="deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
       </div>
 
       <div class="close-form" id="cf-${p.id}">
-        <span style="font-size:11px;color:var(--sub)">买回价 $/股</span>
+        <span style="font-size:11px;color:var(--sub)">${t('买回价 $/股')}</span>
         <input type="number" step="0.01" id="cp-${p.id}"
                placeholder="${prefillPrice}"
                onkeyup="updatePreview('${p.id}', ${p.contracts * 100}, ${p.sell_price})"
                oninput="updatePreview('${p.id}', ${p.contracts * 100}, ${p.sell_price})">
-        <span class="pre-fill" onclick="prefillClose('${p.id}', ${p.mark.toFixed(4)})">用 Mark</span>
-        <span class="preview" id="cprev-${p.id}">→ 预计盈亏 --</span>
-        <button onclick="submitClose('${p.id}')">确认平仓</button>
-        <button class="cancel" onclick="hideClose('${p.id}')">取消</button>
+        <span class="pre-fill" onclick="prefillClose('${p.id}', ${p.mark.toFixed(4)})">${t('用 Mark')}</span>
+        <span class="preview" id="cprev-${p.id}">→ ${t('预计盈亏')} --</span>
+        <button onclick="submitClose('${p.id}')">${t('确认平仓')}</button>
+        <button class="cancel" onclick="hideClose('${p.id}')">${t('取消')}</button>
       </div>
 
       <div class="edit-form" id="ef-${p.id}">
         <div class="ef-head">
-          <span class="ef-title">✏️ 编辑持仓</span>
-          <span class="ef-hint">改错了？这里可以修</span>
+          <span class="ef-title">✏️ ${t('编辑持仓')}</span>
+          <span class="ef-hint">${t('改错了？这里可以修')}</span>
         </div>
         <div class="ef-row">
           <label>
-            <span class="ef-label">张数</span>
+            <span class="ef-label">${t('张数')}</span>
             <input type="number" min="1" step="1" id="ef-c-${p.id}" value="${p.contracts}">
           </label>
           <label>
-            <span class="ef-label">卖出价 $/股</span>
+            <span class="ef-label">${t('卖出价 $/股')}</span>
             <input type="number" step="0.01" min="0" id="ef-p-${p.id}" value="${p.sell_price}">
           </label>
           <label>
-            <span class="ef-label">建仓日</span>
+            <span class="ef-label">${t('建仓日')}</span>
             <input type="date" id="ef-d-${p.id}" value="${p.trade_date}">
           </label>
         </div>
         <div class="ef-actions">
-          <button class="ef-save" onclick="submitEdit('${p.id}')">保存</button>
-          <button class="ef-cancel" onclick="hideEdit('${p.id}')">取消</button>
+          <button class="ef-save" onclick="submitEdit('${p.id}')">${t('保存')}</button>
+          <button class="ef-cancel" onclick="hideEdit('${p.id}')">${t('取消')}</button>
         </div>
         <div class="ef-note">
-          注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。
+          ${t('注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。')}
         </div>
       </div>
     </div>

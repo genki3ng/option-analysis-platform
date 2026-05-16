@@ -1286,6 +1286,30 @@
   }
   .rent-components .rc-v.good { color: var(--green); }
   .rent-components .rc-v.bad  { color: var(--red); }
+  /* 包租公分不适用提示（买入期权） */
+  .rent-components.rent-na {
+    border-style: dashed;
+    background: transparent;
+  }
+  .rent-components.rent-na .rent-na-title {
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .rent-components.rent-na .rent-na-body {
+    color: var(--sub);
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .rent-components.rent-na .rent-na-body code {
+    background: var(--card3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--text);
+  }
 
   /* IV Rank 横幅 */
   .iv-banner {
@@ -1412,6 +1436,249 @@
     font-family: "SF Mono", Menlo, monospace;
     background: var(--card); padding: 1px 4px;
     border-radius: 3px; color: var(--text);
+  }
+
+  /* ─── 推荐卡：预览 + 对比按钮 ─── */
+  .rec-actions {
+    display: flex; gap: 6px; align-items: center;
+    flex-shrink: 0;
+  }
+  .rec-actions .preview-btn {
+    background: transparent;
+    color: var(--sub);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    letter-spacing: -0.005em;
+  }
+  .rec-actions .preview-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(230,184,106,0.06);
+  }
+  .rec-compare-check {
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; font-size: 11px;
+    color: var(--sub);
+    padding: 4px 0;
+    user-select: none;
+  }
+  .rec-compare-check input[type="checkbox"] {
+    width: 14px; height: 14px;
+    accent-color: var(--accent);
+    cursor: pointer; margin: 0;
+  }
+  .rec-compare-check:hover { color: var(--accent); }
+
+  /* 浮动「对比」按钮 — sticky 底部 */
+  .compare-pill {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #0A0A0B;
+    border: none; border-radius: 999px;
+    padding: 12px 24px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(230,184,106,0.4),
+                0 0 0 1px rgba(0,0,0,0.05);
+    z-index: 999;
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: flex; align-items: center; gap: 8px;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+  }
+  .compare-pill:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 12px 32px rgba(230,184,106,0.5);
+  }
+  .compare-pill .pill-count {
+    background: rgba(0,0,0,0.18);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 11.5px;
+    font-weight: 800;
+  }
+  .compare-pill .pill-x {
+    color: rgba(0,0,0,0.45);
+    font-weight: 400; font-size: 16px;
+    margin-left: 4px;
+    transition: color 0.15s;
+  }
+  .compare-pill .pill-x:hover { color: rgba(0,0,0,0.9); }
+
+  /* ─── 加仓预览 modal ─── */
+  .preview-modal {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(540px, 94vw); max-height: 90vh;
+    overflow-y: auto; z-index: 1002;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .preview-modal.open { display: block; }
+  .preview-modal h3 {
+    font-size: 15px; font-weight: 700; margin-bottom: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .preview-modal .x {
+    cursor: pointer; color: var(--sub); font-size: 22px;
+    line-height: 1;
+  }
+  .preview-modal .preview-sub {
+    color: var(--sub); font-size: 11.5px; margin-bottom: 16px;
+  }
+  .preview-section {
+    background: var(--card2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .preview-section .ps-title {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .preview-section .ps-row {
+    display: flex; justify-content: space-between;
+    align-items: baseline; gap: 8px;
+    padding: 4px 0;
+    font-size: 12.5px;
+  }
+  .preview-section .ps-k { color: var(--sub); }
+  .preview-section .ps-v {
+    font-family: "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--text); font-weight: 600;
+  }
+  .preview-section .ps-arrow {
+    color: var(--sub);
+    font-size: 11px;
+    margin: 0 4px;
+  }
+  .preview-section .ps-delta {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 600;
+    background: var(--card3);
+    color: var(--sub);
+  }
+  .preview-section .ps-delta.up { color: var(--green); background: rgba(74,222,128,0.10); }
+  .preview-section .ps-delta.down { color: var(--red); background: rgba(239,68,68,0.10); }
+  .preview-section .ps-delta.warn { color: var(--orange); background: rgba(251,146,60,0.12); }
+  .preview-warn {
+    background: rgba(251,146,60,0.10);
+    border: 1px solid var(--orange);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: var(--orange);
+    margin-bottom: 10px;
+    line-height: 1.55;
+  }
+  .preview-warn b { color: var(--orange); }
+
+  /* ─── 候选对比 modal ─── */
+  .compare-modal {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(960px, 96vw); max-height: 90vh;
+    overflow: auto; z-index: 1002;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .compare-modal.open { display: block; }
+  .compare-modal h3 {
+    font-size: 15px; font-weight: 700; margin-bottom: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .compare-modal .x {
+    cursor: pointer; color: var(--sub); font-size: 22px; line-height: 1;
+  }
+  .compare-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .compare-table th, .compare-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .compare-table th:first-child, .compare-table td:first-child {
+    text-align: left;
+    color: var(--sub);
+    font-weight: 500;
+    position: sticky;
+    left: 0;
+    background: var(--card);
+    z-index: 1;
+  }
+  .compare-table thead th {
+    font-size: 11px;
+    color: var(--text);
+    text-transform: none;
+    font-weight: 700;
+    background: var(--card);
+    border-bottom: 2px solid var(--line-2);
+    position: sticky; top: 0; z-index: 2;
+  }
+  .compare-table thead th:first-child { z-index: 3; }
+  .compare-table .cmp-best {
+    color: var(--green); font-weight: 700;
+  }
+  .compare-table .cmp-worst {
+    color: var(--red); opacity: 0.85;
+  }
+  .compare-table .cmp-ticker-cell {
+    font-weight: 700; color: var(--text);
+  }
+  .compare-table .cmp-tag {
+    display: inline-block;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px;
+    text-transform: uppercase; margin-left: 4px;
+    vertical-align: middle;
+  }
+  .compare-table .cmp-tag.call { background: rgba(74,222,128,0.18); color: var(--green); }
+  .compare-table .cmp-tag.put { background: rgba(251,146,60,0.18); color: var(--orange); }
+  .compare-empty {
+    text-align: center; color: var(--sub);
+    padding: 40px 16px; font-size: 13px;
+  }
+  @media (max-width: 720px) {
+    .preview-modal, .compare-modal {
+      border-radius: 16px 16px 0 0 !important;
+      width: 100% !important;
+      left: 0 !important; right: 0 !important;
+      top: auto !important; bottom: 0 !important;
+      transform: none !important;
+      max-height: 92vh !important;
+      padding: 18px 14px 40px !important;
+    }
+    .preview-modal::before, .compare-modal::before {
+      content: ''; display: block;
+      width: 40px; height: 4px; border-radius: 2px;
+      background: var(--line-2);
+      margin: 0 auto 12px;
+    }
+    .compare-pill { bottom: 18px; padding: 10px 18px; font-size: 13px; }
+    .compare-table { font-size: 11px; }
+    .compare-table th, .compare-table td { padding: 6px 7px; }
+    .rec-actions { flex-wrap: wrap; gap: 4px; }
+    .rec-actions .preview-btn { padding: 6px 8px; font-size: 11px; }
   }
 
   /* 📊 Payoff Diagram */
@@ -1909,9 +2176,92 @@
     .side { position: static; max-height: none; }
   }
   @media (max-width: 720px) {
-    .summary { grid-template-columns: repeat(2, 1fr); }
+    .summary { grid-template-columns: repeat(2, 1fr); padding: 16px 12px; gap: 12px; }
+    .summary .item .val { font-size: 19px; }
+    .summary .item .lab { font-size: 9.5px; }
     .pos-grid { grid-template-columns: 1fr; }
     .tickers { flex-direction: column; }
+    .wrap { padding: 12px 12px 32px; }
+
+    /* ─── Header 压缩 ─── */
+    .header { margin-bottom: 18px; padding: 4px 0 2px; }
+    .header h1 { font-size: 18px; margin-bottom: 4px; }
+    .header h1 .brand-link { gap: 6px; }
+    .header .sub { font-size: 11px; padding: 0 64px; }
+    .theme-toggle { width: 30px; height: 30px; font-size: 12px; }
+    .user-badge { padding: 0 8px; height: 30px; max-width: 110px; font-size: 11px; }
+    .user-badge .name { max-width: 64px; font-size: 11px; }
+    .lang-selector { right: 38px; height: 30px; border-radius: 15px; }
+    .lang-selector button { padding: 0 6px; min-width: 24px; font-size: 10.5px; }
+
+    /* card 内 padding 全员缩 */
+    .card { padding: 16px 14px; }
+    .rec-card { padding: 14px; }
+
+    /* 推荐结果 metrics grid 强制 2 列 */
+    .rec-metrics { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+    .kmet { padding: 8px 10px !important; }
+    .kmet-l { font-size: 9.5px !important; }
+    .kmet-v { font-size: 14px !important; }
+
+    /* 推荐表单 grid 收成单列 */
+    .rec-form .rf-grid { grid-template-columns: 1fr !important; }
+
+    /* fullstat 行：手机上换行，别拉横向滚 */
+    .rec-fullstat { font-size: 10.5px !important; line-height: 1.7 !important; word-spacing: -1px; }
+
+    /* 持仓卡 actions 全宽并列 */
+    .pos-actions { flex-wrap: wrap; gap: 6px; }
+    .pos-actions button { flex: 1 1 calc(33% - 4px); min-width: 0; font-size: 11px; }
+
+    /* 推荐卡 head 行手机换行 */
+    .rec-head { flex-wrap: wrap; }
+    .rec-card .add-btn { flex: 0 0 auto; }
+    .rec-contract { gap: 4px; }
+    .rec-contract .rec-exp { width: 100%; margin-left: 0; }
+
+    /* pros/cons 改单列 */
+    .rec-proscons { grid-template-columns: 1fr !important; }
+    .rec-proscons ul { font-size: 11.5px !important; }
+
+    /* 详情区拉满 modal 上下边 */
+    .rec-form, .rec-form.modal {
+      border-radius: 16px 16px 0 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      left: 0 !important; right: 0 !important;
+      top: auto !important; bottom: 0 !important;
+      transform: none !important;
+      max-height: 92vh !important;
+      padding: 16px 14px 80px !important;
+      margin: 0 !important;
+    }
+
+    /* review-modal / edit modal / journal modal 一同 bottom-sheet 化 */
+    .review-modal {
+      border-radius: 16px 16px 0 0 !important;
+      width: 100% !important;
+      left: 0 !important; right: 0 !important;
+      top: auto !important; bottom: 0 !important;
+      transform: none !important;
+      max-height: 92vh !important;
+      padding: 18px 14px 60px !important;
+    }
+    /* bottom-sheet 顶部小拖把 */
+    .rec-form.modal::before, .review-modal::before {
+      content: ''; display: block;
+      width: 40px; height: 4px; border-radius: 2px;
+      background: var(--line-2);
+      margin: 0 auto 14px;
+    }
+    /* 让 rec-form modal 内部的 grid 折成单列 */
+    .rec-form .rf-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  }
+  @media (max-width: 480px) {
+    .header h1 { font-size: 16px; }
+    .header .sub { display: none; }
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .pos-actions button { font-size: 10.5px; padding: 6px 4px; }
   }
 </style>
 </head>
@@ -2188,6 +2538,14 @@
 <div class="review-modal" id="journal-modal"></div>
 
 <!-- 包租公推荐指数 模态框（全局 overlay）-->
+<!-- 📊 加仓预览 modal -->
+<div class="modal-backdrop" id="preview-backdrop" onclick="hidePreview()"></div>
+<div class="preview-modal" id="preview-modal"></div>
+
+<!-- ⚖️ 候选对比 modal -->
+<div class="modal-backdrop" id="compare-backdrop" onclick="hideCompare()"></div>
+<div class="compare-modal" id="compare-modal"></div>
+
 <div class="modal-backdrop" id="rec-backdrop" onclick="hideRec()"></div>
 <div class="rec-form modal" id="rec-form">
   <h4>
@@ -2306,6 +2664,47 @@ const I18N = {
   
     'rec_disclaimer_html': '⚠️ <strong>本工具仅供学习研究，不构成任何投资建议</strong> — 期权交易有亏损全部本金甚至更多的风险。所有推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。',
     'rec_algo_tip_html': '💡 {algo}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。保守模式下财报跨期 = 一律不接。',
+    '💡 关于包租公分': '💡 关于包租公分',
+    'rent_score_not_applicable_html': '<strong>包租公分</strong>仅适用于<strong>卖出期权</strong>（出租场景，CSP / Covered Call）。<br>当前是<strong>买入期权</strong>，请改看：<code>杠杆倍数</code>（钱的效率）、<code>IV</code>（是否贵）、<code>Delta</code>（是否够 ITM）、<code>到期日</code>（时间够不够长）。',
+    '加仓预览：看这一笔加进组合的影响': '加仓预览：看这一笔加进组合的影响',
+    '预览': '预览',
+    '加入对比': '加入对比',
+    '加仓预览': '加仓预览',
+    '如果加入 1 张这个合约，组合会怎么变？': '如果加入 1 张这个合约，组合会怎么变？',
+    '集中度': '集中度',
+    '占比': '占比',
+    '总仓位（行权额）': '总仓位（行权额）',
+    'Greeks 组合': 'Greeks 组合',
+    'Δ 等效股数': 'Δ 等效股数',
+    'Vega/1%': 'Vega/1%',
+    '资金占用 / 收入': '资金占用 / 收入',
+    '需要保证金 / collateral': '需要保证金 / collateral',
+    '立刻到账权利金': '立刻到账权利金',
+    '立刻支出权利金': '立刻支出权利金',
+    '该笔年化收益率': '该笔年化收益率',
+    '确认加入持仓': '确认加入持仓',
+    '取消': '取消',
+    'preview_warn_concentration': '加完后 <b>{tkr}</b> 单 ticker 占比将达 <b>{pct}%</b>（>50%）。集中度偏高，注意分散。',
+    'preview_warn_already_concentrated': '<b>{tkr}</b> 仍是高集中（{pct}%）。考虑换 ticker 而不是继续加仓。',
+    'preview_warn_earnings': '到期日跨越财报（还有 {days} 天），IV 可能崩塌。保守模式应一律拒。',
+    '最多对比 5 个候选': '最多对比 5 个候选',
+    '对比候选': '对比候选',
+    '清空选择': '清空选择',
+    '候选对比': '候选对比',
+    '绿色 = 该指标最佳　红色 = 最弱': '🟢 该指标最佳　🔴 最弱',
+    '清空对比': '清空对比',
+    '关闭': '关闭',
+    '包租公分': '包租公分',
+    '⭐ Tier': '⭐ Tier',
+    '年化收益': '年化收益',
+    '权利金/张': '权利金/张',
+    'Mid 价': 'Mid 价',
+    '距行权 %': '距行权 %',
+    'Δ Delta': 'Δ Delta',
+    'Spread %': 'Spread %',
+    'Theta/天': 'Theta/天',
+    '杠杆倍数': '杠杆倍数',
+    'Bid/Ask': 'Bid/Ask',
     'earnings_warning_html': '⚠️ <strong>{date}</strong> 财报（剩 {n} 天）在到期前 — 注意 IV crush',
   },
 
@@ -2650,6 +3049,47 @@ const I18N = {
     '评级': '評級',
     'rec_disclaimer_html': '⚠️ <strong>本工具僅供學習研究，不構成任何投資建議</strong> — 期權交易有虧損全部本金甚至更多的風險。所有推薦基於市場資料 + 數學模型，無法預測未來。決策前請自行驗證 / 諮詢持牌顧問。',
     'rec_algo_tip_html': '💡 {algo} 綜合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜區</strong>(7-21天) × <strong>Delta 甜蜜區</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流動性</strong>。保守模式下財報跨期 = 一律不接。',
+    '💡 关于包租公分': '💡 關於包租公分',
+    'rent_score_not_applicable_html': '<strong>包租公分</strong>僅適用於<strong>賣出期權</strong>（出租場景，CSP / Covered Call）。<br>目前是<strong>買入期權</strong>，請改看：<code>槓桿倍數</code>（資金效率）、<code>IV</code>（是否貴）、<code>Delta</code>（是否夠 ITM）、<code>到期日</code>（時間夠不夠長）。',
+    '加仓预览：看这一笔加进组合的影响': '加倉預覽：看這一筆加進組合的影響',
+    '预览': '預覽',
+    '加入对比': '加入對比',
+    '加仓预览': '加倉預覽',
+    '如果加入 1 张这个合约，组合会怎么变？': '如果加入 1 張這個合約，組合會怎麼變？',
+    '集中度': '集中度',
+    '占比': '佔比',
+    '总仓位（行权额）': '總倉位（行權額）',
+    'Greeks 组合': 'Greeks 組合',
+    'Δ 等效股数': 'Δ 等效股數',
+    'Vega/1%': 'Vega/1%',
+    '资金占用 / 收入': '資金佔用 / 收入',
+    '需要保证金 / collateral': '需要保證金 / collateral',
+    '立刻到账权利金': '立刻到帳權利金',
+    '立刻支出权利金': '立刻支出權利金',
+    '该笔年化收益率': '該筆年化收益率',
+    '确认加入持仓': '確認加入持倉',
+    '取消': '取消',
+    'preview_warn_concentration': '加完後 <b>{tkr}</b> 單 ticker 佔比將達 <b>{pct}%</b>（>50%）。集中度偏高，注意分散。',
+    'preview_warn_already_concentrated': '<b>{tkr}</b> 仍是高集中（{pct}%）。考慮換 ticker 而不是繼續加倉。',
+    'preview_warn_earnings': '到期日跨越財報（還有 {days} 天），IV 可能崩塌。保守模式應一律拒。',
+    '最多对比 5 个候选': '最多對比 5 個候選',
+    '对比候选': '對比候選',
+    '清空选择': '清空選擇',
+    '候选对比': '候選對比',
+    '绿色 = 该指标最佳　红色 = 最弱': '🟢 該指標最佳　🔴 最弱',
+    '清空对比': '清空對比',
+    '关闭': '關閉',
+    '包租公分': '包租公分',
+    '⭐ Tier': '⭐ Tier',
+    '年化收益': '年化收益',
+    '权利金/张': '權利金/張',
+    'Mid 价': 'Mid 價',
+    '距行权 %': '距行權 %',
+    'Δ Delta': 'Δ Delta',
+    'Spread %': 'Spread %',
+    'Theta/天': 'Theta/天',
+    '杠杆倍数': '槓桿倍數',
+    'Bid/Ask': 'Bid/Ask',
     '🚨 已 ITM': '🚨 已 ITM',
     '🚨 接近行权': '🚨 接近行權',
     '⚠️ 距行权近': '⚠️ 距行權近',
@@ -3124,6 +3564,47 @@ const I18N = {
     '评级': 'Ranking',
     'rec_disclaimer_html': '⚠️ <strong>This tool is for educational use only — not investment advice</strong> — Options trading carries the risk of losing all or more than your principal. All recommendations are based on market data and mathematical models; they cannot predict the future. Verify on your own / consult a licensed advisor before trading.',
     'rec_algo_tip_html': '💡 {algo} composite factors: <strong>annualized rent</strong> × <strong>safety</strong>(BS) × <strong>DTE sweet spot</strong>(7-21d) × <strong>Delta sweet spot</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>liquidity</strong>. In conservative mode, earnings-spanning contracts are always rejected.',
+    '💡 关于包租公分': '💡 About the Landlord Score',
+    'rent_score_not_applicable_html': 'The <strong>Landlord Score</strong> only applies when <strong>selling options</strong> (renting out — CSP / Covered Call). For <strong>buying options</strong>, check instead: <code>leverage</code> (capital efficiency), <code>IV</code> (is it cheap?), <code>Delta</code> (is it deep enough ITM?), and <code>days to expiry</code> (enough runway?).',
+    '加仓预览：看这一笔加进组合的影响': 'Preview the portfolio impact of adding this contract',
+    '预览': 'Preview',
+    '加入对比': 'Compare',
+    '加仓预览': 'Add-Position Preview',
+    '如果加入 1 张这个合约，组合会怎么变？': 'If you add 1 contract, what changes in your portfolio?',
+    '集中度': 'Concentration',
+    '占比': 'share',
+    '总仓位（行权额）': 'Total exposure (strike-notional)',
+    'Greeks 组合': 'Portfolio Greeks',
+    'Δ 等效股数': 'Δ Equiv. shares',
+    'Vega/1%': 'Vega/1%',
+    '资金占用 / 收入': 'Capital / Premium',
+    '需要保证金 / collateral': 'Collateral required',
+    '立刻到账权利金': 'Premium received',
+    '立刻支出权利金': 'Premium paid',
+    '该笔年化收益率': 'Annualized yield (this trade)',
+    '确认加入持仓': 'Confirm — Add to Positions',
+    '取消': 'Cancel',
+    'preview_warn_concentration': 'After this trade, <b>{tkr}</b> single-ticker share will hit <b>{pct}%</b> (>50%). Concentration risk — diversify.',
+    'preview_warn_already_concentrated': '<b>{tkr}</b> remains highly concentrated ({pct}%). Consider another ticker rather than adding more.',
+    'preview_warn_earnings': 'Expiry spans earnings ({days}d away) — IV may crush. Conservative mode would always reject.',
+    '最多对比 5 个候选': 'Up to 5 candidates can be compared at once',
+    '对比候选': 'Compare',
+    '清空选择': 'Clear',
+    '候选对比': 'Candidate Comparison',
+    '绿色 = 该指标最佳　红色 = 最弱': '🟢 Best on this metric　🔴 Weakest',
+    '清空对比': 'Clear all',
+    '关闭': 'Close',
+    '包租公分': 'Landlord Score',
+    '⭐ Tier': '⭐ Tier',
+    '年化收益': 'Annualized',
+    '权利金/张': 'Premium/contract',
+    'Mid 价': 'Mid',
+    '距行权 %': 'Moneyness',
+    'Δ Delta': 'Δ Delta',
+    'Spread %': 'Spread %',
+    'Theta/天': 'Theta/day',
+    '杠杆倍数': 'Leverage',
+    'Bid/Ask': 'Bid/Ask',
     '🚨 已 ITM': '🚨 Now ITM',
     '🚨 接近行权': '🚨 Near strike',
     '⚠️ 距行权近': '⚠️ Approaching strike',
@@ -3624,7 +4105,15 @@ function renderPriceBand(pb, currentMid) {
 function renderRentComponents(opt) {
   // 仅 short 持仓有 score_components
   const sc = opt.score_components;
-  if (!sc) return '';
+  if (!sc) {
+    // 买入期权（LEAPS / 做多波动率）—— 包租公分不适用，渲染说明
+    return `
+      <div class="rent-components rent-na">
+        <div class="rent-na-title">${t('💡 关于包租公分')}</div>
+        <div class="rent-na-body">${t('rent_score_not_applicable_html')}</div>
+      </div>
+    `;
+  }
   const fmtFactor = (v) => {
     let cls = '';
     if (v >= 1.05) cls = 'good';
@@ -3670,6 +4159,354 @@ function renderRentComponents(opt) {
       ).join('')}
     </div>
   `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 📊 加仓预览：选中一个候选 → 预览加入持仓的组合影响
+// ═══════════════════════════════════════════════════════════════════
+function _findCandidate(candId) {
+  const list = window._lastCandidates || [];
+  return list.find(o => `${o.ticker}_${o.type}_${o.strike}_${o.expiry}` === candId);
+}
+
+// 累加当前持仓的 Greeks / 集中度
+function _computePortfolioSnapshot() {
+  const d = window._currentData || {};
+  const positions = (d.positions || []).filter(p => !p.closed);
+
+  let delta_shares = 0;
+  let theta_daily = 0;
+  let vega_per_1pct = 0;
+  let total_exposure = 0;
+  const by_ticker = {};
+
+  for (const p of positions) {
+    // 后端 p.delta = per-share delta, 已经签好做空号
+    const dlt_shares = (p.delta || 0) * (p.contracts || 0) * 100;
+    delta_shares += dlt_shares;
+    theta_daily += (p.daily_theta || 0);
+    vega_per_1pct += (p.vega_per_1pct || 0);
+
+    const exposure = (p.strike || 0) * (p.contracts || 0) * 100;
+    total_exposure += exposure;
+    by_ticker[p.ticker] = (by_ticker[p.ticker] || 0) + exposure;
+  }
+
+  return { positions, delta_shares, theta_daily, vega_per_1pct, total_exposure, by_ticker };
+}
+
+function _fmtSigned(n, digits = 0) {
+  const v = Number(n) || 0;
+  const sign = v > 0 ? '+' : '';
+  return sign + v.toFixed(digits);
+}
+function _fmtPct(n, digits = 1) {
+  return (Number(n) || 0).toFixed(digits) + '%';
+}
+function _fmtMoney(n) {
+  const v = Number(n) || 0;
+  return '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function showPreview(candId) {
+  const opt = _findCandidate(candId);
+  if (!opt) { console.warn('Preview: candidate not found', candId); return; }
+
+  const snap = _computePortfolioSnapshot();
+  const meta = window._lastRecMeta || {};
+  // is_short：当前 intent 是不是出租意图（决定 collateral 是不是 strike × 100）
+  const isShort = !!meta.is_short;
+  const contracts = 1;  // 预览默认 1 张
+
+  // 新增 Greeks 贡献（候选自带 per-share delta / theta_per_day(per contract) / vega_per_1pct(per contract)）
+  // 注意：后端候选 opt.delta 是 per-share，theta_per_day / vega_per_1pct 已经 × shares (=100)
+  const optSign = isShort ? -1 : 1;  // short 卖出 → 组合负 delta；long → 正
+  const addDeltaShares = (opt.delta || 0) * contracts * 100 * optSign;
+  const addTheta = (opt.theta_per_day || 0) * contracts * optSign;  // short: theta_per_day 后端已是正；× -1 把它放回 long-equivalent 再 ×sign
+  // 注意：state.py 里 theta_per_day = round(-theta * shares if is_short else theta * shares)
+  //       即组合视角下「每日衰减收益」(short正/long负)。这里我们想要"加进组合后 daily theta 变化"
+  //       所以直接采用 opt.theta_per_day（已是带号的"我的收益视角"）
+  const addThetaAccrual = (opt.theta_per_day || 0) * contracts;  // 候选返回时已签好（short=正，long=负）
+  const addVega = (opt.vega_per_1pct || 0) * contracts * optSign;
+
+  // 抵押 / 保证金
+  const collateral = (opt.collateral_per_contract || (opt.strike * 100)) * contracts;
+  const premium = (opt.premium_per_contract || (opt.mid * 100)) * contracts;
+
+  // 集中度
+  const addExposure = (opt.strike || 0) * contracts * 100;
+  const tkr = opt.ticker;
+  const before_tkr = snap.by_ticker[tkr] || 0;
+  const after_tkr = before_tkr + addExposure;
+  const before_total = snap.total_exposure;
+  const after_total = before_total + addExposure;
+  const before_conc = before_total > 0 ? (before_tkr / before_total * 100) : 0;
+  const after_conc = after_total > 0 ? (after_tkr / after_total * 100) : 100;
+
+  // 年化租金（如有）
+  const annualY = opt.annualized_yield_pct || 0;
+
+  // 警告
+  const warnings = [];
+  if (after_conc > 50 && before_conc <= 50) {
+    warnings.push(t('preview_warn_concentration').replace('{tkr}', tkr).replace('{pct}', after_conc.toFixed(0)));
+  } else if (after_conc > 50) {
+    warnings.push(t('preview_warn_already_concentrated').replace('{tkr}', tkr).replace('{pct}', after_conc.toFixed(0)));
+  }
+  if (opt.earnings_warning) {
+    warnings.push(t('preview_warn_earnings').replace('{days}', opt.earnings_warning.days));
+  }
+
+  const concDeltaClass = (after_conc - before_conc) > 5 ? 'warn' : '';
+  const _row = (k, before, after, deltaText, deltaClass='') => `
+    <div class="ps-row">
+      <span class="ps-k">${k}</span>
+      <span><span class="ps-v">${before}</span>
+        <span class="ps-arrow">→</span>
+        <span class="ps-v">${after}</span>
+        ${deltaText ? `<span class="ps-delta ${deltaClass}">${deltaText}</span>` : ''}
+      </span>
+    </div>`;
+
+  const warnHtml = warnings.length
+    ? `<div class="preview-warn">${warnings.map(w => '⚠️ ' + w).join('<br>')}</div>`
+    : '';
+
+  document.getElementById('preview-modal').innerHTML = `
+    <h3>
+      <span>📊 ${t('加仓预览')} · ${opt.ticker} $${opt.strike} ${opt.type.toUpperCase()}</span>
+      <span class="x" onclick="hidePreview()">×</span>
+    </h3>
+    <div class="preview-sub">${t('如果加入 1 张这个合约，组合会怎么变？')}</div>
+
+    ${warnHtml}
+
+    <div class="preview-section">
+      <div class="ps-title">🎯 ${t('集中度')}</div>
+      ${_row(`${tkr} ${t('占比')}`,
+            _fmtPct(before_conc, 1),
+            _fmtPct(after_conc, 1),
+            _fmtSigned(after_conc - before_conc, 1) + 'pp',
+            concDeltaClass)}
+      ${_row(t('总仓位（行权额）'),
+            _fmtMoney(before_total),
+            _fmtMoney(after_total),
+            _fmtSigned(addExposure))}
+    </div>
+
+    <div class="preview-section">
+      <div class="ps-title">📐 ${t('Greeks 组合')}</div>
+      ${_row(t('Δ 等效股数'),
+            _fmtSigned(snap.delta_shares),
+            _fmtSigned(snap.delta_shares + addDeltaShares),
+            _fmtSigned(addDeltaShares))}
+      ${_row(t('每日 Theta'),
+            '$' + _fmtSigned(snap.theta_daily),
+            '$' + _fmtSigned(snap.theta_daily + addThetaAccrual),
+            '$' + _fmtSigned(addThetaAccrual),
+            addThetaAccrual > 0 ? 'up' : (addThetaAccrual < 0 ? 'down' : ''))}
+      ${_row(t('Vega/1%'),
+            '$' + _fmtSigned(snap.vega_per_1pct),
+            '$' + _fmtSigned(snap.vega_per_1pct + addVega),
+            '$' + _fmtSigned(addVega))}
+    </div>
+
+    <div class="preview-section">
+      <div class="ps-title">💰 ${t('资金占用 / 收入')}</div>
+      <div class="ps-row">
+        <span class="ps-k">${t('需要保证金 / collateral')}</span>
+        <span class="ps-v">${_fmtMoney(collateral)}</span>
+      </div>
+      <div class="ps-row">
+        <span class="ps-k">${isShort ? t('立刻到账权利金') : t('立刻支出权利金')}</span>
+        <span class="ps-v">${isShort ? '+' : '-'}${_fmtMoney(premium)}</span>
+      </div>
+      ${annualY > 0 ? `
+      <div class="ps-row">
+        <span class="ps-k">${t('该笔年化收益率')}</span>
+        <span class="ps-v">${_fmtPct(annualY, 1)}</span>
+      </div>` : ''}
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="add-btn" style="flex:1;padding:10px;border-radius:8px;font-size:13px;background:var(--accent);color:#0A0A0B;border:none;cursor:pointer;font-weight:700;"
+              onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid}); hidePreview();">
+        ${t('确认加入持仓')}
+      </button>
+      <button style="flex:0 0 auto;padding:10px 16px;border-radius:8px;font-size:13px;background:transparent;color:var(--sub);border:1px solid var(--line);cursor:pointer;"
+              onclick="hidePreview()">
+        ${t('取消')}
+      </button>
+    </div>
+  `;
+  document.getElementById('preview-backdrop').classList.add('show');
+  document.getElementById('preview-modal').classList.add('open');
+}
+
+function hidePreview() {
+  document.getElementById('preview-backdrop').classList.remove('show');
+  document.getElementById('preview-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ⚖️ 候选对比
+// ═══════════════════════════════════════════════════════════════════
+window._compareSelected = window._compareSelected || new Set();
+
+function toggleCompareSelect(candId, checked) {
+  if (!window._compareSelected) window._compareSelected = new Set();
+  if (checked) {
+    if (window._compareSelected.size >= 5) {
+      alert(t('最多对比 5 个候选'));
+      // 找到 checkbox 取消勾
+      const cb = document.querySelector(`.rec-card[data-cand-id="${candId}"] .rec-compare-check input`);
+      if (cb) cb.checked = false;
+      return;
+    }
+    window._compareSelected.add(candId);
+  } else {
+    window._compareSelected.delete(candId);
+  }
+  renderComparePill();
+}
+
+function renderComparePill() {
+  const set = window._compareSelected || new Set();
+  let pill = document.getElementById('compare-pill');
+  if (set.size < 2) {
+    if (pill) pill.remove();
+    return;
+  }
+  if (!pill) {
+    pill = document.createElement('button');
+    pill.id = 'compare-pill';
+    pill.className = 'compare-pill';
+    pill.onclick = showCompare;
+    document.body.appendChild(pill);
+  }
+  pill.innerHTML = `⚖️ ${t('对比候选')} <span class="pill-count">${set.size}</span>
+    <span class="pill-x" onclick="event.stopPropagation();clearCompareSelect()" title="${t('清空选择')}">×</span>`;
+}
+
+function clearCompareSelect() {
+  window._compareSelected = new Set();
+  // 取消所有 checkbox
+  document.querySelectorAll('.rec-compare-check input').forEach(cb => cb.checked = false);
+  renderComparePill();
+}
+
+function showCompare() {
+  const set = window._compareSelected || new Set();
+  const list = (window._lastCandidates || []).filter(o =>
+    set.has(`${o.ticker}_${o.type}_${o.strike}_${o.expiry}`)
+  );
+  if (list.length < 2) return;
+
+  // 12 个核心指标 — 卖出 / 买入 两套口径
+  const meta = window._lastRecMeta || {};
+  const isShort = !!meta.is_short;
+
+  // 指标定义： { label, getter, betterHigher? }
+  const metrics = isShort
+    ? [
+        { l: '包租公分',    f: o => o.rent_score ?? o.score ?? 0, h: true, fmt: v => v.toFixed(0) },
+        { l: '⭐ Tier',     f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
+        { l: '年化收益',    f: o => o.annualized_yield_pct ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
+        { l: '权利金/张',   f: o => o.premium_per_contract ?? 0, h: true, fmt: v => '$' + Math.round(v) },
+        { l: 'Mid 价',     f: o => o.mid ?? 0, h: null, fmt: v => '$' + v.toFixed(2) },
+        { l: '距行权 %',    f: o => Math.abs(o.moneyness_pct ?? 0), h: true, fmt: v => v.toFixed(1) + '%' },
+        { l: 'Δ Delta',    f: o => Math.abs(o.delta ?? 0), h: false, fmt: v => v.toFixed(3) },
+        { l: 'IV',         f: o => o.iv ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
+        { l: 'DTE',        f: o => o.days ?? 0, h: null, fmt: v => v + 'd' },
+        { l: 'Spread %',   f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+        { l: 'OI',         f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
+        { l: 'Theta/天',   f: o => o.theta_per_day ?? 0, h: true, fmt: v => '$' + v.toFixed(1) },
+      ]
+    : [
+        { l: '⭐ Tier',      f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
+        { l: 'Mid 价',      f: o => o.mid ?? 0, h: false, fmt: v => '$' + v.toFixed(2) },
+        { l: '杠杆倍数',     f: o => o.leverage_x ?? 0, h: true, fmt: v => v.toFixed(1) + 'x' },
+        { l: '距行权 %',     f: o => o.moneyness_pct ?? 0, h: null, fmt: v => (v > 0 ? '+' : '') + v.toFixed(1) + '%' },
+        { l: 'Δ Delta',     f: o => Math.abs(o.delta ?? 0), h: true, fmt: v => v.toFixed(3) },
+        { l: 'IV',          f: o => o.iv ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+        { l: 'DTE',         f: o => o.days ?? 0, h: true, fmt: v => v + 'd' },
+        { l: 'Spread %',    f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+        { l: 'OI',          f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
+        { l: 'Vega/1%',     f: o => o.vega_per_1pct ?? 0, h: true, fmt: v => '$' + v.toFixed(1) },
+        { l: '权利金/张',    f: o => o.premium_per_contract ?? 0, h: false, fmt: v => '$' + Math.round(v) },
+        { l: 'Bid/Ask',     f: o => o.bid + '/' + o.ask, h: null, fmt: v => v },
+      ];
+
+  // 每个指标算出最佳/最差列（仅当 h !== null）
+  const cells = metrics.map(m => {
+    const vals = list.map(m.f);
+    const numeric = vals.every(v => typeof v === 'number');
+    let bestIdx = -1, worstIdx = -1;
+    if (numeric && m.h !== null && list.length > 1) {
+      let bestV = m.h ? -Infinity : Infinity;
+      let worstV = m.h ? Infinity : -Infinity;
+      vals.forEach((v, i) => {
+        if (m.h ? v > bestV : v < bestV) { bestV = v; bestIdx = i; }
+        if (m.h ? v < worstV : v > worstV) { worstV = v; worstIdx = i; }
+      });
+      // 全部相等时不高亮
+      if (bestV === worstV) { bestIdx = -1; worstIdx = -1; }
+    }
+    return { m, vals, bestIdx, worstIdx };
+  });
+
+  const headers = list.map(o => `
+    <th>
+      <div class="cmp-ticker-cell">${o.ticker} $${o.strike}
+        <span class="cmp-tag ${o.type}">${o.type.toUpperCase()}</span>
+      </div>
+      <div style="font-size:10px;color:var(--sub);font-weight:400;margin-top:2px">exp ${o.expiry} · ${o.days}d</div>
+    </th>
+  `).join('');
+
+  const rows = cells.map(({ m, vals, bestIdx, worstIdx }) => {
+    const tds = vals.map((v, i) => {
+      const cls = i === bestIdx ? 'cmp-best' : (i === worstIdx ? 'cmp-worst' : '');
+      const display = (typeof v === 'number') ? m.fmt(v) : m.fmt(v);
+      return `<td class="${cls}">${display}</td>`;
+    }).join('');
+    return `<tr><td>${t(m.l)}</td>${tds}</tr>`;
+  }).join('');
+
+  document.getElementById('compare-modal').innerHTML = `
+    <h3>
+      <span>⚖️ ${t('候选对比')} (${list.length})</span>
+      <span class="x" onclick="hideCompare()">×</span>
+    </h3>
+    <div style="font-size:11px;color:var(--sub);margin-bottom:12px">
+      ${t('绿色 = 该指标最佳　红色 = 最弱')}
+    </div>
+    <div style="overflow-x:auto">
+      <table class="compare-table">
+        <thead>
+          <tr><th></th>${headers}</tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button style="padding:8px 16px;border-radius:6px;font-size:12px;background:transparent;color:var(--sub);border:1px solid var(--line);cursor:pointer;"
+              onclick="clearCompareSelect(); hideCompare();">
+        ${t('清空对比')}
+      </button>
+      <button style="padding:8px 16px;border-radius:6px;font-size:12px;background:var(--accent);color:#0A0A0B;border:none;cursor:pointer;font-weight:600;"
+              onclick="hideCompare()">
+        ${t('关闭')}
+      </button>
+    </div>
+  `;
+  document.getElementById('compare-backdrop').classList.add('show');
+  document.getElementById('compare-modal').classList.add('open');
+}
+
+function hideCompare() {
+  document.getElementById('compare-backdrop').classList.remove('show');
+  document.getElementById('compare-modal').classList.remove('open');
 }
 
 function renderSparkline(points, isUp) {
@@ -5647,8 +6484,17 @@ function renderRecResult(d) {
     return true;
   });
 
+  // 缓存所有候选 — 供 preview/compare modal 用候选 id 查询
+  window._lastCandidates = d.candidates;
+  window._lastRecMeta = {
+    ticker: c.ticker, intent: c.intent, direction: c.direction,
+    is_short: c.is_short, underlying: d.underlying,
+  };
+
   // 新设计：每个候选一张卡（不再用表格），verdict 最显眼
   const cards = filteredCandidates.map((opt, i) => {
+    const candId = `${opt.ticker}_${opt.type}_${opt.strike}_${opt.expiry}`;
+    const isChecked = (window._compareSelected || new Set()).has(candId);
     const v = opt.verdict || {};
     const keyMetrics = isShort
       ? [
@@ -5683,7 +6529,7 @@ function renderRecResult(d) {
     const consHtml = (v.cons || []).map(co => `<li>✗ ${co}</li>`).join('');
 
     return `
-      <div class="rec-card">
+      <div class="rec-card" data-cand-id="${candId}">
         <div class="rec-head">
           <div class="rec-rank">#${i + 1}</div>
           <div class="rec-title">
@@ -5697,8 +6543,16 @@ function renderRecResult(d) {
               ${v.stars || ''} <strong>${v.label ? t(v.label) : ''}</strong>
             </div>
           </div>
-          <button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">${t('加入持仓')}</button>
+          <div class="rec-actions">
+            <button class="preview-btn" onclick="showPreview('${candId}')" title="${t('加仓预览：看这一笔加进组合的影响')}">📊 ${t('预览')}</button>
+            <button class="add-btn" onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid})">${t('加入持仓')}</button>
+          </div>
         </div>
+
+        <label class="rec-compare-check">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCompareSelect('${candId}', this.checked)">
+          <span>${t('加入对比')}</span>
+        </label>
 
         <div class="rec-oneline" style="border-left-color:${verdictColor}">
           ${v.one_line || ''}
@@ -5785,6 +6639,9 @@ function renderRecResult(d) {
       ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.
     </div>
   `;
+
+  // 渲染浮动对比 pill
+  renderComparePill();
 }
 
 function addRecToPositions(ticker, type, strike, expiry, mid) {

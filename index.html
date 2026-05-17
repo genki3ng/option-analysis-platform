@@ -2433,6 +2433,56 @@
     .summary { grid-template-columns: repeat(2, 1fr); }
     .pos-actions button { font-size: 10.5px; padding: 6px 4px; }
   }
+
+  /* ─── 账户设置 modal ─── */
+  .account-modal {
+    width: 460px;
+    max-width: calc(100vw - 32px);
+  }
+  .account-modal h4 {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 15px; font-weight: 600; margin-bottom: 18px;
+    color: var(--accent);
+  }
+  .stock-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .stock-row input[type="text"],
+  .stock-row input[type="number"] {
+    padding: 6px 10px; border-radius: 6px;
+    border: 1px solid var(--line-2); background: var(--bg);
+    color: var(--text); font-size: 13px;
+  }
+  .stock-row .rm-btn {
+    background: none; border: 1px solid var(--line-2); border-radius: 6px;
+    color: var(--sub); cursor: pointer; padding: 4px 8px; font-size: 13px;
+    line-height: 1;
+  }
+  .stock-row .rm-btn:hover { background: var(--card2); color: var(--red); }
+  .add-stock-btn {
+    margin-top: 6px; background: none; border: 1px dashed var(--line-2);
+    border-radius: 6px; color: var(--sub); cursor: pointer;
+    padding: 5px 12px; font-size: 12px; width: 100%;
+  }
+  .add-stock-btn:hover { background: var(--card2); color: var(--accent); }
+  /* 账户 context badge 行（显示在推荐卡片上） */
+  .acct-bar {
+    display: flex; flex-wrap: wrap; gap: 5px;
+    margin-top: 8px;
+  }
+  .acct-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 8px; border-radius: 10px;
+    background: var(--card2); color: var(--sub);
+    font-size: 11px; white-space: nowrap;
+  }
+  .acct-badge.covered { background: rgba(34,197,94,0.12); color: var(--green); }
+  .acct-badge.naked   { background: rgba(239,68,68,0.10);  color: var(--red); }
+  .acct-badge.caution { background: rgba(234,179,8,0.12);  color: var(--yellow); }
 </style>
 </head>
 <body>
@@ -2460,9 +2510,38 @@
     <span>💾</span>
     <span data-i18n="💾 导出 JSON 备份">💾 导出 JSON 备份</span>
   </div>
+  <div class="um-item" onclick="hideUserMenu(); showAccountSettings();">
+    <span>⚙️</span>
+    <span data-i18n="账户设置">账户设置</span>
+  </div>
   <div class="um-item danger" onclick="hideUserMenu(); signOutCloud();">
     <span>🚪</span>
     <span data-i18n="登出">登出</span>
+  </div>
+</div>
+
+<!-- 账户设置 modal -->
+<div class="modal-backdrop" id="account-backdrop" onclick="hideAccountSettings()" style="display:none"></div>
+<div class="account-modal modal" id="account-modal" style="display:none">
+  <h4>
+    <span>⚙️ <span data-i18n="账户设置">账户设置</span></span>
+    <span class="x" onclick="hideAccountSettings()">×</span>
+  </h4>
+  <div class="row">
+    <span class="label" data-i18n="可用保证金 / 现金">可用保证金 / 现金</span>
+    <input type="number" id="account-margin" placeholder="例如 50000" min="0" step="1000"
+           style="width:160px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg);color:var(--text);font-size:13px">
+    <span style="color:var(--sub);font-size:11px" data-i18n="用于计算推荐候选的资金占比和张数建议">用于计算推荐候选的资金占比和张数建议</span>
+  </div>
+  <div class="row">
+    <span class="label" data-i18n="正股持仓">正股持仓</span>
+    <div id="stock-pos-list"></div>
+    <button class="add-stock-btn" onclick="addStockRow()" data-i18n="+ 添加一行">+ 添加一行</button>
+    <span style="color:var(--sub);font-size:11px" data-i18n="用于 Covered Call 检测：你有几股就能卖几张">用于 Covered Call 检测：你有几股就能卖几张</span>
+  </div>
+  <div class="submit-row" style="margin-top:20px">
+    <button class="cancel" onclick="hideAccountSettings()" data-i18n="取消">取消</button>
+    <button class="submit" onclick="saveAccountSettings()" data-i18n="💾 保存">💾 保存</button>
   </div>
 </div>
 
@@ -2807,6 +2886,7 @@
 
   <div class="submit-row">
     <button class="cancel" onclick="hideRec()" data-i18n="取消">取消</button>
+    <div id="rec-acct-hint" style="font-size:11px;color:var(--sub);flex:1;padding-left:8px"></div>
     <button class="submit" onclick="submitRec()" data-i18n="🔍 找出最佳">🔍 找出最佳</button>
   </div>
 
@@ -3287,6 +3367,13 @@ const I18N = {
     '点击查看选项': '點擊查看選項',
     '改昵称': '改暱稱',
     '登出': '登出',
+    '账户设置': '帳戶設定',
+    '可用保证金 / 现金': '可用保證金 / 現金',
+    '正股持仓': '正股持倉',
+    '用于计算推荐候选的资金占比和张数建议': '用於計算推薦候選的資金佔比和張數建議',
+    '用于 Covered Call 检测：你有几股就能卖几张': '用於 Covered Call 檢測：你有幾股就能賣幾張',
+    '+ 添加一行': '+ 新增一行',
+    '💾 保存': '💾 儲存',
     '云同步开启': '雲同步已開啟',
     '☁ 加载中...': '☁ 載入中...',
     '☁ 同步中...': '☁ 同步中...',
@@ -3834,6 +3921,13 @@ const I18N = {
     '点击查看选项': 'Click for options',
     '改昵称': 'Edit nickname',
     '登出': 'Sign out',
+    '账户设置': 'Account Settings',
+    '可用保证金 / 现金': 'Available Margin / Cash',
+    '正股持仓': 'Stock Positions',
+    '用于计算推荐候选的资金占比和张数建议': 'Used to calculate margin % and suggested contracts per candidate',
+    '用于 Covered Call 检测：你有几股就能卖几张': 'For Covered Call detection: 1 contract per 100 shares',
+    '+ 添加一行': '+ Add row',
+    '💾 保存': '💾 Save',
     '云同步开启': 'Cloud sync enabled',
     '☁ 加载中...': '☁ Loading...',
     '☁ 同步中...': '☁ Syncing...',
@@ -6151,6 +6245,21 @@ function showRec() {
     localStorage.getItem('rec_last_ticker') || '';
   document.getElementById('rec-ticker').focus();
   _applyRecSelection();
+  // 显示账户设置状态提示
+  const hint = document.getElementById('rec-acct-hint');
+  if (hint) {
+    const acct = _getAccountMeta();
+    const hasMgn = acct.available_margin > 0;
+    const hasStk = (acct.stock_positions || []).length > 0;
+    if (hasMgn || hasStk) {
+      const parts = [];
+      if (hasMgn) parts.push(`保证金 $${Number(acct.available_margin).toLocaleString()}`);
+      if (hasStk) parts.push(`正股 ${(acct.stock_positions || []).map(p => p.ticker).join('/')}`);
+      hint.innerHTML = `⚙️ ${parts.join(' · ')} · <a href="javascript:void(0)" onclick="hideRec();showAccountSettings()" style="color:var(--accent)">修改</a>`;
+    } else {
+      hint.innerHTML = `<a href="javascript:void(0)" onclick="hideRec();showAccountSettings()" style="color:var(--sub)">⚙️ 设置账户可显示资金占比</a>`;
+    }
+  }
   document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {
     btn.onclick = () => {
       const group = btn.dataset.group;
@@ -6219,6 +6328,10 @@ async function submitRec() {
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
   };
+  const acct = _getAccountMeta();
+  if (acct.available_margin || (acct.stock_positions && acct.stock_positions.length)) {
+    body.account = acct;
+  }
   _savePref('rec_last_ticker', ticker);
   _savePref('rec_last_choice', JSON.stringify(_recSelection));
   renderRerunBtn();
@@ -6391,6 +6504,24 @@ function renderRecResult(d) {
     const prosHtml = (v.pros || []).map(p => `<li>✓ ${p}</li>`).join('');
     const consHtml = (v.cons || []).map(co => `<li>✗ ${co}</li>`).join('');
 
+    // 账户 context badges
+    const acctBadges = [];
+    if (opt.margin_pct != null) {
+      const cls = opt.margin_pct > 30 ? 'caution' : '';
+      acctBadges.push(`<span class="acct-badge ${cls}">💰 占保证金 ${opt.margin_pct}%</span>`);
+    }
+    if (opt.suggested_contracts != null) {
+      acctBadges.push(`<span class="acct-badge">建议最多 ${opt.suggested_contracts} 张</span>`);
+    }
+    if (opt.is_covered != null) {
+      if (opt.is_covered) {
+        acctBadges.push(`<span class="acct-badge covered">✓ Covered（你有 ${opt.shares_held} 股，可卖 ${opt.covered_contracts} 张）</span>`);
+      } else {
+        acctBadges.push(`<span class="acct-badge naked">⚠️ Naked（无正股托底）</span>`);
+      }
+    }
+    const acctBar = acctBadges.length ? `<div class="acct-bar">${acctBadges.join('')}</div>` : '';
+
     return `
       <div class="rec-card" data-cand-id="${candId}">
         <div class="rec-head">
@@ -6426,6 +6557,8 @@ function renderRecResult(d) {
           <div class="kmet"><div class="kmet-l">${t('Mid 价')}</div><div class="kmet-v">$${fmt(opt.mid, 2)}</div></div>
           <div class="kmet"><div class="kmet-l">${t('距行权')}</div><div class="kmet-v">${signed(opt.moneyness_pct, 1)}%</div></div>
         </div>
+
+        ${acctBar}
 
         <details class="rec-details">
           <summary>${t('展开详细分析')}</summary>
@@ -7417,6 +7550,70 @@ async function _loadCloudData() {
 
 function _sigOf(c) {
   return JSON.stringify(c?.positions || []) + '||' + JSON.stringify(c?.state || {});
+}
+
+// ── 账户设置（state._meta.account 命名空间）──────────────────────────────────
+function _getAccountMeta() {
+  if (_currentUser && _cloudReady && _cloudCache) {
+    return _cloudCache.state?._meta?.account || {};
+  }
+  try { return JSON.parse(localStorage.getItem('account_meta') || '{}'); } catch(e) { return {}; }
+}
+
+function _setAccountMeta(val) {
+  localStorage.setItem('account_meta', JSON.stringify(val));
+  if (_currentUser && _cloudReady && _cloudCache) {
+    _cloudCache.state = _cloudCache.state || {};
+    _cloudCache.state._meta = _cloudCache.state._meta || {};
+    _cloudCache.state._meta.account = val;
+    _saveCloud();
+  }
+}
+
+function addStockRow(ticker = '', shares = '') {
+  const list = document.getElementById('stock-pos-list');
+  const row = document.createElement('div');
+  row.className = 'stock-row';
+  row.innerHTML = `
+    <input type="text" class="sr-ticker" placeholder="TSLA" maxlength="6" value="${ticker}"
+           style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+    <input type="number" class="sr-shares" placeholder="100" min="1" step="1" value="${shares}">
+    <button class="rm-btn" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function showAccountSettings() {
+  const acct = _getAccountMeta();
+  document.getElementById('account-margin').value = acct.available_margin || '';
+  const list = document.getElementById('stock-pos-list');
+  list.innerHTML = '';
+  (acct.stock_positions || []).forEach(p => addStockRow(p.ticker, p.shares));
+  if (!list.children.length) addStockRow();  // 至少一行空行方便填
+  document.getElementById('account-backdrop').style.display = 'block';
+  const modal = document.getElementById('account-modal');
+  modal.style.display = 'block';
+  modal.classList.add('show');
+}
+
+function hideAccountSettings() {
+  document.getElementById('account-backdrop').style.display = 'none';
+  const modal = document.getElementById('account-modal');
+  modal.style.display = 'none';
+  modal.classList.remove('show');
+}
+
+function saveAccountSettings() {
+  const margin = parseFloat(document.getElementById('account-margin').value) || 0;
+  const rows = document.querySelectorAll('#stock-pos-list .stock-row');
+  const positions = [];
+  rows.forEach(r => {
+    const ticker = r.querySelector('.sr-ticker').value.trim().toUpperCase();
+    const shares = parseInt(r.querySelector('.sr-shares').value) || 0;
+    if (ticker && shares > 0) positions.push({ ticker, shares });
+  });
+  _setAccountMeta({ available_margin: margin || null, stock_positions: positions });
+  hideAccountSettings();
 }
 
 // ── 偏好设置云端同步（state._meta.prefs 命名空间） ─────────────────────────

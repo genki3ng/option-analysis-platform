@@ -1815,6 +1815,15 @@ def recommend(req: dict) -> dict:
     timeframe = int(req.get("timeframe", 7))
     risk = req.get("risk", "balanced")
 
+    # 账户 context（可选）
+    account = req.get("account") or {}
+    avail_margin = float(account.get("available_margin") or 0)
+    stock_map = {
+        p["ticker"].upper(): int(p.get("shares") or 0)
+        for p in (account.get("stock_positions") or [])
+        if p.get("ticker")
+    }
+
     # 拿当前价
     prices = fetch_prices([ticker])
     underlying = prices.get(ticker, {}).get("price", 0.0)
@@ -2039,6 +2048,18 @@ def recommend(req: dict) -> dict:
         c["verdict"] = _make_verdict(c, is_short, intent, iv_rank,
                                       backtest, risk=risk, is_csp=is_csp,
                                       underlying=underlying)
+
+        # 账户 context：保证金占比 + 张数建议 + Covered Call 检测
+        collateral = c["collateral_per_contract"]
+        if avail_margin > 0 and collateral > 0:
+            c["margin_pct"] = round(collateral / avail_margin * 100, 1)
+            # 单笔建议不超过账户 20%
+            c["suggested_contracts"] = max(1, int(avail_margin * 0.20 / collateral))
+        if is_short and is_call:
+            shares_held = stock_map.get(ticker, 0)
+            c["is_covered"] = shares_held >= 100
+            c["covered_contracts"] = shares_held // 100
+            c["shares_held"] = shares_held
 
     # 5. 排序后保留 top 15
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))

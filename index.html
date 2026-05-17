@@ -2440,6 +2440,10 @@
     <span>📥</span>
     <span data-i18n="重新导入本地数据">重新导入本地数据</span>
   </div>
+  <div class="um-item" onclick="hideUserMenu(); exportJsonBackup();">
+    <span>💾</span>
+    <span data-i18n="💾 导出 JSON 备份">💾 导出 JSON 备份</span>
+  </div>
   <div class="um-item danger" onclick="hideUserMenu(); signOutCloud();">
     <span>🚪</span>
     <span data-i18n="登出">登出</span>
@@ -2484,12 +2488,11 @@
     <span class="close" onclick="dismissInfo()" title="收起">×</span>
     <div class="title" data-i18n-html="ℹ️ &lt;b&gt;关于这个工具&lt;/b&gt;（点 × 收起）">ℹ️ <b data-i18n="关于这个工具">关于这个工具</b>（点 × 收起）</div>
     <ul id="info-bullets">
-      <li data-i18n-html="info_b1">📥 持仓数据存在 <strong data-i18n="你自己浏览器">你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器</li>
-      <li data-i18n-html="info_b2">👥 其他人打开同一个网址，看到的是 <strong data-i18n="他们自己">他们自己</strong> 的数据，互相不可见</li>
-      <li data-i18n-html="info_b3">💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong data-i18n="💾 导出备份">💾 导出备份</strong> 存 JSON 文件</li>
-      <li data-i18n-html="info_b4">📂 在新浏览器恢复 → 点 <strong data-i18n="📂 导入备份">📂 导入备份</strong> 选那个 JSON</li>
-      <li data-i18n-html="info_b5">🔗 <strong data-i18n="跨设备自动同步">跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong data-i18n="🔗 文件同步">🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong data-i18n="📁 文件夹同步">📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong data-i18n="与本地 Mac app 数据完全共享 🌟">与本地 Mac app 数据完全共享 🌟</strong></li></ul></li>
-      <li data-i18n-html="info_b6">👤 改用户名（左上角）方便区分多浏览器/多设备的数据</li>
+      <li data-i18n-html="info_b1_new">☁ <strong>Google 登录</strong>后数据存到云端，多设备实时同步（推荐）</li>
+      <li data-i18n-html="info_b2_new">📥 未登录则只存在本机浏览器的 <span class="key">localStorage</span>，换设备不可见</li>
+      <li data-i18n-html="info_b3_new">💾 想要本地备份 → 登录后点头像菜单 → <strong>💾 导出 JSON 备份</strong></li>
+      <li data-i18n-html="info_b4_new">📥 首次登录有本地数据 → 弹框确认导入云端；以后菜单"📥 重新导入"可随时再触发</li>
+      <li data-i18n-html="info_b5_new">🔒 RLS 兜底，只有你能读写自己那行数据</li>
     </ul>
   </div>
   <div class="info-summary hidden" id="info-summary" onclick="expandInfo()" data-i18n="ℹ️ 数据存储 & 备份说明 — 点击展开">
@@ -2657,23 +2660,6 @@
             </div>
           </div>
 
-          <div class="dropdown">
-            <button class="muted" id="sync-btn" onclick="toggleDD(this)" data-i18n="🔗 同步 ▾">🔗 同步 ▾</button>
-            <div class="dropdown-menu">
-              <div class="dd-label" data-i18n="连接到">连接到</div>
-              <button onclick="linkSyncFile()" data-i18n-html="sync_file_opt">🔗 单个 JSON 文件
-                <div class="dd-hint" data-i18n="网页自用格式">网页自用格式</div>
-              </button>
-              <button onclick="linkSyncDir()" data-i18n-html="sync_dir_opt">📁 文件夹
-                <div class="dd-hint" data-i18n="兼容本地 Mac app（positions.json + state.json）">兼容本地 Mac app（positions.json + state.json）</div>
-              </button>
-              <hr>
-              <div class="dd-label" data-i18n="仅 Chrome / Edge / Brave">仅 Chrome / Edge / Brave</div>
-            </div>
-          </div>
-
-          <span id="sync-status" style="font-size:11px;margin-left:4px"></span>
-
           <span style="flex:1"></span>
 
           <span id="sel-count" style="color:var(--sub);font-size:11px"></span>
@@ -2816,12 +2802,12 @@ const I18N = {
   // 简中（默认）— 只有语义 key 才需要列在这里，
   // 直接用中文做 key 的字符串会原样返回（fallback）
   zh: {
-    'info_b1': '📥 持仓数据存在 <strong>你自己浏览器</strong>的 <span class="key">localStorage</span>，从不上传服务器',
-    'info_b2': '👥 其他人打开同一个网址，看到的是 <strong>他们自己</strong> 的数据，互相不可见',
-    'info_b3': '💾 清缓存 / 换浏览器 / 换设备会丢失 → 点 <strong>💾 导出备份</strong> 存 JSON 文件',
-    'info_b4': '📂 在新浏览器恢复 → 点 <strong>📂 导入备份</strong> 选那个 JSON',
-    'info_b5': '🔗 <strong>跨设备自动同步</strong>（推荐 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 文件同步</strong>：选单个 JSON 文件（适合纯网页用户）</li><li><strong>📁 文件夹同步</strong>：选 Drive 文件夹 → 读写 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>与本地 Mac app 数据完全共享 🌟</strong></li></ul>',
-    'info_b6': '👤 改用户名（左上角）方便区分多浏览器/多设备的数据',
+    'info_b1_new': '☁ <strong>Google 登录</strong>后数据存到云端，多设备实时同步（推荐）',
+    'info_b2_new': '📥 未登录则只存在本机浏览器的 <span class="key">localStorage</span>，换设备不可见',
+    'info_b3_new': '💾 想要本地备份 → 登录后点头像菜单 → <strong>💾 导出 JSON 备份</strong>',
+    'info_b4_new': '📥 首次登录有本地数据 → 弹框确认导入云端；以后菜单"📥 重新导入"可随时再触发',
+    'info_b5_new': '🔒 RLS 兜底，只有你能读写自己那行数据',
+    '💾 导出 JSON 备份': '💾 导出 JSON 备份',
     'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>关于这个工具</b>（点 × 收起）',
     'hint_sold': '卖出期权时一次性收到的现金。<br>这是你的最大可能利润',
     'hint_mktval': '现在花多少钱可以全部买回平仓。<br>越低越好（你赚的越多）',
@@ -2940,12 +2926,12 @@ const I18N = {
     '实时 P&L · 自动每 30 秒刷新': '即時 P&L · 自動每 30 秒刷新',
     'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>關於這個工具</b>（點 × 收起）',
     'ℹ️ 数据存储 & 备份说明 — 点击展开': 'ℹ️ 資料儲存 & 備份說明 — 點擊展開',
-    'info_b1': '📥 持倉資料存在 <strong>你自己瀏覽器</strong>的 <span class="key">localStorage</span>，從不上傳伺服器',
-    'info_b2': '👥 其他人打開同一個網址，看到的是 <strong>他們自己</strong> 的資料，互相不可見',
-    'info_b3': '💾 清快取 / 換瀏覽器 / 換裝置會遺失 → 點 <strong>💾 匯出備份</strong> 存 JSON 檔案',
-    'info_b4': '📂 在新瀏覽器恢復 → 點 <strong>📂 匯入備份</strong> 選那個 JSON',
-    'info_b5': '🔗 <strong>跨裝置自動同步</strong>（推薦 Chrome/Edge）：<ul style="margin:4px 0"><li><strong>🔗 檔案同步</strong>：選單個 JSON 檔案（適合純網頁用戶）</li><li><strong>📁 資料夾同步</strong>：選 Drive 資料夾 → 讀寫 <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>與本地 Mac app 資料完全共享 🌟</strong></li></ul>',
-    'info_b6': '👤 改用戶名（左上角）方便區分多瀏覽器/多裝置的資料',
+    'info_b1_new': '☁ <strong>Google 登入</strong>後資料存到雲端，多裝置即時同步（推薦）',
+    'info_b2_new': '📥 未登入則只存在本機瀏覽器的 <span class="key">localStorage</span>，換裝置不可見',
+    'info_b3_new': '💾 想要本地備份 → 登入後點頭像選單 → <strong>💾 匯出 JSON 備份</strong>',
+    'info_b4_new': '📥 首次登入有本機資料 → 彈框確認匯入雲端；之後選單「📥 重新匯入」可隨時再觸發',
+    'info_b5_new': '🔒 RLS 兜底，只有你能讀寫自己那行資料',
+    '💾 导出 JSON 备份': '💾 匯出 JSON 備份',
     '关于这个工具': '關於這個工具',
     '点 × 收起，以后从底部展开': '點 × 收起，之後從底部展開',
     '持仓数据存在': '持倉資料存在',
@@ -3391,12 +3377,12 @@ const I18N = {
     '实时 P&L · 自动每 30 秒刷新': 'Real-time P&L · Auto refresh every 30 s',
     'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>About this tool</b> (click × to collapse)',
     'ℹ️ 数据存储 & 备份说明 — 点击展开': 'ℹ️ Data storage & backup info — click to expand',
-    'info_b1': '📥 Position data lives in <strong>your own browser</strong>\'s <span class="key">localStorage</span> — never uploaded to a server',
-    'info_b2': '👥 Others opening the same URL see <strong>their own</strong> data — yours is private',
-    'info_b3': '💾 Clearing cache / switching browser or device will lose data → click <strong>💾 Export Backup</strong> to save a JSON file',
-    'info_b4': '📂 To restore in a new browser → click <strong>📂 Import Backup</strong> and pick that JSON',
-    'info_b5': '🔗 <strong>Cross-device auto-sync</strong> (recommended on Chrome/Edge):<ul style="margin:4px 0"><li><strong>🔗 File Sync</strong>: pick a single JSON file (for web-only users)</li><li><strong>📁 Folder Sync</strong>: pick a Drive folder → reads/writes <span class="key">positions.json</span> + <span class="key">state.json</span> → <strong>fully compatible with the local Mac app 🌟</strong></li></ul>',
-    'info_b6': '👤 Set username (top-left) to distinguish data across browsers/devices',
+    'info_b1_new': '☁ <strong>Sign in with Google</strong> → data lives in the cloud, realtime cross-device sync (recommended)',
+    'info_b2_new': '📥 Without sign-in, data only lives in this browser\'s <span class="key">localStorage</span> — invisible from other devices',
+    'info_b3_new': 'For a local backup → after sign-in, open the avatar menu → <strong>💾 Export JSON Backup</strong>',
+    'info_b4_new': '📥 On first sign-in with local data → confirmation dialog asks to import; "📥 Re-import" in menu re-triggers anytime',
+    'info_b5_new': '🔒 RLS enforced — only you can read/write your own row',
+    '💾 导出 JSON 备份': '💾 Export JSON Backup',
     '关于这个工具': 'About this tool',
     '点 × 收起，以后从底部展开': 'Click × to collapse, expand from bottom later',
     '持仓数据存在': 'Position data lives in',
@@ -5270,460 +5256,6 @@ function reopenPos(id) {
   refresh();
 }
 
-// ── 文件同步（File System Access API + Google Drive 文件夹）──────────
-// 用户挑一个 JSON 文件（放 Drive 同步文件夹里），App 读写它。
-// 不同设备打开同一个文件 → 走 Drive 自家同步 → 数据跨设备共享。
-// 只支持 Chromium 浏览器（Chrome / Edge / Brave）。
-
-let _syncHandle = null;     // 单文件 handle（mode = 'file'）
-let _syncDirHandle = null;  // 文件夹 handle（mode = 'dir' — 兼容本地 Mac app 格式）
-let _syncMode = null;       // 'file' | 'dir' | null
-let _syncing = false;
-const _syncSupported = ('showOpenFilePicker' in window);
-const _syncDirSupported = ('showDirectoryPicker' in window);
-
-// IndexedDB 持久化 file handle
-function _idbOpen() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('oap-sync', 1);
-    req.onupgradeneeded = () => req.result.createObjectStore('kv');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbGet(key) {
-  const db = await _idbOpen();
-  return new Promise((res, rej) => {
-    const tx = db.transaction('kv', 'readonly');
-    const r = tx.objectStore('kv').get(key);
-    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-  });
-}
-async function idbSet(key, val) {
-  const db = await _idbOpen();
-  return new Promise((res, rej) => {
-    const tx = db.transaction('kv', 'readwrite');
-    const r = tx.objectStore('kv').put(val, key);
-    r.onsuccess = () => res(); r.onerror = () => rej(r.error);
-  });
-}
-async function idbDel(key) {
-  const db = await _idbOpen();
-  return new Promise((res, rej) => {
-    const tx = db.transaction('kv', 'readwrite');
-    const r = tx.objectStore('kv').delete(key);
-    r.onsuccess = () => res(); r.onerror = () => rej(r.error);
-  });
-}
-
-async function _fsaHasPerm(handle) {
-  const opts = { mode: 'readwrite' };
-  if ((await handle.queryPermission(opts)) === 'granted') return true;
-  return (await handle.requestPermission(opts)) === 'granted';
-}
-async function _fsaRead(handle) {
-  const file = await handle.getFile();
-  const text = await file.text();
-  return text.trim() ? JSON.parse(text) : null;
-}
-async function _fsaWrite(handle, data) {
-  const w = await handle.createWritable();
-  await w.write(JSON.stringify(data, null, 2));
-  await w.close();
-}
-
-function _packData() {
-  return {
-    app: 'option-analysis-platform',
-    version: '1',
-    updatedAt: new Date().toISOString(),
-    username: loadUsername(),
-    positions: loadPositions(),
-    state: loadStateMap(),
-  };
-}
-
-function _applyData(data) {
-  if (!data || !Array.isArray(data.positions)) return false;
-  localStorage.setItem('positions', JSON.stringify(data.positions));
-  localStorage.setItem('positionState', JSON.stringify(data.state || {}));
-  if (data.username) {
-    localStorage.setItem('username', data.username);
-    const el = document.getElementById('user-name');
-    if (el) el.textContent = data.username;
-  }
-  return true;
-}
-
-async function _writeFile(dirHandle, filename, content) {
-  const fh = await dirHandle.getFileHandle(filename, { create: true });
-  const w = await fh.createWritable();
-  await w.write(content);
-  await w.close();
-}
-
-async function _readFile(dirHandle, filename) {
-  try {
-    const fh = await dirHandle.getFileHandle(filename);
-    const f = await fh.getFile();
-    const text = await f.text();
-    return text.trim() ? JSON.parse(text) : null;
-  } catch (e) {
-    if (e.name === 'NotFoundError') return null;
-    throw e;
-  }
-}
-
-async function syncOut() {
-  if (_syncing) return;
-  if (_syncMode === 'file' && _syncHandle) {
-    _syncing = true;
-    try {
-      await _fsaWrite(_syncHandle, _packData());
-      _showSyncStatus('synced');
-    } catch (e) {
-      console.warn('syncOut(file) failed', e);
-      _showSyncStatus('error', e.message);
-    } finally { _syncing = false; }
-  } else if (_syncMode === 'dir' && _syncDirHandle) {
-    _syncing = true;
-    try {
-      // 写两个文件：positions.json（flat array）+ state.json（map）
-      // —— 兼容本地 Mac app 格式
-      await _writeFile(_syncDirHandle, 'positions.json',
-        JSON.stringify(loadPositions(), null, 2));
-      await _writeFile(_syncDirHandle, 'state.json',
-        JSON.stringify(loadStateMap(), null, 2));
-      // username 单独存（本地 app 没有这个概念）
-      await _writeFile(_syncDirHandle, 'username.txt', loadUsername());
-      _showSyncStatus('synced');
-    } catch (e) {
-      console.warn('syncOut(dir) failed', e);
-      _showSyncStatus('error', e.message);
-    } finally { _syncing = false; }
-  }
-}
-
-async function syncIn() {
-  if (_syncMode === 'file' && _syncHandle) {
-    try {
-      const data = await _fsaRead(_syncHandle);
-      if (data) _applyData(data);
-    } catch (e) { console.warn('syncIn(file) failed', e); }
-  } else if (_syncMode === 'dir' && _syncDirHandle) {
-    try {
-      const positions = await _readFile(_syncDirHandle, 'positions.json');
-      const state = await _readFile(_syncDirHandle, 'state.json');
-      let username = null;
-      try {
-        const fh = await _syncDirHandle.getFileHandle('username.txt');
-        username = (await (await fh.getFile()).text()).trim();
-      } catch (e) {}
-      if (Array.isArray(positions)) {
-        _applyData({
-          positions,
-          state: state || {},
-          username: username || undefined,
-        });
-      }
-    } catch (e) { console.warn('syncIn(dir) failed', e); }
-  }
-  selectedIds = null;
-  refresh();
-}
-
-async function linkSyncFile() {
-  if (!_syncSupported) {
-    alert('当前浏览器不支持文件同步功能。' + NL + NL +
-          '需要 Chrome / Edge / Brave（Chromium 内核）。' + NL +
-          'Safari 和 Firefox 暂不支持。' + NL + NL +
-          '替代方案：用 💾 导出备份 + 📂 导入备份 手动同步。');
-    return;
-  }
-
-  let handle;
-  try {
-    // 让用户选已有文件
-    const useExisting = confirm(
-      '🔗 文件同步设置' + NL + NL +
-      '【强烈推荐】把 JSON 文件放在 Google Drive 同步文件夹里，' +
-      '这样换设备打开同一个文件就能跨设备同步数据。' + NL + NL +
-      '点 OK = 选择已有 JSON 文件' + NL +
-      '点 取消 = 创建新 JSON 文件'
-    );
-
-    if (useExisting) {
-      const arr = await window.showOpenFilePicker({
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-        multiple: false,
-      });
-      handle = arr[0];
-    } else {
-      handle = await window.showSaveFilePicker({
-        suggestedName: 'oap-data.json',
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
-      });
-    }
-  } catch (e) {
-    if (e.name !== 'AbortError') alert('选择失败: ' + e.message);
-    return;
-  }
-
-  if (!(await _fsaHasPerm(handle))) {
-    alert('需要文件读写权限');
-    return;
-  }
-
-  // 看文件里有没有数据
-  let fileData = null;
-  try { fileData = await _fsaRead(handle); } catch (e) {}
-
-  if (fileData && Array.isArray(fileData.positions) && fileData.positions.length) {
-    const merge = confirm(
-      '该文件已有 ' + fileData.positions.length + ' 个持仓' + NL +
-      '导出时间: ' + (fileData.updatedAt ? new Date(fileData.updatedAt).toLocaleString('zh-CN') : '未知') + NL + NL +
-      '点 OK = 用文件数据覆盖本地（首次跨设备恢复用这个）' + NL +
-      '点 取消 = 用本地数据覆盖文件（首次绑定本地数据用这个）'
-    );
-    if (merge) _applyData(fileData);
-  }
-
-  _syncHandle = handle;
-  _syncMode = 'file';
-  await idbSet('fileHandle', handle);
-  await idbSet('syncMode', 'file');
-  await syncOut();
-
-  _showSyncStatus('synced');
-  _updateSyncBtn(true, handle.name);
-  selectedIds = null;
-  refresh();
-  alert('✅ 已连接到文件: ' + handle.name + NL + NL +
-        '每次改动都会自动写入这个文件。' + NL +
-        '换设备：打开网站 → 选同一个文件 → 选"用文件数据覆盖本地"');
-}
-
-// ── 文件夹同步模式（兼容本地 Mac app 格式：positions.json + state.json）
-async function linkSyncDir() {
-  if (!_syncDirSupported) {
-    alert('当前浏览器不支持文件夹同步功能，需要 Chrome / Edge / Brave。');
-    return;
-  }
-
-  let dirHandle;
-  try {
-    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-  } catch (e) {
-    if (e.name !== 'AbortError') alert('选择失败: ' + e.message);
-    return;
-  }
-
-  // 验证权限
-  const perm = await dirHandle.queryPermission({ mode: 'readwrite' });
-  if (perm !== 'granted') {
-    const r = await dirHandle.requestPermission({ mode: 'readwrite' });
-    if (r !== 'granted') {
-      alert('需要文件夹读写权限');
-      return;
-    }
-  }
-
-  // 读现有文件（如果有）
-  let positions = null, state = null, username = null;
-  try { positions = await _readFile(dirHandle, 'positions.json'); } catch (e) {}
-  try { state = await _readFile(dirHandle, 'state.json'); } catch (e) {}
-  try {
-    const fh = await dirHandle.getFileHandle('username.txt');
-    username = (await (await fh.getFile()).text()).trim();
-  } catch (e) {}
-
-  if (Array.isArray(positions) && positions.length) {
-    const merge = confirm(
-      '文件夹 ' + dirHandle.name + ' 已有数据：' + NL +
-      '  • ' + positions.length + ' 个持仓 (positions.json)' + NL +
-      '  • ' + (state ? Object.keys(state).length : 0) + ' 条平仓记录 (state.json)' + NL +
-      (username ? '  • 用户名: ' + username + NL : '') + NL +
-      '点 OK = 用文件夹数据覆盖本地（跨设备恢复 / 复用本地 Mac app 数据）' + NL +
-      '点 取消 = 用本地浏览器数据覆盖文件夹'
-    );
-    if (merge) {
-      _applyData({ positions, state: state || {}, username: username || undefined });
-    }
-  }
-
-  _syncDirHandle = dirHandle;
-  _syncMode = 'dir';
-  await idbSet('dirHandle', dirHandle);
-  await idbSet('syncMode', 'dir');
-  await syncOut();
-
-  _showSyncStatus('synced');
-  _updateSyncBtn(true, dirHandle.name + '/ (文件夹)');
-  selectedIds = null;
-  refresh();
-  alert('✅ 已连接到文件夹: ' + dirHandle.name + NL + NL +
-        '会自动读写：' + NL +
-        '  • positions.json（持仓数组）' + NL +
-        '  • state.json（平仓状态）' + NL +
-        '  • username.txt（用户名）' + NL + NL +
-        '这个格式与本地 Mac app 完全兼容 — 同一个 Drive 文件夹两边共用 ✨');
-}
-
-async function unlinkSync() {
-  if (!confirm('断开同步？\n本地 localStorage 数据保留，但以后改动不再同步。')) return;
-  _syncHandle = null;
-  _syncDirHandle = null;
-  _syncMode = null;
-  await idbDel('fileHandle');
-  await idbDel('dirHandle');
-  await idbDel('syncMode');
-  _updateSyncBtn(false);
-  _showSyncStatus('none');
-}
-
-async function syncMenu() {
-  if (!_syncMode) return linkSyncFile();
-  const target = _syncMode === 'file'
-    ? '文件: ' + (_syncHandle?.name || '?')
-    : '文件夹: ' + (_syncDirHandle?.name || '?');
-  const action = prompt(
-    '🔗 已连接（' + _syncMode + '）: ' + target + NL + NL +
-    '输入命令：' + NL +
-    '  pull   → 从文件/文件夹重新读取（另一设备改了之后）' + NL +
-    '  push   → 立即把本地数据写出去' + NL +
-    '  unlink → 断开同步' + NL +
-    '  change-file → 改连接别的单文件' + NL +
-    '  change-dir  → 改连接别的文件夹（兼容本地 app 模式）',
-    'pull'
-  );
-  if (!action) return;
-  switch (action.trim().toLowerCase()) {
-    case 'pull': await syncIn(); break;
-    case 'push': await syncOut(); break;
-    case 'unlink': await unlinkSync(); break;
-    case 'change-file':
-      await unlinkSync(); linkSyncFile(); break;
-    case 'change-dir':
-      await unlinkSync(); linkSyncDir(); break;
-  }
-}
-
-function _showSyncStatus(status, detail) {
-  const el = document.getElementById('sync-status');
-  if (!el) return;
-  if (status === 'synced') {
-    el.textContent = '✓ 同步中';
-    el.style.color = 'var(--green)';
-  } else if (status === 'error') {
-    el.textContent = '⚠️ 同步失败';
-    el.style.color = 'var(--red)';
-    el.title = detail || '';
-  } else {
-    el.textContent = '';
-  }
-}
-
-function _updateSyncBtn(linked, filename) {
-  const btn = document.getElementById('sync-btn');
-  if (!btn) return;
-  const menu = btn.nextElementSibling;  // .dropdown-menu
-  if (linked) {
-    btn.innerHTML = '🔗 已同步 <span style="opacity:0.7;font-weight:400">▾</span>';
-    btn.title = '已连接: ' + filename;
-    btn.classList.add('linked');
-    if (menu) {
-      menu.innerHTML = `
-        <div class="dd-label">已连接</div>
-        <div style="padding:6px 10px;font-size:11px;color:var(--accent);font-weight:600">📂 ${filename}</div>
-        <hr>
-        <button onclick="syncIn()">🔄 从源拉取最新</button>
-        <button onclick="syncOut()">📤 把本地推到源</button>
-        <button onclick="unlinkSync()" style="color:var(--red)">✂️ 断开同步</button>
-        <hr>
-        <div class="dd-label">改连其他</div>
-        <button onclick="(async()=>{await unlinkSync();linkSyncFile();})()">🔗 改连单个 JSON 文件</button>
-        <button onclick="(async()=>{await unlinkSync();linkSyncDir();})()">📁 改连文件夹</button>
-      `;
-    }
-  } else {
-    btn.innerHTML = '🔗 同步 <span style="opacity:0.7;font-weight:400">▾</span>';
-    btn.title = '文件 / 文件夹同步';
-    btn.classList.remove('linked');
-    if (menu) {
-      menu.innerHTML = `
-        <div class="dd-label">连接到</div>
-        <button onclick="linkSyncFile()">🔗 单个 JSON 文件
-          <div class="dd-hint">网页自用格式</div>
-        </button>
-        <button onclick="linkSyncDir()">📁 文件夹
-          <div class="dd-hint">兼容本地 Mac app（positions.json + state.json）</div>
-        </button>
-        <hr>
-        <div class="dd-label">仅 Chrome / Edge / Brave 支持</div>
-      `;
-    }
-  }
-}
-
-async function _initSync() {
-  if (!_syncSupported) return;
-  try {
-    const mode = await idbGet('syncMode');
-    if (mode === 'dir') {
-      const dh = await idbGet('dirHandle');
-      if (!dh) return;
-      const perm = await dh.queryPermission({ mode: 'readwrite' });
-      if (perm === 'granted') {
-        _syncDirHandle = dh;
-        _syncMode = 'dir';
-        _updateSyncBtn(true, dh.name + '/');
-        await syncIn();
-      } else {
-        _updateSyncBtn(false);
-        const btn = document.getElementById('sync-btn');
-        if (btn) {
-          btn.textContent = '🔗 ' + t('重新授权') + ' ' + dh.name + '/';
-          btn.onclick = async () => {
-            const r = await dh.requestPermission({ mode: 'readwrite' });
-            if (r === 'granted') {
-              _syncDirHandle = dh;
-              _syncMode = 'dir';
-              _updateSyncBtn(true, dh.name + '/');
-              await syncIn();
-            }
-          };
-        }
-      }
-    } else {
-      // 默认 / 老用户：单文件模式
-      const handle = await idbGet('fileHandle');
-      if (!handle) return;
-      const perm = await handle.queryPermission({ mode: 'readwrite' });
-      if (perm === 'granted') {
-        _syncHandle = handle;
-        _syncMode = 'file';
-        _updateSyncBtn(true, handle.name);
-        await syncIn();
-      } else {
-        _updateSyncBtn(false);
-        const btn = document.getElementById('sync-btn');
-        if (btn) {
-          btn.textContent = '🔗 ' + t('重新授权') + ' ' + handle.name;
-          btn.onclick = async () => {
-            if (await _fsaHasPerm(handle)) {
-              _syncHandle = handle;
-              _syncMode = 'file';
-              _updateSyncBtn(true, handle.name);
-              await syncIn();
-            }
-          };
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('initSync failed', e);
-  }
-}
 
 // ── 📚 期权小白指南 ───────────────────────────────────────────────────
 const EDU_TOPICS = [
@@ -6993,7 +6525,6 @@ function saveUsername(name) {
   localStorage.setItem('username', name);
   const el = document.getElementById('user-name');
   if (el) el.textContent = name;
-  syncOut();
 }
 function editUsername() {
   const cur = loadUsername();
@@ -7876,6 +7407,42 @@ async function manualReimport() {
   }
 }
 
+// 💾 导出 JSON 备份 — 不依赖登录，未登录就导出 localStorage
+function exportJsonBackup() {
+  let positions, state, source;
+  if (_currentUser && _cloudReady && _cloudCache) {
+    positions = _cloudCache.positions || [];
+    state = _cloudCache.state || {};
+    source = 'cloud';
+  } else {
+    try { positions = JSON.parse(localStorage.getItem('positions') || '[]'); } catch(e){ positions = []; }
+    try { state = JSON.parse(localStorage.getItem('positionState') || '{}'); } catch(e){ state = {}; }
+    source = 'local';
+  }
+  const payload = {
+    _meta: {
+      app: 'baozugong',
+      exported_at: new Date().toISOString(),
+      source,
+      user: _currentUser?.email || null,
+      n_positions: positions.length,
+      n_state: Object.keys(state).length,
+    },
+    positions,
+    state,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+  a.href = url;
+  a.download = `baozugong-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 async function signInGoogle() {
   if (!_sb) return alert('Supabase not ready');
   const { error } = await _sb.auth.signInWithOAuth({
@@ -7962,7 +7529,6 @@ function savePositions(arr) {
   }
   // 同时写 localStorage：作为离线降级备份
   localStorage.setItem('positions', JSON.stringify(arr));
-  syncOut();
 }
 function loadStateMap() {
   if (window._isShareView && window._sharedSnapshot) {
@@ -7982,7 +7548,6 @@ function saveStateMap(obj) {
     _saveCloud();
   }
   localStorage.setItem('positionState', JSON.stringify(obj));
-  syncOut();
 }
 
 // 持仓 id（必须和后端 position_id 函数一致）
@@ -8041,9 +7606,6 @@ window.addEventListener('load', () => {
 
 refresh();
 setInterval(refresh, 30000);
-
-// 启动时检查文件同步连接（share view 下跳过）
-if (!window._isShareView) _initSync();
 </script>
 </body>
 </html>

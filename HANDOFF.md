@@ -3,7 +3,56 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（晚 — 本地 + 云端并行 session 双更新）
+最后更新：2026-05-17（深夜 — 表单双轨 A 落地 + 出场计划重写 + 多账户管理）
+
+### 🆕 这一轮（form A landing 后续，深夜连续迭代）
+
+**总入口**：用户挑了 A 方案落地，然后连续追问"目标只是 UI 没意义吧"→"账户能不能算够不够"→
+"出场计划看不懂"→"持仓也加"→"sell put 怎么只 $3.4k"→"被认成 CSP"→"按券商分多账户"。
+
+**完成的事**（一长串提交，main 上）：
+
+1. **A · Tab 切换落地** (`b48813d`) — `rec-form` 顶部 segment control，目标驱动 vs 策略驱动 tab。
+   - 4 个 goal cards：💵 stable_rent / 🛡 max_safety / 📊 max_yield / 🎁 assign_stock
+   - 每个 goal 反推 direction/intent/timeframe/risk → mutate `_recSelection`
+   - mode 持久 `localStorage.rec_mode`
+   - 数值输入按 goal 显示（仅 UI 预览不传后端）
+
+2. **Goal 真正起作用** (`2e47136`) — 数值不再死的：
+   - `max_safety` 硬 filter（前端过滤掉 prob_safe_pct < target）+ 0 个达标 fallback
+   - `assign_stock` 按 `|strike - target|` 升序排序
+   - 新增顶部 `goal-banner`：账户预算 + 目标对比 + 钱够不够
+   - 单卡 `goal-progress` 加账户负担细节
+
+3. **suggested_contracts 对齐** (`cecf35e`) — 之前 banner 用 100% margin 算"卖 5 张"，跟单卡"建议最多 2 张"不一致。
+   - 后端 `suggested_contracts = floor(margin × 0.20 / BPR)` 是 20% 集中度上限
+   - banner 改用 suggested → 三档清晰：达标 / 超过建议 / 账户不够
+
+4. **出场计划文案重写** (`eab94ec`) — 用户报"锁利 $2.91 (30%) 看不懂"。
+   - 推荐卡：单行 → vertical block 三行，把 mid → exit 价差和每张落袋 $ 写清
+   - 持仓卡：新加 `renderPositionExitPlan(p)` compact 一行（默认 balanced = 锁利 50%）
+   - 用 sentence-level i18n 模板（`exit_profit_action` / `pos_exit_profit` 等）解决词序问题
+
+5. **Margin L2 / L3+ 拆分** (`2427ef5`) — Schwab CSP-only (Options Level 2) vs naked (Level 3+)。
+   - 账户类型 segment 从 2 个变 3 个：cash / margin_l2 / margin_l3
+   - 后端 `account_type == "margin_l3"` 才用 Reg-T BPR，否则全额抵押
+   - 兼容旧值：'margin' → 'margin_l3'
+
+6. **多账户管理** (`8182f65`) — 用户有 Schwab + Robinhood 等多家。
+   - 数据模型变 `account_meta.accounts: [...]` 数组
+   - 每个 account: `{ id, name, broker, type, available_margin, stock_positions }`
+   - 8 家券商可选（Schwab / RH / IB / TT / Fidelity / E*Trade / TD / Webull / Other）
+   - 账户设置 modal 重写成 cards list + "+ 添加账户"
+   - `_getAccountMeta()` 返回**合并视图**（兼容旧调用方）：sum margin / 最允许 type / union stocks
+   - 新 `_getAccountsList()` 给 modal UI 用
+   - Backwards compat：旧 flat 格式自动转单条 default 账户
+   - 简化：合并算法用"最允许"type — 已知不完美（Schwab L2 + RH L3 会按 L3 算，但实际 L2 部分得 CSP）
+
+**待用户验证 / 反馈**：
+- [ ] 多账户 modal 在桌面 / 手机两种宽度看下 layout（特别是 broker 下拉、type 3-segment）
+- [ ] 输入数据 → 推荐 → banner 数字对得上单卡（suggested / BPR 一致）
+- [ ] 持仓卡的 compact 出场建议位置 OK 不
+- [ ] mixed accounts 推荐时是否需要按账户分组（暂未做）
 
 ### 🚧 本地 session 留下的事（2026-05-17 晚）
 

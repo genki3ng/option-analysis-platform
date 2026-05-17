@@ -134,6 +134,8 @@ TRANS_EN = {
     "考虑买回 / roll": "consider buyback / roll",
     "盯紧，考虑止损": "watch closely — consider stop",
     "浮盈 ${pnl} · 剩 {d} 天 · 接近锁利窗口": "${pnl} profit · {d}d left · near lock-in",
+    "{tk} 新闻: {title}": "{tk} news: {title}",
+    "{pub} · {h}h 前": "{pub} · {h}h ago",
     "看持仓 →": "View →",
     "看推荐 →": "Recommend →",
     "📅 未来 14 天关键日": "📅 Next 14 days",
@@ -248,6 +250,8 @@ TRANS_TW = {
     "考虑买回 / roll": "考慮買回 / roll",
     "盯紧，考虑止损": "盯緊，考慮止損",
     "浮盈 ${pnl} · 剩 {d} 天 · 接近锁利窗口": "浮盈 ${pnl} · 剩 {d} 天 · 接近鎖利窗口",
+    "{tk} 新闻: {title}": "{tk} 新聞: {title}",
+    "{pub} · {h}h 前": "{pub} · {h}h 前",
     "看持仓 →": "看持倉 →",
     "看推荐 →": "看推薦 →",
     "📅 未来 14 天关键日": "📅 未來 14 天關鍵日",
@@ -2602,6 +2606,101 @@ def _fetch_vix_quote() -> Optional[Dict]:
         return None
 
 
+_news_cache: Dict[str, Tuple[list, float]] = {}  # ticker -> (items, fetched_at)
+
+# 负面关键词 → 触发 news_alert focus card
+_NEGATIVE_NEWS_KEYWORDS = (
+    "downgrade", "loss", "lawsuit", "sec", "investigation", "bankrupt", "fraud",
+    "miss", "cut", "warn", "recall", "subpoena", "delist", "fall", "plunge",
+    "降级", "亏损", "诉讼", "调查", "破产", "欺诈", "下调", "未达预期", "暴跌", "召回",
+)
+
+
+def _fetch_position_news(positions: List[dict],
+                          max_items_per_ticker: int = 3,
+                          max_age_hours: int = 24,
+                          cache_ttl: int = 600) -> List[Dict]:
+    """抓持仓 ticker 的最近 24h 新闻（每 ticker 缓存 10 分钟）。失败返回 []。"""
+    try:
+        import yfinance as yf
+        import time as _t
+        now = _t.time()
+        cutoff = now - max_age_hours * 3600
+        session = _get_yf_session()
+        tickers = sorted(set(p["ticker"] for p in positions
+                            if not p.get("closed") and p.get("days", 0) >= 0))
+        out: List[Dict] = []
+        for tk in tickers[:6]:  # 最多 6 个 ticker 避免 yfinance 慢
+            items = None
+            if tk in _news_cache and (now - _news_cache[tk][1]) < cache_ttl:
+                items = _news_cache[tk][0]
+            else:
+                try:
+                    t = yf.Ticker(tk, session=session) if session else yf.Ticker(tk)
+                    items = t.news or []
+                    _news_cache[tk] = (items, now)
+                except Exception:
+                    items = []
+            for n in (items or [])[:max_items_per_ticker]:
+                # yfinance 新 schema 嵌套在 n['content']
+                content = n.get("content") or n
+                title = (content.get("title") or "").strip()
+                publisher = ((content.get("provider") or {}).get("displayName")
+                             or content.get("publisher") or "").strip()
+                pub_iso = content.get("pubDate") or ""
+                pub_time = 0
+                if isinstance(pub_iso, str) and pub_iso:
+                    try:
+                        pub_time = datetime.fromisoformat(pub_iso.replace("Z", "+00:00")).timestamp()
+                    except Exception:
+                        pass
+                if not pub_time:
+                    pub_time = n.get("providerPublishTime") or content.get("providerPublishTime") or 0
+                if pub_time < cutoff or not title:
+                    continue
+                out.append({
+                    "ticker": tk,
+                    "title": title,
+                    "publisher": publisher,
+                    "hours_ago": max(1, int((now - pub_time) / 3600)),
+                    "pub_time": int(pub_time),
+                })
+        # 按时间倒序，最近的在前
+        out.sort(key=lambda x: -x["pub_time"])
+        return out[:10]
+    except Exception:
+        return []
+
+
+def _detect_news_alerts(news: List[Dict], lang: str) -> List[Dict]:
+    """从新闻列表里挑出含负面关键词的，转为 events 加入 focus 优先列。"""
+    alerts = []
+    seen_titles = set()
+    for n in news:
+        title_lower = n["title"].lower()
+        if not any(kw in title_lower for kw in _NEGATIVE_NEWS_KEYWORDS):
+            continue
+        if n["title"] in seen_titles:
+            continue
+        seen_titles.add(n["title"])
+        alerts.append({
+            "kind": "news_alert",
+            "priority": 80,
+            "position_id": None,
+            "ticker": n["ticker"],
+            "label": f"{n['ticker']} 新闻",
+            "icon": "📰",
+            "headline": _T(lang, "{tk} 新闻: {title}",
+                           tk=n["ticker"],
+                           title=(n["title"][:50] + "…" if len(n["title"]) > 50 else n["title"])),
+            "detail": _T(lang, "{pub} · {h}h 前", pub=n["publisher"], h=n["hours_ago"]),
+            "action": "view_position",
+        })
+        if len(alerts) >= 3:
+            break
+    return alerts
+
+
 def _compute_concentration(positions: List[dict]) -> Dict:
     """最大单 ticker 占持仓暴露的百分比。"""
     active = [p for p in positions if not p.get("closed") and p.get("days", 0) >= 0]
@@ -2928,6 +3027,12 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     else:
         signal_lines.append("(no urgent signals)")
 
+    news = market.get("news") or []
+    if news:
+        signal_lines.append("\nRecent news on your tickers (24h):")
+        for n in news[:6]:
+            signal_lines.append(f"  - {n['ticker']} ({n['publisher']}, {n['hours_ago']}h): {n['title']}")
+
     lang_word = {"en": "English", "zh_tw": "繁體中文"}.get(lang, "简体中文")
 
     system_prompt = (
@@ -2939,7 +3044,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "  ② 给一个具体的\"今天怎么办\"建议（平仓 / roll / 等等看 / 加仓）；\n"
         "  ③ 可选：附一句让人安心 or 提醒边界的话（比如 Theta 进账 / 集中度高）。\n"
         "不要以\"早安\"开头（前端已写）。不要列条目、不要项目符号、不要编造数字。\n"
-        "如果所有信号都平静，就说一句让人放心的短话即可，别硬挤建议。"
+        "如果所有信号都平静，就说一句让人放心的短话即可，别硬挤建议。\n"
+        "**如果列了 Recent news**：挑 1 条最相关的引用进语句里（如 'NVDA 昨晚被下调评级'），"
+        "不要每条都念；纯营销稿/不痛不痒的标题直接忽略。"
     )
 
     user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 2-3 句话总览。"
@@ -2965,18 +3072,22 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     today_iso = today.isoformat()
     state = state if isinstance(state, dict) else {}
 
-    market = {"indices": prices, "vix": _fetch_vix_quote()}
+    news = _fetch_position_news(positions)
+    market = {"indices": prices, "vix": _fetch_vix_quote(), "news": news}
     concentration = _compute_concentration(positions)
     calendar = _compute_calendar_14d(positions, today)
     yesterday_snap = _load_brief_snapshot(state)
     diff_events = _compute_diff_events(yesterday_snap, positions, market, lang)
+    # news_alert events 拼到 diff_events 前面（priority 80，比 VIX 跳变 85 低，比 dte 70 高）
+    news_alerts = _detect_news_alerts(news, lang)
+    diff_events = news_alerts + diff_events
     top_3 = _rank_top_3_focus(diff_events, positions, lang)
     chips = _build_focus_chips(positions, market, total_pnl, total_realized, total_theta,
                                 concentration, lang)
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
-    CONCIERGE_VERSION = 3
+    CONCIERGE_VERSION = 4
     cached_text = None
     cached_by = None
     if (yesterday_snap.get("date") == today_iso

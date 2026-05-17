@@ -2726,6 +2726,16 @@
     background: var(--accent-tint-strong);
     color: var(--accent); font-weight: 700;
   }
+  .mb-cal-day.weekend {
+    opacity: 0.45;
+    background: transparent;
+    border: 1px dashed var(--line);
+  }
+  .mb-cal-day.weekend.today {
+    opacity: 1;
+    background: var(--accent-tint-strong);
+    border: none;
+  }
   .mb-cal-day .marker {
     position: absolute; bottom: -2px;
     width: 6px; height: 6px; border-radius: 50%;
@@ -9175,12 +9185,19 @@ function _mbRenderCalendar(markers, todayISO) {
   for (let i = 0; i < 14; i++) {
     const d = new Date(today.getTime()); d.setDate(d.getDate() + i);
     const day = d.getDate();
+    const dow = d.getDay(); // 0 = Sun, 6 = Sat
+    const isWeekend = dow === 0 || dow === 6;
     const types = byOffset[i] || new Set();
     let marker = '';
     if (types.has('earnings') && types.has('expiry')) marker = '<span class="marker both"></span>';
     else if (types.has('earnings')) marker = '<span class="marker earn"></span>';
     else if (types.has('expiry')) marker = '<span class="marker exp"></span>';
-    cells += `<div class="mb-cal-day${i === 0 ? ' today' : ''}">${day}${marker}</div>`;
+    const cls = [
+      'mb-cal-day',
+      i === 0 ? 'today' : '',
+      isWeekend ? 'weekend' : '',
+    ].filter(Boolean).join(' ');
+    cells += `<div class="${cls}" title="${d.toISOString().slice(0,10)}${isWeekend?' (休市)':''}">${day}${marker}</div>`;
   }
   const hasEarn = markers.some(m => m.type === 'earnings');
   const hasExp = markers.some(m => m.type === 'expiry');

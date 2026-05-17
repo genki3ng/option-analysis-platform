@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包租公 · 按钮设计预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0A0A0B;
+    --card:      #141416;
+    --card2:     #1A1A1E;
+    --card3:     #1C1C20;
+    --text:      #EDEDEC;
+    --sub:       #888889;
+    --dim:       #5A5A5C;
+    --line:      #232328;
+    --line-2:    #2E2E36;
+    --accent:    #E6B86A;
+    --accent-2:  #B89255;
+    --accent-light: #F0C778;
+    --accent-tint: rgba(230,184,106,0.10);
+    --accent-tint-strong: rgba(230,184,106,0.18);
+    --green:     #34D399;
+    --red:       #F87171;
+  }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Inter", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 56px max(24px, 5vw);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv01";
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 {
+    font-size: 28px; font-weight: 600;
+    letter-spacing: -0.025em;
+    margin-bottom: 6px;
+  }
+  .sub { color: var(--sub); font-size: 14px; margin-bottom: 56px; }
+
+  /* ── Section layout ── */
+  .section {
+    border-top: 1px solid var(--line);
+    padding: 40px 0;
+  }
+  .section-label {
+    font-size: 10.5px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 600; margin-bottom: 6px;
+  }
+  .section-title {
+    font-size: 20px; font-weight: 500;
+    letter-spacing: -0.015em; margin-bottom: 6px;
+  }
+  .section-desc {
+    color: var(--sub); font-size: 13px;
+    line-height: 1.6; margin-bottom: 32px;
+    max-width: 540px;
+  }
+
+  /* ── Button row ── */
+  .btn-row {
+    display: flex; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .row-label {
+    font-size: 11px; color: var(--dim);
+    font-family: "SF Mono", Menlo, monospace;
+    min-width: 80px; letter-spacing: 0.02em;
+  }
+  .btn-demo {
+    display: flex; align-items: center;
+    gap: 8px; flex-wrap: wrap;
+  }
+
+  /* ── Context strip ── */
+  .context-strip {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    display: flex; align-items: center;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .context-strip .strip-label {
+    font-size: 11px; color: var(--sub);
+    flex: 0 0 100%; margin-bottom: 2px;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+
+  /* ══════════════════════════════════════════
+     方案 A · 微立体
+  ═══════════════════════════════════════════ */
+
+  /* A: 主按钮 */
+  .a-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 7px;
+    padding: 7px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; letter-spacing: -0.005em;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.18) inset,
+      0 2px 8px rgba(230,184,106,0.28);
+    transition: box-shadow 0.15s, transform 0.1s, background 0.15s;
+  }
+  .a-primary:hover {
+    background: var(--accent-light);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.22) inset,
+      0 4px 16px rgba(230,184,106,0.40);
+    transform: translateY(-1px);
+  }
+  .a-primary:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3) inset;
+  }
+
+  /* A: 次按钮 */
+  .a-secondary {
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--line-2); border-radius: 7px;
+    padding: 7px 14px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .a-secondary:hover {
+    border-color: var(--accent);
+    background: var(--card2);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset;
+  }
+  .a-secondary:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset;
+  }
+
+  /* A: ghost */
+  .a-ghost {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line); border-radius: 7px;
+    padding: 7px 14px; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .a-ghost:hover { color: var(--text); border-color: var(--line-2); }
+
+  /* A: danger */
+  .a-danger {
+    background: rgba(248,113,113,0.10); color: var(--red);
+    border: 1px solid rgba(248,113,113,0.30); border-radius: 7px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .a-danger:hover {
+    background: rgba(248,113,113,0.18);
+    border-color: var(--red);
+    box-shadow: 0 0 8px rgba(248,113,113,0.20);
+    transform: translateY(-1px);
+  }
+  .a-danger:active { transform: translateY(1px); }
+
+  /* A: small toolbar */
+  .a-toolbar {
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 5px 11px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+  .a-toolbar:hover { border-color: var(--accent); background: var(--card2); }
+  .a-toolbar:active { transform: translateY(1px); box-shadow: none; }
+
+  .a-toolbar-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: 1px solid var(--accent); border-radius: 6px;
+    padding: 5px 11px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 2px 6px rgba(230,184,106,0.25);
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .a-toolbar-primary:hover { background: var(--accent-light); box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset, 0 3px 10px rgba(230,184,106,0.35); transform: translateY(-1px); }
+  .a-toolbar-primary:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset; }
+
+  /* ══════════════════════════════════════════
+     方案 B · 圆润 SaaS
+  ═══════════════════════════════════════════ */
+
+  .b-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 10px;
+    padding: 8px 18px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; letter-spacing: -0.005em;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
+  }
+  .b-primary:hover {
+    background: var(--accent-light);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(230,184,106,0.32);
+  }
+  .b-primary:active {
+    transform: scale(0.97);
+    box-shadow: none;
+  }
+
+  .b-secondary {
+    background: var(--card2); color: var(--text);
+    border: 1.5px solid var(--line-2); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, background 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  .b-secondary:hover {
+    border-color: var(--accent);
+    background: var(--card3);
+    transform: scale(1.02);
+  }
+  .b-secondary:active { transform: scale(0.97); }
+
+  .b-ghost {
+    background: transparent; color: var(--sub);
+    border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+    transition: color 0.15s, border-color 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  .b-ghost:hover { color: var(--text); border-color: var(--line-2); transform: scale(1.02); }
+  .b-ghost:active { transform: scale(0.97); }
+
+  .b-danger {
+    background: rgba(248,113,113,0.10); color: var(--red);
+    border: 1.5px solid rgba(248,113,113,0.30); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  .b-danger:hover {
+    background: rgba(248,113,113,0.18);
+    border-color: var(--red);
+    transform: scale(1.02);
+  }
+  .b-danger:active { transform: scale(0.97); }
+
+  .b-toolbar {
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 8px;
+    padding: 5px 12px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  .b-toolbar:hover { border-color: var(--accent); transform: scale(1.03); }
+  .b-toolbar:active { transform: scale(0.96); }
+
+  .b-toolbar-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 8px;
+    padding: 5px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1), box-shadow 0.18s;
+  }
+  .b-toolbar-primary:hover { background: var(--accent-light); transform: scale(1.04); box-shadow: 0 4px 12px rgba(230,184,106,0.28); }
+  .b-toolbar-primary:active { transform: scale(0.96); }
+
+  /* ══════════════════════════════════════════
+     方案 C · 分级清晰
+  ═══════════════════════════════════════════ */
+
+  .c-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 7px;
+    padding: 7px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; letter-spacing: -0.005em;
+    box-shadow: 0 2px 8px rgba(230,184,106,0.22);
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .c-primary:hover {
+    background: var(--accent-light);
+    box-shadow: 0 2px 12px rgba(230,184,106,0.36);
+  }
+  .c-primary:active { box-shadow: none; background: var(--accent-2); }
+
+  /* C: outlined secondary (accent border + tint bg) */
+  .c-secondary {
+    background: var(--accent-tint); color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 7px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .c-secondary:hover {
+    background: var(--accent-tint-strong);
+    border-color: var(--accent-light);
+  }
+  .c-secondary:active { background: rgba(230,184,106,0.22); }
+
+  /* C: ghost = pure text, no border */
+  .c-ghost {
+    background: transparent; color: var(--sub);
+    border: none; border-radius: 7px;
+    padding: 7px 14px; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+  }
+  .c-ghost:hover { color: var(--text); background: var(--card2); }
+  .c-ghost:active { background: var(--card3); }
+
+  .c-danger {
+    background: transparent; color: var(--red);
+    border: 1px solid rgba(248,113,113,0.40); border-radius: 7px;
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .c-danger:hover {
+    background: rgba(248,113,113,0.10);
+    border-color: var(--red);
+  }
+  .c-danger:active { background: rgba(248,113,113,0.18); }
+
+  .c-toolbar {
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 5px 11px; font-size: 12px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .c-toolbar:hover { border-color: var(--accent); color: var(--accent); }
+  .c-toolbar:active { background: var(--card2); }
+
+  .c-toolbar-primary {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 6px;
+    padding: 5px 11px; font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    box-shadow: 0 1px 6px rgba(230,184,106,0.20);
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .c-toolbar-primary:hover { background: var(--accent-light); box-shadow: 0 2px 10px rgba(230,184,106,0.32); }
+  .c-toolbar-primary:active { box-shadow: none; }
+
+  /* ── Verdict row ── */
+  .verdict {
+    margin-top: 28px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 12.5px; color: var(--sub);
+    line-height: 1.6;
+  }
+  .verdict strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>按钮设计 · 三方案预览</h1>
+  <p class="sub">鼠标悬停 / 点击每个按钮可测试交互状态。选好后告诉我哪套，我来批量替换主应用。</p>
+
+  <!-- ══ 方案 A ══════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">方案 A</div>
+    <div class="section-title">微立体</div>
+    <div class="section-desc">
+      主按钮有 amber 光晕 shadow + 顶部高光 inset，hover 上浮 1px，click 下压 1px。次按钮细边框 + 极淡 inset。
+      整体专业感强，适合金融工具，不抢 focus、不花哨。
+    </div>
+
+    <div class="btn-row">
+      <span class="row-label">primary</span>
+      <div class="btn-demo">
+        <button class="a-primary">+ 添加持仓</button>
+        <button class="a-primary">获取推荐</button>
+        <button class="a-primary">保存</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">secondary</span>
+      <div class="btn-demo">
+        <button class="a-secondary">取消</button>
+        <button class="a-secondary">编辑</button>
+        <button class="a-secondary">导出 JSON</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">ghost</span>
+      <div class="btn-demo">
+        <button class="a-ghost">跳过</button>
+        <button class="a-ghost">查看详情</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">danger</span>
+      <div class="btn-demo">
+        <button class="a-danger">关闭持仓</button>
+        <button class="a-danger">删除</button>
+      </div>
+    </div>
+
+    <div class="context-strip">
+      <span class="strip-label">工具栏 context</span>
+      <button class="a-toolbar">筛选</button>
+      <button class="a-toolbar">上次推荐 ★★★★</button>
+      <button class="a-toolbar">排序</button>
+      <button class="a-toolbar">导出</button>
+      <button class="a-toolbar-primary">+ 添加持仓</button>
+    </div>
+
+    <div class="verdict">
+      <strong>适合场景：</strong>整个 app 的主基调。主按钮有分量感但克制，次按钮不抢戏。amber glow 与品牌色高度一致，dark/light 两套都好看。
+    </div>
+  </div>
+
+  <!-- ══ 方案 B ══════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">方案 B</div>
+    <div class="section-title">圆润 SaaS</div>
+    <div class="section-desc">
+      border-radius 10px，padding 更宽松。hover 有轻微 scale(1.03) 弹出感，click 有 scale(0.97) 回弹。
+      风格偏 Linear / Vercel，更现代。按钮更"大"，手机上点击舒适度更高。
+    </div>
+
+    <div class="btn-row">
+      <span class="row-label">primary</span>
+      <div class="btn-demo">
+        <button class="b-primary">+ 添加持仓</button>
+        <button class="b-primary">获取推荐</button>
+        <button class="b-primary">保存</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">secondary</span>
+      <div class="btn-demo">
+        <button class="b-secondary">取消</button>
+        <button class="b-secondary">编辑</button>
+        <button class="b-secondary">导出 JSON</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">ghost</span>
+      <div class="btn-demo">
+        <button class="b-ghost">跳过</button>
+        <button class="b-ghost">查看详情</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">danger</span>
+      <div class="btn-demo">
+        <button class="b-danger">关闭持仓</button>
+        <button class="b-danger">删除</button>
+      </div>
+    </div>
+
+    <div class="context-strip">
+      <span class="strip-label">工具栏 context</span>
+      <button class="b-toolbar">筛选</button>
+      <button class="b-toolbar">上次推荐 ★★★★</button>
+      <button class="b-toolbar">排序</button>
+      <button class="b-toolbar">导出</button>
+      <button class="b-toolbar-primary">+ 添加持仓</button>
+    </div>
+
+    <div class="verdict">
+      <strong>适合场景：</strong>更活泼、更 consumer-friendly。如果目标用户是年轻散户这套很对。信息密度高的区域（持仓卡片里的小操作按钮）会稍显拥挤。
+    </div>
+  </div>
+
+  <!-- ══ 方案 C ══════════════════════════════ -->
+  <div class="section">
+    <div class="section-label">方案 C</div>
+    <div class="section-title">分级清晰</div>
+    <div class="section-desc">
+      三级明确层次：主按钮填充色 + shadow，次按钮 amber outlined（tint 底色 + accent 边框），ghost 完全无边框纯文字。
+      hover 改颜色深浅而非形变。视觉层次最清晰，适合 UI 复杂区域。
+    </div>
+
+    <div class="btn-row">
+      <span class="row-label">primary</span>
+      <div class="btn-demo">
+        <button class="c-primary">+ 添加持仓</button>
+        <button class="c-primary">获取推荐</button>
+        <button class="c-primary">保存</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">secondary</span>
+      <div class="btn-demo">
+        <button class="c-secondary">取消</button>
+        <button class="c-secondary">编辑</button>
+        <button class="c-secondary">导出 JSON</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">ghost</span>
+      <div class="btn-demo">
+        <button class="c-ghost">跳过</button>
+        <button class="c-ghost">查看详情</button>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span class="row-label">danger</span>
+      <div class="btn-demo">
+        <button class="c-danger">关闭持仓</button>
+        <button class="c-danger">删除</button>
+      </div>
+    </div>
+
+    <div class="context-strip">
+      <span class="strip-label">工具栏 context</span>
+      <button class="c-toolbar">筛选</button>
+      <button class="c-toolbar">上次推荐 ★★★★</button>
+      <button class="c-toolbar">排序</button>
+      <button class="c-toolbar">导出</button>
+      <button class="c-toolbar-primary">+ 添加持仓</button>
+    </div>
+
+    <div class="verdict">
+      <strong>适合场景：</strong>当前持仓卡片的 pos-actions 区域（编辑/平仓/加仓按钮一排）用这套最干净。次按钮全 amber outlined 在深色背景下很醒目，不会跟主按钮混。
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

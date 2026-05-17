@@ -10,30 +10,49 @@
 ## 1. 最近 12 个 commit（按新到旧）
 
 ```
+7af714e style: round 2 — premium polish (backdrop blur, focus rings, gradients)
+c982da7 style: UI polish — Linear/Vercel-inspired refinements
+4b9b15c fix(mobile): 16px font-size 规则不再套用到 select
+41299d1 fix(mobile): 移动端推荐 modal 难看 — 根因是缺 viewport meta
+197b60a docs: HANDOFF — 偏好云同步 + 简洁模式入主线，更新 backlog
 06772eb feat: 简洁模式 toggle（持仓卡 + 推荐卡）
 66d80cc feat: 偏好设置（lang/theme/tier_filter/rec_last_*）云端同步
-1193853 docs: HANDOFF rebase 后 SHA 更新
 9ff7d00 docs: 授权 — 部署/合并 main 不再单独问
 69d26f9 docs: HANDOFF 更新 — 算法 1.2 + Massive 移除 + 数据源 pill
 f773187 feat: 推荐列表顶部加数据源降级 pill
 0fc47de remove: Massive API（30 天历史价位带特性弃用）+ Schwab 错误日志
 8103520 algo 1.2: 财报因子改成距财报天数衰减
-88643f3 security: 加强 .gitignore + HANDOFF.md 补 public repo 注意事项
-3a47516 docs: 加 CLAUDE.md + HANDOFF.md
-a973cbb fix: sweep stale supabase auth keys on init (prevent PKCE drift)
-a4bf629 debug: visible auth diagnostic for mobile sign-in failures
-51a4a96 fix: don't strip ?code= from URL on load (Supabase PKCE needs it async)
-2c97f32 feat: Safari PKCE + Vercel Analytics + intro privacy section + contact email
-a9734d1 refactor: remove File System Access sync (replaced by Supabase cloud)
-23c70c6 fix: migration prompt uses in-page modal (was silently blocked after OAuth)
-4354462 feat: Supabase Auth (Google sign-in) + realtime cloud sync
-84ec1dd fix: compare-pill z-index above rec-form modal
-e4ca47e Trigger: force Vercel build (GitHub integration test)
-a4432f4 Add: 加仓预览 + 候选对比 + 手机 UX 优化 + 包租公分提示
-db30630 Deploy: bump trigger (stability test)
 ```
 
 ## 2. 本 session（cloud / 2026-05-17）做了什么
+
+### UI 打磨（`claude/polish-ui-design-T1D8m` → main，2 个 commit）
+
+**Round 1（`c982da7`）— Linear/Vercel 风格视觉精修**
+- border tokens: `--line`/`--line-2` 稍亮，暗色模式边框更清晰
+- `--accent-light: #F0C778` 变量，收拢全部硬编码
+- 移除 pos 卡 / rec 按钮 / compare pill 的 `translateY(-1px)` hover 浮起效果
+- `pos-hero` 加上下 hairline border，区块分层清晰
+- `pos-bar` 滑块：白圆 → accent 描边圆
+- `rec-rank`：粗体大号数字 → compact badge tag
+- 推荐卡加 3px 包租公分视觉条（随 verdict 颜色，short 策略才显示）
+- `kmet` 指标格加 border
+- `morning-brief` / `info-card` / `algo-badge` 去掉 border-left 金色（减少滥用）
+
+**Round 2（`7af714e`）— 精致感更深的改动**
+- `modal-backdrop`: `backdrop-filter: blur(10px) saturate(140%)` — 玻璃感
+- `:focus-visible` 全局 focus ring（3px accent 光晕，键盘only）
+- Summary 顶部数据区：28px 数字 + cv11/tnum font features + 伪元素分隔线 + 顶部极淡金线
+- `rec-btn-large` + `compare-pill`：linear-gradient + inner highlight + 暖金阴影晕
+- 品牌 mark drop-shadow 微光（hover 增强）
+- 所有卡片 transition 改 `cubic-bezier(0.16, 1, 0.3, 1)` — 自然减速曲线
+- 所有 modal shadow 加 inset highlight（配 backdrop blur）
+- `morning-brief` radial-gradient 暖色 / `algo-badge` 细微纵向 gradient
+- `pos-actions` 按钮改用 `--accent-tint` 变量（清理硬编码 rgba）
+
+---
+
+### 之前的 session（cloud / 2026-05-17）
 
 分支 `claude/product-suggestions-TzFsz` 合到 main 后又追加了 2 个 feature commit。
 

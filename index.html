@@ -22,10 +22,11 @@
     --text:      #EDEDEC;
     --sub:       #888889;
     --dim:       #5A5A5C;
-    --line:      #1C1C1F;
-    --line-2:    #2A2A2E;
+    --line:      #232328;
+    --line-2:    #2E2E36;
     --accent:    #E6B86A;
     --accent-2:  #B89255;
+    --accent-light: #F0C778;
     --accent-tint: rgba(230,184,106,0.10);
     --accent-tint-strong: rgba(230,184,106,0.18);
     --green:     #34D399;
@@ -34,8 +35,8 @@
     --yellow:    #E6B86A;
     --purple:    #E6B86A;
     --teal:      #34D399;
-    --shadow:    0 1px 2px rgba(0,0,0,0.4);
-    --shadow-lg: 0 12px 36px rgba(0,0,0,0.5);
+    --shadow:    0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.65);
     --header-bg: var(--bg);
     --chart-grid: rgba(255,255,255,0.06);
   }
@@ -48,8 +49,9 @@
     --text:      #1A1A1A;
     --sub:       #6B6B68;
     --dim:       #9A9A95;
-    --line:      #EAE7DC;
-    --line-2:    #D5D2C7;
+    --line:      #D8D4C8;
+    --line-2:    #C6C2B5;
+    --accent-light: #C89850;
     --accent:    #B89255;
     --accent-2:  #8C6E40;
     --accent-tint: rgba(184,146,85,0.10);
@@ -60,8 +62,8 @@
     --yellow:    #B89255;
     --purple:    #B89255;
     --teal:      #16A34A;
-    --shadow:    0 1px 2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 32px rgba(0,0,0,0.08);
+    --shadow:    0 1px 3px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 32px rgba(0,0,0,0.12);
     --header-bg: var(--bg);
     --chart-grid: rgba(0,0,0,0.08);
   }
@@ -71,8 +73,32 @@
                  "PingFang SC", "Microsoft YaHei", sans-serif;
     background: var(--bg); color: var(--text);
     padding: 28px max(20px, 3vw); -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
-    font-feature-settings: "ss01", "cv01";
+    font-feature-settings: "ss01", "cv01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  /* 全局 focus ring — 仅键盘 focus 显示（鼠标点击不打扰） */
+  *:focus { outline: none; }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible,
+  summary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-tint-strong);
+    border-color: var(--accent) !important;
+  }
+  /* 已有 accent 背景的按钮 focus ring 反向（描边） */
+  .pos-toolbar button.add-btn:focus-visible,
+  .rec-btn-large:focus-visible,
+  .rec-form button.submit:focus-visible,
+  .add-form .actions .submit:focus-visible,
+  .compare-pill:focus-visible,
+  .edit-form .ef-save:focus-visible,
+  .migrate-modal .btn-import:focus-visible {
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
   }
   .wrap { max-width: 1480px; margin: 0 auto; }
   .layout {
@@ -112,6 +138,11 @@
     flex-shrink: 0;
     color: var(--accent);
     display: inline-block;
+    filter: drop-shadow(0 0 10px rgba(230,184,106,0.18));
+    transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .header h1 .brand-link:hover .bzg-mark {
+    filter: drop-shadow(0 0 14px rgba(230,184,106,0.45));
   }
   .bzg-mark.size-lg { width: 1.1em; height: 1.1em; }
   /* Inline (in flowing text) — slightly smaller + no extra alignment */
@@ -135,9 +166,13 @@
     border-radius: 50%; width: 34px; height: 34px;
     cursor: pointer; display: flex; align-items: center;
     justify-content: center; font-size: 14px;
-    transition: border-color 0.15s;
+    transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .theme-toggle:hover { border-color: var(--accent); }
+  .theme-toggle:hover {
+    border-color: var(--line-2);
+    background: var(--card2);
+  }
   .theme-toggle .t-icon { line-height: 1; }
 
   /* 语言选择器（紧贴 theme-toggle 左侧） */
@@ -162,6 +197,7 @@
   .lang-selector button.active {
     background: var(--accent); color: #0A0A0B;
     font-weight: 600;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset;
   }
   @media (max-width: 720px) {
     .lang-selector { right: 44px; }
@@ -258,10 +294,12 @@
     width: min(440px, 94vw);
     z-index: 1400;
     background: var(--card);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-2);
     border-radius: 14px;
     padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
   }
   .migrate-modal.open { display: block; }
   .migrate-modal h3 {
@@ -305,7 +343,7 @@
   .migrate-modal .btn-import {
     background: var(--accent); color: #0A0A0B;
   }
-  .migrate-modal .btn-import:hover { background: #F0C778; }
+  .migrate-modal .btn-import:hover { background: var(--accent-light); }
   .migrate-modal .btn-skip {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -345,7 +383,6 @@
   .info-card {
     background: var(--card);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 10px;
     padding: 14px 18px;
     margin-bottom: 16px;
@@ -411,22 +448,53 @@
     margin-bottom: 18px; border: 1px solid var(--line);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
   }
-  .summary .item { text-align: center; }
+  /* summary 顶部一道极淡的金线，标记这是 "全局视图" */
+  .summary::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      var(--accent-tint-strong) 20%,
+      var(--accent-tint-strong) 80%,
+      transparent 100%);
+    opacity: 0.5;
+  }
+  .summary .item {
+    text-align: center;
+    padding: 6px 12px;
+    position: relative;
+  }
+  /* 用伪元素画分隔线，避免 grid wrap 时边框错位 */
+  .summary .item + .item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 18%; bottom: 18%;
+    width: 1px;
+    background: var(--line);
+  }
   .summary .item .lab {
-    font-size: 10.5px; color: var(--sub);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    margin-bottom: 10px; font-weight: 500;
+    font-size: 10px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 12px; font-weight: 600;
   }
   .summary .item .val {
-    font-size: 26px; font-weight: 600;
+    font-size: 28px; font-weight: 600;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
+    font-feature-settings: "tnum", "cv11";
+    letter-spacing: -0.035em;
+    line-height: 1.05;
   }
   .summary .item .hint {
-    font-size: 11px; color: var(--sub); margin-top: 8px;
-    line-height: 1.4; font-weight: 400;
+    font-size: 10.5px; color: var(--dim); margin-top: 10px;
+    line-height: 1.45; font-weight: 400;
+  }
+  @media (max-width: 720px) {
+    .summary .item + .item::before { display: none; }
   }
 
   /* Ticker 卡片 — 动态生成，含当日 sparkline */
@@ -438,7 +506,7 @@
   .tk-card {
     background: var(--card); border-radius: 12px;
     padding: 16px 18px; border: 1px solid var(--line);
-    transition: border-color 0.15s;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .tk-card:hover { border-color: var(--line-2); }
   .tk-head {
@@ -491,11 +559,13 @@
     background: var(--card);
     border-radius: 12px; padding: 0;
     border: 1px solid var(--line);
-    transition: border-color 0.15s, transform 0.15s;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
   }
   .pos:hover {
-    border-color: var(--line-2); transform: translateY(-1px);
+    border-color: var(--line-2);
+    background: rgba(255,255,255,0.012);
   }
   .pos.unchecked { opacity: 0.4; }
   /* 状态描边整体着色，取代左边粗条 */
@@ -577,6 +647,8 @@
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; padding: 10px 14px;
     background: var(--inset);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .pos-hero .stat {
     display: flex; flex-direction: column; gap: 2px;
@@ -614,8 +686,10 @@
   .pos-bar .marker {
     position: absolute; top: -3px;
     width: 12px; height: 12px;
-    background: white; border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--card), 0 2px 5px rgba(15,23,42,0.2);
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--bg);
     transform: translateX(-50%);
     transition: left 0.3s;
   }
@@ -651,15 +725,17 @@
     border-top: 1px solid var(--line);
   }
   .pos-actions button {
-    background: rgba(230,184,106,0.10);
+    background: var(--accent-tint);
     border: 1px solid rgba(230,184,106,0.30);
     color: var(--accent);
     font-size: 11px; font-weight: 600;
     padding: 5px 12px; border-radius: 5px;
     cursor: pointer;
+    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .pos-actions button:hover {
-    background: rgba(230,184,106,0.20);
+    background: var(--accent-tint-strong);
     border-color: var(--accent);
   }
   .pos-actions button.danger-btn {
@@ -730,7 +806,7 @@
   .edit-form .ef-save {
     background: var(--accent); color: #0A0A0B;
   }
-  .edit-form .ef-save:hover { background: #F0C778; }
+  .edit-form .ef-save:hover { background: var(--accent-light); }
   .edit-form .ef-cancel {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -894,7 +970,8 @@
   .pos-stats .stat {
     display: flex; align-items: baseline;
     justify-content: space-between; gap: 4px;
-    padding: 4px 8px; background: var(--card2);
+    padding: 5px 8px; background: var(--card2);
+    border: 1px solid var(--line);
     border-radius: 5px;
     min-width: 0;
   }
@@ -942,6 +1019,10 @@
     font-family: inherit; font-weight: 500;
     transition: border-color 0.15s, background 0.15s;
     letter-spacing: -0.005em;
+    min-height: 30px;
+    line-height: 1.3;
+    display: inline-flex; align-items: center;
+    box-sizing: border-box;
   }
   .pos-toolbar button:hover, .pos-toolbar select:hover {
     border-color: var(--accent); background: var(--card2);
@@ -950,7 +1031,7 @@
     background: var(--accent); color: #0A0A0B; border-color: var(--accent);
     font-weight: 600;
   }
-  .pos-toolbar button.add-btn:hover { background: #F0C778; }
+  .pos-toolbar button.add-btn:hover { background: var(--accent-light); }
   .pos-toolbar button.linked {
     background: rgba(74,222,128,0.12);
     border-color: var(--green);
@@ -965,9 +1046,7 @@
     width: 1px; height: 22px; background: var(--line);
     margin: 0 6px;
   }
-  .pos-toolbar button.small {
-    padding: 4px 10px; font-size: 11px;
-  }
+  /* .small 旧覆盖已移除——所有 toolbar 按钮统一尺寸 */
   /* Dropdown 菜单 */
   .dropdown { position: relative; display: inline-block; }
   .dropdown-menu {
@@ -1006,20 +1085,23 @@
     margin: 4px 0;
   }
 
-  /* 右侧"找最佳 Option"主按钮 — 单色暖金，扁平 */
+  /* 右侧"找最佳 Option"主按钮 — 暖金渐变，主 CTA 视觉权重 */
   .rec-btn-large {
     width: 100%;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
     color: #0A0A0B; border: 1px solid var(--accent);
     border-radius: 10px;
     padding: 16px 18px;
     cursor: pointer;
     text-align: left;
-    transition: transform 0.15s, background 0.15s;
+    transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     display: flex; align-items: center; gap: 12px;
     overflow: hidden;
     letter-spacing: -0.01em;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(230,184,106,0.18);
   }
   .rec-btn-large::after {
     content: '→';
@@ -1029,8 +1111,12 @@
     transition: transform 0.15s;
   }
   .rec-btn-large:hover {
-    background: #F0C778;
-    transform: translateY(-1px);
+    filter: brightness(1.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                0 6px 20px rgba(230,184,106,0.30);
+  }
+  .rec-btn-large:active {
+    filter: brightness(0.96);
   }
 
   /* 维护模式 — 置灰，不可点击的视觉 */
@@ -1189,9 +1275,11 @@
     transform: translate(-50%, -50%);
     width: min(820px, 94vw); max-height: 90vh;
     overflow-y: auto; z-index: 1001;
-    background: var(--card); border: 1px solid var(--line);
+    background: var(--card); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
   }
   .review-modal.open { display: block; }
   .review-modal h3 {
@@ -1230,14 +1318,31 @@
     text-transform: uppercase; letter-spacing: 0.5px;
   }
 
-  /* 模态遮罩 */
+  /* 模态遮罩 — backdrop blur 是 premium 感最大杠杆 */
   .modal-backdrop {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
     z-index: 1000;
   }
   .modal-backdrop.show { display: block; }
+  :root[data-theme="light"] .modal-backdrop {
+    background: rgba(20,20,18,0.25);
+  }
+  :root[data-theme="light"] .rec-form .opt-btn {
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  :root[data-theme="light"] .rec-form .opt-btn:hover {
+    background: rgba(230,184,106,0.10);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  :root[data-theme="light"] .rec-form .opt-btn.selected {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset,
+                0 3px 10px rgba(200,152,80,0.35);
+  }
   .rec-form.modal {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -1246,8 +1351,10 @@
     z-index: 1001;
     margin: 0;
     background: var(--card);
-    border: 1px solid var(--line);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    border: 1px solid var(--line-2);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
   }
 
   /* ── 推荐引擎表单 + 结果 ───────────────────────────────────────────── */
@@ -1268,24 +1375,131 @@
     cursor: pointer; color: var(--sub); font-size: 20px;
   }
   .rec-form .row {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    margin-bottom: 14px; align-items: center;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 20px; align-items: center;
   }
   .rec-form .label {
     font-size: 11px; color: var(--sub);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    width: 100%; margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.07em;
+    font-weight: 500;
+    width: 100%; margin-bottom: 6px;
   }
   .rec-form .opt-btn {
-    background: var(--card2); border: 1px solid var(--line);
-    color: var(--text); border-radius: 6px;
-    padding: 7px 12px; font-size: 12px; cursor: pointer;
-    transition: all 0.15s;
+    background: transparent;
+    border: 1.5px solid var(--line-2);
+    color: var(--text); border-radius: 10px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: -0.005em;
+    line-height: 1.3;
+    font-family: inherit;
   }
-  .rec-form .opt-btn:hover { border-color: var(--accent); }
+  .rec-form .opt-btn:hover {
+    border-color: var(--accent);
+    background: rgba(230,184,106,0.07);
+    color: var(--text);
+  }
   .rec-form .opt-btn.selected {
-    background: var(--accent); color: #0A0A0B;
-    border-color: var(--accent); font-weight: 600;
+    background: var(--accent);
+    color: #0A0A0B;
+    border-color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset,
+                0 4px 14px rgba(230,184,106,0.30);
+  }
+
+  /* ── Section-typed layouts: 按 section 类型选择最佳控件布局 ── */
+  /* 方向（3 项互斥）：等宽 segmented-control 风格 */
+  .rec-form .row[data-section="direction"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="direction"] .label { grid-column: 1 / -1; }
+
+  /* 策略意图（5 项）：2 列网格，LEAPS 占整行 */
+  .rec-form .row[data-section="intent"] {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="intent"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="intent"] .opt-btn[data-value="long_leaps"] {
+    grid-column: 1 / -1;
+  }
+
+  /* 时长（7 项）：3 列网格 3+3+1，LEAPS 占整行 */
+  .rec-form .row[data-section="timeframe"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="timeframe"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="timeframe"] .opt-btn[data-value="400"] {
+    grid-column: 1 / -1;
+  }
+
+  /* 方向 opt-btn 内部：emoji + 文字横排 */
+  .rec-form .row[data-section="direction"] .opt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .rec-form .row[data-section="direction"] .opt-icon {
+    font-size: 14px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+
+  /* 风险（3 项 + Δ 元数据）：等宽 card，emoji + 主副标题 grid 布局 */
+  .rec-form .row[data-section="risk"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="risk"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="risk"] .opt-btn {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "icon title"
+      "sub  sub";
+    column-gap: 7px;
+    row-gap: 1px;
+    align-items: center;
+    text-align: left;
+    padding: 10px 12px;
+    min-height: 58px;
+  }
+  .rec-form .row[data-section="risk"] .opt-icon {
+    grid-area: icon;
+    font-size: 16px; line-height: 1;
+    display: inline-flex; align-items: center;
+  }
+  .rec-form .row[data-section="risk"] .opt-title {
+    grid-area: title;
+    align-self: center;
+  }
+  .rec-form .row[data-section="risk"] .opt-sub {
+    grid-area: sub;
+    margin-top: 1px;
+  }
+  .rec-form .opt-title {
+    font-size: 13.5px; font-weight: 600;
+    line-height: 1.2; letter-spacing: -0.01em;
+  }
+  .rec-form .opt-sub {
+    font-size: 10.5px; color: var(--sub);
+    font-family: "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums; line-height: 1.2;
+  }
+  .rec-form .opt-btn.selected .opt-title,
+  .rec-form .opt-btn.selected .opt-sub { color: #0A0A0B; }
+  .rec-form .opt-btn.selected .opt-sub { opacity: 0.72; }
+  .rec-form .risk-hint {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    font-size: 11px; color: var(--sub);
+    line-height: 1.4;
   }
   .rec-form input[type="text"], .rec-form input[type="number"] {
     background: var(--card2); border: 1px solid var(--line);
@@ -1332,7 +1546,7 @@
     padding: 9px 18px; font-size: 13px; font-weight: 600;
     cursor: pointer; letter-spacing: -0.005em;
   }
-  .rec-form button.submit:hover { background: #F0C778; }
+  .rec-form button.submit:hover { background: var(--accent-light); }
   .rec-form button.cancel {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -1406,10 +1620,11 @@
   /* 包租公算法徽章 */
   .algo-badge {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px;
-    background: var(--card);
+    padding: 9px 14px;
+    background: linear-gradient(180deg,
+      rgba(230,184,106,0.06) 0%,
+      rgba(230,184,106,0.02) 100%);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 8px;
     margin-bottom: 12px;
     font-size: 12px;
@@ -1527,19 +1742,51 @@
   .rec-card {
     background: var(--card); border: 1px solid var(--line);
     border-radius: 10px; padding: 16px 18px;
-    transition: border-color 0.15s;
+    transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .rec-card:hover { border-color: var(--line-2); }
+  .rec-card:hover {
+    border-color: var(--line-2);
+    background: rgba(255,255,255,0.012);
+  }
   .rec-head {
     display: flex; align-items: center; gap: 12px;
     margin-bottom: 8px;
   }
   .rec-rank {
-    font-size: 18px; font-weight: 800;
-    color: var(--accent); flex-shrink: 0;
-    min-width: 36px;
+    font-size: 11px; font-weight: 600;
+    color: var(--sub);
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    align-self: flex-start;
+    margin-top: 2px;
   }
   .rec-title { flex: 1; min-width: 0; }
+  /* 包租公分视觉条 — 3px 细线，随 verdict 颜色变 */
+  .rec-score-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 5px;
+  }
+  .rec-score-bar {
+    flex: 1; height: 3px;
+    background: var(--card3);
+    border-radius: 2px; overflow: hidden;
+  }
+  .rec-score-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .rec-score-num {
+    font-size: 10px; color: var(--sub);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", Menlo, monospace;
+    flex-shrink: 0; min-width: 20px; text-align: right;
+  }
   .rec-contract {
     font-size: 14px; font-weight: 600;
     display: flex; align-items: baseline; gap: 6px;
@@ -1572,7 +1819,7 @@
   .rec-oneline {
     background: var(--card2);
     border-left: 3px solid var(--accent);
-    padding: 8px 12px; border-radius: 4px;
+    padding: 8px 12px; border-radius: 6px;
     font-size: 12px; line-height: 1.5;
     margin-bottom: 10px;
   }
@@ -1582,7 +1829,9 @@
     gap: 8px; margin-bottom: 8px;
   }
   .kmet {
-    background: var(--card2); border-radius: 6px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
     padding: 6px 10px; text-align: center;
   }
   .kmet-l { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
@@ -1662,23 +1911,29 @@
     position: fixed;
     bottom: 24px; left: 50%;
     transform: translateX(-50%);
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
     color: #0A0A0B;
     border: none; border-radius: 999px;
     padding: 12px 24px;
     font-size: 14px; font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(230,184,106,0.4),
-                0 0 0 1px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                0 8px 28px rgba(230,184,106,0.32),
+                0 1px 0 rgba(0,0,0,0.04);
     z-index: 1100;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex; align-items: center; gap: 8px;
     font-family: inherit;
     letter-spacing: -0.01em;
   }
   .compare-pill:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 12px 32px rgba(230,184,106,0.5);
+    filter: brightness(1.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset,
+                0 10px 36px rgba(230,184,106,0.46);
+  }
+  .compare-pill:active {
+    filter: brightness(0.96);
   }
   .compare-pill .pill-count {
     background: rgba(0,0,0,0.18);
@@ -1702,9 +1957,11 @@
     transform: translate(-50%, -50%);
     width: min(540px, 94vw); max-height: 90vh;
     overflow-y: auto; z-index: 1200;
-    background: var(--card); border: 1px solid var(--line);
+    background: var(--card); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 22px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
   }
   .preview-modal.open { display: block; }
   .preview-modal h3 {
@@ -1778,9 +2035,11 @@
     transform: translate(-50%, -50%);
     width: min(960px, 96vw); max-height: 90vh;
     overflow: auto; z-index: 1200;
-    background: var(--card); border: 1px solid var(--line);
+    background: var(--card); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
   }
   .compare-modal.open { display: block; }
   .compare-modal h3 {
@@ -1896,11 +2155,14 @@
   }
   .earnings-warn strong { color: var(--orange); }
 
-  /* ☀️ Morning Brief */
+  /* ☀️ Morning Brief — 每日重点，微金色暖光底 */
   .morning-brief {
-    background: var(--card);
+    background:
+      radial-gradient(140% 100% at 0% 0%,
+        rgba(230,184,106,0.07) 0%,
+        rgba(230,184,106,0) 50%),
+      var(--card);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 10px;
     padding: 16px 20px;
     margin-bottom: 16px;
@@ -2142,7 +2404,7 @@
   .add-form .actions .submit {
     background: var(--accent); color: #0A0A0B;
   }
-  .add-form .actions .submit:hover { background: #F0C778; }
+  .add-form .actions .submit:hover { background: var(--accent-light); }
   .add-form .actions .submit:disabled {
     opacity: 0.4; cursor: not-allowed;
   }
@@ -2354,9 +2616,43 @@
     input[type="text"], input[type="number"], input[type="date"],
     .rec-form input[type="text"], .rec-form input[type="number"],
     textarea { font-size: 16px !important; }
-    /* row 里的 opt-btn 在长文本时溢出/不换行 → 强制可换行 + 单 button 不超容器 */
+    /* rec-form 移动端布局全面重做 */
     .rec-form .row { row-gap: 8px; }
-    .rec-form .opt-btn { max-width: 100%; white-space: normal; line-height: 1.3; }
+
+    /* 所有 opt-btn：Apple HIG 最小触控目标 44px，居中对齐 */
+    .rec-form .opt-btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: normal;
+      text-align: center;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 10px;
+    }
+
+    /* timeframe：强制 3 列 grid（7 项 → 3+3+1，LEAPS 独占最后行） */
+    .rec-form .opt-btn[data-group="timeframe"] {
+      flex: 1 1 calc(33.33% - 8px);
+      max-width: calc(33.33% - 8px);
+      font-size: 12px;
+    }
+
+    /* intent：2 列，每行 2 个，最后 LEAPS 独占全宽 */
+    .rec-form .opt-btn[data-group="intent"] {
+      flex: 1 1 calc(50% - 6px);
+      max-width: calc(50% - 6px);
+    }
+    .rec-form .opt-btn[data-group="intent"][data-value="long_leaps"] {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+
+    /* 工具栏按钮：至少 36px 高保证触控 */
+    .pos-toolbar button, .pos-toolbar select {
+      min-height: 36px;
+    }
 
     .summary { grid-template-columns: repeat(2, 1fr); padding: 16px 12px; gap: 12px; }
     .summary .item .val { font-size: 19px; }
@@ -2378,13 +2674,49 @@
 
     /* card 内 padding 全员缩 */
     .card { padding: 16px 14px; }
-    .rec-card { padding: 14px; }
+    .rec-card { padding: 12px !important; }
+    .rec-cards { gap: 8px !important; }
 
-    /* 推荐结果 metrics grid 强制 2 列 */
-    .rec-metrics { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-    .kmet { padding: 8px 10px !important; }
-    .kmet-l { font-size: 9.5px !important; }
-    .kmet-v { font-size: 14px !important; }
+    /* 推荐结果 metrics grid → 3 列 2 行（省一整行高度）*/
+    .rec-metrics { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; margin-bottom: 8px !important; }
+    .kmet { padding: 5px 6px !important; border-radius: 5px !important; }
+    .kmet-l { font-size: 9px !important; margin-bottom: 1px !important; }
+    .kmet-v { font-size: 13px !important; }
+
+    /* 推荐卡 head: rank+title 左，actions 竖排右，不换行 */
+    .rec-head { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 6px !important; }
+    .rec-actions { flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; }
+    .rec-card .add-btn { flex: unset !important; padding: 6px 10px !important; font-size: 11px !important; white-space: nowrap !important; }
+    .rec-actions .preview-btn { padding: 5px 8px !important; font-size: 10.5px !important; text-align: center !important; white-space: nowrap !important; }
+    .rec-contract { gap: 4px; flex-wrap: wrap; }
+    .rec-contract .rec-exp { font-size: 10.5px !important; margin-left: 0 !important; }
+    .rec-head .rec-rank { margin-top: 3px !important; }
+
+    /* 一句话评价：tighter */
+    .rec-oneline { padding: 6px 10px !important; font-size: 11.5px !important; line-height: 1.4 !important; margin-bottom: 8px !important; }
+
+    /* 加入对比 checkbox：compact */
+    .rec-compare-check { padding: 1px 0 !important; font-size: 10.5px !important; margin-bottom: 4px !important; gap: 5px !important; }
+    .rec-compare-check input[type="checkbox"] { width: 12px !important; height: 12px !important; }
+
+    /* algo-badge：紧凑，减少结果区顶部空白 */
+    .algo-badge { padding: 7px 10px !important; gap: 8px !important; margin-bottom: 8px !important; font-size: 11px !important; }
+    .algo-badge .algo-tag { font-size: 10px !important; }
+
+    /* iv-banner：缩 */
+    .iv-banner { padding: 10px 12px !important; margin: 8px 0 !important; }
+    .iv-rank-bar { margin-bottom: 6px !important; }
+    .iv-text { font-size: 11px !important; line-height: 1.4 !important; }
+
+    /* disclaimer：缩 */
+    .disclaimer { padding: 6px 10px !important; font-size: 10.5px !important; margin: 8px 0 !important; }
+
+    /* tier-filter：缩 */
+    .tier-filter { margin: 10px 0 8px !important; gap: 6px !important; }
+    .tier-filter .tf-pill { padding: 4px 10px !important; font-size: 11px !important; }
+
+    /* rec-result summary 文字行 */
+    .rec-result .summary { font-size: 11px !important; margin-bottom: 6px !important; }
 
     /* 推荐表单 grid 收成单列 */
     .rec-form .rf-grid { grid-template-columns: 1fr !important; }
@@ -2395,12 +2727,6 @@
     /* 持仓卡 actions 全宽并列 */
     .pos-actions { flex-wrap: wrap; gap: 6px; }
     .pos-actions button { flex: 1 1 calc(33% - 4px); min-width: 0; font-size: 11px; }
-
-    /* 推荐卡 head 行手机换行 */
-    .rec-head { flex-wrap: wrap; }
-    .rec-card .add-btn { flex: 0 0 auto; }
-    .rec-contract { gap: 4px; }
-    .rec-contract .rec-exp { width: 100%; margin-left: 0; }
 
     /* pros/cons 改单列 */
     .rec-proscons { grid-template-columns: 1fr !important; }
@@ -2750,7 +3076,7 @@
               <option value="distance_asc" data-i18n="🎯 距行权 · 近→远">🎯 距行权 · 近→远</option>
               <option value="distance_desc" data-i18n="🛡 距行权 · 远→近">🛡 距行权 · 远→近</option>
               <option value="days_asc" data-i18n="⏱️ 到期 · 近→远">⏱️ 到期 · 近→远</option>
-              <option value="days_desc" data-i18n="📅 到期 · 远→近">📅 到期 · 远→近</option>
+              <option value="days_desc" data-i18n="到期 · 远→近">到期 · 远→近</option>
               <option value="sold_desc" data-i18n="🪙 权利金 · 大→小">🪙 权利金 · 大→小</option>
               <option value="theta_desc" data-i18n="⚙️ Theta · 大→小">⚙️ Theta · 大→小</option>
             </select>
@@ -2861,47 +3187,68 @@
     <button class="preset-btn" data-preset="iron_condor_neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="ticker">
     <span class="label" data-i18n="1. 标的 Ticker">1. 标的 Ticker</span>
     <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
     <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="direction">
     <span class="label" data-i18n="2. 你的方向看法">2. 你的方向看法</span>
-    <button class="opt-btn" data-group="direction" data-value="bullish" data-i18n="📈 长期看涨">📈 长期看涨</button>
-    <button class="opt-btn" data-group="direction" data-value="bearish" data-i18n="📉 长期看跌">📉 长期看跌</button>
-    <button class="opt-btn" data-group="direction" data-value="neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
+    <button class="opt-btn" data-group="direction" data-value="bullish">
+      <span class="opt-icon" aria-hidden="true">📈</span>
+      <span class="opt-text" data-i18n="长期看涨">长期看涨</span>
+    </button>
+    <button class="opt-btn" data-group="direction" data-value="bearish">
+      <span class="opt-icon" aria-hidden="true">📉</span>
+      <span class="opt-text" data-i18n="长期看跌">长期看跌</span>
+    </button>
+    <button class="opt-btn" data-group="direction" data-value="neutral">
+      <span class="opt-icon" aria-hidden="true">↔️</span>
+      <span class="opt-text" data-i18n="区间震荡">区间震荡</span>
+    </button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="intent">
     <span class="label" data-i18n="3. 策略意图">3. 策略意图</span>
-    <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="💰 收权利金">💰 收权利金</button>
-    <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="🎯 准备接货（CSP）">🎯 准备接货（CSP）</button>
-    <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="📤 减仓（Covered Call）">📤 减仓（Covered Call）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="🚀 做多波动率（近期）">🚀 做多波动率（近期）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="📖 LEAPS 股票替代（长期 Long Call）">📖 LEAPS 股票替代（长期 Long Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="收权利金">收权利金</button>
+    <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="准备接货（CSP）">准备接货（CSP）</button>
+    <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="减仓（Covered Call）">减仓（Covered Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="做多波动率（近期）">做多波动率（近期）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="LEAPS 股票替代（长期 Long Call）">LEAPS 股票替代（长期 Long Call）</button>
   </div>
 
   <div id="rec-conflict-hint" style="display:none;font-size:12px;color:var(--yellow);padding:6px 10px;background:rgba(234,179,8,0.08);border-radius:6px;margin-bottom:2px"></div>
 
-  <div class="row">
+  <div class="row" data-section="timeframe">
     <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
-    <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="📅 当周 1-5天">📅 当周 1-5天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="📅 下周 6-12天">📅 下周 6-12天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="📅 当月 14-30天">📅 当月 14-30天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="45"  data-i18n="📅 下月 30-60天">📅 下月 30-60天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="90"  data-i18n="📅 季度 60-120天">📅 季度 60-120天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="180" data-i18n="📅 半年 150-240天">📅 半年 150-240天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="📅 LEAPS 1年+">📅 LEAPS 1年+</button>
+    <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="当周 1-5天">当周 1-5天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="下周 6-12天">下周 6-12天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="当月 14-30天">当月 14-30天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="45"  data-i18n="下月 30-60天">下月 30-60天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="90"  data-i18n="季度 60-120天">季度 60-120天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="180" data-i18n="半年 150-240天">半年 150-240天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="LEAPS 1年+">LEAPS 1年+</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="risk">
     <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
-    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative" data-i18n="🛡 保守">🛡 保守</button>
-    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced" data-i18n="⚖️ 平衡">⚖️ 平衡</button>
-    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive" data-i18n="🔥 激进">🔥 激进</button>
-    <span id="risk-hint" style="font-size:11px;color:var(--sub);margin-left:8px"></span>
+    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative">
+      <span class="opt-icon" aria-hidden="true">🛡</span>
+      <span class="opt-title" data-i18n="保守">保守</span>
+      <span class="opt-sub" id="risk-sub-conservative">Δ —</span>
+    </button>
+    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced">
+      <span class="opt-icon" aria-hidden="true">⚖️</span>
+      <span class="opt-title" data-i18n="平衡">平衡</span>
+      <span class="opt-sub" id="risk-sub-balanced">Δ —</span>
+    </button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive">
+      <span class="opt-icon" aria-hidden="true">🔥</span>
+      <span class="opt-title" data-i18n="激进">激进</span>
+      <span class="opt-sub" id="risk-sub-aggressive">Δ —</span>
+    </button>
+    <span class="risk-hint" id="risk-hint"></span>
   </div>
 
   <div class="submit-row">
@@ -3132,7 +3479,7 @@ const I18N = {
     '🎯 距行权 · 近→远': '🎯 距行權 · 近→遠',
     '🛡 距行权 · 远→近': '🛡 距行權 · 遠→近',
     '⏱️ 到期 · 近→远': '⏱️ 到期 · 近→遠',
-    '📅 到期 · 远→近': '📅 到期 · 遠→近',
+    '到期 · 远→近': '到期 · 遠→近',
     '🪙 权利金 · 大→小': '🪙 權利金 · 大→小',
     '⚙️ Theta · 大→小': '⚙️ Theta · 大→小',
     '📊 持仓快照 CSV': '📊 持倉快照 CSV',
@@ -3209,21 +3556,24 @@ const I18N = {
     '3. 策略意图': '3. 策略意圖',
     '4. 持仓时长': '4. 持倉時長',
     '5. 风险偏好': '5. 風險偏好',
-    '📈 长期看涨': '📈 長期看漲',
-    '📉 长期看跌': '📉 長期看跌',
-    '↔️ 区间震荡 ': '↔️ 區間震盪 ',
-    '💰 收权利金': '💰 收權利金',
-    '🎯 准备接货（CSP）': '🎯 準備接貨（CSP）',
-    '📤 减仓（Covered Call）': '📤 減倉（Covered Call）',
-    '🚀 做多波动率（近期）': '🚀 做多波動率（近期）',
-    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS 股票替代（長期 Long Call）',
-    '📅 当周 1-5天': '📅 當週 1-5天',
-    '📅 下周 6-12天': '📅 下週 6-12天',
-    '📅 当月 14-30天': '📅 當月 14-30天',
-    '📅 下月 30-60天': '📅 下月 30-60天',
-    '📅 季度 60-120天': '📅 季度 60-120天',
-    '📅 半年 150-240天': '📅 半年 150-240天',
-    '📅 LEAPS 1年+': '📅 LEAPS 1年+',
+    '长期看涨': '長期看漲',
+    '长期看跌': '長期看跌',
+    '区间震荡': '區間震盪',
+    '收权利金': '收權利金',
+    '准备接货（CSP）': '準備接貨（CSP）',
+    '减仓（Covered Call）': '減倉（Covered Call）',
+    '做多波动率（近期）': '做多波動率（近期）',
+    'LEAPS 股票替代（长期 Long Call）': 'LEAPS 股票替代（長期 Long Call）',
+    '保守': '保守',
+    '平衡': '平衡',
+    '激进': '激進',
+    '当周 1-5天': '當週 1-5天',
+    '下周 6-12天': '下週 6-12天',
+    '当月 14-30天': '當月 14-30天',
+    '下月 30-60天': '下月 30-60天',
+    '季度 60-120天': '季度 60-120天',
+    '半年 150-240天': '半年 150-240天',
+    'LEAPS 1年+': 'LEAPS 1年+',
     '🛡 保守（Δ < 0.20）': '🛡 保守（Δ < 0.20）',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ 平衡（Δ 0.20-0.35）',
     '🔥 激进（Δ > 0.35）': '🔥 激進（Δ > 0.35）',
@@ -3702,7 +4052,7 @@ const I18N = {
     '🎯 距行权 · 近→远': '🎯 Strike · near→far',
     '🛡 距行权 · 远→近': '🛡 Strike · far→near',
     '⏱️ 到期 · 近→远': '⏱️ Expiry · near→far',
-    '📅 到期 · 远→近': '📅 Expiry · far→near',
+    '到期 · 远→近': 'Expiry · far→near',
     '🪙 权利金 · 大→小': '🪙 Premium · large→small',
     '⚙️ Theta · 大→小': '⚙️ Theta · large→small',
     '📊 持仓快照 CSV': '📊 Positions CSV',
@@ -3779,21 +4129,24 @@ const I18N = {
     '3. 策略意图': '3. Strategy Intent',
     '4. 持仓时长': '4. Time Horizon',
     '5. 风险偏好': '5. Risk Profile',
-    '📈 长期看涨': '📈 Long-term Bullish',
-    '📉 长期看跌': '📉 Long-term Bearish',
-    '↔️ 区间震荡 ': '↔️ Range-bound ',
-    '💰 收权利金': '💰 Collect Premium',
-    '🎯 准备接货（CSP）': '🎯 Cash-Secured Put',
-    '📤 减仓（Covered Call）': '📤 Covered Call',
-    '🚀 做多波动率（近期）': '🚀 Long Volatility (near-term)',
-    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS Stock Replacement',
-    '📅 当周 1-5天': '📅 This week 1-5d',
-    '📅 下周 6-12天': '📅 Next week 6-12d',
-    '📅 当月 14-30天': '📅 This month 14-30d',
-    '📅 下月 30-60天': '📅 Next month 30-60d',
-    '📅 季度 60-120天': '📅 Quarterly 60-120d',
-    '📅 半年 150-240天': '📅 6 months 150-240d',
-    '📅 LEAPS 1年+': '📅 LEAPS 1y+',
+    '长期看涨': 'Long-term Bullish',
+    '长期看跌': 'Long-term Bearish',
+    '区间震荡': 'Range-bound',
+    '收权利金': 'Collect Premium',
+    '准备接货（CSP）': 'Cash-Secured Put',
+    '减仓（Covered Call）': 'Covered Call',
+    '做多波动率（近期）': 'Long Volatility (near-term)',
+    'LEAPS 股票替代（长期 Long Call）': 'LEAPS Stock Replacement',
+    '保守': 'Conservative',
+    '平衡': 'Balanced',
+    '激进': 'Aggressive',
+    '当周 1-5天': 'This week 1-5d',
+    '下周 6-12天': 'Next week 6-12d',
+    '当月 14-30天': 'This month 14-30d',
+    '下月 30-60天': 'Next month 30-60d',
+    '季度 60-120天': 'Quarterly 60-120d',
+    '半年 150-240天': '6 months 150-240d',
+    'LEAPS 1年+': 'LEAPS 1y+',
     '🛡 保守（Δ < 0.20）': '🛡 Conservative (Δ < 0.20)',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ Balanced (Δ 0.20-0.35)',
     '🔥 激进（Δ > 0.35）': '🔥 Aggressive (Δ > 0.35)',
@@ -6387,17 +6740,12 @@ const _RISK_BANDS = {
 function _updateRiskLabels() {
   const intent = _recSelection.intent;
   const bands = _RISK_BANDS[intent] || _RISK_BANDS.default;
-  const labels = {
-    conservative: `🛡 保守（Δ ${bands.conservative}）`,
-    balanced:     `⚖️ 平衡（Δ ${bands.balanced}）`,
-    aggressive:   `🔥 激进（Δ ${bands.aggressive}）`,
-  };
-  for (const [k, txt] of Object.entries(labels)) {
-    const el = document.getElementById(`risk-btn-${k}`);
-    if (el) el.textContent = txt;
-  }
+  ['conservative', 'balanced', 'aggressive'].forEach(k => {
+    const sub = document.getElementById(`risk-sub-${k}`);
+    if (sub) sub.textContent = `Δ ${bands[k]}`;
+  });
   const hintEl = document.getElementById('risk-hint');
-  if (hintEl) hintEl.textContent = bands.hint;
+  if (hintEl) hintEl.textContent = t(bands.hint);
 }
 
 async function submitRec() {
@@ -6637,6 +6985,15 @@ function renderRecResult(d) {
       green: 'var(--green)', yellow: 'var(--yellow)',
       orange: 'var(--orange)', red: 'var(--red)',
     }[v.color] || 'var(--accent)';
+    const scoreRaw = opt.rent_score ?? opt.score ?? 0;
+    const scorePct = Math.min(100, Math.round(scoreRaw * 100));
+    const scoreBar = isShort ? `
+      <div class="rec-score-row">
+        <div class="rec-score-bar" title="${t('包租公分')}: ${scorePct}">
+          <div class="rec-score-fill" style="width:${scorePct}%;background:${verdictColor}"></div>
+        </div>
+        <span class="rec-score-num" style="color:${verdictColor}">${scorePct}</span>
+      </div>` : '';
 
     const prosHtml = (v.pros || []).map(p => `<li>✓ ${p}</li>`).join('');
     const consHtml = (v.cons || []).map(co => `<li>✗ ${co}</li>`).join('');
@@ -6677,6 +7034,7 @@ function renderRecResult(d) {
             <div class="rec-verdict" style="color:${verdictColor}">
               ${v.stars || ''} <strong>${v.label ? t(v.label) : ''}</strong>
             </div>
+            ${scoreBar}
           </div>
           <div class="rec-actions">
             <button class="preview-btn" onclick="showPreview('${candId}')" title="${t('加仓预览：看这一笔加进组合的影响')}">📊 ${t('预览')}</button>

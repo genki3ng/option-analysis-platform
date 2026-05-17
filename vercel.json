@@ -5,12 +5,14 @@
     { "src": "api/state.py", "use": "@vercel/python" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "intro.html", "use": "@vercel/static" },
-    { "src": "marks.html", "use": "@vercel/static" }
+    { "src": "marks.html", "use": "@vercel/static" },
+    { "src": "buttons.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
     { "src": "/app/?", "dest": "/index.html" },
     { "src": "/marks/?", "dest": "/marks.html" },
+    { "src": "/buttons/?", "dest": "/buttons.html" },
     { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }

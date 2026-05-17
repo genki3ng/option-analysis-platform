@@ -1555,6 +1555,56 @@ def _peek_atm_iv(ticker: str, exp_str: str, underlying: float) -> Optional[float
         return None
 
 
+def _compute_skew_signal(ticker: str, exp_str: str, underlying: float) -> Optional[dict]:
+    """Put/Call IV skew 信号（包租公 1.4）。
+
+    取最接近 underlying 的 ATM put / ATM call 的 IV，算 put_iv / call_iv 比值：
+      ratio > 1.15  → put skew（市场为下跌付溢价）→ short put 卖 vol 有 edge
+      ratio < 0.90  → call skew（市场为上涨付溢价）→ short call / Covered Call 有 edge
+      其他 → 中性，无明显 vol edge
+
+    仅作 transparency 提示，不进 score（rent_score 已经隐含吃了 IV）。"""
+    try:
+        chain = fetch_chain(ticker, exp_str)
+        if not chain:
+            return None
+        best_put = (None, float("inf"))  # (iv, |strike-underlying|)
+        best_call = (None, float("inf"))
+        for (strike, opt_type), q in chain.items():
+            iv = q.get("iv", 0)
+            if not strike or strike <= 0 or iv <= 0:
+                continue
+            dist = abs(strike - underlying)
+            if opt_type == "put" and dist < best_put[1]:
+                best_put = (iv, dist)
+            elif opt_type == "call" and dist < best_call[1]:
+                best_call = (iv, dist)
+        put_iv, call_iv = best_put[0], best_call[0]
+        if not put_iv or not call_iv:
+            return None
+        # 归一化到小数
+        put_iv = put_iv / 100 if put_iv > 3 else put_iv
+        call_iv = call_iv / 100 if call_iv > 3 else call_iv
+        if call_iv <= 0:
+            return None
+        ratio = put_iv / call_iv
+        if ratio > 1.15:
+            bias = "put_skew"
+        elif ratio < 0.90:
+            bias = "call_skew"
+        else:
+            bias = "neutral"
+        return {
+            "put_iv": round(put_iv * 100, 1),
+            "call_iv": round(call_iv * 100, 1),
+            "ratio": round(ratio, 3),
+            "bias": bias,
+            "expiry": exp_str,
+        }
+    except Exception:
+        return None
+
+
 def _margin_bpr(strike: float, underlying: float, is_call: bool, mid: float) -> float:
     """
     Reg-T 保证金账户 BPR（Buying Power Reduction）估算，裸卖期权。
@@ -2012,6 +2062,11 @@ def recommend(req: dict) -> dict:
                 iv_rank_for_band = r["rank_pct"]
                 delta_band = _adjust_delta_band_by_iv(delta_band, iv_rank_for_band)
 
+    # Vol skew 信号（put_iv / call_iv），仅 short premium 策略需要
+    skew_signal = None
+    if is_short and target_exps and intent != "long_leaps":
+        skew_signal = _compute_skew_signal(ticker, target_exps[0], underlying)
+
     candidates = []
     chain_stats = {"empty_count": 0, "good_count": 0, "total": len(target_exps),
                    "sources": {}}
@@ -2274,6 +2329,7 @@ def recommend(req: dict) -> dict:
         "total_examined": len(candidates),
         "data_source": _summarize_data_source(chain_stats),
         "portfolio_context": portfolio_context,
+        "skew_signal": skew_signal,
     }
 
 

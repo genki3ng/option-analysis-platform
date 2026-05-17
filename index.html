@@ -1764,6 +1764,60 @@
   .pc-panel .pc-row { color: var(--sub); }
   .pc-panel .pc-row strong { color: var(--text); }
   .pc-panel .pc-row.pc-stress { margin-top: 4px; }
+  /* Wheel 闭环提示 — CSP 被指派 / 持有正股时建议卖 Covered Call */
+  .wheel-hint {
+    background: rgba(91, 124, 245, 0.06);
+    border: 1px solid rgba(91, 124, 245, 0.30);
+    border-radius: 10px;
+    padding: 11px 14px;
+    margin: 8px 0 12px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; line-height: 1.5;
+    flex-wrap: wrap;
+  }
+  .wheel-hint .wh-icon { font-size: 18px; }
+  .wheel-hint .wh-body { flex: 1; min-width: 200px; color: var(--text); }
+  .wheel-hint .wh-body strong { color: var(--accent); }
+  .wheel-hint .wh-cta {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+    transition: background 200ms;
+  }
+  .wheel-hint .wh-cta:hover { background: var(--accent-light, var(--accent)); }
+  .wheel-hint .wh-source {
+    color: var(--sub); font-size: 11.5px;
+  }
+  @media (max-width: 600px) {
+    .wheel-hint { padding: 10px 12px; font-size: 12.5px; }
+    .wheel-hint .wh-cta { padding: 8px 12px; }
+  }
+  /* Vol skew 信号 — put/call IV 偏度，提示卖方向是否有 vol edge */
+  .skew-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 500;
+    margin: 8px 0 4px;
+  }
+  .skew-pill.put-skew {
+    background: rgba(74, 222, 128, 0.08);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    color: var(--green);
+  }
+  .skew-pill.call-skew {
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    color: var(--red);
+  }
+  .skew-pill.neutral {
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--sub);
+  }
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
     display: flex; align-items: center; gap: 8px;
@@ -3225,6 +3279,7 @@
 
           <span id="sel-count" style="color:var(--sub);font-size:11px"></span>
         </div>
+        <div id="wheel-hints"></div>
         <div class="pos-grid" id="positions"></div>
       </div>
 
@@ -3337,7 +3392,6 @@
     <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="收权利金">收权利金</button>
     <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="准备接货（CSP）">准备接货（CSP）</button>
     <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="减仓（Covered Call）">减仓（Covered Call）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="做多波动率（近期）">做多波动率（近期）</button>
     <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="LEAPS 股票替代（长期 Long Call）">LEAPS 股票替代（长期 Long Call）</button>
   </div>
 
@@ -3502,6 +3556,11 @@ const I18N = {
     '杠杆倍数': '杠杆倍数',
     'Bid/Ask': 'Bid/Ask',
     'earnings_warning_html': '⚠️ <strong>{date}</strong> 财报（剩 {n} 天）在到期前 — 注意 IV crush',
+    'wheel_hint_assigned_body': '<strong>🔄 Wheel 下半场:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
+    'wheel_hint_hold_body': '<strong>💡 Wheel 提示:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
+    'wheel_hint_source_assigned': '来自 {date} CSP 指派',
+    'wheel_hint_source_hold': '账户中已持仓',
+    '推荐 Covered Call': '推荐 Covered Call',
   },
 
   zh_tw: {
@@ -3684,7 +3743,6 @@ const I18N = {
     '收权利金': '收權利金',
     '准备接货（CSP）': '準備接貨（CSP）',
     '减仓（Covered Call）': '減倉（Covered Call）',
-    '做多波动率（近期）': '做多波動率（近期）',
     'LEAPS 股票替代（长期 Long Call）': 'LEAPS 股票替代（長期 Long Call）',
     '保守': '保守',
     '平衡': '平衡',
@@ -3864,6 +3922,11 @@ const I18N = {
     '张 short put': '張 short put',
     '张 short call': '張 short call',
     '张 put 进入 ITM': '張 put 進入 ITM',
+    'wheel_hint_assigned_body': '<strong>🔄 Wheel 下半场:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
+    'wheel_hint_hold_body': '<strong>💡 Wheel 提示:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
+    'wheel_hint_source_assigned': '来自 {date} CSP 指派',
+    'wheel_hint_source_hold': '账户中已持仓',
+    '推荐 Covered Call': '推薦 Covered Call',
     '现有持仓': '現有持倉',
     '累计抵押金': '累計抵押金',
     '账户占比': '帳戶佔比',
@@ -3873,6 +3936,10 @@ const I18N = {
     '估算浮亏上限': '估算浮虧上限',
     '你的': '你的',
     '敞口（仅参考，不影响排序）': '敞口（僅參考，不影響排序）',
+    'put skew': 'put skew',
+    'call skew': 'call skew',
+    '卖 Put 有 vol edge（OTM put IV 偏贵）': '賣 Put 有 vol edge（OTM put IV 偏貴）',
+    '卖 Call 有 vol edge（OTM call IV 偏贵）': '賣 Call 有 vol edge（OTM call IV 偏貴）',
     '💵 现金 / IRA': '💵 現金 / IRA',
     '📈 保证金账户': '📈 保證金帳戶',
     '影响每张合约的实际资金占用（BPR）计算': '影響每張合約的實際資金佔用（BPR）計算',
@@ -4257,7 +4324,6 @@ const I18N = {
     '收权利金': 'Collect Premium',
     '准备接货（CSP）': 'Cash-Secured Put',
     '减仓（Covered Call）': 'Covered Call',
-    '做多波动率（近期）': 'Long Volatility (near-term)',
     'LEAPS 股票替代（长期 Long Call）': 'LEAPS Stock Replacement',
     '保守': 'Conservative',
     '平衡': 'Balanced',
@@ -4437,6 +4503,11 @@ const I18N = {
     '张 short put': 'short put(s)',
     '张 short call': 'short call(s)',
     '张 put 进入 ITM': 'put(s) ITM',
+    'wheel_hint_assigned_body': '<strong>🔄 Wheel — Second Half:</strong> You hold {shares} shares of <strong>{ticker}</strong> — can sell {contracts} Covered Call(s)',
+    'wheel_hint_hold_body': '<strong>💡 Wheel Hint:</strong> You hold {shares} shares of <strong>{ticker}</strong> — can sell {contracts} Covered Call(s)',
+    'wheel_hint_source_assigned': 'from {date} CSP assignment',
+    'wheel_hint_source_hold': 'already in account',
+    '推荐 Covered Call': 'Recommend CC',
     '现有持仓': 'Existing exposure',
     '累计抵押金': 'Total collateral',
     '账户占比': 'of account',
@@ -4446,6 +4517,10 @@ const I18N = {
     '估算浮亏上限': 'est. max drawdown',
     '你的': 'Your',
     '敞口（仅参考，不影响排序）': 'exposure (for reference only — does not affect ranking)',
+    'put skew': 'put skew',
+    'call skew': 'call skew',
+    '卖 Put 有 vol edge（OTM put IV 偏贵）': 'Selling puts has vol edge (OTM put IV is pricey)',
+    '卖 Call 有 vol edge（OTM call IV 偏贵）': 'Selling calls has vol edge (OTM call IV is pricey)',
     '💵 现金 / IRA': '💵 Cash / IRA',
     '📈 保证金账户': '📈 Margin Account',
     '影响每张合约的实际资金占用（BPR）计算': 'Affects actual buying power reduction (BPR) per contract',
@@ -5031,7 +5106,7 @@ function renderRentComponents(opt) {
   // 仅 short 持仓有 score_components
   const sc = opt.score_components;
   if (!sc) {
-    // 买入期权（LEAPS / 做多波动率）—— 包租公分不适用，渲染说明
+    // 买入期权（LEAPS）—— 包租公分不适用，渲染说明
     return `
       <div class="rent-components rent-na">
         <div class="rent-na-title">${t('💡 关于包租公分')}</div>
@@ -6693,7 +6768,7 @@ function showPresetNote(note) {
 // 用 i18n key 而非硬编码 — t() 在 render 时解析当前语言
 const _INTENT_LABEL = {
   premium: '收权利金', csp: 'CSP', covered_call: 'Covered Call',
-  long_vol: 'Long Vol', long_leaps: 'LEAPS',
+  long_leaps: 'LEAPS',
 };
 const _DIRECTION_LABEL = {
   bullish: '看涨', bearish: '看跌', neutral: '区间',
@@ -6832,7 +6907,6 @@ const _INTENT_CONFLICTS = {
   'bearish+csp':            '⚠️ CSP（卖 Put）在标的不跌时赚钱，跟看跌方向相反。如果你是想趁低位收权利金并愿意接货，没问题。',
   'bullish+covered_call':   '⚠️ Covered Call 会封住上涨空间。如果你已在高位准备减仓，合理；如果你很看涨，可能会踏空。',
   'neutral+long_leaps':     '⚠️ LEAPS 是方向性工具，中性看法下效果有限，考虑换成收权利金策略。',
-  'neutral+long_vol':       '⚠️ 做多波动率在市场横盘时持续亏 theta，中性看法需谨慎。',
 };
 
 function _checkRecConflict() {
@@ -7003,6 +7077,17 @@ function renderRecResult(d) {
     `;
   }
 
+  // Vol skew 信号（put/call ATM IV 比值）— 卖方向 vol edge 提示
+  let skewPill = '';
+  if (d.skew_signal && d.skew_signal.bias && d.skew_signal.bias !== 'neutral') {
+    const sk = d.skew_signal;
+    if (sk.bias === 'put_skew') {
+      skewPill = `<div class="skew-pill put-skew">📐 ${t('put skew')} ${sk.ratio.toFixed(2)}x · ${t('卖 Put 有 vol edge（OTM put IV 偏贵）')}</div>`;
+    } else if (sk.bias === 'call_skew') {
+      skewPill = `<div class="skew-pill call-skew">📐 ${t('call skew')} ${sk.ratio.toFixed(2)}x · ${t('卖 Call 有 vol edge（OTM call IV 偏贵）')}</div>`;
+    }
+  }
+
   // Portfolio Context panel — 同 ticker 敞口（透明度工具，不影响 score）
   let pcPanel = '';
   if (d.portfolio_context) {
@@ -7047,6 +7132,7 @@ function renderRecResult(d) {
     document.getElementById('rec-result').innerHTML = `
       <div class="summary">${summary}</div>
       ${ivBanner}
+      ${skewPill}
       ${pcPanel}
       <div class="empty">${t('😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）')}</div>
     `;
@@ -7243,6 +7329,7 @@ function renderRecResult(d) {
     <div class="summary">${summary}</div>
     ${dsPill}
     ${ivBanner}
+    ${skewPill}
     ${pcPanel}
     <div class="disclaimer">
       ${t('rec_disclaimer_html')}
@@ -7893,6 +7980,91 @@ function dismissMorningBrief() {
   localStorage.setItem('mb_dismissed_date', today);
 }
 
+// Wheel 闭环提示：CSP 被指派或持有正股 ≥100 股时，建议卖 Covered Call
+function renderWheelHints(positions) {
+  const el = document.getElementById('wheel-hints');
+  if (!el) return;
+  const acct = _getAccountMeta();
+  const stockPos = (acct.stock_positions || []).filter(p => p.shares >= 100);
+
+  // 最近 30 天被指派的 CSP（close_reason=expired_itm + type=put）
+  const today = new Date();
+  const RECENT_DAYS = 30;
+  const recentAssigned = {};  // ticker -> {date, contracts}
+  (positions || []).forEach(p => {
+    if (!p.closed || p.type !== 'put') return;
+    if (p.close_reason !== 'expired_itm') return;
+    if (!p.close_date) return;
+    const cd = new Date(p.close_date);
+    const daysAgo = (today - cd) / 86400000;
+    if (daysAgo > RECENT_DAYS) return;
+    const prev = recentAssigned[p.ticker];
+    if (!prev || cd > new Date(prev.date)) {
+      recentAssigned[p.ticker] = { date: p.close_date, contracts: p.contracts };
+    }
+  });
+
+  // 当前已有 short call 的 ticker — 已经在 wheel 下半场，不重复提示
+  const hasShortCall = new Set();
+  (positions || []).forEach(p => {
+    if (!p.closed && p.type === 'call') hasShortCall.add(p.ticker);
+  });
+
+  // 汇总：同 ticker 取 max(assignment, stock_positions)
+  const tickerSet = new Set([
+    ...Object.keys(recentAssigned),
+    ...stockPos.map(s => s.ticker),
+  ]);
+  const hints = [];
+  for (const tk of tickerSet) {
+    if (hasShortCall.has(tk)) continue;
+    const assigned = recentAssigned[tk];
+    const stk = stockPos.find(s => s.ticker === tk);
+    const shares = Math.max(stk ? stk.shares : 0,
+                             assigned ? assigned.contracts * 100 : 0);
+    if (shares < 100) continue;
+    const contracts = Math.floor(shares / 100);
+    hints.push({ ticker: tk, shares, contracts, assigned });
+  }
+
+  if (!hints.length) { el.innerHTML = ''; return; }
+
+  const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+  el.innerHTML = hints.map(h => {
+    const srcTpl = h.assigned
+      ? t('wheel_hint_source_assigned')
+      : t('wheel_hint_source_hold');
+    const src = `<span class="wh-source">${fill(srcTpl, { date: h.assigned?.date })}</span>`;
+    const bodyTpl = h.assigned
+      ? t('wheel_hint_assigned_body')
+      : t('wheel_hint_hold_body');
+    const body = `${fill(bodyTpl, { shares: h.shares, ticker: h.ticker, contracts: h.contracts })} ${src}`;
+    return `
+      <div class="wheel-hint">
+        <div class="wh-icon">${h.assigned ? '📦' : '🏠'}</div>
+        <div class="wh-body">${body}</div>
+        <button class="wh-cta" onclick="showRecForCoveredCall('${h.ticker}')">${t('推荐 Covered Call')} →</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// 一键预填 rec form 为 Covered Call（neutral + balanced + 短期）
+function showRecForCoveredCall(ticker) {
+  _recSelection.direction = 'neutral';
+  _recSelection.intent = 'covered_call';
+  _recSelection.timeframe = '21';
+  _recSelection.risk = 'balanced';
+  localStorage.setItem('rec_last_ticker', ticker);
+  localStorage.setItem('rec_last_choice', JSON.stringify(_recSelection));
+  showRec();
+  setTimeout(() => {
+    const t = document.getElementById('rec-ticker');
+    if (t) t.value = ticker;
+    document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
+  }, 30);
+}
+
 function renderAll(d) {
   // ── 早安 brief
   renderMorningBrief(d.morning_brief);
@@ -7924,6 +8096,9 @@ function renderAll(d) {
 
   // ── Tickers（动态：仅显示持仓涉及的股票）+ 当日走势 sparkline
   renderTickers(d.tickers || {}, d.intraday || {});
+
+  // ── Wheel 闭环提示（CSP 被指派 / 持有正股 → 建议卖 Covered Call）
+  renderWheelHints(d.positions);
 
   // ── 持仓卡（按当前排序键排序，可隐藏已平仓）
   const sortedPos = sortPositions(d.positions);

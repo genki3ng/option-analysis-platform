@@ -1262,61 +1262,119 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
                        sample_dte: int = 7, delta_target: float = 0.25,
                        is_short_put: bool = True) -> Optional[dict]:
     """
-    粗略回测：过去 N 天每个交易日卖一笔 sample_dte DTE delta_target Δ 期权，
-    模拟最终结果。返回胜率 + 平均收益。
+    历史回测（POP 校准版 v2）：
+    - 拉过去 12 个月日线（不够就 6 月）
+    - 每 3 天采样一次（之前 5）
+    - 用 BS 反推 strike（解 |Δ(K)|≈delta_target），不再用粗略 offset
+    - 用 BS 算 premium（不再用 offset×0.3）
+    - 同时输出经验胜率 (win_rate) + 理论 POP (理论 N(d2) 均值)
+    - 报 calibration_ratio = empirical / theoretical（>1.05 = 历史偏乐观，
+      <0.95 = 历史偏悲观）
     """
     try:
         import yfinance as yf
         session = _get_yf_session()
         ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
-        hist = ticker_obj.history(period="6mo", interval="1d", auto_adjust=True)
+        # 优先 12 个月，不够回退到 6 个月
+        hist = ticker_obj.history(period="1y", interval="1d", auto_adjust=True)
         closes = hist["Close"].dropna().tolist()
         if len(closes) < 60:
+            hist = ticker_obj.history(period="6mo", interval="1d", auto_adjust=True)
+            closes = hist["Close"].dropna().tolist()
+        if len(closes) < 60:
             return None
-        # 估算每天的隐含波动率（用 20 天 RV 近似）
         wins, losses = 0, 0
-        total_pnl_pct = 0
-        for i in range(20, len(closes) - sample_dte, 5):  # 每 5 天采样
+        total_pnl_pct = 0.0
+        total_theo_pop = 0.0
+        sample_dte = max(3, min(sample_dte, 60))
+        for i in range(20, len(closes) - sample_dte, 3):  # 每 3 天采样
             S = closes[i]
-            # 20 天 RV
             rets = [math.log(closes[j] / closes[j-1]) for j in range(i-19, i+1)]
-            rv = math.sqrt(sum((r - sum(rets)/len(rets))**2 for r in rets) / 19 * 252)
-            if rv <= 0 or rv > 3: continue
-            # 选 strike 让 Delta ≈ delta_target（粗估）
-            # 对于 short put: K = S * exp(-z * sigma * sqrt(T)), z ~ delta_target 反算
-            # 简化：K = S * (1 - sigma * sqrt(T) * delta_target * 2)
-            T = sample_dte / 365
-            offset = rv * math.sqrt(T) * 0.85  # 大约 -0.25 delta
-            K = S * (1 - offset) if is_short_put else S * (1 + offset)
-            # 模拟到期 stock price
+            mean = sum(rets) / len(rets)
+            rv = math.sqrt(sum((r - mean) ** 2 for r in rets) / 19 * 252)
+            if rv <= 0 or rv > 3:
+                continue
+            T = sample_dte / 365.0
+            is_call = not is_short_put
+            # 用二分反推 strike，使 |Δ(K)| ≈ delta_target
+            K = _strike_for_delta(S, T, rv, delta_target, is_call)
+            if K is None or K <= 0:
+                continue
+            # BS premium（合约单位 per share）
+            premium, _, _, _ = price_option(S, K, T, RISK_FREE, rv, is_call)
+            if premium <= 0:
+                continue
+            # 理论 POP（N(d2) 或 N(-d2)）
+            try:
+                d2 = (math.log(S / K) + (RISK_FREE - 0.5 * rv * rv) * T) / (rv * math.sqrt(T))
+            except (ValueError, ZeroDivisionError):
+                continue
+            theo_pop = _ncdf(-d2) if is_call else _ncdf(d2)
+            total_theo_pop += theo_pop
+            # 模拟到期 P&L
             S_exp = closes[i + sample_dte]
-            # P&L: short put 卖 X 收钱，到期如果 S_exp > K 全收，否则赔 (K - S_exp)
-            premium_pct = offset * 0.3  # 粗估权利金占股价的百分比
             if is_short_put:
                 if S_exp >= K:
-                    pnl = premium_pct  # 全收权利金
+                    pnl = premium / S
                     wins += 1
                 else:
-                    pnl = premium_pct - (K - S_exp) / S
+                    pnl = (premium - (K - S_exp)) / S
                     losses += 1
-            else:  # short call
+            else:
                 if S_exp <= K:
-                    pnl = premium_pct
+                    pnl = premium / S
                     wins += 1
                 else:
-                    pnl = premium_pct - (S_exp - K) / S
+                    pnl = (premium - (S_exp - K)) / S
                     losses += 1
             total_pnl_pct += pnl
         n = wins + losses
         if n < 5:
             return None
+        win_rate = wins / n * 100
+        theo_pop_avg = total_theo_pop / n * 100
+        calibration = (win_rate / theo_pop_avg) if theo_pop_avg > 0 else None
         return {
-            "win_rate": round(wins / n * 100, 0),
+            "win_rate": round(win_rate, 0),
             "avg_pnl_pct": round(total_pnl_pct / n * 100, 1),
             "n_trades": n,
+            "theoretical_pop": round(theo_pop_avg, 0),
+            "calibration_ratio": round(calibration, 2) if calibration else None,
+            "window_months": 12 if len(closes) >= 220 else 6,
         }
     except Exception:
         return None
+
+
+def _strike_for_delta(S: float, T: float, sigma: float, delta_target: float,
+                      is_call: bool, max_iter: int = 30) -> Optional[float]:
+    """
+    给定 S, T, σ，二分反推 K 让 |Δ(K)| ≈ delta_target（短 call/put）。
+    Short call delta 取值 0..1（实际 BS call Δ），短 put delta 取 |-Δ| 即 0..1。
+    """
+    if S <= 0 or T <= 0 or sigma <= 0 or delta_target <= 0 or delta_target >= 1:
+        return None
+    # call: K 越大 Δ 越小；put: K 越小 |Δ| 越小
+    lo, hi = S * 0.3, S * 3.0
+    for _ in range(max_iter):
+        mid = (lo + hi) / 2
+        _, delta_mid, _, _ = price_option(S, mid, T, RISK_FREE, sigma, is_call)
+        d = abs(delta_mid)
+        if abs(d - delta_target) < 0.005:
+            return mid
+        if is_call:
+            # call Δ 随 K↑ 而↓
+            if d > delta_target:
+                lo = mid
+            else:
+                hi = mid
+        else:
+            # put |Δ| 随 K↑ 而↑
+            if d < delta_target:
+                lo = mid
+            else:
+                hi = mid
+    return (lo + hi) / 2
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -1974,6 +2032,106 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     }
 
 
+def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
+               is_covered: bool = False, is_short: bool = True) -> dict:
+    """
+    出场计划：按 risk × strategy 矩阵生成。
+    返回:
+      kind: short_premium / csp / covered_call / leaps / long_other
+      profit_target_pct: 锁利目标（按权利金的百分比）
+      stop_loss_pct: 止损（None=不止损）
+      exit_at_price: 平仓建议价（per share）
+      stop_at_price: 止损价（None=不止损）
+      roll_trigger: roll 触发条件（短卖才有）
+      summary_key: 给前端用的 i18n key
+      summary_vars: 模板变量
+    """
+    mid = float(opt.get("mid") or 0)
+    # 推断策略类型
+    if intent == "long_leaps":
+        kind = "leaps"
+    elif is_csp:
+        kind = "csp"
+    elif is_covered:
+        kind = "covered_call"
+    elif is_short:
+        kind = "short_premium"
+    else:
+        kind = "long_other"
+
+    # ── 矩阵：risk × kind → (profit %, stop %)
+    # stop = None 表示「不止损」（持股 / 接货）
+    matrix = {
+        "short_premium": {
+            "conservative": (30, 100),
+            "balanced":     (50, 200),
+            "aggressive":   (75, 300),
+        },
+        "csp": {
+            "conservative": (30, None),  # 不止损 = 接货
+            "balanced":     (50, None),
+            "aggressive":   (75, None),
+        },
+        "covered_call": {
+            "conservative": (30, None),  # 不止损 = 被叫走
+            "balanced":     (50, None),
+            "aggressive":   (75, None),
+        },
+        "leaps": {
+            "conservative": (50,  50),   # 翻倍前先锁一半，避免归零
+            "balanced":     (100, 50),
+            "aggressive":   (200, 50),
+        },
+        "long_other": {
+            "conservative": (50,  50),
+            "balanced":     (100, 50),
+            "aggressive":   (150, 50),
+        },
+    }
+    profit_pct, stop_pct = matrix[kind].get(risk, matrix[kind]["balanced"])
+
+    # ── 价格换算
+    exit_at_price = None
+    stop_at_price = None
+    if kind == "leaps" or kind == "long_other":
+        # 买入场景：profit = 涨多少，stop = 跌多少
+        if mid > 0:
+            exit_at_price = round(mid * (1 + profit_pct / 100.0), 2)
+            stop_at_price = round(mid * (1 - stop_pct / 100.0), 2) if stop_pct else None
+    else:
+        # 短卖场景：profit = premium 衰减到 (1 - p%)，stop = premium 涨到 (1 + s%)
+        if mid > 0:
+            exit_at_price = round(mid * (1 - profit_pct / 100.0), 2)
+            stop_at_price = round(mid * (1 + stop_pct / 100.0), 2) if stop_pct else None
+
+    # ── Roll 触发（仅短卖）
+    roll_trigger = None
+    if kind in ("short_premium", "csp", "covered_call"):
+        # DTE 是当前候选的到期天数，不是 trigger 本身；trigger 是「当 DTE 缩到 ≤7 时」
+        # 这里给出文案模板，前端按 i18n key 渲染
+        roll_trigger = "dte7_delta50_loss"  # i18n key
+
+    summary_key = f"exit_summary_{kind}"
+    summary_vars = {
+        "profit_pct": profit_pct,
+        "stop_pct": stop_pct if stop_pct is not None else 0,
+        "exit_price": exit_at_price if exit_at_price is not None else 0,
+        "stop_price": stop_at_price if stop_at_price is not None else 0,
+    }
+
+    return {
+        "kind": kind,
+        "profit_target_pct": profit_pct,
+        "stop_loss_pct": stop_pct,
+        "stop_loss_disabled": stop_pct is None,
+        "exit_at_price": exit_at_price,
+        "stop_at_price": stop_at_price,
+        "roll_trigger": roll_trigger,
+        "summary_key": summary_key,
+        "summary_vars": summary_vars,
+    }
+
+
 def _find_expiries(ticker: str, target_days: int, n: int = 3,
                    min_days: int = None, max_days: int = None):
     """找最接近 target_days 的到期日，可选范围过滤。"""
@@ -2298,6 +2456,11 @@ def recommend(req: dict) -> dict:
             c["covered_contracts"] = shares_held // 100
             c["shares_held"] = shares_held
 
+        # 出场计划（短卖 + LEAPS 都生成；其他做多场景生成基础版）
+        c["exit_plan"] = _exit_plan(c, intent, is_csp, risk,
+                                     is_covered=is_covered_call,
+                                     is_short=is_short)
+
     # 5. 排序后保留 top 15
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
@@ -2330,6 +2493,7 @@ def recommend(req: dict) -> dict:
         "data_source": _summarize_data_source(chain_stats),
         "portfolio_context": portfolio_context,
         "skew_signal": skew_signal,
+        "backtest_summary": backtest,  # win_rate / theoretical_pop / calibration_ratio
     }
 
 

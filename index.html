@@ -1932,6 +1932,46 @@
     border: 1px solid var(--line);
     color: var(--sub);
   }
+  /* POP 校准 pill — 历史回测 vs 理论 BS POP 差异提示 */
+  .calib-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 500;
+    margin: 4px 0;
+  }
+  .calib-pill.calib-warn {
+    background: rgba(248, 113, 113, 0.07);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: var(--orange, #f59e0b);
+  }
+  .calib-pill.calib-ok {
+    background: rgba(74, 222, 128, 0.07);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    color: var(--green);
+  }
+  /* Exit plan inline — 推荐卡底部出场计划 */
+  .exit-plan {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 6px;
+    background: rgba(212, 165, 116, 0.06);
+    border: 1px solid rgba(212, 165, 116, 0.28);
+    border-radius: 8px;
+    padding: 8px 11px;
+    margin: 8px 0 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .exit-plan .ep-icon { font-size: 14px; }
+  .exit-plan .ep-label { color: var(--accent); font-weight: 600; }
+  .exit-plan .ep-divider { color: var(--sub); opacity: 0.5; }
+  .exit-plan .ep-profit strong { color: var(--green); }
+  .exit-plan .ep-stop strong { color: var(--red); }
+  .exit-plan .ep-stop.disabled { color: var(--sub); font-style: italic; }
+  .exit-plan .ep-roll { color: var(--sub); font-size: 11.5px; }
+  @media (max-width: 600px) {
+    .exit-plan { font-size: 11.5px; padding: 7px 9px; gap: 4px; }
+  }
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
     display: flex; align-items: center; gap: 8px;
@@ -3792,6 +3832,12 @@ const I18N = {
     'wheel_hint_source_assigned': '来自 {date} CSP 指派',
     'wheel_hint_source_hold': '账户中已持仓',
     '推荐 Covered Call': '推荐 Covered Call',
+    // ── Exit plan (出场计划) + POP 校准 ──────────────────────
+    'exit_roll_dte7_delta50': 'DTE ≤ 7 且 |Δ| ≥ 0.50 时考虑 roll',
+    'historical_below_theory':
+      '历史 {mo} 月回测胜率 {wr}% < 理论 POP {tp}%（{n} 次模拟） — 理论可能偏乐观',
+    'historical_above_theory':
+      '历史 {mo} 月回测胜率 {wr}% > 理论 POP {tp}%（{n} 次模拟） — 该方向历史更稳',
   },
 
   zh_tw: {
@@ -4284,6 +4330,18 @@ const I18N = {
     '复制合约代码': '複製合約代碼',
     '复制持仓摘要': '複製持倉摘要',
     '已复制': '已複製',
+    // ── Exit plan + POP 校准 ──────────────────────
+    '出场计划': '出場計劃',
+    '锁利': '鎖利',
+    '止损': '止損',
+    '不止损': '不止損',
+    '被指派接货': '被指派接貨',
+    '被叫走持股': '被叫走持股',
+    'exit_roll_dte7_delta50': 'DTE ≤ 7 且 |Δ| ≥ 0.50 時考慮 roll',
+    'historical_below_theory':
+      '歷史 {mo} 月回測勝率 {wr}% < 理論 POP {tp}%（{n} 次模擬）— 理論可能偏樂觀',
+    'historical_above_theory':
+      '歷史 {mo} 月回測勝率 {wr}% > 理論 POP {tp}%（{n} 次模擬）— 該方向歷史更穩',
   },
 
   en: {
@@ -4868,6 +4926,18 @@ const I18N = {
     '复制合约代码': 'Copy OCC code',
     '复制持仓摘要': 'Copy position summary',
     '已复制': 'Copied',
+    // ── Exit plan + POP calibration ──────────────────────
+    '出场计划': 'Exit plan',
+    '锁利': 'Take profit',
+    '止损': 'Stop loss',
+    '不止损': 'No stop loss',
+    '被指派接货': 'Allow assignment',
+    '被叫走持股': 'Allow shares called',
+    'exit_roll_dte7_delta50': 'Roll when DTE ≤ 7 and |Δ| ≥ 0.50',
+    'historical_below_theory':
+      'Historical {mo}-mo win rate {wr}% < theoretical POP {tp}% ({n} sims) — theory may be optimistic',
+    'historical_above_theory':
+      'Historical {mo}-mo win rate {wr}% > theoretical POP {tp}% ({n} sims) — direction historically stronger',
   },
 };
 
@@ -5384,6 +5454,40 @@ function renderTickers(tickers, intradayMap) {
       </div>
     `;
   }).join('');
+}
+
+function renderExitPlan(plan) {
+  if (!plan || !plan.kind) return '';
+  const v = plan.summary_vars || {};
+  const ep = (v.exit_price ?? 0).toFixed(2);
+  const sp = (v.stop_price ?? 0).toFixed(2);
+  const pp = v.profit_pct ?? 0;
+  const xp = v.stop_pct ?? 0;
+  // 三个段：锁利 / 止损 / Roll
+  const profitSeg = `<span class="ep-profit">${t('锁利')} <strong>$${ep}</strong> (${pp}%)</span>`;
+  let stopSeg = '';
+  if (plan.stop_loss_disabled) {
+    if (plan.kind === 'csp') stopSeg = `<span class="ep-stop disabled">${t('被指派接货')}</span>`;
+    else if (plan.kind === 'covered_call') stopSeg = `<span class="ep-stop disabled">${t('被叫走持股')}</span>`;
+    else stopSeg = `<span class="ep-stop disabled">${t('不止损')}</span>`;
+  } else {
+    stopSeg = `<span class="ep-stop">${t('止损')} <strong>$${sp}</strong> (-${xp}%)</span>`;
+  }
+  let rollSeg = '';
+  if (plan.roll_trigger) {
+    rollSeg = `<span class="ep-roll">${t('exit_roll_dte7_delta50')}</span>`;
+  }
+  return `
+    <div class="exit-plan exit-plan-${plan.kind}">
+      <span class="ep-icon">📍</span>
+      <span class="ep-label">${t('出场计划')}</span>
+      <span class="ep-divider">·</span>
+      ${profitSeg}
+      <span class="ep-divider">·</span>
+      ${stopSeg}
+      ${rollSeg ? `<span class="ep-divider">·</span>${rollSeg}` : ''}
+    </div>
+  `;
 }
 
 function renderRentComponents(opt) {
@@ -7324,6 +7428,19 @@ function renderRecResult(d) {
     }
   }
 
+  // POP 校准 pill：历史回测 vs 理论 BS POP 背离
+  let calibPill = '';
+  const bs = d.backtest_summary;
+  if (bs && bs.n_trades >= 5 && bs.theoretical_pop != null && bs.calibration_ratio != null) {
+    const wr = bs.win_rate, tp = bs.theoretical_pop, ratio = bs.calibration_ratio;
+    const n = bs.n_trades, mo = bs.window_months;
+    if (ratio < 0.95) {
+      calibPill = `<div class="calib-pill calib-warn">📊 ${t('historical_below_theory').replace('{wr}', wr).replace('{tp}', tp).replace('{n}', n).replace('{mo}', mo)}</div>`;
+    } else if (ratio > 1.05) {
+      calibPill = `<div class="calib-pill calib-ok">📊 ${t('historical_above_theory').replace('{wr}', wr).replace('{tp}', tp).replace('{n}', n).replace('{mo}', mo)}</div>`;
+    }
+  }
+
   // Portfolio Context panel — 同 ticker 敞口（透明度工具，不影响 score）
   let pcPanel = '';
   if (d.portfolio_context) {
@@ -7369,6 +7486,7 @@ function renderRecResult(d) {
       <div class="summary">${summary}</div>
       ${ivBanner}
       ${skewPill}
+      ${calibPill}
       ${pcPanel}
       <div class="empty">${t('😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）')}</div>
     `;
@@ -7464,6 +7582,9 @@ function renderRecResult(d) {
     }
     const acctBar = acctBadges.length ? `<div class="acct-bar">${acctBadges.join('')}</div>` : '';
 
+    // 出场计划 inline
+    const exitBar = renderExitPlan(opt.exit_plan);
+
     return `
       <div class="rec-card" data-cand-id="${candId}">
         <div class="rec-head">
@@ -7502,6 +7623,7 @@ function renderRecResult(d) {
         </div>
 
         ${acctBar}
+        ${exitBar}
 
         <details class="rec-details">
           <summary>${t('展开详细分析')}</summary>
@@ -7566,6 +7688,7 @@ function renderRecResult(d) {
     ${dsPill}
     ${ivBanner}
     ${skewPill}
+    ${calibPill}
     ${pcPanel}
     ${tierPills}
     ${emptyFilterMsg}

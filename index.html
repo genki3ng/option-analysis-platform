@@ -8506,9 +8506,18 @@ function _mbFormatTime() {
   return `${mm}/${dd} 周${wkday} · ${hh}:${mn}`;
 }
 function _mbSaveSnapshot(snap) {
+  // 每天只上传一次：避免每次刷新 positions 价格变化触发"已同步"指示器一直闪。
+  // 跨日时 (date 变了) 或 concierge_text 变了才重新上传。
   if (!snap) return;
   try {
     const state = (typeof loadStateMap === 'function') ? loadStateMap() : {};
+    const old = (state && state._meta && state._meta.brief_snapshot) || {};
+    if (old.date === snap.date
+        && old.concierge_text === snap.concierge_text
+        && old.concierge_version === snap.concierge_version
+        && old.concierge_lang === snap.concierge_lang) {
+      return; // 今天已经存过同样的 snapshot → 不重复上传
+    }
     state._meta = state._meta || {};
     state._meta.brief_snapshot = snap;
     if (typeof saveStateMap === 'function') saveStateMap(state);

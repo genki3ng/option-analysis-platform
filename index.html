@@ -78,6 +78,10 @@
     font-feature-settings: "ss01", "cv01", "cv11";
     text-rendering: optimizeLegibility;
   }
+  /* 全局 button 基础过渡（B 方案弹出动效） */
+  button { transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                       box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                       background 0.15s, border-color 0.15s; }
   /* 全局 focus ring — 仅键盘 focus 显示（鼠标点击不打扰） */
   *:focus { outline: none; }
   input:focus-visible,
@@ -332,23 +336,32 @@
   }
   .migrate-modal button {
     border: none;
-    border-radius: 7px;
+    border-radius: 10px;
     padding: 9px 18px;
     font-size: 13px;
     cursor: pointer;
     font-family: inherit;
     font-weight: 600;
     letter-spacing: -0.005em;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
   .migrate-modal .btn-import {
     background: var(--accent); color: #0A0A0B;
   }
-  .migrate-modal .btn-import:hover { background: var(--accent-light); }
+  .migrate-modal .btn-import:hover {
+    background: var(--accent-light);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(230,184,106,0.32);
+  }
+  .migrate-modal .btn-import:active { transform: scale(0.97); box-shadow: none; }
   .migrate-modal .btn-skip {
     background: transparent; color: var(--sub);
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
   }
-  .migrate-modal .btn-skip:hover { color: var(--text); }
+  .migrate-modal .btn-skip:hover { color: var(--text); transform: scale(1.02); }
+  .migrate-modal .btn-skip:active { transform: scale(0.97); }
 
   /* ─── 云同步状态指示 ─── */
   .cloud-sync-status {
@@ -726,26 +739,32 @@
   }
   .pos-actions button {
     background: var(--accent-tint);
-    border: 1px solid rgba(230,184,106,0.30);
+    border: 1.5px solid rgba(230,184,106,0.35);
     color: var(--accent);
     font-size: 11px; font-weight: 600;
-    padding: 5px 12px; border-radius: 5px;
+    padding: 5px 12px; border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: background 0.18s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.18s cubic-bezier(0.16,1,0.3,1),
+                transform 0.18s cubic-bezier(0.16,1,0.3,1);
   }
   .pos-actions button:hover {
     background: var(--accent-tint-strong);
     border-color: var(--accent);
+    transform: scale(1.04);
   }
+  .pos-actions button:active { transform: scale(0.96); }
   .pos-actions button.danger-btn {
     background: rgba(248,113,113,0.08);
-    border-color: rgba(248,113,113,0.3);
+    border-color: rgba(248,113,113,0.35);
     color: var(--red);
   }
   .pos-actions button.danger-btn:hover {
     background: rgba(248,113,113,0.18);
+    border-color: var(--red);
+    transform: scale(1.04);
   }
+  .pos-actions button.danger-btn:active { transform: scale(0.96); }
 
   /* Inline edit-form — 改 contracts / sell_price / trade_date */
   .edit-form {
@@ -800,17 +819,27 @@
   }
   .edit-form button {
     padding: 6px 14px; font-size: 12px; font-weight: 600;
-    border-radius: 5px; cursor: pointer; border: none;
+    border-radius: 8px; cursor: pointer; border: none;
     font-family: inherit; letter-spacing: -0.005em;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
   .edit-form .ef-save {
     background: var(--accent); color: #0A0A0B;
   }
-  .edit-form .ef-save:hover { background: var(--accent-light); }
+  .edit-form .ef-save:hover {
+    background: var(--accent-light);
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(230,184,106,0.30);
+  }
+  .edit-form .ef-save:active { transform: scale(0.96); box-shadow: none; }
   .edit-form .ef-cancel {
     background: transparent; color: var(--sub);
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
   }
+  .edit-form .ef-cancel:hover { color: var(--text); border-color: var(--line-2); transform: scale(1.03); }
+  .edit-form .ef-cancel:active { transform: scale(0.97); }
   .edit-form .ef-note {
     font-size: 10.5px; color: var(--sub);
     line-height: 1.5;
@@ -822,13 +851,14 @@
   .pos-actions .edit-btn {
     background: transparent;
     color: var(--sub);
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
     font-size: 11px;
   }
   .pos-actions .edit-btn:hover {
     color: var(--accent);
     border-color: var(--accent);
     background: rgba(230,184,106,0.06);
+    transform: scale(1.04);
   }
 
   /* Inline close-form */
@@ -853,13 +883,24 @@
   }
   .close-form button {
     background: var(--accent); color: #0A0A0B;
-    border: none; border-radius: 5px;
+    border: none; border-radius: 8px;
     padding: 6px 12px; font-size: 12px; font-weight: 600;
     cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
+  .close-form button:hover {
+    background: var(--accent-light);
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(230,184,106,0.30);
+  }
+  .close-form button:active { transform: scale(0.96); box-shadow: none; }
   .close-form button.cancel {
-    background: transparent; color: var(--sub); border: 1px solid var(--line);
+    background: transparent; color: var(--sub); border: 1.5px solid var(--line);
   }
+  .close-form button.cancel:hover { color: var(--text); border-color: var(--line-2); box-shadow: none; }
+  .close-form button.cancel:active { transform: scale(0.97); }
   .close-form .preview { font-size: 11px; color: var(--sub); flex: 1; }
 
   /* Closed position styling — modern minimal, 不再纸卡片质感 */
@@ -1013,11 +1054,12 @@
     margin-bottom: 12px; font-size: 12px; flex-wrap: wrap;
   }
   .pos-toolbar button, .pos-toolbar select {
-    background: var(--card); border: 1px solid var(--line);
-    color: var(--text); border-radius: 6px;
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 8px;
     padding: 6px 11px; cursor: pointer; font-size: 12px;
     font-family: inherit; font-weight: 500;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s,
+                transform 0.18s cubic-bezier(0.16,1,0.3,1);
     letter-spacing: -0.005em;
     min-height: 30px;
     line-height: 1.3;
@@ -1026,12 +1068,19 @@
   }
   .pos-toolbar button:hover, .pos-toolbar select:hover {
     border-color: var(--accent); background: var(--card2);
+    transform: scale(1.04);
   }
+  .pos-toolbar button:active, .pos-toolbar select:active { transform: scale(0.96); }
   .pos-toolbar button.add-btn {
     background: var(--accent); color: #0A0A0B; border-color: var(--accent);
     font-weight: 600;
   }
-  .pos-toolbar button.add-btn:hover { background: var(--accent-light); }
+  .pos-toolbar button.add-btn:hover {
+    background: var(--accent-light);
+    box-shadow: 0 4px 14px rgba(230,184,106,0.30);
+    transform: scale(1.05);
+  }
+  .pos-toolbar button.add-btn:active { transform: scale(0.96); box-shadow: none; }
   .pos-toolbar button.linked {
     background: rgba(74,222,128,0.12);
     border-color: var(--green);
@@ -1543,16 +1592,27 @@
   }
   .rec-form button.submit {
     background: var(--accent); color: #0A0A0B;
-    border: none; border-radius: 6px;
+    border: none; border-radius: 10px;
     padding: 9px 18px; font-size: 13px; font-weight: 600;
     cursor: pointer; letter-spacing: -0.005em;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
-  .rec-form button.submit:hover { background: var(--accent-light); }
+  .rec-form button.submit:hover {
+    background: var(--accent-light);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(230,184,106,0.32);
+  }
+  .rec-form button.submit:active { transform: scale(0.97); box-shadow: none; }
   .rec-form button.cancel {
     background: transparent; color: var(--sub);
-    border: 1px solid var(--line);
-    border-radius: 6px; padding: 9px 14px; cursor: pointer;
+    border: 1.5px solid var(--line);
+    border-radius: 10px; padding: 9px 14px; cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1), color 0.15s, border-color 0.15s;
   }
+  .rec-form button.cancel:hover { color: var(--text); border-color: var(--line-2); transform: scale(1.02); }
+  .rec-form button.cancel:active { transform: scale(0.97); }
 
   .rec-result { margin-top: 12px; }
   .rec-result .summary {
@@ -1812,15 +1872,23 @@
     font-size: 12px; margin-top: 2px; font-weight: 600;
   }
   .rec-card .add-btn {
-    background: var(--accent); color: #0A0A0B;
-    border: 1px solid var(--accent);
-    border-radius: 6px; padding: 6px 12px;
+    background: var(--accent); color: #0A0A0B; border: none;
+    border-radius: 8px; padding: 6px 12px;
     font-size: 12px; cursor: pointer; font-weight: 600;
     flex-shrink: 0; letter-spacing: -0.005em;
     min-height: 30px; line-height: 1.3;
     display: inline-flex; align-items: center; justify-content: center;
     box-sizing: border-box;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
+  .rec-card .add-btn:hover {
+    background: var(--accent-light);
+    transform: scale(1.04);
+    box-shadow: 0 4px 14px rgba(230,184,106,0.28);
+  }
+  .rec-card .add-btn:active { transform: scale(0.96); box-shadow: none; }
   .rec-oneline {
     background: var(--card2);
     border-left: 3px solid var(--accent);
@@ -2407,19 +2475,29 @@
   }
   .add-form .actions button {
     padding: 8px 16px; font-size: 13px; font-weight: 600;
-    border-radius: 6px; cursor: pointer; border: none;
+    border-radius: 10px; cursor: pointer; border: none;
+    transition: transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.15s;
   }
   .add-form .actions .submit {
     background: var(--accent); color: #0A0A0B;
   }
-  .add-form .actions .submit:hover { background: var(--accent-light); }
+  .add-form .actions .submit:hover {
+    background: var(--accent-light);
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(230,184,106,0.32);
+  }
+  .add-form .actions .submit:active { transform: scale(0.97); box-shadow: none; }
   .add-form .actions .submit:disabled {
     opacity: 0.4; cursor: not-allowed;
   }
   .add-form .actions .cancel {
     background: transparent; color: var(--sub);
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
   }
+  .add-form .actions .cancel:hover { color: var(--text); border-color: var(--line-2); transform: scale(1.02); }
+  .add-form .actions .cancel:active { transform: scale(0.97); }
   .add-form .err {
     color: var(--red); font-size: 12px; margin-top: 8px;
   }
@@ -2427,12 +2505,13 @@
   /* 删除链接 */
   .pos-actions .del-btn {
     background: transparent; color: var(--sub);
-    border: 1px solid var(--line);
+    border: 1.5px solid var(--line);
     margin-left: auto; font-size: 11px;
   }
   .pos-actions .del-btn:hover {
     color: var(--red); border-color: var(--red);
     background: rgba(248,113,113,0.05);
+    transform: scale(1.04);
   }
   .pos-toolbar button.muted { color: var(--sub); }
   .pos-toolbar .label-tag {
@@ -5151,7 +5230,7 @@ function showPreview(candId) {
               onclick="addRecToPositions('${opt.ticker}','${opt.type}',${opt.strike},'${opt.expiry}',${opt.mid}); hidePreview();">
         ${t('确认加入持仓')}
       </button>
-      <button style="flex:0 0 auto;padding:10px 16px;border-radius:8px;font-size:13px;background:transparent;color:var(--sub);border:1px solid var(--line);cursor:pointer;"
+      <button style="flex:0 0 auto;padding:10px 16px;border-radius:10px;font-size:13px;background:transparent;color:var(--sub);border:1.5px solid var(--line);cursor:pointer;"
               onclick="hidePreview()">
         ${t('取消')}
       </button>
@@ -5308,11 +5387,11 @@ function showCompare() {
       </table>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
-      <button style="padding:8px 16px;border-radius:6px;font-size:12px;background:transparent;color:var(--sub);border:1px solid var(--line);cursor:pointer;"
+      <button style="padding:8px 16px;border-radius:10px;font-size:12px;background:transparent;color:var(--sub);border:1.5px solid var(--line);cursor:pointer;"
               onclick="clearCompareSelect(); hideCompare();">
         ${t('清空对比')}
       </button>
-      <button style="padding:8px 16px;border-radius:6px;font-size:12px;background:var(--accent);color:#0A0A0B;border:none;cursor:pointer;font-weight:600;"
+      <button style="padding:8px 16px;border-radius:10px;font-size:12px;background:var(--accent);color:#0A0A0B;border:none;cursor:pointer;font-weight:600;"
               onclick="hideCompare()">
         ${t('关闭')}
       </button>
@@ -6260,9 +6339,9 @@ function showJournal(pid) {
                      background:var(--card2);color:var(--text);"></textarea>
     <div style="margin:10px 0 18px;display:flex;justify-content:flex-end;gap:8px">
       <button onclick="hideJournal()" style="background:transparent;color:var(--sub);
-              border:1px solid var(--line);padding:7px 14px;border-radius:6px;cursor:pointer">取消</button>
+              border:1.5px solid var(--line);padding:7px 14px;border-radius:8px;cursor:pointer">取消</button>
       <button onclick="_addJournalAndRefresh('${pid}')" style="background:var(--accent);
-              color:#0A0A0B;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-weight:600">
+              color:#0A0A0B;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600">
         + 添加笔记
       </button>
     </div>
@@ -6814,7 +6893,7 @@ async function submitRec() {
           ${isDataErr ? `
             <div style="margin-top:14px;display:flex;gap:10px">
               <button onclick="submitRec()"
-                style="background:var(--accent);color:#0A0A0B;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">
+                style="background:var(--accent);color:#0A0A0B;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">
                 ↻ 立即重试
               </button>
             </div>
@@ -7919,9 +7998,9 @@ function _showAuthDebug(reason) {
         </div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="(async () => { const t = JSON.stringify({ ua: navigator.userAgent, url: location.href, log: JSON.parse(sessionStorage.getItem('_auth_log')||'[]'), lsKeys: Object.keys(localStorage).filter(k => k.startsWith('sb-')) }, null, 2); try { await navigator.clipboard.writeText(t); alert('已复制诊断信息，发给 hi@congyangwang.com'); } catch(e){ prompt('手动复制：', t); } })()"
-                  style="padding:8px 14px;background:var(--accent);color:#0A0A0B;border:none;border-radius:6px;cursor:pointer;font-weight:600">📋 复制诊断</button>
+                  style="padding:8px 14px;background:var(--accent);color:#0A0A0B;border:none;border-radius:8px;cursor:pointer;font-weight:600">📋 复制诊断</button>
           <button onclick="sessionStorage.removeItem('_auth_log'); Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k)); location.href='/app'"
-                  style="padding:8px 14px;background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;cursor:pointer">🗑 清干净重试</button>
+                  style="padding:8px 14px;background:transparent;border:1.5px solid var(--line);color:var(--text);border-radius:8px;cursor:pointer">🗑 清干净重试</button>
         </div>
       </div>
     </div>

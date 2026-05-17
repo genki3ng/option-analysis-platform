@@ -2074,10 +2074,8 @@
     border: 1px solid rgba(74, 222, 128, 0.3);
     color: var(--green);
   }
-  /* Exit plan inline — 推荐卡底部出场计划 */
+  /* Exit plan — 出场计划 */
   .exit-plan {
-    display: flex; align-items: center; flex-wrap: wrap;
-    gap: 6px;
     background: rgba(212, 165, 116, 0.06);
     border: 1px solid rgba(212, 165, 116, 0.28);
     border-radius: 8px;
@@ -2087,15 +2085,56 @@
     line-height: 1.5;
     color: var(--text);
   }
-  .exit-plan .ep-icon { font-size: 14px; }
-  .exit-plan .ep-label { color: var(--accent); font-weight: 600; }
-  .exit-plan .ep-divider { color: var(--sub); opacity: 0.5; }
-  .exit-plan .ep-profit strong { color: var(--green); }
-  .exit-plan .ep-stop strong { color: var(--red); }
-  .exit-plan .ep-stop.disabled { color: var(--sub); font-style: italic; }
-  .exit-plan .ep-roll { color: var(--sub); font-size: 11.5px; }
+  /* expanded（推荐卡用）：垂直列表 */
+  .exit-plan.expanded {
+    display: block;
+  }
+  .exit-plan.expanded .ep-header {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+    color: var(--accent); font-weight: 600;
+  }
+  .exit-plan.expanded .ep-header .ep-icon { font-size: 14px; }
+  .exit-plan.expanded .ep-item {
+    display: flex; gap: 6px;
+    padding: 3px 0 3px 18px;
+    align-items: flex-start;
+  }
+  .exit-plan.expanded .ep-item .ic {
+    font-size: 12px;
+    width: 16px;
+    flex-shrink: 0;
+    line-height: 1.5;
+  }
+  .exit-plan.expanded .ep-item .body { flex: 1; }
+  .exit-plan.expanded .ep-item .ep-action {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .exit-plan.expanded .ep-item .ep-detail {
+    color: var(--sub);
+    margin-left: 4px;
+  }
+  .exit-plan.expanded .ep-item.profit .ep-action { color: var(--green); }
+  .exit-plan.expanded .ep-item.stop .ep-action   { color: var(--red); }
+  .exit-plan.expanded .ep-item.assign .ep-action { color: var(--accent); }
+  .exit-plan.expanded .ep-item.roll .body { color: var(--sub); font-size: 11.5px; }
+  /* compact（持仓卡用）：一行 */
+  .exit-plan.compact {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+  .exit-plan.compact .ep-icon { font-size: 13px; }
+  .exit-plan.compact .ep-label { color: var(--accent); font-weight: 600; margin-right: 2px; }
+  .exit-plan.compact .ep-divider { color: var(--sub); opacity: 0.45; }
+  .exit-plan.compact strong { color: var(--text); }
+  .exit-plan.compact .pf strong { color: var(--green); }
+  .exit-plan.compact .as strong { color: var(--accent); }
   @media (max-width: 600px) {
-    .exit-plan { font-size: 11.5px; padding: 7px 9px; gap: 4px; }
+    .exit-plan { font-size: 11.5px; padding: 7px 9px; }
+    .exit-plan.expanded .ep-item { padding-left: 12px; }
   }
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
@@ -4198,6 +4237,17 @@ const I18N = {
       '历史 {mo} 月回测胜率 {wr}% < 理论 POP {tp}%（{n} 次模拟） — 理论可能偏乐观',
     'historical_above_theory':
       '历史 {mo} 月回测胜率 {wr}% > 理论 POP {tp}%（{n} 次模拟） — 该方向历史更稳',
+    // ── Exit plan 句子模板（{pct} {amt} {entry} {exit} {stop} {strike} {ticker} {collateral} {px}）──
+    'exit_profit_action': '赚 {pct}% 时买回',
+    'exit_profit_detail': '每张落袋 {amt}（mid {entry} → {exit}）',
+    'exit_stop_action':   'mid 涨到 {stop} 时止损',
+    'exit_stop_detail':   '每张亏 {amt}（涨 {pct}%）',
+    'exit_csp_full':      '<strong>不止损</strong>：到期跌穿 <strong>{strike}</strong> → 接货 {ticker} 正股（占资 {collateral} / 100 股）',
+    'exit_cc_full':       '<strong>不止损</strong>：到期升破 <strong>{strike}</strong> → {ticker} 正股被叫走（卖出锁利）',
+    'pos_exit_profit':    '跌到 <strong>{px}</strong> 买回锁利 <strong>{amt}/张</strong>',
+    'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
+    'pos_exit_cc':        '升破 <strong>{strike}</strong> 卖出 {ticker}',
+    '出场建议': '出场建议',
   },
 
   zh_tw: {
@@ -4748,6 +4798,16 @@ const I18N = {
       '歷史 {mo} 月回測勝率 {wr}% < 理論 POP {tp}%（{n} 次模擬）— 理論可能偏樂觀',
     'historical_above_theory':
       '歷史 {mo} 月回測勝率 {wr}% > 理論 POP {tp}%（{n} 次模擬）— 該方向歷史更穩',
+    'exit_profit_action': '賺 {pct}% 時買回',
+    'exit_profit_detail': '每張落袋 {amt}（mid {entry} → {exit}）',
+    'exit_stop_action':   'mid 漲到 {stop} 時止損',
+    'exit_stop_detail':   '每張虧 {amt}（漲 {pct}%）',
+    'exit_csp_full':      '<strong>不止損</strong>：到期跌穿 <strong>{strike}</strong> → 接貨 {ticker} 正股（佔資 {collateral} / 100 股）',
+    'exit_cc_full':       '<strong>不止損</strong>：到期升破 <strong>{strike}</strong> → {ticker} 正股被叫走（賣出鎖利）',
+    'pos_exit_profit':    '跌到 <strong>{px}</strong> 買回鎖利 <strong>{amt}/張</strong>',
+    'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
+    'pos_exit_cc':        '升破 <strong>{strike}</strong> 賣出 {ticker}',
+    '出场建议': '出場建議',
   },
 
   en: {
@@ -5390,6 +5450,16 @@ const I18N = {
       'Historical {mo}-mo win rate {wr}% < theoretical POP {tp}% ({n} sims) — theory may be optimistic',
     'historical_above_theory':
       'Historical {mo}-mo win rate {wr}% > theoretical POP {tp}% ({n} sims) — direction historically stronger',
+    'exit_profit_action': 'Buy back at {pct}% profit',
+    'exit_profit_detail': 'Lock {amt}/contract (mid {entry} → {exit})',
+    'exit_stop_action':   'Stop loss when mid rises to {stop}',
+    'exit_stop_detail':   'Lose {amt}/contract ({pct}% rise)',
+    'exit_csp_full':      '<strong>No stop</strong>: if expires below <strong>{strike}</strong>, get assigned {ticker} shares ({collateral} collateral / 100 sh)',
+    'exit_cc_full':       '<strong>No stop</strong>: if expires above <strong>{strike}</strong>, {ticker} shares called away (sell to lock)',
+    'pos_exit_profit':    'Buy back at <strong>{px}</strong> to lock <strong>{amt}/contract</strong>',
+    'pos_exit_csp':       'Below <strong>{strike}</strong> → assigned {ticker}',
+    'pos_exit_cc':        'Above <strong>{strike}</strong> → sell {ticker}',
+    '出场建议': 'Exit guide',
   },
 };
 
@@ -5908,36 +5978,119 @@ function renderTickers(tickers, intradayMap) {
   }).join('');
 }
 
-function renderExitPlan(plan) {
+// 模板替换 helper — 支持 {key} 占位
+function _fillTpl(tpl, vars) {
+  let s = tpl;
+  for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+
+function renderExitPlan(plan, opt) {
   if (!plan || !plan.kind) return '';
   const v = plan.summary_vars || {};
-  const ep = (v.exit_price ?? 0).toFixed(2);
-  const sp = (v.stop_price ?? 0).toFixed(2);
+  const exitPx = Number(v.exit_price) || 0;
+  const stopPx = Number(v.stop_price) || 0;
   const pp = v.profit_pct ?? 0;
   const xp = v.stop_pct ?? 0;
-  // 三个段：锁利 / 止损 / Roll
-  const profitSeg = `<span class="ep-profit">${t('锁利')} <strong>$${ep}</strong> (${pp}%)</span>`;
-  let stopSeg = '';
+  const entry = Number((opt && opt.mid) || 0);
+  const profitDollars = (entry - exitPx) * 100;
+  const stopDollars = (stopPx - entry) * 100;
+  const strike = Number((opt && opt.strike) || 0);
+  const ticker = (opt && opt.ticker) || '';
+  const collateral = strike * 100;
+
+  const fmtMoney = (n) => '$' + fmt(n, 0);
+  const fmtMoney2 = (n) => '$' + fmt(n, 2);
+
+  // 段 1：锁利
+  const profitAction = _fillTpl(t('exit_profit_action'), { pct: pp });
+  const profitDetail = _fillTpl(t('exit_profit_detail'), {
+    amt: fmtMoney(profitDollars), entry: fmtMoney2(entry), exit: fmtMoney2(exitPx),
+  });
+  const profitItem = `
+    <div class="ep-item profit">
+      <span class="ic">🎯</span>
+      <span class="body">
+        <span class="ep-action">${profitAction}</span>
+        <span class="ep-detail">— ${profitDetail}</span>
+      </span>
+    </div>`;
+
+  // 段 2：止损 / 接货 / 被叫走
+  let stopItem = '';
   if (plan.stop_loss_disabled) {
-    if (plan.kind === 'csp') stopSeg = `<span class="ep-stop disabled">${t('被指派接货')}</span>`;
-    else if (plan.kind === 'covered_call') stopSeg = `<span class="ep-stop disabled">${t('被叫走持股')}</span>`;
-    else stopSeg = `<span class="ep-stop disabled">${t('不止损')}</span>`;
+    if (plan.kind === 'csp') {
+      const txt = _fillTpl(t('exit_csp_full'), {
+        strike: '$' + strike, ticker, collateral: fmtMoney(collateral),
+      });
+      stopItem = `<div class="ep-item assign"><span class="ic">🤝</span><span class="body">${txt}</span></div>`;
+    } else if (plan.kind === 'covered_call') {
+      const txt = _fillTpl(t('exit_cc_full'), { strike: '$' + strike, ticker });
+      stopItem = `<div class="ep-item assign"><span class="ic">📤</span><span class="body">${txt}</span></div>`;
+    } else {
+      stopItem = `<div class="ep-item assign"><span class="ic">⊘</span><span class="body">${t('不止损')}</span></div>`;
+    }
   } else {
-    stopSeg = `<span class="ep-stop">${t('止损')} <strong>$${sp}</strong> (-${xp}%)</span>`;
+    const stopAction = _fillTpl(t('exit_stop_action'), { stop: fmtMoney2(stopPx) });
+    const stopDetail = _fillTpl(t('exit_stop_detail'), {
+      amt: fmtMoney(stopDollars), pct: xp,
+    });
+    stopItem = `
+      <div class="ep-item stop">
+        <span class="ic">🛑</span>
+        <span class="body">
+          <span class="ep-action">${stopAction}</span>
+          <span class="ep-detail">— ${stopDetail}</span>
+        </span>
+      </div>`;
   }
-  let rollSeg = '';
+
+  // 段 3：Roll
+  let rollItem = '';
   if (plan.roll_trigger) {
-    rollSeg = `<span class="ep-roll">${t('exit_roll_dte7_delta50')}</span>`;
+    rollItem = `<div class="ep-item roll"><span class="ic">↻</span><span class="body">${t('exit_roll_dte7_delta50')}</span></div>`;
   }
+
   return `
-    <div class="exit-plan exit-plan-${plan.kind}">
+    <div class="exit-plan expanded exit-plan-${plan.kind}">
+      <div class="ep-header">
+        <span class="ep-icon">📍</span>
+        <span>${t('出场计划')}</span>
+      </div>
+      ${profitItem}
+      ${stopItem}
+      ${rollItem}
+    </div>
+  `;
+}
+
+// 持仓卡 compact 一行出场建议（默认 balanced 风险 = 锁利 50%）
+function renderPositionExitPlan(p) {
+  if (!p || p.closed) return '';
+  const entry = Number(p.sell_price || 0);
+  if (!entry) return '';   // 只对 short premium 显示（sell_price 是收到的权利金）
+  const isPut = p.type === 'put';
+  const profitPct = 50;
+  const buybackPx = entry * (1 - profitPct / 100);
+  const profitDollars = (entry - buybackPx) * 100;
+  const strike = Number(p.strike || 0);
+
+  const fmtMoney = (n) => '$' + fmt(n, 0);
+  const fmtMoney2 = (n) => '$' + fmt(n, 2);
+
+  const profitSeg = `<span class="pf">🎯 ${_fillTpl(t('pos_exit_profit'), {
+    px: fmtMoney2(buybackPx), amt: fmtMoney(profitDollars),
+  })}</span>`;
+  const assignSeg = isPut
+    ? `<span class="as">🤝 ${_fillTpl(t('pos_exit_csp'), { strike: '$' + strike, ticker: p.ticker })}</span>`
+    : `<span class="as">📤 ${_fillTpl(t('pos_exit_cc'), { strike: '$' + strike, ticker: p.ticker })}</span>`;
+  return `
+    <div class="exit-plan compact">
       <span class="ep-icon">📍</span>
-      <span class="ep-label">${t('出场计划')}</span>
-      <span class="ep-divider">·</span>
+      <span class="ep-label">${t('出场建议')}</span>
       ${profitSeg}
       <span class="ep-divider">·</span>
-      ${stopSeg}
-      ${rollSeg ? `<span class="ep-divider">·</span>${rollSeg}` : ''}
+      ${assignSeg}
     </div>
   `;
 }
@@ -6520,6 +6673,8 @@ function renderPosition(p) {
       <div class="earnings-warn">
         ${t('earnings_warning_html').replace('{date}', p.earnings_date).replace('{n}', p.earnings_days_until)}
       </div>` : ''}
+
+      ${renderPositionExitPlan(p)}
 
       <div class="pos-extras">
         <details class="pos-payoff">
@@ -8251,7 +8406,7 @@ function renderRecResult(d) {
     const goalProgress = _renderGoalProgress(opt, isShort, isLeaps);
 
     // 出场计划 inline
-    const exitBar = renderExitPlan(opt.exit_plan);
+    const exitBar = renderExitPlan(opt.exit_plan, opt);
 
     return `
       <div class="rec-card" data-cand-id="${candId}">

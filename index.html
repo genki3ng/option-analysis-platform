@@ -1408,6 +1408,68 @@
     box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset,
                 0 4px 14px rgba(230,184,106,0.30);
   }
+
+  /* ── Section-typed layouts: 按 section 类型选择最佳控件布局 ── */
+  /* 方向（3 项互斥）：等宽 segmented-control 风格 */
+  .rec-form .row[data-section="direction"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="direction"] .label { grid-column: 1 / -1; }
+
+  /* 策略意图（5 项）：2 列网格，LEAPS 占整行 */
+  .rec-form .row[data-section="intent"] {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="intent"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="intent"] .opt-btn[data-value="long_leaps"] {
+    grid-column: 1 / -1;
+  }
+
+  /* 时长（7 项）：3 列网格 3+3+1，LEAPS 占整行 */
+  .rec-form .row[data-section="timeframe"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="timeframe"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="timeframe"] .opt-btn[data-value="400"] {
+    grid-column: 1 / -1;
+  }
+
+  /* 风险（3 项 + Δ 元数据）：等宽 card，含主副标题 */
+  .rec-form .row[data-section="risk"] {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 22px; align-items: stretch;
+  }
+  .rec-form .row[data-section="risk"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="risk"] .opt-btn {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    justify-content: center;
+    padding: 11px 14px;
+    min-height: 58px;
+    gap: 3px;
+  }
+  .rec-form .opt-title {
+    font-size: 13.5px; font-weight: 600;
+    line-height: 1.2; letter-spacing: -0.01em;
+  }
+  .rec-form .opt-sub {
+    font-size: 10.5px; color: var(--sub);
+    font-family: "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums; line-height: 1.2;
+  }
+  .rec-form .opt-btn.selected .opt-title,
+  .rec-form .opt-btn.selected .opt-sub { color: #0A0A0B; }
+  .rec-form .opt-btn.selected .opt-sub { opacity: 0.72; }
+  .rec-form .risk-hint {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    font-size: 11px; color: var(--sub);
+    line-height: 1.4;
+  }
   .rec-form input[type="text"], .rec-form input[type="number"] {
     background: var(--card2); border: 1px solid var(--line);
     border-radius: 6px; padding: 7px 10px; font-size: 13px;
@@ -2997,29 +3059,29 @@
     <button class="preset-btn" data-preset="iron_condor_neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="ticker">
     <span class="label" data-i18n="1. 标的 Ticker">1. 标的 Ticker</span>
     <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
     <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="direction">
     <span class="label" data-i18n="2. 你的方向看法">2. 你的方向看法</span>
-    <button class="opt-btn" data-group="direction" data-value="bullish" data-i18n="📈 长期看涨">📈 长期看涨</button>
-    <button class="opt-btn" data-group="direction" data-value="bearish" data-i18n="📉 长期看跌">📉 长期看跌</button>
-    <button class="opt-btn" data-group="direction" data-value="neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
+    <button class="opt-btn" data-group="direction" data-value="bullish" data-i18n="长期看涨">长期看涨</button>
+    <button class="opt-btn" data-group="direction" data-value="bearish" data-i18n="长期看跌">长期看跌</button>
+    <button class="opt-btn" data-group="direction" data-value="neutral" data-i18n="区间震荡">区间震荡</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="intent">
     <span class="label" data-i18n="3. 策略意图">3. 策略意图</span>
-    <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="💰 收权利金">💰 收权利金</button>
-    <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="🎯 准备接货（CSP）">🎯 准备接货（CSP）</button>
-    <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="📤 减仓（Covered Call）">📤 减仓（Covered Call）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="🚀 做多波动率（近期）">🚀 做多波动率（近期）</button>
-    <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="📖 LEAPS 股票替代（长期 Long Call）">📖 LEAPS 股票替代（长期 Long Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="收权利金">收权利金</button>
+    <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="准备接货（CSP）">准备接货（CSP）</button>
+    <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="减仓（Covered Call）">减仓（Covered Call）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="做多波动率（近期）">做多波动率（近期）</button>
+    <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="LEAPS 股票替代（长期 Long Call）">LEAPS 股票替代（长期 Long Call）</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="timeframe">
     <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
     <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="当周 1-5天">当周 1-5天</button>
     <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="下周 6-12天">下周 6-12天</button>
@@ -3030,12 +3092,21 @@
     <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="LEAPS 1年+">LEAPS 1年+</button>
   </div>
 
-  <div class="row">
+  <div class="row" data-section="risk">
     <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
-    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative" data-i18n="🛡 保守">🛡 保守</button>
-    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced" data-i18n="⚖️ 平衡">⚖️ 平衡</button>
-    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive" data-i18n="🔥 激进">🔥 激进</button>
-    <span id="risk-hint" style="font-size:11px;color:var(--sub);margin-left:8px"></span>
+    <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative">
+      <span class="opt-title" data-i18n="保守">保守</span>
+      <span class="opt-sub" id="risk-sub-conservative">Δ —</span>
+    </button>
+    <button class="opt-btn" data-group="risk" data-value="balanced" id="risk-btn-balanced">
+      <span class="opt-title" data-i18n="平衡">平衡</span>
+      <span class="opt-sub" id="risk-sub-balanced">Δ —</span>
+    </button>
+    <button class="opt-btn" data-group="risk" data-value="aggressive" id="risk-btn-aggressive">
+      <span class="opt-title" data-i18n="激进">激进</span>
+      <span class="opt-sub" id="risk-sub-aggressive">Δ —</span>
+    </button>
+    <span class="risk-hint" id="risk-hint"></span>
   </div>
 
   <div class="submit-row">
@@ -3342,14 +3413,17 @@ const I18N = {
     '3. 策略意图': '3. 策略意圖',
     '4. 持仓时长': '4. 持倉時長',
     '5. 风险偏好': '5. 風險偏好',
-    '📈 长期看涨': '📈 長期看漲',
-    '📉 长期看跌': '📉 長期看跌',
-    '↔️ 区间震荡 ': '↔️ 區間震盪 ',
-    '💰 收权利金': '💰 收權利金',
-    '🎯 准备接货（CSP）': '🎯 準備接貨（CSP）',
-    '📤 减仓（Covered Call）': '📤 減倉（Covered Call）',
-    '🚀 做多波动率（近期）': '🚀 做多波動率（近期）',
-    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS 股票替代（長期 Long Call）',
+    '长期看涨': '長期看漲',
+    '长期看跌': '長期看跌',
+    '区间震荡': '區間震盪',
+    '收权利金': '收權利金',
+    '准备接货（CSP）': '準備接貨（CSP）',
+    '减仓（Covered Call）': '減倉（Covered Call）',
+    '做多波动率（近期）': '做多波動率（近期）',
+    'LEAPS 股票替代（长期 Long Call）': 'LEAPS 股票替代（長期 Long Call）',
+    '保守': '保守',
+    '平衡': '平衡',
+    '激进': '激進',
     '当周 1-5天': '當週 1-5天',
     '下周 6-12天': '下週 6-12天',
     '当月 14-30天': '當月 14-30天',
@@ -3889,14 +3963,17 @@ const I18N = {
     '3. 策略意图': '3. Strategy Intent',
     '4. 持仓时长': '4. Time Horizon',
     '5. 风险偏好': '5. Risk Profile',
-    '📈 长期看涨': '📈 Long-term Bullish',
-    '📉 长期看跌': '📉 Long-term Bearish',
-    '↔️ 区间震荡 ': '↔️ Range-bound ',
-    '💰 收权利金': '💰 Collect Premium',
-    '🎯 准备接货（CSP）': '🎯 Cash-Secured Put',
-    '📤 减仓（Covered Call）': '📤 Covered Call',
-    '🚀 做多波动率（近期）': '🚀 Long Volatility (near-term)',
-    '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS Stock Replacement',
+    '长期看涨': 'Long-term Bullish',
+    '长期看跌': 'Long-term Bearish',
+    '区间震荡': 'Range-bound',
+    '收权利金': 'Collect Premium',
+    '准备接货（CSP）': 'Cash-Secured Put',
+    '减仓（Covered Call）': 'Covered Call',
+    '做多波动率（近期）': 'Long Volatility (near-term)',
+    'LEAPS 股票替代（长期 Long Call）': 'LEAPS Stock Replacement',
+    '保守': 'Conservative',
+    '平衡': 'Balanced',
+    '激进': 'Aggressive',
     '当周 1-5天': 'This week 1-5d',
     '下周 6-12天': 'Next week 6-12d',
     '当月 14-30天': 'This month 14-30d',
@@ -6428,17 +6505,12 @@ const _RISK_BANDS = {
 function _updateRiskLabels() {
   const intent = _recSelection.intent;
   const bands = _RISK_BANDS[intent] || _RISK_BANDS.default;
-  const labels = {
-    conservative: `🛡 保守（Δ ${bands.conservative}）`,
-    balanced:     `⚖️ 平衡（Δ ${bands.balanced}）`,
-    aggressive:   `🔥 激进（Δ ${bands.aggressive}）`,
-  };
-  for (const [k, txt] of Object.entries(labels)) {
-    const el = document.getElementById(`risk-btn-${k}`);
-    if (el) el.textContent = txt;
-  }
+  ['conservative', 'balanced', 'aggressive'].forEach(k => {
+    const sub = document.getElementById(`risk-sub-${k}`);
+    if (sub) sub.textContent = `Δ ${bands[k]}`;
+  });
   const hintEl = document.getElementById('risk-hint');
-  if (hintEl) hintEl.textContent = bands.hint;
+  if (hintEl) hintEl.textContent = t(bands.hint);
 }
 
 async function submitRec() {

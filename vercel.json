@@ -18,5 +18,3 @@
     { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }
-</content>
-</invoke>

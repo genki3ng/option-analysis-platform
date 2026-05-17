@@ -245,6 +245,68 @@
   .user-menu .um-item.danger { color: var(--red); }
   .user-menu .um-item.danger:hover { background: rgba(239,68,68,0.06); }
 
+  /* ─── 迁移确认 modal (替代 confirm()，OAuth 后浏览器会拦截 confirm) ─── */
+  .migrate-modal {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(440px, 94vw);
+    z-index: 1400;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .migrate-modal.open { display: block; }
+  .migrate-modal h3 {
+    font-size: 16px; font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .migrate-modal .body {
+    font-size: 13px; line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .migrate-modal .body .counts {
+    background: var(--card2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .migrate-modal .body .hint {
+    font-size: 11.5px; color: var(--sub);
+    margin-top: 8px;
+  }
+  .migrate-modal .actions {
+    display: flex; gap: 8px;
+    justify-content: flex-end;
+  }
+  .migrate-modal button {
+    border: none;
+    border-radius: 7px;
+    padding: 9px 18px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .migrate-modal .btn-import {
+    background: var(--accent); color: #0A0A0B;
+  }
+  .migrate-modal .btn-import:hover { background: #F0C778; }
+  .migrate-modal .btn-skip {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line);
+  }
+  .migrate-modal .btn-skip:hover { color: var(--text); }
+
   /* ─── 云同步状态指示 ─── */
   .cloud-sync-status {
     position: fixed;
@@ -2374,9 +2436,29 @@
     <span>✏️</span>
     <span data-i18n="改昵称">改昵称</span>
   </div>
+  <div class="um-item" onclick="hideUserMenu(); manualReimport();">
+    <span>📥</span>
+    <span data-i18n="重新导入本地数据">重新导入本地数据</span>
+  </div>
   <div class="um-item danger" onclick="hideUserMenu(); signOutCloud();">
     <span>🚪</span>
     <span data-i18n="登出">登出</span>
+  </div>
+</div>
+
+<!-- 迁移确认 modal -->
+<div class="modal-backdrop" id="migrate-backdrop"></div>
+<div class="migrate-modal" id="migrate-modal">
+  <h3>☁ <span data-i18n="检测到本地数据">检测到本地数据</span></h3>
+  <div class="body">
+    <div data-i18n="migrate_modal_body_html">本机 localStorage 里发现你之前的持仓和状态记录。</div>
+    <div class="counts" id="migrate-counts">—</div>
+    <div data-i18n="导入到云端，以后多设备实时同步？">导入到云端，以后多设备实时同步？</div>
+    <div class="hint" data-i18n="跳过的话，云端会从空白开始（本机数据不会删除）。">跳过的话，云端会从空白开始（本机数据不会删除）。</div>
+  </div>
+  <div class="actions">
+    <button class="btn-skip" onclick="resolveMigration(false)" data-i18n="跳过">跳过</button>
+    <button class="btn-import" onclick="resolveMigration(true)" data-i18n="导入云端">导入云端</button>
   </div>
 </div>
 
@@ -2795,6 +2877,19 @@ const I18N = {
     '登录失败：': '登录失败：',
     '确定登出？登出后切回本地模式（本机数据不受影响）。': '确定登出？登出后切回本地模式（本机数据不受影响）。',
     'migration_prompt': '检测到本地有 {nPos} 个持仓 / {nState} 条状态记录，导入到云端？\n\n点"确定"：导入云端 → 以后多设备实时同步。\n点"取消"：忽略本地数据，云端从空白开始。',
+    '检测到本地数据': '检测到本地数据',
+    'migrate_modal_body_html': '本机 localStorage 里发现你之前的持仓和状态记录：',
+    '导入到云端，以后多设备实时同步？': '导入到云端，以后多设备实时同步？',
+    '跳过的话，云端会从空白开始（本机数据不会删除）。': '跳过的话，云端会从空白开始（本机数据不会删除）。',
+    '跳过': '跳过',
+    '导入云端': '导入云端',
+    '重新导入本地数据': '重新导入本地数据',
+    '个持仓': '个持仓',
+    '条状态记录': '条状态记录',
+    '请先登录': '请先登录',
+    '云端尚未就绪，稍候再试': '云端尚未就绪，稍候再试',
+    '本地没有数据可导入': '本地没有数据可导入',
+    'manual_reimport_overwrite_warn': '⚠️ 警告：云端已有 {cloudN} 个持仓，重新导入会用本地的 {localN} 个持仓覆盖云端数据，且无法撤销！\n\n确定继续？',
     '加仓预览：看这一笔加进组合的影响': '加仓预览：看这一笔加进组合的影响',
     '预览': '预览',
     '加入对比': '加入对比',
@@ -3195,6 +3290,19 @@ const I18N = {
     '登录失败：': '登入失敗：',
     '确定登出？登出后切回本地模式（本机数据不受影响）。': '確定登出？登出後切回本機模式（本機資料不受影響）。',
     'migration_prompt': '偵測到本機有 {nPos} 個持倉 / {nState} 條狀態記錄，匯入雲端？\n\n點「確定」：匯入雲端 → 之後多裝置即時同步。\n點「取消」：忽略本機資料，雲端從空白開始。',
+    '检测到本地数据': '偵測到本機資料',
+    'migrate_modal_body_html': '本機 localStorage 裡發現你之前的持倉與狀態記錄：',
+    '导入到云端，以后多设备实时同步？': '匯入雲端，之後多裝置即時同步？',
+    '跳过的话，云端会从空白开始（本机数据不会删除）。': '跳過的話，雲端會從空白開始（本機資料不會刪除）。',
+    '跳过': '跳過',
+    '导入云端': '匯入雲端',
+    '重新导入本地数据': '重新匯入本機資料',
+    '个持仓': '個持倉',
+    '条状态记录': '條狀態記錄',
+    '请先登录': '請先登入',
+    '云端尚未就绪，稍候再试': '雲端尚未就緒，稍候再試',
+    '本地没有数据可导入': '本機沒有資料可匯入',
+    'manual_reimport_overwrite_warn': '⚠️ 警告：雲端已有 {cloudN} 個持倉，重新匯入會用本機的 {localN} 個持倉覆蓋雲端資料，且無法復原！\n\n確定繼續？',
     '加仓预览：看这一笔加进组合的影响': '加倉預覽：看這一筆加進組合的影響',
     '预览': '預覽',
     '加入对比': '加入對比',
@@ -3725,6 +3833,19 @@ const I18N = {
     '登录失败：': 'Sign-in failed: ',
     '确定登出？登出后切回本地模式（本机数据不受影响）。': 'Sign out? You will revert to local-only mode (local data is unaffected).',
     'migration_prompt': 'Found {nPos} local positions / {nState} state records. Import to cloud?\n\nOK: import to cloud (multi-device realtime sync afterward).\nCancel: ignore local data, start cloud fresh.',
+    '检测到本地数据': 'Local data detected',
+    'migrate_modal_body_html': 'Your previous positions and state records were found in this browser:',
+    '导入到云端，以后多设备实时同步？': 'Import to cloud and enable cross-device realtime sync?',
+    '跳过的话，云端会从空白开始（本机数据不会删除）。': 'If you skip, your cloud starts empty (local data is not deleted).',
+    '跳过': 'Skip',
+    '导入云端': 'Import to Cloud',
+    '重新导入本地数据': 'Re-import local data',
+    '个持仓': 'positions',
+    '条状态记录': 'state records',
+    '请先登录': 'Please sign in first',
+    '云端尚未就绪，稍候再试': 'Cloud not ready yet, please try again',
+    '本地没有数据可导入': 'No local data to import',
+    'manual_reimport_overwrite_warn': '⚠️ WARNING: Cloud already has {cloudN} positions. Re-import will OVERWRITE cloud with {localN} local positions — this cannot be undone.\n\nContinue?',
     '加仓预览：看这一笔加进组合的影响': 'Preview the portfolio impact of adding this contract',
     '预览': 'Preview',
     '加入对比': 'Compare',
@@ -7690,14 +7811,69 @@ async function _checkMigration() {
     localStorage.setItem(migKey, '1');
     return;
   }
-  const msg = t('migration_prompt').replace('{nPos}', nPos).replace('{nState}', nState);
-  const ok = confirm(msg);
+  const ok = await _askMigration(nPos, nState);
   if (ok) {
     _cloudCache.positions = localPos;
     _cloudCache.state = localState;
     await _saveCloud();
   }
   localStorage.setItem(migKey, '1');
+}
+
+// 用页面内 modal 替代 confirm() — OAuth 回调后浏览器可能拦截 confirm
+let _migrationResolve = null;
+function _askMigration(nPos, nState) {
+  return new Promise(resolve => {
+    _migrationResolve = resolve;
+    const countsEl = document.getElementById('migrate-counts');
+    if (countsEl) countsEl.textContent = `${nPos} ${t('个持仓')} · ${nState} ${t('条状态记录')}`;
+    document.getElementById('migrate-backdrop')?.classList.add('show');
+    document.getElementById('migrate-modal')?.classList.add('open');
+  });
+}
+
+function resolveMigration(yes) {
+  document.getElementById('migrate-backdrop')?.classList.remove('show');
+  document.getElementById('migrate-modal')?.classList.remove('open');
+  if (_migrationResolve) {
+    const r = _migrationResolve;
+    _migrationResolve = null;
+    r(yes);
+  }
+}
+
+// 用户从菜单手动触发的"重新导入" — 清掉 migrated 标记 → 重跑检测
+async function manualReimport() {
+  if (!_currentUser) { alert(t('请先登录')); return; }
+  if (!_cloudReady) { alert(t('云端尚未就绪，稍候再试')); return; }
+  // 本地是否有数据？
+  let localPos = []; let localState = {};
+  try { localPos = JSON.parse(localStorage.getItem('positions') || '[]'); } catch(e){}
+  try { localState = JSON.parse(localStorage.getItem('positionState') || '{}'); } catch(e){}
+  const nPos = localPos.length;
+  const nState = Object.keys(localState).length;
+  if (nPos === 0 && nState === 0) {
+    alert(t('本地没有数据可导入'));
+    return;
+  }
+  // 云端非空 → 二次确认（会被覆盖！）
+  if ((_cloudCache.positions || []).length > 0 ||
+      Object.keys(_cloudCache.state || {}).length > 0) {
+    const sure = confirm(
+      t('manual_reimport_overwrite_warn')
+        .replace('{cloudN}', _cloudCache.positions.length)
+        .replace('{localN}', nPos)
+    );
+    if (!sure) return;
+  }
+  const ok = await _askMigration(nPos, nState);
+  if (ok) {
+    _cloudCache.positions = localPos;
+    _cloudCache.state = localState;
+    await _saveCloud();
+    localStorage.setItem('cloud_migrated_' + _currentUser.id, '1');
+    if (typeof refresh === 'function') refresh();
+  }
 }
 
 async function signInGoogle() {

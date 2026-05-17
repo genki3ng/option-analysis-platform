@@ -67,17 +67,45 @@
 3. Vercel auto-deploy 后验证 `/app` 早安简报，应该看到「☀️ 包租公管家 · 今日…」段
 4. 验证：dismiss 后今天不再出现 / 第二天再开应该有跨日 diff（今日是首日，明天起 diff 生效）
 
-### 🆕 并行：子批 C 预览页 上线（Commit `b12d152`）
+### 🆕 并行：子批 C 落地 A — 顶部 Tab 切换（Commit `b48813d`）
 
-**地址**：https://trade.congyangwang.com/form-dual-preview
+**预览页地址**（参考）：https://trade.congyangwang.com/form-dual-preview
 
 3 个 UX 方向 × 桌面+手机：
-- **A · 顶部 Tab 切换** — Segmented control，目标驱动 / 策略驱动两 tab 共存
-- **B · 入口卡片 Picker** — 进 modal 先选 mode（"告诉我目标" vs "我懂策略"）
-- **C · 一句话提问 + chips** — 自然语言输入框 + 常见目标 chips fallback
+- **A · 顶部 Tab 切换** ← **用户选了这个，已落地到 `/app` 推荐表单**
+- B · 入口卡片 Picker — 备选
+- C · 一句话提问 + chips — 备选
 
-目标驱动覆盖 4 种 goal：💵 稳定租金 / 🛡 最大化安全度 / 📊 最高年化 / 🎁 想接货卖股。
-等用户挑方向 → 落地到 `index.html` `rec-form` + 移除预览页。
+**A 落地实现细节**（`index.html`）：
+
+HTML：
+- `rec-form` 顶部加 `.rec-mode-tabs` segment control（两个 `.rmt-tab`）
+- ticker row 提到 tabs 之下（不再算"第 1 步"，去 `1.` 前缀）
+- 新 `#rec-goal-mode` 容器（默认 `hidden`）：4 个 `.goal-card` + 数值输入 + 倒推预览
+- 原 preset / direction / intent / timeframe / risk 包进 `#rec-strategy-mode`
+- direction/intent/timeframe/risk 的 label 序号 2-5 → 1-4
+
+CSS：`.rec-form .rmt-tab` / `.goal-card` / `.rec-goal-num` / `.rec-goal-preview`
+
+JS：
+- 新 `REC_GOALS` dict：4 个 goal 反向映射到 `_recSelection`（direction/intent/timeframe/risk）
+- `_recMode` 持久到 localStorage `rec_mode`（默认 `strategy`）
+- `switchRecMode(mode)` 切 hidden 状态
+- `applyGoal(key)` 选中 + 倒推 + 写 `rec_last_choice` + 渲染 num input + preview hint
+- `showRec()` 末尾绑定 tab/goal 点击 + 恢复 mode + 恢复 goal 高亮
+
+数值输入目前**仅做 UI 预览**（"每月目标 / 安全度下限 / 目标接货价"），不传后端。下一步可以接到后端做"严格命中目标"过滤。
+
+i18n：`zh_tw` + `en` dict 各补 ~24 条。
+
+**待用户验证**：
+- 桌面 / 手机两个视口都顺
+- goal 4 卡片点击 → 反推参数显示对不对
+- 切换 tab 来回，submit 走的还是 _recSelection（不变）
+- 把目标驱动设为默认是否合适？现在默认 strategy。
+
+**清理 TODO（用户拍板后）**：
+- 删 `form-dual-preview.html` + vercel.json 路由
 
 ### 📋 上一个 session：子批 B 落地（POP 校准 + Exit plan 模板）
 

@@ -9126,7 +9126,9 @@ function renderMorningBrief(brief) {
     ${chipsHtml}
     ${calHtml}
   `;
-  el.style.display = 'block';
+  // 用空字符串清掉 inline display，让 @media (min-width: 900px) 的 display:grid 能生效
+  // (inline style 优先级 > CSS @media rule，直接写 'block' 会让 grid layout 失效)
+  el.style.display = '';
 
   // 把今天的 snapshot 写回 state._meta.brief_snapshot（下次启动时用作 diff 基准）
   if (brief.next_snapshot) _mbSaveSnapshot(brief.next_snapshot);

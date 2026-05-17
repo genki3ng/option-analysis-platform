@@ -3,9 +3,19 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**早安简报 v2 — 包租公管家 + LLM 加持 落地**）
+最后更新：2026-05-17（晚 — 本地 + 云端并行 session 双更新）
 
-### 🆕 当前 session：早安简报升级 落地（branch `claude/enhance-feature-Efdp9`）
+### 🚧 本地 session 留下的事（2026-05-17 晚）
+
+**JOBhakdi 大佬整合 hold 着**
+- 用户提过想把 https://x.com/JOBhakdi 加进 `📖 大佬策略模板`，但没定怎么加
+- 现有 5 个预设见 `index.html` 第 6632 行 `REC_PRESETS`
+- 当时讨论的整合粒度：轻（加 X 链接 + bio）/ 中（金句库）/ 重（接 X API 自动拉信号）
+- 用户说"先算了"，等他自己想清楚再问
+
+（持仓卡 v1 的 3 方案被拒事已经无效：云端 session 后续做了 v2/v3 → 方案 H 已上线）
+
+### 🆕 早安简报升级 落地（branch `claude/enhance-feature-Efdp9`）
 
 **用户选了"方案 D 混搭" + LLM 加持**。设计：A 骨架 + B 14 天日历 + C 管家人格化（LLM 真生成）。
 
@@ -195,7 +205,6 @@ Batch 4 是用户 priority table 的最后一波，分 3 个子批做：
       三种触发：账户设≥100 股 / 手动 expired_itm / put 已过期未平仓且 ITM
 - [ ] intent 下拉只剩 4 项：收权利金 / CSP / Covered Call / LEAPS（"做多波动率"已下架）
 - [ ] [推荐 Covered Call →] 按钮一键预填 rec form (covered_call/neutral/21d/balanced)
-
 ### ⚠️ 新 session 必看：CLAUDE.md 顶部 3 条铁律
 
 1. **开场必报模型**（用户期望 Opus 4.7 1M Max，不是就暂停问用户）

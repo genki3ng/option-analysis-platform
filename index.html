@@ -2528,6 +2528,12 @@
     <span class="x" onclick="hideAccountSettings()">×</span>
   </h4>
   <div class="row">
+    <span class="label" data-i18n="账户类型">账户类型</span>
+    <button class="opt-btn" data-group="acct_type" data-value="cash" id="acct-type-cash" data-i18n="💵 现金 / IRA">💵 现金 / IRA</button>
+    <button class="opt-btn" data-group="acct_type" data-value="margin" id="acct-type-margin" data-i18n="📈 保证金账户">📈 保证金账户</button>
+    <span style="color:var(--sub);font-size:11px" data-i18n="影响每张合约的实际资金占用（BPR）计算">影响每张合约的实际资金占用（BPR）计算</span>
+  </div>
+  <div class="row">
     <span class="label" data-i18n="可用保证金 / 现金">可用保证金 / 现金</span>
     <input type="number" id="account-margin" placeholder="例如 50000" min="0" step="1000"
            style="width:160px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg);color:var(--text);font-size:13px">
@@ -2864,6 +2870,8 @@
     <button class="opt-btn" data-group="intent" data-value="long_vol" data-i18n="🚀 做多波动率（近期）">🚀 做多波动率（近期）</button>
     <button class="opt-btn" data-group="intent" data-value="long_leaps" data-i18n="📖 LEAPS 股票替代（长期 Long Call）">📖 LEAPS 股票替代（长期 Long Call）</button>
   </div>
+
+  <div id="rec-conflict-hint" style="display:none;font-size:12px;color:var(--yellow);padding:6px 10px;background:rgba(234,179,8,0.08);border-radius:6px;margin-bottom:2px"></div>
 
   <div class="row">
     <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
@@ -3368,6 +3376,10 @@ const I18N = {
     '改昵称': '改暱稱',
     '登出': '登出',
     '账户设置': '帳戶設定',
+    '账户类型': '帳戶類型',
+    '💵 现金 / IRA': '💵 現金 / IRA',
+    '📈 保证金账户': '📈 保證金帳戶',
+    '影响每张合约的实际资金占用（BPR）计算': '影響每張合約的實際資金佔用（BPR）計算',
     '可用保证金 / 现金': '可用保證金 / 現金',
     '正股持仓': '正股持倉',
     '用于计算推荐候选的资金占比和张数建议': '用於計算推薦候選的資金佔比和張數建議',
@@ -3922,6 +3934,10 @@ const I18N = {
     '改昵称': 'Edit nickname',
     '登出': 'Sign out',
     '账户设置': 'Account Settings',
+    '账户类型': 'Account Type',
+    '💵 现金 / IRA': '💵 Cash / IRA',
+    '📈 保证金账户': '📈 Margin Account',
+    '影响每张合约的实际资金占用（BPR）计算': 'Affects actual buying power reduction (BPR) per contract',
     '可用保证金 / 现金': 'Available Margin / Cash',
     '正股持仓': 'Stock Positions',
     '用于计算推荐候选的资金占比和张数建议': 'Used to calculate margin % and suggested contracts per candidate',
@@ -4519,7 +4535,7 @@ function renderRentComponents(opt) {
     return `<span class="rc-v ${cls}">×${v.toFixed(2)}</span>`;
   };
   const rows = [
-    ['📦 年化租金', `<span class="rc-v">${sc.annualized}%</span>`],
+    ['📦 期间收益率', `<span class="rc-v">${sc.period_roc != null ? sc.period_roc + '%' : (sc.annualized != null ? sc.annualized + '%(年化)' : '—')}</span>`],
     ['🛡 安全幂次', `<span class="rc-v">${(sc.safety * 100).toFixed(0)}</span>`],
     ['📅 DTE 甜蜜区', fmtFactor(sc.dte_factor)],
     ['🎯 Delta 甜蜜区', fmtFactor(sc.delta_factor)],
@@ -6265,10 +6281,12 @@ function showRec() {
       const group = btn.dataset.group;
       _recSelection[group] = btn.dataset.value;
       _applyRecSelection();
+      _checkRecConflict();
       // 用户手动调整后取消预设高亮
       document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
     };
   });
+  _checkRecConflict();
   document.querySelectorAll('.rec-form .preset-btn').forEach(btn => {
     btn.onclick = () => applyPreset(btn.dataset.preset);
   });
@@ -6287,6 +6305,35 @@ function _applyRecSelection() {
 }
 
 // 根据意图动态显示 Delta 区间 — LEAPS 用 0.55-0.90，其它用 0.08-0.50
+// 每个 timeframe 按钮对应的到期日范围（min/max 天数），传给后端严格过滤
+const _TIMEFRAME_RANGES = {
+  '3':   [1,   6],
+  '8':   [6,   14],
+  '21':  [14,  35],
+  '45':  [30,  65],
+  '90':  [60,  125],
+  '180': [140, 260],
+  '400': [270, 600],
+};
+
+// direction + intent 冲突提示（软警告，不阻断）
+const _INTENT_CONFLICTS = {
+  'bearish+csp':            '⚠️ CSP（卖 Put）在标的不跌时赚钱，跟看跌方向相反。如果你是想趁低位收权利金并愿意接货，没问题。',
+  'bullish+covered_call':   '⚠️ Covered Call 会封住上涨空间。如果你已在高位准备减仓，合理；如果你很看涨，可能会踏空。',
+  'neutral+long_leaps':     '⚠️ LEAPS 是方向性工具，中性看法下效果有限，考虑换成收权利金策略。',
+  'neutral+long_vol':       '⚠️ 做多波动率在市场横盘时持续亏 theta，中性看法需谨慎。',
+};
+
+function _checkRecConflict() {
+  const key = `${_recSelection.direction}+${_recSelection.intent}`;
+  const hint = _INTENT_CONFLICTS[key] || '';
+  const el = document.getElementById('rec-conflict-hint');
+  if (el) {
+    el.textContent = hint;
+    el.style.display = hint ? 'block' : 'none';
+  }
+}
+
 const _RISK_BANDS = {
   long_leaps: {
     conservative: '0.75-0.90',
@@ -6328,9 +6375,14 @@ async function submitRec() {
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
   };
+  const tfRange = _TIMEFRAME_RANGES[String(_recSelection.timeframe)];
+  if (tfRange) {
+    body.timeframe_min = tfRange[0];
+    body.timeframe_max = tfRange[1];
+  }
   const acct = _getAccountMeta();
   if (acct.available_margin || (acct.stock_positions && acct.stock_positions.length)) {
-    body.account = acct;
+    body.account = { ...acct };
   }
   _savePref('rec_last_ticker', ticker);
   _savePref('rec_last_choice', JSON.stringify(_recSelection));
@@ -6508,7 +6560,11 @@ function renderRecResult(d) {
     const acctBadges = [];
     if (opt.margin_pct != null) {
       const cls = opt.margin_pct > 30 ? 'caution' : '';
-      acctBadges.push(`<span class="acct-badge ${cls}">💰 占保证金 ${opt.margin_pct}%</span>`);
+      acctBadges.push(`<span class="acct-badge ${cls}">💰 占账户 ${opt.margin_pct}%</span>`);
+    }
+    if (opt.bpr_per_contract != null && opt.bpr_per_contract > 0) {
+      const rocBpr = opt.roc_on_bpr_pct != null ? ` · BPR ROC ${opt.roc_on_bpr_pct}%` : '';
+      acctBadges.push(`<span class="acct-badge">BPR $${fmt(opt.bpr_per_contract, 0)}${rocBpr}</span>`);
     }
     if (opt.suggested_contracts != null) {
       acctBadges.push(`<span class="acct-badge">建议最多 ${opt.suggested_contracts} 张</span>`);
@@ -7586,10 +7642,23 @@ function addStockRow(ticker = '', shares = '') {
 function showAccountSettings() {
   const acct = _getAccountMeta();
   document.getElementById('account-margin').value = acct.available_margin || '';
+  // 账户类型按钮状态
+  const atype = acct.account_type || 'cash';
+  ['cash', 'margin'].forEach(v => {
+    const btn = document.getElementById(`acct-type-${v}`);
+    if (btn) btn.classList.toggle('active', v === atype);
+  });
+  // 账户类型按钮 onclick（modal 内部）
+  document.querySelectorAll('.account-modal [data-group="acct_type"]').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.account-modal [data-group="acct_type"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+  });
   const list = document.getElementById('stock-pos-list');
   list.innerHTML = '';
   (acct.stock_positions || []).forEach(p => addStockRow(p.ticker, p.shares));
-  if (!list.children.length) addStockRow();  // 至少一行空行方便填
+  if (!list.children.length) addStockRow();
   document.getElementById('account-backdrop').style.display = 'block';
   const modal = document.getElementById('account-modal');
   modal.style.display = 'block';
@@ -7605,6 +7674,8 @@ function hideAccountSettings() {
 
 function saveAccountSettings() {
   const margin = parseFloat(document.getElementById('account-margin').value) || 0;
+  const activeType = document.querySelector('.account-modal [data-group="acct_type"].active');
+  const account_type = activeType ? activeType.dataset.value : 'cash';
   const rows = document.querySelectorAll('#stock-pos-list .stock-row');
   const positions = [];
   rows.forEach(r => {
@@ -7612,7 +7683,7 @@ function saveAccountSettings() {
     const shares = parseInt(r.querySelector('.sr-shares').value) || 0;
     if (ticker && shares > 0) positions.push({ ticker, shares });
   });
-  _setAccountMeta({ available_margin: margin || null, stock_positions: positions });
+  _setAccountMeta({ available_margin: margin || null, account_type, stock_positions: positions });
   hideAccountSettings();
 }
 

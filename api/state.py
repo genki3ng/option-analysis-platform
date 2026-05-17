@@ -1444,6 +1444,19 @@ def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool) -> tu
     return 1.0, None
 
 
+def _margin_bpr(strike: float, underlying: float, is_call: bool, mid: float) -> float:
+    """
+    Reg-T 保证金账户 BPR（Buying Power Reduction）估算，裸卖期权。
+    Short Put : max(20% × underlying - OTM_amount + mid, 10% × strike + mid) × 100
+    Short Call: max(20% × underlying - OTM_amount + mid, 10% × underlying + mid) × 100
+    Covered Call (is_covered=True): BPR ≈ 0（有正股托底，margin 不占用）
+    """
+    otm_amount = max(0.0, strike - underlying) if is_call else max(0.0, underlying - strike)
+    m1 = 0.20 * underlying - otm_amount + mid
+    m2 = (0.10 * underlying + mid) if is_call else (0.10 * strike + mid)
+    return max(m1, m2) * 100
+
+
 def _summarize_data_source(chain_stats: dict) -> dict:
     """汇总本次推荐用到的数据源：primary = 出现最多的；is_fallback = 不是 schwab。"""
     sources = chain_stats.get("sources") or {}
@@ -1460,12 +1473,20 @@ def _summarize_data_source(chain_stats: dict) -> dict:
     }
 
 
-def _earnings_factor(days_to_earnings: int, risk: str) -> float:
-    """财报因子（包租公 1.2）：按距财报天数衰减，替代原 1.1 的 cross 二元否决。
+def _earnings_factor(days_to_earnings: int, risk: str, intent: str = "premium") -> float:
+    """财报因子（包租公 1.3）：按意图区分财报的利弊。
 
-    保守模式下 ≤5 天硬否决（IV crush 风险极高、新手最常踩的坑）；
-    其他时段用距离衰减，避免误杀 14+ 天后到期、风险其实可控的合约。
+    CSP / Covered Call：财报前 IV 高 = 更多权利金 = 优势，不是风险。
+      保守派 ≤3 天：轻微警惕（极端 gap down 可能）；其余中性。
+
+    Pure premium / long_vol：双向 gamma 风险，保持扣分逻辑。
     """
+    if intent in ("csp", "covered_call"):
+        if risk == "conservative" and days_to_earnings <= 3:
+            return 0.75  # 极短期 gap down 风险，轻微警惕
+        return 1.0  # IV 高是优势，中性处理
+
+    # premium / long_vol / long_leaps — 双向风险，保持原逻辑
     if risk == "conservative" and days_to_earnings <= 5:
         return 0.0
     if days_to_earnings <= 2:    base = 0.20
@@ -1483,12 +1504,12 @@ def _earnings_factor(days_to_earnings: int, risk: str) -> float:
 def _landlord_score(opt: dict, is_csp: bool, underlying: float,
                      iv_rank: Optional[dict], backtest: Optional[dict],
                      earnings_cross: bool, earnings_days_until: Optional[int],
-                     risk: str) -> dict:
+                     risk: str, intent: str = "premium") -> dict:
     """
     包租公分（rent_score）— 综合"周租"质量评分。
     返回 {"score": float, "components": {...}}，components 用于解释。
     """
-    ay         = max(0, opt["annualized_yield_pct"])   # 年化租金 %
+    period_roc = max(0, opt.get("period_roc_pct", 0))  # 本期实际收益率（不年化）
     prob_safe  = max(0, min(100, opt["prob_safe_pct"])) / 100  # 0-1
     spread_pct = opt["spread_pct"]
     days       = opt["days"]
@@ -1496,8 +1517,9 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     oi         = opt.get("oi", 0)
     volume     = opt.get("volume", 0)
 
-    # 1. 基础：年化收益（房租）
-    base = ay
+    # 1. 基础：本期实际收益率（不年化）
+    # 用 period_roc 而非 annualized_yield，防止 3-DTE 的超高年化虚高排名
+    base = period_roc
 
     # 2. 安全度幂次 — 安全压倒一切
     safety = prob_safe ** 1.5
@@ -1520,10 +1542,10 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     # 6. 流动性（包租公 1.1：spread × OI × volume 复合）
     liq_f, liq_breakdown = _liquidity_factor_v11(spread_pct, oi, volume)
 
-    # 7. 财报跨期：1.2 用距财报天数衰减（见 _earnings_factor）
+    # 7. 财报跨期：1.3 按 intent 区分利弊（CSP/CC 跨财报是优势）
     earnings_f = 1.0
     if earnings_cross and earnings_days_until is not None and earnings_days_until >= 0:
-        earnings_f = _earnings_factor(earnings_days_until, risk)
+        earnings_f = _earnings_factor(earnings_days_until, risk, intent=intent)
 
     # 8. 回测胜率加成
     bt_f = 1.0
@@ -1538,7 +1560,7 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     return {
         "score": round(score, 2),
         "components": {
-            "annualized": round(ay, 1),
+            "period_roc": round(period_roc, 2),
             "safety": round(safety, 3),
             "dte_factor": round(dte_f, 2),
             "delta_factor": round(delta_f, 2),
@@ -1701,20 +1723,30 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         elif wr < 45:
             cons.append(f"📊 类似策略回测胜率仅 {wr:.0f}%，历史上不利"); weight -= 2
 
-    # 财报警告 — 包租公算法 1.0：保守派 = 硬否决，平衡派 = 重扣，激进派 = 轻扣
+    # 财报处理 — 算法 1.3：按意图区分利弊
     earnings_veto = False
     if opt.get("earnings_warning"):
         ed = opt["earnings_warning"]
-        if is_short and risk == "conservative":
-            cons.append(f"🚫 {ed['date']} 财报跨期（剩 {ed['days']} 天）— 包租公保守派不接此单")
-            weight -= 5
-            earnings_veto = True
-        elif is_short and risk == "balanced":
-            cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天），IV crush 风险")
-            weight -= 3
+        if intent in ("csp", "covered_call"):
+            # CSP/CC：财报前 IV 高 = 更多权利金 = 优势
+            if risk == "conservative" and ed["days"] <= 3:
+                cons.append(f"⚠️ {ed['date']} 财报在 3 天内，gap down 风险较高")
+                weight -= 2
+            else:
+                pros.append(f"📊 {ed['date']} 财报前（剩 {ed['days']} 天），IV 偏高，权利金充裕")
+                weight += 1
         else:
-            cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天）")
-            weight -= 2
+            # premium / long_vol：双向 gamma 风险
+            if is_short and risk == "conservative":
+                cons.append(f"🚫 {ed['date']} 财报跨期（剩 {ed['days']} 天）— 保守派不接此单")
+                weight -= 5
+                earnings_veto = True
+            elif is_short and risk == "balanced":
+                cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天），IV crush 风险")
+                weight -= 3
+            else:
+                cons.append(f"⚠️ {ed['date']} 财报跨期（剩 {ed['days']} 天）")
+                weight -= 2
 
     # Spread 替代方案（短期高风险时建议）
     if is_short and opt.get("spread_alt"):
@@ -1780,8 +1812,9 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     }
 
 
-def _find_expiries(ticker: str, target_days: int, n: int = 3):
-    """找最接近 target_days 的到期日"""
+def _find_expiries(ticker: str, target_days: int, n: int = 3,
+                   min_days: int = None, max_days: int = None):
+    """找最接近 target_days 的到期日，可选范围过滤。"""
     try:
         import yfinance as yf
         session = _get_yf_session()
@@ -1794,6 +1827,10 @@ def _find_expiries(ticker: str, target_days: int, n: int = 3):
                 d = date.fromisoformat(e)
                 days = (d - today).days
                 if days < 1:
+                    continue
+                if min_days is not None and days < min_days:
+                    continue
+                if max_days is not None and days > max_days:
                     continue
                 scored.append((abs(days - target_days), e, days))
             except Exception:
@@ -1818,6 +1855,7 @@ def recommend(req: dict) -> dict:
     # 账户 context（可选）
     account = req.get("account") or {}
     avail_margin = float(account.get("available_margin") or 0)
+    account_type = account.get("account_type", "cash")  # "cash" | "margin"
     stock_map = {
         p["ticker"].upper(): int(p.get("shares") or 0)
         for p in (account.get("stock_positions") or [])
@@ -1845,7 +1883,10 @@ def recommend(req: dict) -> dict:
             "aggressive":   (0.35, 0.50),
         }.get(risk, (0.20, 0.35))
 
-    target_exps = _find_expiries(ticker, timeframe, n=3)
+    timeframe_min = req.get("timeframe_min")
+    timeframe_max = req.get("timeframe_max")
+    target_exps = _find_expiries(ticker, timeframe, n=3,
+                                  min_days=timeframe_min, max_days=timeframe_max)
     today = date.today()
 
     candidates = []
@@ -1916,8 +1957,10 @@ def recommend(req: dict) -> dict:
             # 抵押金：CSP 用 strike；Covered Call 假定持有正股，用 strike；裸卖也用 strike
             collateral = strike * shares if is_short else mid * shares
             annualized = 0
+            period_roc = 0.0
             if is_short and collateral > 0 and days > 0:
                 annualized = (premium / collateral) * (365 / days) * 100
+                period_roc = (premium / collateral) * 100  # 本期实际收益率（不年化）
             # 包租公算法 1.0：真实 BS P(safe expiry)，而不是 1-|delta|
             if is_short:
                 prob_safe = _prob_safe_bs(underlying, strike, T, iv, is_call)
@@ -1966,6 +2009,7 @@ def recommend(req: dict) -> dict:
                 "premium_per_contract": round(premium, 2),
                 "collateral_per_contract": round(collateral, 2),
                 "annualized_yield_pct": round(annualized, 1),
+                "period_roc_pct": round(period_roc, 2),
                 "prob_safe_pct": round(prob_safe, 1),
                 "moneyness_pct": round((strike / underlying - 1) * 100, 1),
                 "score": round(score, 2),
@@ -2040,7 +2084,7 @@ def recommend(req: dict) -> dict:
         earnings_days_until = (earnings_date - today).days if earnings_date else None
         if is_short:
             ls = _landlord_score(c, is_csp, underlying, iv_rank, backtest,
-                                  earnings_cross, earnings_days_until, risk)
+                                  earnings_cross, earnings_days_until, risk, intent=intent)
             c["rent_score"] = ls["score"]
             c["score_components"] = ls["components"]
             c["score"] = ls["score"]   # 排序统一用 rent_score
@@ -2049,15 +2093,29 @@ def recommend(req: dict) -> dict:
                                       backtest, risk=risk, is_csp=is_csp,
                                       underlying=underlying)
 
-        # 账户 context：保证金占比 + 张数建议 + Covered Call 检测
+        # 账户 context：保证金占比 + 张数建议 + Covered Call 检测 + BPR
         collateral = c["collateral_per_contract"]
-        if avail_margin > 0 and collateral > 0:
-            c["margin_pct"] = round(collateral / avail_margin * 100, 1)
-            # 单笔建议不超过账户 20%
-            c["suggested_contracts"] = max(1, int(avail_margin * 0.20 / collateral))
+        shares_held = stock_map.get(ticker, 0)
+        is_covered_call = is_short and is_call and (shares_held >= 100)
+
+        # BPR：保证金账户 + 非 covered 时，算 Reg-T BPR
+        if account_type == "margin" and is_short and not is_covered_call:
+            bpr = _margin_bpr(c["strike"], underlying, is_call, c["mid"])
+            c["bpr_per_contract"] = round(bpr, 0)
+            if bpr > 0:
+                c["roc_on_bpr_pct"] = round(c["period_roc_pct"] * (collateral / bpr), 2)
+        elif is_covered_call:
+            c["bpr_per_contract"] = 0  # covered — no margin used
+
+        # 资金占比 & 张数建议
+        effective_capital = c.get("bpr_per_contract", collateral) if account_type == "margin" else collateral
+        if avail_margin > 0 and effective_capital > 0:
+            c["margin_pct"] = round(effective_capital / avail_margin * 100, 1)
+            c["suggested_contracts"] = max(1, int(avail_margin * 0.20 / effective_capital))
+
+        # Covered Call 检测
         if is_short and is_call:
-            shares_held = stock_map.get(ticker, 0)
-            c["is_covered"] = shares_held >= 100
+            c["is_covered"] = is_covered_call
             c["covered_contracts"] = shares_held // 100
             c["shares_held"] = shares_held
 

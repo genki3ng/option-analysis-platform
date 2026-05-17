@@ -1284,7 +1284,7 @@
     margin: 4px 0;
   }
 
-  /* 右侧"找最佳 Option"主按钮 — 暖金渐变，主 CTA 视觉权重 */
+  /* 右侧"找最佳 Option"主按钮 — 暖金渐变 + D 方案双层光晕 (Glowing Halo Ring) */
   .rec-btn-large {
     width: 100%;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
@@ -1294,13 +1294,25 @@
     cursor: pointer;
     text-align: left;
     transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     display: flex; align-items: center; gap: 12px;
     overflow: hidden;
     letter-spacing: -0.01em;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
-                0 4px 14px rgba(230,184,106,0.18);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.18) inset,
+      0 0 0 4px var(--card),
+      0 0 0 5px rgba(230,184,106,0.30),
+      0 12px 32px rgba(230,184,106,0.28),
+      0 4px 12px rgba(230,184,106,0.22);
+  }
+  :root[data-theme="light"] .rec-btn-large {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.16) inset,
+      0 0 0 4px var(--card),
+      0 0 0 5px rgba(184,146,85,0.25),
+      0 12px 32px rgba(184,146,85,0.22),
+      0 4px 12px rgba(184,146,85,0.18);
   }
   .rec-btn-large::after {
     content: '→';
@@ -1311,8 +1323,20 @@
   }
   .rec-btn-large:hover {
     filter: brightness(1.05);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
-                0 6px 20px rgba(230,184,106,0.30);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.22) inset,
+      0 0 0 4px var(--card),
+      0 0 0 6px rgba(230,184,106,0.45),
+      0 16px 40px rgba(230,184,106,0.38),
+      0 4px 12px rgba(230,184,106,0.28);
+  }
+  :root[data-theme="light"] .rec-btn-large:hover {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.22) inset,
+      0 0 0 4px var(--card),
+      0 0 0 6px rgba(184,146,85,0.40),
+      0 16px 40px rgba(184,146,85,0.32),
+      0 4px 12px rgba(184,146,85,0.24);
   }
   .rec-btn-large:active {
     filter: brightness(0.96);

@@ -222,3 +222,59 @@ curl -s "https://trade.congyangwang.com/app?_=$(date +%s)" | grep -c "<你的新
   vercel 自动 build → 简单 curl 验证（沙盒能 curl 的话）→ 报结果。
   仍然适用的守则：commit message 写清楚；改完同步 HANDOFF.md；
   涉及破坏性操作（force push / 删分支 / 删表）还是要单独问。
+
+---
+
+## 9. 🎨 设计类任务的强制工作流
+
+**任何涉及视觉 / UI / 布局 / 配色 / 控件样式 / 文案展示形式**的任务，
+**不要直接改 `index.html` / `intro.html`**。先做"在线预览页"让用户选。
+
+### 流程
+
+1. **建一个临时预览页面**（HTML 文件 + vercel.json 路由）
+   - 命名约定：`<feature>.html` 放项目根，路由 `/<feature>` → 该文件
+   - 例子：`buttons.html` → `/buttons`，`cards.html` → `/cards`，`palette.html` → `/palette`
+2. **页面里同屏展示 2-4 个候选方案**（A / B / C / D）
+   - 每个方案带 1 句话说明（设计取舍 / 灵感来源）
+   - **必须同时展示桌面 + 手机两种视口**（手机宽度可用 `width: 375px` 模拟，或在桌面上加 frame）
+3. **告诉用户预览地址** `https://trade.congyangwang.com/<feature>`
+4. **用 AskUserQuestion 让他选**（A / B / C / D / 都不行）
+5. 选完 → 把该方案套用到正式页面 (`index.html` / `intro.html`)
+6. **删掉预览页** + 从 vercel.json 移除路由 + commit
+
+### vercel.json 加路由的位置
+
+`/(.*)` 这条是 catch-all，**新路由必须加在它前面**：
+
+```json
+"routes": [
+  { "src": "/api/state", "dest": "/api/state.py" },
+  { "src": "/app/?", "dest": "/index.html" },
+  { "src": "/marks/?", "dest": "/marks.html" },
+  { "src": "/<feature>/?", "dest": "/<feature>.html" },   ← 加这里
+  { "src": "/(.*)", "dest": "/intro.html" }
+]
+```
+
+builds 数组也要加 `{ "src": "<feature>.html", "use": "@vercel/static" }`。
+
+### 预览页模板要点
+
+- 复用项目调色板（CSS 变量 `--bg / --card / --text / --accent` 等）
+- 候选用大标题分割：`<h2>A · 简洁线框</h2>`，下面是真实可点的渲染
+- **同屏桌面 + 手机对照**：
+  ```html
+  <div style="display:grid;grid-template-columns:1fr 375px;gap:24px">
+    <div class="desktop-frame">...桌面渲染...</div>
+    <div class="mobile-frame">...手机渲染（375px 宽）...</div>
+  </div>
+  ```
+- 用户可以直接在浏览器开 dev tools 切换设备模式看，但**预览页里直接对比更省事**
+
+### 反例（不要这样做）
+
+❌ 直接在 `index.html` 改完 push，告诉用户"你看看好不好"  
+❌ 只写文字描述"我想做成 A 这样：xxx，B 这样：yyy"  
+❌ 只展示桌面或只展示手机  
+❌ 让用户自己开 chrome devtools 切设备模式

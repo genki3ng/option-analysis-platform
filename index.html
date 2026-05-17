@@ -3529,6 +3529,21 @@
   .acct-badge.covered { background: rgba(34,197,94,0.12); color: var(--green); }
   .acct-badge.naked   { background: rgba(239,68,68,0.10);  color: var(--red); }
   .acct-badge.caution { background: rgba(234,179,8,0.12);  color: var(--yellow); }
+
+  /* 🎯 目标达成度（仅目标驱动 mode 显示） */
+  .goal-progress {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; margin-top: 8px;
+    border-radius: 8px; border-left: 3px solid var(--accent);
+    font-size: 12px; line-height: 1.5;
+    background: rgba(230,184,106,0.08);
+  }
+  .goal-progress.ok   { background: rgba(52,211,153,0.10); border-left-color: var(--green); }
+  .goal-progress.warn { background: rgba(234,179,8,0.10);  border-left-color: var(--yellow); }
+  .goal-progress.miss { background: rgba(248,113,113,0.08); border-left-color: var(--red); }
+  .goal-progress .ic { font-size: 14px; line-height: 1; }
+  .goal-progress strong { color: var(--text); }
+  .goal-progress .delta { color: var(--sub); margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -4376,6 +4391,20 @@ const I18N = {
     '中性 · 收权利金 · {tf}d · 保守': '中性 · 收權利金 · {tf}d · 保守',
     '看涨 · 收权利金 · {tf}d · 激进': '看漲 · 收權利金 · {tf}d · 激進',
     '看涨 · CSP 接货 · {tf}d · 平衡': '看漲 · CSP 接貨 · {tf}d · 平衡',
+    // 🎯 目标达成度
+    '卖出': '賣出',
+    '月': '月',
+    '目标': '目標',
+    '占账户': '佔帳戶',
+    '需': '需',
+    '达': '達',
+    '你账户最多': '你帳戶最多',
+    '差': '差',
+    '每张约': '每張約',
+    '设置账户可看占比': '設定帳戶可看佔比',
+    '安全度': '安全度',
+    '个点': '個百分點',
+    '接货价': '接貨價',
     '长期看涨': '長期看漲',
     '长期看跌': '長期看跌',
     '区间震荡': '區間震盪',
@@ -5004,6 +5033,20 @@ const I18N = {
     '中性 · 收权利金 · {tf}d · 保守': 'neutral · premium · {tf}d · conservative',
     '看涨 · 收权利金 · {tf}d · 激进': 'bullish · premium · {tf}d · aggressive',
     '看涨 · CSP 接货 · {tf}d · 平衡': 'bullish · CSP · {tf}d · balanced',
+    // 🎯 goal progress
+    '卖出': 'Sell',
+    '月': 'month',
+    '目标': 'target',
+    '占账户': 'of account',
+    '需': 'Need',
+    '达': 'to reach',
+    '你账户最多': 'your account can do at most',
+    '差': 'gap',
+    '每张约': 'each ≈',
+    '设置账户可看占比': 'set account to see %',
+    '安全度': 'Safety',
+    '个点': 'pts',
+    '接货价': 'Strike',
     '长期看涨': 'Long-term Bullish',
     '长期看跌': 'Long-term Bearish',
     '区间震荡': 'Range-bound',
@@ -7590,6 +7633,98 @@ const REC_GOALS = {
 
 let _recGoalKey = null;
 let _recMode = localStorage.getItem('rec_mode') || 'strategy';
+// 提交时快照「目标 + 用户输入值」，供结果卡渲染目标达成度
+let _recGoalContext = null;
+
+function _renderGoalProgress(opt, isShort, isLeaps) {
+  const ctx = _recGoalContext;
+  if (!ctx || !ctx.key) return '';
+  // LEAPS / 买入候选不适用目标达成度
+  if (isLeaps || !isShort) return '';
+
+  const target = Number(ctx.value) || 0;
+  const acct = _getAccountMeta() || {};
+  const margin = Number(acct.available_margin) || 0;
+  const bpr = Number(opt.bpr_per_contract) || 0;
+
+  // ── 💵 拿稳定租金：目标 $/月 ─────────────────────────
+  if (ctx.key === 'stable_rent') {
+    if (!target) return '';
+    const days = Math.max(1, Number(opt.days) || 1);
+    const perContractMonthly = (Number(opt.premium_per_contract) || 0) * 30 / days;
+    if (perContractMonthly <= 0) return '';
+    const needed = Math.ceil(target / perContractMonthly);
+    const maxAffordable = (margin > 0 && bpr > 0) ? Math.floor(margin / bpr) : null;
+    const reachedMonthly = perContractMonthly * needed;
+
+    if (maxAffordable != null && maxAffordable > 0) {
+      if (needed <= maxAffordable) {
+        // 账户够买够数
+        const pct = Math.round((bpr * needed / margin) * 100);
+        return `<div class="goal-progress ok">
+          <span class="ic">✓</span>
+          <span>${t('卖出')} <strong>${needed} ${t('张')}</strong> ≈ <strong>$${fmt(reachedMonthly, 0)}/${t('月')}</strong>
+          ≈ ${t('目标')} $${fmt(target, 0)}/${t('月')}<span class="delta"> · ${t('占账户')} ${pct}%</span></span>
+        </div>`;
+      }
+      // 账户不够：能买的张数 × 单张月收益
+      const maxMonthly = perContractMonthly * maxAffordable;
+      const gap = target - maxMonthly;
+      return `<div class="goal-progress warn">
+        <span class="ic">⚠</span>
+        <span>${t('需')} <strong>${needed} ${t('张')}</strong> ${t('达')} $${fmt(target, 0)}/${t('月')}，
+        ${t('你账户最多')} <strong>${maxAffordable} ${t('张')}</strong> = $${fmt(maxMonthly, 0)}/${t('月')}
+        <span class="delta">（${t('差')} $${fmt(gap, 0)}）</span></span>
+      </div>`;
+    }
+    // 没账户保证金数据
+    return `<div class="goal-progress">
+      <span class="ic">ⓘ</span>
+      <span>${t('需')} <strong>${needed} ${t('张')}</strong> ${t('达')} $${fmt(target, 0)}/${t('月')}
+      <span class="delta">（${t('每张约')} $${fmt(perContractMonthly, 0)}/${t('月')} · ${t('设置账户可看占比')}）</span></span>
+    </div>`;
+  }
+
+  // ── 🛡 最大化安全度：目标 ≥ X% ─────────────────────────
+  if (ctx.key === 'max_safety') {
+    if (!target) return '';
+    const actual = Number(opt.prob_safe_pct) || 0;
+    if (actual >= target) {
+      return `<div class="goal-progress ok">
+        <span class="ic">✓</span>
+        <span>${t('安全度')} <strong>${actual.toFixed(0)}%</strong> ≥ ${t('目标')} ${target.toFixed(0)}%</span>
+      </div>`;
+    }
+    const cls = (target - actual) > 10 ? 'miss' : 'warn';
+    return `<div class="goal-progress ${cls}">
+      <span class="ic">${cls === 'miss' ? '✗' : '⚠'}</span>
+      <span>${t('安全度')} <strong>${actual.toFixed(0)}%</strong> &lt; ${t('目标')} ${target.toFixed(0)}%
+      <span class="delta">（${t('差')} ${(target - actual).toFixed(0)} ${t('个点')}）</span></span>
+    </div>`;
+  }
+
+  // ── 🎁 想接货：目标 strike $X ─────────────────────────
+  if (ctx.key === 'assign_stock') {
+    if (!target) return '';
+    const strike = Number(opt.strike) || 0;
+    if (!strike) return '';
+    const diff = strike - target;
+    const diffPct = Math.abs(diff / target * 100);
+    if (diffPct <= 3) {
+      return `<div class="goal-progress ok">
+        <span class="ic">✓</span>
+        <span>${t('接货价')} <strong>$${strike}</strong> ≈ ${t('目标')} $${target.toFixed(0)}</span>
+      </div>`;
+    }
+    return `<div class="goal-progress">
+      <span class="ic">ⓘ</span>
+      <span>${t('接货价')} <strong>$${strike}</strong> · ${t('目标')} $${target.toFixed(0)}
+      <span class="delta">（${diff >= 0 ? '+' : ''}$${fmt(diff, 0)} / ${diffPct.toFixed(1)}%）</span></span>
+    </div>`;
+  }
+
+  return '';
+}
 
 function switchRecMode(mode) {
   _recMode = (mode === 'goal') ? 'goal' : 'strategy';
@@ -7640,9 +7775,7 @@ function _renderGoalPreview() {
   if (!g) { box.hidden = true; return; }
   box.hidden = false;
   const descKey = g.descTpl || '';
-  // 替换 {tf} 占位
-  const tfLabel = g.fill.timeframe + 'd';
-  const desc = t(descKey).replace('{tf}', tfLabel);
+  const desc = t(descKey).replace('{tf}', g.fill.timeframe);
   document.getElementById('rec-goal-preview-text').textContent = desc;
 }
 
@@ -7815,6 +7948,17 @@ async function submitRec() {
   }
   _savePref('rec_last_ticker', ticker);
   _savePref('rec_last_choice', JSON.stringify(_recSelection));
+
+  // 🎯 目标驱动 mode：快照「目标 + 用户输入」供结果卡渲染目标达成度
+  if (_recMode === 'goal' && _recGoalKey) {
+    const numEl = document.getElementById('rec-goal-num');
+    _recGoalContext = {
+      key: _recGoalKey,
+      value: numEl ? (parseFloat(numEl.value) || 0) : 0,
+    };
+  } else {
+    _recGoalContext = null;
+  }
 
   const out = document.getElementById('rec-result');
   out.innerHTML = '<div class="loading">🔍 抓取期权链 + 评分中（5-15 秒）...</div>';
@@ -8089,6 +8233,9 @@ function renderRecResult(d) {
     }
     const acctBar = acctBadges.length ? `<div class="acct-bar">${acctBadges.join('')}</div>` : '';
 
+    // 🎯 目标达成度（仅目标驱动 mode 显示）
+    const goalProgress = _renderGoalProgress(opt, isShort, isLeaps);
+
     // 出场计划 inline
     const exitBar = renderExitPlan(opt.exit_plan);
 
@@ -8130,6 +8277,7 @@ function renderRecResult(d) {
         </div>
 
         ${acctBar}
+        ${goalProgress}
         ${exitBar}
 
         <details class="rec-details">

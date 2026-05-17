@@ -10,7 +10,8 @@
     { "src": "positions-preview.html", "use": "@vercel/static" },
     { "src": "rec-redesign.html", "use": "@vercel/static" },
     { "src": "form-dual-preview.html", "use": "@vercel/static" },
-    { "src": "recommend-cta.html", "use": "@vercel/static" }
+    { "src": "recommend-cta.html", "use": "@vercel/static" },
+    { "src": "account-modal-preview.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
@@ -21,6 +22,7 @@
     { "src": "/rec-redesign/?", "dest": "/rec-redesign.html" },
     { "src": "/form-dual-preview/?", "dest": "/form-dual-preview.html" },
     { "src": "/recommend-cta/?", "dest": "/recommend-cta.html" },
+    { "src": "/account-modal-preview/?", "dest": "/account-modal-preview.html" },
     { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }

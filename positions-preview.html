@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" data-density="full">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>包租公 · 持仓卡片重设计预览</title>
+<title>包租公 · 持仓卡片重设计预览 v2</title>
 <style>
   :root {
     --bg:        #FAFAF7;
@@ -14,7 +14,7 @@
     --text:      #1A1A1A;
     --sub:       #6B6B68;
     --dim:       #9A9A95;
-    --line:      #D8D4C8;
+    --line:      #E2DED2;
     --line-2:    #C6C2B5;
     --accent:    #B89255;
     --accent-2:  #8C6E40;
@@ -22,7 +22,9 @@
     --accent-tint: rgba(184,146,85,0.10);
     --accent-tint-strong: rgba(184,146,85,0.18);
     --green:     #16A34A;
+    --green-tint: rgba(22,163,74,0.12);
     --red:       #DC2626;
+    --red-tint:  rgba(220,38,38,0.10);
     --yellow:    #B89255;
   }
   :root[data-theme="dark"] {
@@ -42,7 +44,9 @@
     --accent-tint: rgba(230,184,106,0.10);
     --accent-tint-strong: rgba(230,184,106,0.18);
     --green:     #34D399;
+    --green-tint: rgba(52,211,153,0.12);
     --red:       #F87171;
+    --red-tint:  rgba(248,113,113,0.10);
     --yellow:    #E6B86A;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,9 +59,9 @@
     line-height: 1.5;
     font-feature-settings: "ss01", "cv01", "cv11", "tnum";
   }
-  .wrap { max-width: 1680px; margin: 0 auto; }
+  .wrap { max-width: 1380px; margin: 0 auto; }
 
-  /* Header */
+  /* Page header */
   .page-head {
     display: flex; align-items: flex-end; justify-content: space-between;
     margin-bottom: 8px; gap: 24px; flex-wrap: wrap;
@@ -66,245 +70,86 @@
     font-size: 26px; font-weight: 600;
     letter-spacing: -0.025em;
   }
-  .controls {
-    display: flex; gap: 8px;
-  }
-  .controls button {
-    background: var(--card); border: 1px solid var(--line);
-    color: var(--text); font-family: inherit;
-    padding: 6px 12px; font-size: 12px; border-radius: 7px;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .controls button:hover {
-    border-color: var(--accent); color: var(--accent);
-  }
-  .controls button.active {
-    background: var(--accent-tint); color: var(--accent);
-    border-color: var(--accent);
+  h1 .v-tag {
+    font-size: 14px; color: var(--sub);
+    font-weight: 400; margin-left: 4px;
   }
   .sub-head {
     color: var(--sub); font-size: 13px;
-    margin-bottom: 28px; max-width: 740px;
+    margin-bottom: 16px; max-width: 760px;
     line-height: 1.6;
   }
-
-  /* Column grid */
-  .columns {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
+  .controls {
+    display: flex; gap: 8px; flex-wrap: wrap;
   }
-  @media (max-width: 1200px) {
-    .columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controls .group {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--card);
   }
-  @media (max-width: 700px) {
-    .columns { grid-template-columns: 1fr; }
+  .controls .group button {
+    background: transparent; border: none;
+    color: var(--sub); font-family: inherit;
+    padding: 6px 14px; font-size: 12px;
+    cursor: pointer; transition: all 0.15s;
+    border-right: 1px solid var(--line);
   }
-  .col-head {
-    display: flex; flex-direction: column; gap: 4px;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--line);
-  }
-  .col-tag {
-    font-size: 10.5px; color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.1em;
+  .controls .group button:last-child { border-right: none; }
+  .controls .group button:hover { color: var(--text); }
+  .controls .group button.active {
+    background: var(--accent-tint);
+    color: var(--accent-2);
     font-weight: 600;
   }
-  .col-title {
-    font-size: 17px; font-weight: 600;
+
+  /* Section */
+  .section {
+    padding: 26px 0;
+    border-top: 1px solid var(--line);
+  }
+  .section:first-of-type { border-top: none; padding-top: 12px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .section-tag {
+    font-size: 10.5px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  .section-title {
+    font-size: 18px; font-weight: 600;
     letter-spacing: -0.015em;
   }
-  .col-desc {
-    font-size: 11.5px; color: var(--sub);
+  .section-desc {
+    color: var(--sub); font-size: 12.5px;
     line-height: 1.55;
-    min-height: 36px;
+    margin-bottom: 18px;
+    max-width: 820px;
   }
-  .col-stack {
-    display: flex; flex-direction: column; gap: 14px;
+  .section-desc .mode-tag {
+    display: inline-block;
+    font-size: 10px; font-weight: 600;
+    padding: 1px 6px; border-radius: 4px;
+    background: var(--card2);
+    color: var(--text);
+    margin: 0 2px;
+    letter-spacing: 0.02em;
   }
-
-  /* ════════════════════════════════════════════════════════════
-     当前版 (.pos-cur) — 复制自 index.html
-  ════════════════════════════════════════════════════════════ */
-
-  .pos-cur {
-    background: var(--card);
-    border-radius: 12px; padding: 0;
-    border: 1px solid var(--line);
-    overflow: hidden;
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
   }
-  .pos-cur.danger-status {
-    border-color: rgba(220,38,38,.28);
-    background: rgba(220,38,38,.025);
+  @media (max-width: 900px) {
+    .cards-row { grid-template-columns: 1fr; }
   }
-  .pos-cur.warn-status {
-    border-color: rgba(184,146,85,.32);
-    background: rgba(184,146,85,.025);
-  }
-  .pos-cur .row1 {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 14px 8px 14px;
-  }
-  .pos-cur input[type="checkbox"] {
-    width: 17px; height: 17px;
-    accent-color: var(--accent);
-    cursor: pointer; flex-shrink: 0;
-  }
-  .pos-cur .name {
-    flex: 1; min-width: 0;
-    display: flex; align-items: baseline; gap: 6px;
-  }
-  .pos-cur .name .ticker {
-    font-size: 14px; font-weight: 600;
-  }
-  .pos-cur .name .strike {
-    font-size: 13px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-cur .name .type-badge {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
-    padding: 2px 6px; border-radius: 3px;
-    text-transform: uppercase;
-    font-family: "SF Mono", Menlo, monospace;
-  }
-  .pos-cur .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
-  .pos-cur .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
-  .pos-cur .status {
-    font-size: 10.5px; font-weight: 600;
-    padding: 2px 7px; border-radius: 999px;
-  }
-  .pos-cur .status.danger { background: rgba(220,38,38,0.16); color: var(--red); }
-  .pos-cur .status.warn   { background: rgba(184,146,85,0.16); color: var(--accent); }
-  .pos-cur .status.good   { background: rgba(22,163,74,0.16); color: var(--green); }
-  .pos-cur .pct {
-    font-size: 14px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-cur .meta {
-    padding: 0 14px 10px 14px;
-    font-size: 11px; color: var(--sub);
-  }
-  .pos-cur .occ {
-    margin: 0 14px 8px 14px;
-    padding: 4px 8px;
-    background: var(--card2); border-radius: 5px;
-    font-family: "SF Mono", Menlo, monospace;
-    font-size: 11px; color: var(--sub);
-    display: flex; align-items: center; gap: 6px;
-  }
-  .pos-cur .occ .code { flex: 1; letter-spacing: 0.3px; }
-  .pos-cur .occ .copy-hint { opacity: 0.5; font-size: 10px; }
-  .pos-cur .hero {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; padding: 10px 14px;
-    background: var(--inset);
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-  }
-  .pos-cur .hero .v {
-    font-size: 20px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em; line-height: 1.1;
-  }
-  .pos-cur .hero .l {
-    font-size: 10px; color: var(--sub);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    font-weight: 500; margin-top: 2px;
-    display: block;
-  }
-  .pos-cur .bar { padding: 12px 14px 10px 14px; }
-  .pos-cur .bar .head {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-bottom: 4px;
-  }
-  .pos-cur .bar .head .pct {
-    font-weight: 700; color: var(--text);
-  }
-  .pos-cur .bar .track {
-    position: relative; height: 6px; border-radius: 3px;
-    background: linear-gradient(to right,
-      rgba(220,38,38,0.7) 0%,
-      rgba(245,158,11,0.6) 25%,
-      rgba(22,163,74,0.7) 60%);
-  }
-  .pos-cur .bar .marker {
-    position: absolute; top: -3px;
-    width: 12px; height: 12px;
-    background: var(--card);
-    border: 2px solid var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px var(--bg);
-    transform: translateX(-50%);
-  }
-  .pos-cur .bar .endpoints {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-top: 4px; font-variant-numeric: tabular-nums;
-  }
-  .pos-cur .time {
-    padding: 0 14px 10px 14px;
-  }
-  .pos-cur .time .head {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-bottom: 4px;
-  }
-  .pos-cur .time .track {
-    height: 4px; border-radius: 2px;
-    background: var(--card3);
-    overflow: hidden;
-  }
-  .pos-cur .time .fill {
-    height: 100%; background: var(--accent);
-  }
-  .pos-cur .payoff-btn,
-  .pos-cur .journal-btn {
-    display: block; margin: 8px 14px 0 14px;
-    padding: 6px 10px; font-size: 11px;
-    background: transparent;
-    border: 1px dashed var(--line);
-    border-radius: 6px;
-    color: var(--sub); cursor: pointer;
-    text-align: left;
-    font-family: inherit;
-    width: calc(100% - 28px);
-  }
-  .pos-cur .stats {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    padding: 10px 14px 8px 14px;
-  }
-  .pos-cur .stats .stat {
-    background: var(--card2); border-radius: 6px;
-    padding: 5px 8px;
-    display: flex; align-items: center;
-    justify-content: space-between;
-    font-size: 11px;
-  }
-  .pos-cur .stats .k { color: var(--sub); }
-  .pos-cur .stats .v {
-    font-weight: 600; font-variant-numeric: tabular-nums;
-  }
-  .pos-cur .actions {
-    display: flex; gap: 8px;
-    padding: 10px 14px 12px 14px;
-    border-top: 1px solid var(--line);
-  }
-  .pos-cur .actions button {
-    background: var(--accent-tint);
-    border: 1.5px solid rgba(184,146,85,0.35);
-    color: var(--accent-2);
-    font-size: 11px; font-weight: 600;
-    padding: 5px 12px; border-radius: 8px;
-    cursor: pointer; font-family: inherit;
-  }
-  .pos-cur .actions .del {
-    margin-left: auto;
-    background: rgba(220,38,38,0.08);
-    border-color: rgba(220,38,38,0.30);
-    color: var(--red);
+  .rows-stack {
+    display: flex; flex-direction: column;
+    gap: 8px;
   }
 
   /* Common color classes */
@@ -313,526 +158,720 @@
 
 
   /* ════════════════════════════════════════════════════════════
-     方案 A · 紧凑 (.pos-a)
+     CURRENT 原版重现 — .pos-cur (用作 reference)
+     已应用真实简洁模式逻辑：完整=显示全部, 简洁=隐藏 meta/occ/stats
   ════════════════════════════════════════════════════════════ */
 
-  .pos-a {
+  .pos-cur {
     background: var(--card);
     border-radius: 12px;
     border: 1px solid var(--line);
-    padding: 14px 14px 12px 14px;
     overflow: hidden;
-    position: relative;
-    transition: border-color 0.2s;
+    opacity: 0.85;
   }
-  .pos-a:hover { border-color: var(--line-2); }
-  .pos-a.danger { border-color: rgba(220,38,38,0.28); }
-  .pos-a.warn   { border-color: rgba(184,146,85,0.32); }
-  .pos-a.good   { border-color: rgba(22,163,74,0.28); }
-
-  /* 状态色边强化：左边 3px 色条 */
-  .pos-a::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: transparent;
-  }
-  .pos-a.danger::before { background: var(--red); }
-  .pos-a.warn::before   { background: var(--accent); }
-  .pos-a.good::before   { background: var(--green); }
-
-  .pos-a .row1 {
+  .pos-cur.danger { border-color: rgba(220,38,38,.28); background: rgba(220,38,38,.025); }
+  .pos-cur.warn   { border-color: rgba(184,146,85,.32); background: rgba(184,146,85,.025); }
+  .pos-cur .row1 {
     display: flex; align-items: center; gap: 8px;
-    margin-bottom: 10px;
+    padding: 11px 12px 6px 12px;
   }
-  .pos-a input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
-  }
-  .pos-a .name {
-    display: flex; align-items: baseline; gap: 5px;
-    flex: 1; min-width: 0; cursor: pointer;
-  }
-  .pos-a .ticker {
-    font-size: 14px; font-weight: 600;
-    letter-spacing: -0.005em;
-  }
-  .pos-a .strike {
-    font-size: 13px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-a .type-badge {
+  .pos-cur input { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+  .pos-cur .name { flex: 1; display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+  .pos-cur .ticker { font-size: 13px; font-weight: 600; }
+  .pos-cur .strike { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pos-cur .type-badge {
     font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
     padding: 1.5px 5px; border-radius: 3px;
     text-transform: uppercase;
     font-family: "SF Mono", Menlo, monospace;
   }
-  .pos-a .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
-  .pos-a .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
-  .pos-a .status-chip {
+  .pos-cur .type-badge.put { background: rgba(184,146,85,0.16); color: var(--accent); }
+  .pos-cur .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
+  .pos-cur .status {
     font-size: 10px; font-weight: 600;
-    padding: 1.5px 7px; border-radius: 999px;
+    padding: 1.5px 6px; border-radius: 999px;
   }
-  .pos-a .status-chip.danger { background: rgba(220,38,38,0.14); color: var(--red); }
-  .pos-a .status-chip.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
-  .pos-a .status-chip.good   { background: rgba(22,163,74,0.14); color: var(--green); }
-
-  /* PnL hero row — 大数字 + DTE 占一行 */
-  .pos-a .pnl-row {
-    display: flex; align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .pos-a .pnl-big {
-    font-size: 28px; font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.035em; line-height: 1;
-  }
-  .pos-a .pnl-pct {
-    font-size: 12px; font-weight: 600;
-    color: var(--sub);
-    margin-left: 8px;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-a .pnl-pct.red { color: var(--red); opacity: 0.8; }
-  .pos-a .pnl-pct.green { color: var(--green); opacity: 0.85; }
-  .pos-a .dte {
-    font-size: 11.5px; color: var(--sub);
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-  .pos-a .dte strong {
-    color: var(--text); font-weight: 600;
-  }
-
-  /* Thermometer bar */
-  .pos-a .bar {
-    margin-bottom: 6px;
-  }
-  .pos-a .bar .track {
-    position: relative; height: 5px; border-radius: 3px;
-    background: linear-gradient(to right,
-      rgba(220,38,38,0.55) 0%,
-      rgba(245,158,11,0.55) 28%,
-      rgba(22,163,74,0.55) 62%);
-  }
-  .pos-a .bar .marker {
-    position: absolute; top: -3px;
-    width: 11px; height: 11px;
-    background: var(--card);
-    border: 2px solid var(--text);
-    border-radius: 50%;
-    box-shadow: 0 0 0 1.5px var(--bg);
-    transform: translateX(-50%);
-  }
-  .pos-a .bar-info {
-    display: flex; justify-content: space-between;
-    font-size: 10.5px; margin-top: 5px;
-    color: var(--sub);
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-a .bar-info .safe { font-weight: 600; color: var(--text); }
-  .pos-a .bar-info .safe.bad { color: var(--red); }
-  .pos-a .bar-info .safe.ok  { color: var(--green); }
-
-  /* Chips row */
-  .pos-a .chips {
-    display: flex; flex-wrap: wrap;
-    gap: 4px 6px;
-    margin-top: 10px;
-    font-size: 11px;
-    color: var(--sub);
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-a .chips span { white-space: nowrap; }
-  .pos-a .chips strong {
-    color: var(--text); font-weight: 600;
-    margin-left: 1px;
-  }
-  .pos-a .chips .sep {
-    color: var(--dim);
-    margin: 0 2px;
-  }
-
-  /* Slim actions */
-  .pos-a .actions {
-    display: flex; gap: 6px;
-    margin-top: 12px;
-  }
-  .pos-a .actions button {
-    background: var(--accent-tint);
-    border: 1px solid rgba(184,146,85,0.30);
-    color: var(--accent-2);
-    font-size: 11.5px; font-weight: 600;
-    padding: 5px 12px; border-radius: 7px;
-    cursor: pointer; font-family: inherit;
-    transition: all 0.15s;
-  }
-  .pos-a .actions button:hover {
-    background: var(--accent-tint-strong);
-    border-color: var(--accent);
-  }
-  .pos-a .actions .more {
-    margin-left: auto;
-    background: transparent;
-    border-color: var(--line);
-    color: var(--sub);
-    padding: 5px 10px;
-  }
-  .pos-a .actions .more:hover { color: var(--text); border-color: var(--line-2); background: var(--card2); }
-
-
-  /* ════════════════════════════════════════════════════════════
-     方案 B · 分层 (.pos-b) — 推荐
-  ════════════════════════════════════════════════════════════ */
-
-  .pos-b {
-    background: var(--card);
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .pos-b:hover { border-color: var(--line-2); }
-
-  /* 顶部彩色状态条 — 把"危险/警告"提升为整卡第一识别点 */
-  .pos-b .status-strip {
-    height: 3px;
-    background: var(--line);
-  }
-  .pos-b.danger .status-strip { background: var(--red); }
-  .pos-b.warn   .status-strip { background: var(--accent); }
-  .pos-b.good   .status-strip { background: var(--green); }
-
-  .pos-b .row1 {
-    display: flex; align-items: center; gap: 9px;
-    padding: 12px 16px 4px 16px;
-  }
-  .pos-b input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
-  }
-  .pos-b .name {
-    flex: 1; min-width: 0;
-    display: flex; align-items: baseline; gap: 6px;
-  }
-  .pos-b .ticker {
-    font-size: 15px; font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .pos-b .strike {
-    font-size: 13.5px; font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--sub);
-  }
-  .pos-b .type-badge {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
-    padding: 1.5px 5px; border-radius: 3px;
-    text-transform: uppercase;
+  .pos-cur .status.danger { background: rgba(220,38,38,0.14); color: var(--red); }
+  .pos-cur .status.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
+  .pos-cur .status.good   { background: rgba(22,163,74,0.14); color: var(--green); }
+  .pos-cur .pct { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pos-cur .pos-meta { padding: 0 12px 8px; font-size: 10.5px; color: var(--sub); }
+  .pos-cur .pos-occ {
+    margin: 0 12px 6px;
+    padding: 3px 7px;
+    background: var(--card2); border-radius: 5px;
     font-family: "SF Mono", Menlo, monospace;
+    font-size: 10px; color: var(--sub);
   }
-  .pos-b .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
-  .pos-b .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
-  .pos-b .status-text {
-    font-size: 11px; font-weight: 600;
-  }
-  .pos-b .status-text.danger { color: var(--red); }
-  .pos-b .status-text.warn   { color: var(--accent-2); }
-  .pos-b .status-text.good   { color: var(--green); }
-
-  .pos-b .meta {
-    padding: 0 16px 14px 16px;
-    font-size: 11px; color: var(--sub);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Hero — 浮盈亏是唯一大字 */
-  .pos-b .hero {
-    padding: 4px 16px 14px 16px;
-    text-align: center;
-  }
-  .pos-b .hero .v {
-    font-size: 30px; font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.035em; line-height: 1;
-    display: block;
-  }
-  .pos-b .hero .l {
-    font-size: 10.5px; color: var(--sub);
-    text-transform: uppercase; letter-spacing: 0.1em;
-    font-weight: 500; margin-top: 5px;
-    display: block;
-  }
-  .pos-b .hero .pct-inline {
-    font-size: 13px; font-weight: 600;
-    margin-left: 6px;
-    font-variant-numeric: tabular-nums;
-    opacity: 0.7;
-  }
-
-  /* Bars block — 紧凑两条 */
-  .pos-b .bars {
-    padding: 12px 16px;
+  .pos-cur .hero {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; padding: 8px 12px;
     background: var(--inset);
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
   }
-  .pos-b .bar-line {
-    display: flex; align-items: center; gap: 10px;
+  .pos-cur .hero .v {
+    font-size: 17px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em; line-height: 1;
   }
-  .pos-b .bar-line + .bar-line { margin-top: 8px; }
-  .pos-b .bar-line .label {
-    font-size: 10.5px; color: var(--sub);
-    width: 60px; flex-shrink: 0;
+  .pos-cur .hero .l {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 3px; display: block;
   }
-  .pos-b .bar-line .track-wrap {
-    flex: 1; position: relative;
+  .pos-cur .bar { padding: 10px 12px 6px; }
+  .pos-cur .bar .head {
+    display: flex; justify-content: space-between;
+    font-size: 9.5px; color: var(--sub); margin-bottom: 3px;
   }
-  .pos-b .bar-line.distance .track {
-    height: 5px; border-radius: 3px;
+  .pos-cur .bar .head .pct { font-weight: 700; color: var(--text); }
+  .pos-cur .bar .track {
+    position: relative; height: 5px; border-radius: 3px;
     background: linear-gradient(to right,
-      rgba(220,38,38,0.55) 0%,
-      rgba(245,158,11,0.55) 28%,
-      rgba(22,163,74,0.55) 62%);
+      rgba(220,38,38,0.55) 0%, rgba(245,158,11,0.55) 28%, rgba(22,163,74,0.55) 62%);
   }
-  .pos-b .bar-line.distance .marker {
+  .pos-cur .bar .marker {
     position: absolute; top: -3px;
     width: 11px; height: 11px;
     background: var(--card);
-    border: 2px solid var(--text);
+    border: 2px solid var(--accent);
     border-radius: 50%;
-    box-shadow: 0 0 0 1.5px var(--bg);
+    box-shadow: 0 0 0 1px var(--bg);
     transform: translateX(-50%);
   }
-  .pos-b .bar-line.time .track {
-    height: 5px; border-radius: 3px;
-    background: var(--card3);
-    overflow: hidden;
-  }
-  .pos-b .bar-line.time .fill {
-    height: 100%; background: var(--accent);
-    border-radius: 3px;
-  }
-  .pos-b .bar-line .value {
-    font-size: 10.5px; font-weight: 600;
-    color: var(--text);
+  .pos-cur .bar .endpoints {
+    display: flex; justify-content: space-between;
+    font-size: 9.5px; color: var(--sub); margin-top: 3px;
     font-variant-numeric: tabular-nums;
-    width: 78px; flex-shrink: 0; text-align: right;
   }
-  .pos-b .bar-line .value.bad { color: var(--red); }
-  .pos-b .bar-line .value.ok  { color: var(--green); }
-
-  /* Inline greeks — 单行小字 */
-  .pos-b .greeks {
-    padding: 10px 16px;
-    font-size: 11px; color: var(--sub);
-    font-variant-numeric: tabular-nums;
-    display: flex; gap: 14px;
-    flex-wrap: wrap;
+  .pos-cur .time { padding: 0 12px 8px; }
+  .pos-cur .time .head { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--sub); margin-bottom: 3px; }
+  .pos-cur .time .track { height: 3px; border-radius: 2px; background: var(--card3); overflow: hidden; }
+  .pos-cur .time .fill { height: 100%; background: var(--accent); }
+  .pos-cur .small-btn {
+    display: block; margin: 6px 12px 0; padding: 5px 8px;
+    font-size: 10px; background: transparent;
+    border: 1px dashed var(--line); border-radius: 6px;
+    color: var(--sub); text-align: left; width: calc(100% - 24px);
+    font-family: inherit;
   }
-  .pos-b .greeks span strong {
-    color: var(--text); font-weight: 600;
-    margin-left: 3px;
+  .pos-cur .pos-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4px; padding: 8px 12px 6px;
   }
-
-  /* Actions row */
-  .pos-b .actions {
-    display: flex; gap: 7px; align-items: center;
-    padding: 8px 16px 12px 16px;
+  .pos-cur .pos-stats .stat {
+    background: var(--card2); border-radius: 5px;
+    padding: 4px 7px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10.5px;
+  }
+  .pos-cur .pos-stats .k { color: var(--sub); }
+  .pos-cur .pos-stats .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pos-cur .actions {
+    display: flex; gap: 6px; padding: 8px 12px 10px;
     border-top: 1px solid var(--line);
   }
-  .pos-b .actions .primary {
-    background: var(--accent-tint-strong);
-    border: 1.5px solid var(--accent);
+  .pos-cur .actions button {
+    background: var(--accent-tint);
+    border: 1.5px solid rgba(184,146,85,0.35);
     color: var(--accent-2);
-    font-size: 11.5px; font-weight: 600;
-    padding: 6px 14px; border-radius: 7px;
-    cursor: pointer; font-family: inherit;
-    transition: all 0.15s;
+    font-size: 10.5px; font-weight: 600;
+    padding: 4px 10px; border-radius: 7px;
+    font-family: inherit;
   }
-  .pos-b .actions .primary:hover {
-    background: var(--accent);
-    color: var(--bg);
-  }
-  .pos-b .actions .ghost {
-    background: transparent;
-    border: 1px solid var(--line);
-    color: var(--sub);
-    font-size: 11.5px; font-weight: 500;
-    padding: 6px 10px; border-radius: 7px;
-    cursor: pointer; font-family: inherit;
-    transition: all 0.15s;
-  }
-  .pos-b .actions .ghost:hover {
-    color: var(--text); border-color: var(--line-2); background: var(--card2);
-  }
-  .pos-b .actions .more {
+  .pos-cur .actions .del {
     margin-left: auto;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--sub);
-    font-size: 16px;
-    padding: 2px 8px; border-radius: 7px;
-    cursor: pointer; font-family: inherit;
-    line-height: 1;
+    background: rgba(220,38,38,0.08);
+    border-color: rgba(220,38,38,0.30);
+    color: var(--red);
   }
-  .pos-b .actions .more:hover {
-    background: var(--card2); color: var(--text);
-  }
+  /* 真实 density 规则 */
+  [data-density="simple"] .pos-cur .pos-meta,
+  [data-density="simple"] .pos-cur .pos-occ,
+  [data-density="simple"] .pos-cur .pos-stats { display: none; }
 
 
   /* ════════════════════════════════════════════════════════════
-     方案 C · 标签化 (.pos-c)
+     D · 紧凑行（Row, table-like）
   ════════════════════════════════════════════════════════════ */
 
-  .pos-c {
+  .pos-d {
+    display: grid;
+    grid-template-columns:
+      24px              /* checkbox */
+      minmax(120px, 1.2fr) /* name */
+      minmax(78px, auto)   /* status */
+      minmax(100px, 1fr)   /* pnl */
+      minmax(140px, 1.6fr) /* thermo */
+      minmax(60px, auto)   /* dte */
+      minmax(140px, 1.4fr) /* greeks */
+      minmax(76px, auto);  /* actions */
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
     background: var(--card);
-    border-radius: 14px;
     border: 1px solid var(--line);
-    padding: 14px 16px 12px 16px;
-    transition: border-color 0.2s;
-  }
-  .pos-c:hover { border-color: var(--line-2); }
-  .pos-c.danger { border-color: rgba(220,38,38,0.28); background: rgba(220,38,38,0.018); }
-  .pos-c.warn   { border-color: rgba(184,146,85,0.32); background: rgba(184,146,85,0.018); }
-
-  .pos-c .row1 {
-    display: flex; align-items: center; gap: 8px;
-    margin-bottom: 14px;
-  }
-  .pos-c input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
-  }
-  .pos-c .name {
-    flex: 1; min-width: 0;
-    display: flex; align-items: baseline; gap: 5px;
-  }
-  .pos-c .ticker {
-    font-size: 14px; font-weight: 600;
-    letter-spacing: -0.005em;
-  }
-  .pos-c .strike {
-    font-size: 13px; font-weight: 600;
+    border-left-width: 3px;
+    border-radius: 8px;
+    transition: border-color 0.2s, background 0.2s;
     font-variant-numeric: tabular-nums;
-    color: var(--sub);
   }
-  .pos-c .type-badge {
+  .pos-d:hover { background: var(--inset); }
+  .pos-d.danger { border-left-color: var(--red); }
+  .pos-d.warn   { border-left-color: var(--accent); }
+  .pos-d.good   { border-left-color: var(--green); }
+
+  .pos-d input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent); cursor: pointer;
+  }
+  .pos-d .name { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+  .pos-d .ticker { font-size: 13.5px; font-weight: 600; letter-spacing: -0.005em; }
+  .pos-d .strike { font-size: 12.5px; font-weight: 600; color: var(--sub); }
+  .pos-d .type-badge {
     font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
     padding: 1.5px 5px; border-radius: 3px;
     text-transform: uppercase;
     font-family: "SF Mono", Menlo, monospace;
   }
-  .pos-c .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
-  .pos-c .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
-  .pos-c .status-chip {
+  .pos-d .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
+  .pos-d .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
+
+  .pos-d .status-chip {
     font-size: 10px; font-weight: 600;
-    padding: 2px 8px; border-radius: 999px;
+    padding: 2px 7px; border-radius: 999px;
+    justify-self: start;
   }
-  .pos-c .status-chip.danger { background: rgba(220,38,38,0.14); color: var(--red); }
-  .pos-c .status-chip.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
-  .pos-c .status-chip.good   { background: rgba(22,163,74,0.14); color: var(--green); }
+  .pos-d .status-chip.danger { background: rgba(220,38,38,0.14); color: var(--red); }
+  .pos-d .status-chip.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
+  .pos-d .status-chip.good   { background: rgba(22,163,74,0.14); color: var(--green); }
 
-  /* PnL hero — 同一行大字 + 副信息 */
-  .pos-c .pnl {
-    text-align: center;
-    margin-bottom: 14px;
-  }
-  .pos-c .pnl-big {
-    font-size: 28px; font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.035em; line-height: 1.05;
-    display: block;
-  }
-  .pos-c .pnl-sub {
-    font-size: 11px; color: var(--sub);
-    margin-top: 4px; display: block;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-c .pnl-sub strong {
-    color: var(--text); font-weight: 600;
-  }
+  .pos-d .pnl-block { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .pos-d .pnl { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .pos-d .pct { font-size: 11px; font-weight: 500; color: var(--sub); }
 
-  /* Bar */
-  .pos-c .bar { margin-bottom: 12px; }
-  .pos-c .bar .track {
+  .pos-d .bar-cell { position: relative; }
+  .pos-d .bar {
     position: relative; height: 5px; border-radius: 3px;
     background: linear-gradient(to right,
       rgba(220,38,38,0.55) 0%,
       rgba(245,158,11,0.55) 28%,
       rgba(22,163,74,0.55) 62%);
   }
-  .pos-c .bar .marker {
+  .pos-d .bar .marker {
     position: absolute; top: -3px;
     width: 11px; height: 11px;
     background: var(--card);
     border: 2px solid var(--text);
     border-radius: 50%;
-    box-shadow: 0 0 0 1.5px var(--bg);
     transform: translateX(-50%);
+    box-shadow: 0 0 0 1.5px var(--bg);
   }
-  .pos-c .bar .info {
-    display: flex; justify-content: space-between;
-    margin-top: 5px;
-    font-size: 10.5px; color: var(--sub);
-    font-variant-numeric: tabular-nums;
+  .pos-d .bar-safe {
+    font-size: 10px; color: var(--sub);
+    margin-top: 3px; font-weight: 500;
+    text-align: center;
   }
-  .pos-c .bar .info .safe { font-weight: 600; color: var(--text); }
-  .pos-c .bar .info .safe.bad { color: var(--red); }
+  .pos-d .bar-safe.bad { color: var(--red); }
+  .pos-d .bar-safe.ok  { color: var(--green); }
 
-  /* Chip grid */
-  .pos-c .chip-grid {
-    display: flex; flex-wrap: wrap;
-    gap: 5px 6px;
-    margin-bottom: 12px;
-  }
-  .pos-c .chip {
-    font-size: 10.5px; font-weight: 500;
-    padding: 3px 8px; border-radius: 999px;
-    background: var(--card2);
-    color: var(--sub);
-    font-variant-numeric: tabular-nums;
-    border: 1px solid transparent;
-  }
-  .pos-c .chip strong {
-    color: var(--text); font-weight: 600;
-    margin-left: 2px;
-  }
+  .pos-d .dte { font-size: 11.5px; color: var(--sub); font-weight: 500; text-align: right; white-space: nowrap; }
+  .pos-d .dte strong { color: var(--text); font-weight: 600; }
 
-  /* Actions */
-  .pos-c .actions {
-    display: flex; gap: 6px; align-items: center;
+  .pos-d .greeks {
+    font-size: 11px; color: var(--sub);
+    display: flex; gap: 10px;
+    overflow: hidden; white-space: nowrap;
   }
-  .pos-c .actions .primary {
-    background: var(--accent-tint-strong);
-    border: 1.5px solid var(--accent);
+  .pos-d .greeks strong { color: var(--text); font-weight: 600; margin-left: 2px; }
+
+  .pos-d .actions { display: flex; gap: 5px; align-items: center; justify-self: end; }
+  .pos-d .actions button {
+    background: var(--accent-tint);
+    border: 1px solid rgba(184,146,85,0.30);
     color: var(--accent-2);
-    font-size: 11.5px; font-weight: 600;
-    padding: 5px 14px; border-radius: 7px;
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 6px;
     cursor: pointer; font-family: inherit;
   }
-  .pos-c .actions .ghost {
+  .pos-d .actions .more {
+    background: transparent;
+    border-color: transparent;
+    color: var(--sub);
+    padding: 2px 7px; font-size: 14px;
+    line-height: 1;
+  }
+  .pos-d .actions .more:hover { background: var(--card2); color: var(--text); }
+
+  /* D 简洁模式 — 砍掉 greeks 列，bar-safe 文字保留作"危险度签注" */
+  [data-density="simple"] .pos-d {
+    grid-template-columns:
+      24px
+      minmax(120px, 1.2fr)
+      minmax(78px, auto)
+      minmax(110px, 1fr)
+      minmax(180px, 2fr)
+      minmax(70px, auto)
+      minmax(76px, auto);
+  }
+  [data-density="simple"] .pos-d .greeks { display: none; }
+
+
+  /* ════════════════════════════════════════════════════════════
+     E · iOS Stocks 极简 — .pos-e
+  ════════════════════════════════════════════════════════════ */
+
+  .pos-e {
+    position: relative;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+    border: 1px solid var(--line);
+    transition: border-color 0.2s;
+  }
+  .pos-e:hover { border-color: var(--line-2); }
+
+  .pos-e .e-row1 {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .pos-e input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .pos-e .e-ticker {
+    font-size: 19px; font-weight: 700;
+    letter-spacing: -0.015em;
+    flex: 1;
+  }
+  .pos-e .e-pnl {
+    font-size: 22px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .pos-e .e-row2 {
+    display: flex; justify-content: space-between;
+    align-items: baseline;
+    margin-left: 23px;
+    margin-bottom: 18px;
+    font-size: 11.5px;
+    color: var(--sub);
+  }
+  .pos-e .e-meta {
+    display: flex; align-items: center; gap: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-e .e-meta .type-badge {
+    font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 1px 5px; border-radius: 3px;
+    text-transform: uppercase;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .pos-e .e-meta .type-badge.put  { background: rgba(184,146,85,0.14); color: var(--accent); }
+  .pos-e .e-meta .type-badge.call { background: rgba(22,163,74,0.12); color: var(--green); }
+  .pos-e .e-pct {
+    font-size: 12.5px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pos-e .e-bar {
+    margin-left: 23px;
+    margin-bottom: 12px;
+  }
+  .pos-e .e-bar .track {
+    position: relative; height: 3px; border-radius: 2px;
+    background: linear-gradient(to right,
+      rgba(220,38,38,0.45) 0%,
+      rgba(245,158,11,0.45) 28%,
+      rgba(22,163,74,0.45) 62%);
+  }
+  .pos-e .e-bar .marker {
+    position: absolute; top: -3px;
+    width: 9px; height: 9px;
+    background: var(--text);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 2.5px var(--card);
+  }
+  .pos-e .e-bar .info {
+    display: flex; justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-e .e-bar .info .status-text { font-weight: 600; }
+  .pos-e .e-bar .info .status-text.danger { color: var(--red); }
+  .pos-e .e-bar .info .status-text.warn   { color: var(--accent-2); }
+  .pos-e .e-bar .info .status-text.good   { color: var(--green); }
+
+  .pos-e .e-greeks {
+    margin-left: 23px;
+    margin-bottom: 12px;
+    display: flex; gap: 14px;
+    font-size: 11px;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-e .e-greeks strong { color: var(--text); font-weight: 600; margin-left: 3px; }
+
+  .pos-e .e-actions {
+    margin-left: 23px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .pos-e .e-actions .primary {
+    background: var(--text); color: var(--card);
+    border: none;
+    font-size: 11.5px; font-weight: 600;
+    padding: 6px 16px; border-radius: 999px;
+    cursor: pointer; font-family: inherit;
+  }
+  .pos-e .e-actions .primary:hover { opacity: 0.85; }
+  .pos-e .e-actions .ghost {
     background: transparent;
     border: 1px solid var(--line);
     color: var(--sub);
     font-size: 11.5px; font-weight: 500;
-    padding: 5px 10px; border-radius: 7px;
+    padding: 5px 10px; border-radius: 999px;
     cursor: pointer; font-family: inherit;
   }
-  .pos-c .actions .more {
+  .pos-e .e-actions .more {
     margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--sub);
+    font-size: 16px;
+    padding: 2px 8px;
+    cursor: pointer; font-family: inherit;
+    line-height: 1;
+  }
+  .pos-e .e-actions .more:hover { color: var(--text); }
+
+  /* E 简洁模式 — 砍 greeks，缩小副信息 */
+  [data-density="simple"] .pos-e { padding: 14px 16px 12px; }
+  [data-density="simple"] .pos-e .e-greeks { display: none; }
+  [data-density="simple"] .pos-e .e-row2 { margin-bottom: 12px; }
+  [data-density="simple"] .pos-e .e-actions .ghost { display: none; }
+
+
+  /* ════════════════════════════════════════════════════════════
+     F · 仪表盘 (Gauge) — .pos-f
+  ════════════════════════════════════════════════════════════ */
+
+  .pos-f {
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    padding: 14px 14px 12px;
+    transition: border-color 0.2s;
+  }
+  .pos-f.danger { border-color: rgba(220,38,38,0.30); }
+  .pos-f.warn   { border-color: rgba(184,146,85,0.35); }
+  .pos-f.good   { border-color: rgba(22,163,74,0.28); }
+
+  .pos-f .f-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .pos-f input[type="checkbox"] {
+    width: 15px; height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .pos-f .f-name {
+    display: flex; align-items: baseline; gap: 5px;
+    flex: 1; min-width: 0;
+  }
+  .pos-f .f-ticker { font-size: 14px; font-weight: 600; }
+  .pos-f .f-strike { font-size: 13px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .pos-f .type-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 1.5px 5px; border-radius: 3px;
+    text-transform: uppercase;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .pos-f .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
+  .pos-f .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
+  .pos-f .f-head .more {
     background: transparent;
     border: 1px solid transparent;
     color: var(--sub);
     font-size: 16px;
-    padding: 2px 8px; border-radius: 7px;
+    padding: 2px 7px; border-radius: 6px;
     cursor: pointer; font-family: inherit;
     line-height: 1;
   }
-  .pos-c .actions .more:hover {
-    background: var(--card2); color: var(--text);
+  .pos-f .f-head .more:hover { background: var(--card2); color: var(--text); }
+
+  .pos-f .gauge-wrap {
+    position: relative;
+    width: 152px; height: 152px;
+    margin: 6px auto 4px;
   }
+  .pos-f .gauge {
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+  .pos-f .gauge .track {
+    fill: none;
+    stroke: var(--card3);
+    stroke-width: 9;
+  }
+  .pos-f .gauge .fill {
+    fill: none;
+    stroke-width: 9;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.4s;
+  }
+  .pos-f.danger .gauge .fill { stroke: var(--red); }
+  .pos-f.warn   .gauge .fill { stroke: var(--accent); }
+  .pos-f.good   .gauge .fill { stroke: var(--green); }
+
+  .pos-f .gauge-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+  .pos-f .gauge-center .pnl {
+    font-size: 21px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em; line-height: 1;
+  }
+  .pos-f .gauge-center .pct {
+    font-size: 11px; font-weight: 600;
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+  .pos-f .gauge-center .label {
+    font-size: 9px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+
+  .pos-f .gauge-meta {
+    display: flex; justify-content: center;
+    gap: 0;
+    margin: 0 -4px 10px;
+    font-size: 10px;
+  }
+  .pos-f .gauge-meta .m { flex: 1; text-align: center; padding: 4px 6px; }
+  .pos-f .gauge-meta .m + .m { border-left: 1px solid var(--line); }
+  .pos-f .gauge-meta .k {
+    color: var(--sub); text-transform: uppercase;
+    letter-spacing: 0.06em; font-size: 9px;
+    display: block; margin-bottom: 2px;
+  }
+  .pos-f .gauge-meta .v {
+    font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+  }
+  .pos-f .gauge-meta .v.bad { color: var(--red); }
+  .pos-f .gauge-meta .v.warn { color: var(--accent-2); }
+  .pos-f .gauge-meta .v.ok { color: var(--green); }
+
+  .pos-f .status-chip {
+    display: inline-block;
+    font-size: 10.5px; font-weight: 600;
+    padding: 2px 9px; border-radius: 999px;
+    margin: 0 auto 10px;
+  }
+  .pos-f .status-chip.danger { background: rgba(220,38,38,0.14); color: var(--red); }
+  .pos-f .status-chip.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
+  .pos-f .status-chip.good   { background: rgba(22,163,74,0.14); color: var(--green); }
+  .pos-f .status-wrap { text-align: center; }
+
+  .pos-f .greeks {
+    font-size: 10.5px; color: var(--sub);
+    display: flex; justify-content: center; gap: 10px;
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-f .greeks strong { color: var(--text); font-weight: 600; margin-left: 2px; }
+
+  .pos-f .actions { display: flex; gap: 6px; }
+  .pos-f .actions .primary {
+    flex: 1;
+    background: var(--accent-tint-strong);
+    border: 1.5px solid var(--accent);
+    color: var(--accent-2);
+    font-size: 11.5px; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px;
+    cursor: pointer; font-family: inherit;
+  }
+  .pos-f .actions .primary:hover { background: var(--accent); color: var(--bg); }
+  .pos-f .actions .ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--sub);
+    font-size: 11.5px; font-weight: 500;
+    padding: 6px 12px; border-radius: 8px;
+    cursor: pointer; font-family: inherit;
+  }
+
+  /* F 简洁模式 — 砍 gauge-meta + greeks，状态标签直接显示在 gauge 下方 */
+  [data-density="simple"] .pos-f .gauge-meta,
+  [data-density="simple"] .pos-f .greeks { display: none; }
+  [data-density="simple"] .pos-f .actions .ghost { display: none; }
+
+
+  /* ════════════════════════════════════════════════════════════
+     G · 双列分区 (Two-column) — .pos-g
+  ════════════════════════════════════════════════════════════ */
+
+  .pos-g {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr);
+    overflow: hidden;
+    transition: border-color 0.2s;
+    min-height: 168px;
+  }
+  .pos-g.danger { border-color: rgba(220,38,38,0.30); }
+  .pos-g.warn   { border-color: rgba(184,146,85,0.35); }
+  .pos-g.good   { border-color: rgba(22,163,74,0.28); }
+
+  .pos-g .g-left {
+    padding: 12px 12px 12px 14px;
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  .pos-g.danger .g-left { background: rgba(220,38,38,0.025); }
+  .pos-g.warn   .g-left { background: rgba(184,146,85,0.025); }
+  .pos-g.good   .g-left { background: rgba(22,163,74,0.025); }
+
+  .pos-g .g-head { display: flex; align-items: center; gap: 7px; }
+  .pos-g input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+  .pos-g .g-name { display: flex; align-items: baseline; gap: 4px; flex: 1; min-width: 0; }
+  .pos-g .g-ticker { font-size: 13.5px; font-weight: 600; letter-spacing: -0.005em; }
+  .pos-g .g-strike { font-size: 12.5px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+  .pos-g .type-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 1.5px 5px; border-radius: 3px;
+    text-transform: uppercase;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .pos-g .type-badge.put  { background: rgba(184,146,85,0.16); color: var(--accent); }
+  .pos-g .type-badge.call { background: rgba(22,163,74,0.14); color: var(--green); }
+
+  .pos-g .g-pnl { margin-top: 2px; }
+  .pos-g .g-pnl .v {
+    font-size: 24px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em; line-height: 1;
+    display: block;
+  }
+  .pos-g .g-pnl .l {
+    font-size: 10.5px;
+    margin-top: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pos-g .status-chip {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px;
+    margin-top: auto;
+  }
+  .pos-g .status-chip.danger { background: rgba(220,38,38,0.14); color: var(--red); }
+  .pos-g .status-chip.warn   { background: rgba(184,146,85,0.18); color: var(--accent-2); }
+  .pos-g .status-chip.good   { background: rgba(22,163,74,0.14); color: var(--green); }
+
+  .pos-g .g-right { padding: 12px 14px; display: flex; flex-direction: column; gap: 9px; }
+
+  .pos-g .bar-line { display: flex; align-items: center; gap: 8px; }
+  .pos-g .bar-line .label {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    width: 32px; flex-shrink: 0;
+  }
+  .pos-g .bar-line .track-wrap { flex: 1; position: relative; }
+  .pos-g .bar-line.distance .track {
+    position: relative; height: 5px; border-radius: 3px;
+    background: linear-gradient(to right,
+      rgba(220,38,38,0.55) 0%,
+      rgba(245,158,11,0.55) 28%,
+      rgba(22,163,74,0.55) 62%);
+  }
+  .pos-g .bar-line.distance .marker {
+    position: absolute; top: -3px;
+    width: 11px; height: 11px;
+    background: var(--card);
+    border: 2px solid var(--text);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 1.5px var(--bg);
+  }
+  .pos-g .bar-line.time .track { height: 4px; border-radius: 3px; background: var(--card3); overflow: hidden; }
+  .pos-g .bar-line.time .fill { height: 100%; background: var(--accent); }
+  .pos-g .bar-line .value {
+    font-size: 10px; font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    width: 70px; text-align: right; flex-shrink: 0;
+  }
+  .pos-g .bar-line .value.bad { color: var(--red); }
+  .pos-g .bar-line .value.ok { color: var(--green); }
+
+  .pos-g .greeks {
+    font-size: 10.5px; color: var(--sub);
+    display: flex; gap: 12px;
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+  }
+  .pos-g .greeks strong { color: var(--text); font-weight: 600; margin-left: 2px; }
+
+  .pos-g .g-actions {
+    display: flex; gap: 6px; align-items: center;
+    margin-top: auto;
+    padding-top: 2px;
+  }
+  .pos-g .g-actions .primary {
+    flex: 1;
+    background: var(--accent-tint-strong);
+    border: 1.5px solid var(--accent);
+    color: var(--accent-2);
+    font-size: 11px; font-weight: 600;
+    padding: 5px 10px; border-radius: 7px;
+    cursor: pointer; font-family: inherit;
+  }
+  .pos-g .g-actions .primary:hover { background: var(--accent); color: var(--bg); }
+  .pos-g .g-actions .ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--sub);
+    font-size: 11px; font-weight: 500;
+    padding: 5px 8px; border-radius: 7px;
+    cursor: pointer; font-family: inherit;
+  }
+  .pos-g .g-actions .more {
+    margin-left: auto;
+    background: transparent; border: none;
+    color: var(--sub);
+    font-size: 15px;
+    padding: 2px 7px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+    line-height: 1;
+  }
+  .pos-g .g-actions .more:hover { background: var(--card2); color: var(--text); }
+
+  /* G 简洁模式 — 砍 greeks 和编辑按钮 */
+  [data-density="simple"] .pos-g { min-height: 140px; }
+  [data-density="simple"] .pos-g .greeks { display: none; }
+  [data-density="simple"] .pos-g .g-actions .ghost { display: none; }
+
 
   /* Footer */
   .foot {
@@ -851,635 +890,618 @@
 
 <div class="page-head">
   <div>
-    <h1>持仓卡片 · 重设计预览</h1>
+    <h1>持仓卡片 · 重设计预览<span class="v-tag">· v2 · 含完整/简洁模式</span></h1>
   </div>
   <div class="controls">
-    <button id="theme-light" class="active" onclick="setTheme('light')">浅色</button>
-    <button id="theme-dark" onclick="setTheme('dark')">深色</button>
+    <div class="group">
+      <button id="density-full" class="active" onclick="setDensity('full')">完整模式</button>
+      <button id="density-simple" onclick="setDensity('simple')">简洁模式</button>
+    </div>
+    <div class="group">
+      <button id="theme-light" class="active" onclick="setTheme('light')">浅色</button>
+      <button id="theme-dark" onclick="setTheme('dark')">深色</button>
+    </div>
   </div>
 </div>
 <p class="sub-head">
-  原版要素太多、主次不分。三个方向供选择 —— 每栏用同一组持仓数据，从亏到赚渐变排列。
-  <br>统一改动：OCC 合约代码藏到 ⋯ 菜单（点击复制）；损益曲线、编辑、删除也归到 ⋯ 里，让卡片主区只剩"看一眼就懂"的关键信息。
+  这一轮换了 4 个完全不同 paradigm 的方向（D/E/F/G）。每个方案同时支持 <span style="color:var(--text);font-weight:600;">完整模式</span> 和 <span style="color:var(--text);font-weight:600;">简洁模式</span> —— 点击顶部切换按钮看效果。
+  OCC 合约码统一藏到 ⋯ 菜单。
 </p>
 
-<div class="columns">
 
-  <!-- ════════ 当前版 ════════ -->
-  <div class="col">
-    <div class="col-head">
-      <span class="col-tag">CURRENT</span>
-      <span class="col-title">当前版</span>
-      <span class="col-desc">原版重现 —— Hero 区 +$1,340 和 顶部 +35.9% 都很显眼，互相争夺注意力。</span>
-    </div>
-    <div class="col-stack">
-
-      <!-- TSLA $415 PUT — 亏 -->
-      <div class="pos-cur danger-status">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">TSLA</span>
-            <span class="strike">$415</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status danger">🔥 接近行权</span>
-          <span class="pct red">-150.9%</span>
-        </div>
-        <div class="meta">Exp 2026-05-22 · 3× contracts · sold $2.77/share</div>
-        <div class="occ">
-          <span class="code">TSLA260522P00415000</span>
-          <span class="copy-hint">📋</span>
-        </div>
-        <div class="hero">
-          <div>
-            <div class="v red">-$1,254</div>
-            <span class="l">浮盈亏</span>
-          </div>
-          <div>
-            <div class="v green">+$239</div>
-            <span class="l">每日 Theta</span>
-          </div>
-        </div>
-        <div class="bar">
-          <div class="head">
-            <span>距行权价</span>
-            <span class="pct">+1.7% 安全</span>
-          </div>
-          <div class="track">
-            <div class="marker" style="left: 52%"></div>
-          </div>
-          <div class="endpoints">
-            <span>TSLA $422.24</span>
-            <span>行权 $415</span>
-          </div>
-        </div>
-        <div class="time">
-          <div class="head">
-            <span>时间进度 3/8 天</span>
-            <span>剩 5 天</span>
-          </div>
-          <div class="track"><div class="fill" style="width: 37.5%"></div></div>
-        </div>
-        <button class="payoff-btn">📊 损益曲线</button>
-        <button class="journal-btn">📝 记笔记 / 写交易计划</button>
-        <div class="stats">
-          <div class="stat"><span class="k">Δ</span><span class="v">−0.355</span></div>
-          <div class="stat"><span class="k">IV</span><span class="v">44%</span></div>
-          <div class="stat"><span class="k">Mark</span><span class="v">$6.95</span></div>
-          <div class="stat"><span class="k">$P</span><span class="v">$831</span></div>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button>✏️ 编辑</button>
-          <button class="del">🗑 删除</button>
-        </div>
-      </div>
-
-      <!-- META $630 PUT — 赚 -->
-      <div class="pos-cur warn-status">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">META</span>
-            <span class="strike">$630</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status warn">⚠ 已 ITM</span>
-          <span class="pct green">+35.9%</span>
-        </div>
-        <div class="meta">Exp 2026-05-29 · 1× contracts · sold $37.28/share</div>
-        <div class="occ">
-          <span class="code">META260529P00630000</span>
-          <span class="copy-hint">📋</span>
-        </div>
-        <div class="hero">
-          <div>
-            <div class="v green">+$1,340</div>
-            <span class="l">浮盈亏</span>
-          </div>
-          <div>
-            <div class="v green">+$51</div>
-            <span class="l">每日 Theta</span>
-          </div>
-        </div>
-        <div class="bar">
-          <div class="head">
-            <span>距行权价</span>
-            <span class="pct">−2.6% ITM</span>
-          </div>
-          <div class="track">
-            <div class="marker" style="left: 18%"></div>
-          </div>
-          <div class="endpoints">
-            <span>META $614.23</span>
-            <span>行权 $630</span>
-          </div>
-        </div>
-        <div class="time">
-          <div class="head">
-            <span>时间进度 17/29 天</span>
-            <span>剩 12 天</span>
-          </div>
-          <div class="track"><div class="fill" style="width: 58.6%"></div></div>
-        </div>
-        <button class="payoff-btn">📊 损益曲线</button>
-        <button class="journal-btn">📝 记笔记 / 写交易计划</button>
-        <div class="stats">
-          <div class="stat"><span class="k">Δ</span><span class="v">−0.647</span></div>
-          <div class="stat"><span class="k">IV</span><span class="v">32%</span></div>
-          <div class="stat"><span class="k">Mark</span><span class="v">$23.88</span></div>
-          <div class="stat"><span class="k">$P</span><span class="v">$3,728</span></div>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button>✏️ 编辑</button>
-          <button class="del">🗑 删除</button>
-        </div>
-      </div>
-
-      <!-- NVDA $180 CALL — 健康 -->
-      <div class="pos-cur">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">NVDA</span>
-            <span class="strike">$180</span>
-            <span class="type-badge call">CALL</span>
-          </div>
-          <span class="status good">健康</span>
-          <span class="pct green">+58.2%</span>
-        </div>
-        <div class="meta">Exp 2026-06-05 · 2× contracts · sold $2.40/share</div>
-        <div class="occ">
-          <span class="code">NVDA260605C00180000</span>
-          <span class="copy-hint">📋</span>
-        </div>
-        <div class="hero">
-          <div>
-            <div class="v green">+$278</div>
-            <span class="l">浮盈亏</span>
-          </div>
-          <div>
-            <div class="v green">+$42</div>
-            <span class="l">每日 Theta</span>
-          </div>
-        </div>
-        <div class="bar">
-          <div class="head">
-            <span>距行权价</span>
-            <span class="pct">+9.2% 安全</span>
-          </div>
-          <div class="track">
-            <div class="marker" style="left: 78%"></div>
-          </div>
-          <div class="endpoints">
-            <span>NVDA $164.85</span>
-            <span>行权 $180</span>
-          </div>
-        </div>
-        <div class="time">
-          <div class="head">
-            <span>时间进度 7/21 天</span>
-            <span>剩 14 天</span>
-          </div>
-          <div class="track"><div class="fill" style="width: 33%"></div></div>
-        </div>
-        <button class="payoff-btn">📊 损益曲线</button>
-        <button class="journal-btn">📝 记笔记 / 写交易计划</button>
-        <div class="stats">
-          <div class="stat"><span class="k">Δ</span><span class="v">+0.182</span></div>
-          <div class="stat"><span class="k">IV</span><span class="v">38%</span></div>
-          <div class="stat"><span class="k">Mark</span><span class="v">$1.05</span></div>
-          <div class="stat"><span class="k">$P</span><span class="v">$480</span></div>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button>✏️ 编辑</button>
-          <button class="del">🗑 删除</button>
-        </div>
-      </div>
-
-    </div>
+<!-- ════════════ 原版 reference ════════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-tag">CURRENT</span>
+    <span class="section-title">原版（参照对比）</span>
   </div>
+  <p class="section-desc">
+    现在的样式 —— 3 处大字（顶部 %、Hero 区 PnL、状态徽章）互相争夺注意力。
+    简洁模式只是隐藏副标 / OCC / 4 格小指标，主结构没变。
+  </p>
+  <div class="cards-row">
 
-  <!-- ════════ 方案 A · 紧凑 ════════ -->
-  <div class="col">
-    <div class="col-head">
-      <span class="col-tag">OPTION A</span>
-      <span class="col-title">紧凑列表</span>
-      <span class="col-desc">高度砍掉约 40%。一屏能看 6+ 张。状态用左侧色条，PnL 是唯一大字。次要按钮收进 ⋯。</span>
+    <div class="pos-cur danger">
+      <div class="row1">
+        <input type="checkbox" checked>
+        <div class="name"><span class="ticker">TSLA</span><span class="strike">$415</span><span class="type-badge put">PUT</span></div>
+        <span class="status danger">🔥 接近行权</span>
+        <span class="pct red">-150.9%</span>
+      </div>
+      <div class="pos-meta">Exp 2026-05-22 · 3× contracts · sold $2.77/share</div>
+      <div class="pos-occ">TSLA260522P00415000 📋</div>
+      <div class="hero">
+        <div><div class="v red">-$1,254</div><span class="l">浮盈亏</span></div>
+        <div><div class="v green">+$239</div><span class="l">每日 Theta</span></div>
+      </div>
+      <div class="bar">
+        <div class="head"><span>距行权价</span><span class="pct">+1.7% 安全</span></div>
+        <div class="track"><div class="marker" style="left: 52%"></div></div>
+        <div class="endpoints"><span>TSLA $422.24</span><span>行权 $415</span></div>
+      </div>
+      <div class="time">
+        <div class="head"><span>时间进度 3/8 天</span><span>剩 5 天</span></div>
+        <div class="track"><div class="fill" style="width: 37.5%"></div></div>
+      </div>
+      <button class="small-btn">📊 损益曲线</button>
+      <button class="small-btn">📝 记笔记 / 写交易计划</button>
+      <div class="pos-stats">
+        <div class="stat"><span class="k">Δ</span><span class="v">−0.355</span></div>
+        <div class="stat"><span class="k">IV</span><span class="v">44%</span></div>
+        <div class="stat"><span class="k">Mark</span><span class="v">$6.95</span></div>
+        <div class="stat"><span class="k">$P</span><span class="v">$831</span></div>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button>✏️ 编辑</button>
+        <button class="del">🗑 删除</button>
+      </div>
     </div>
-    <div class="col-stack">
 
-      <!-- TSLA -->
-      <div class="pos-a danger">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">TSLA</span>
-            <span class="strike">$415</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-chip danger">接近行权</span>
-        </div>
-        <div class="pnl-row">
-          <div>
-            <span class="pnl-big red">−$1,254</span>
-            <span class="pnl-pct red">−150.9%</span>
-          </div>
-          <span class="dte">剩 <strong>5</strong> / 8 天</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 52%"></div></div>
-          <div class="bar-info">
-            <span>$422.24</span>
-            <span class="safe ok">+1.7% 安全</span>
-            <span>行权 $415</span>
-          </div>
-        </div>
-        <div class="chips">
-          <span>Δ <strong>−.36</strong></span>
-          <span class="sep">·</span>
-          <span>IV <strong>44%</strong></span>
-          <span class="sep">·</span>
-          <span>θ <strong>+$239</strong>/日</span>
-          <span class="sep">·</span>
-          <span>3× ctr</span>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button class="more">⋯</button>
-        </div>
+    <div class="pos-cur warn">
+      <div class="row1">
+        <input type="checkbox" checked>
+        <div class="name"><span class="ticker">META</span><span class="strike">$630</span><span class="type-badge put">PUT</span></div>
+        <span class="status warn">⚠ 已 ITM</span>
+        <span class="pct green">+35.9%</span>
       </div>
-
-      <!-- META -->
-      <div class="pos-a warn">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">META</span>
-            <span class="strike">$630</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-chip warn">已 ITM</span>
-        </div>
-        <div class="pnl-row">
-          <div>
-            <span class="pnl-big green">+$1,340</span>
-            <span class="pnl-pct green">+35.9%</span>
-          </div>
-          <span class="dte">剩 <strong>12</strong> / 29 天</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 18%"></div></div>
-          <div class="bar-info">
-            <span>$614.23</span>
-            <span class="safe bad">−2.6% ITM</span>
-            <span>行权 $630</span>
-          </div>
-        </div>
-        <div class="chips">
-          <span>Δ <strong>−.65</strong></span>
-          <span class="sep">·</span>
-          <span>IV <strong>32%</strong></span>
-          <span class="sep">·</span>
-          <span>θ <strong>+$51</strong>/日</span>
-          <span class="sep">·</span>
-          <span>1× ctr</span>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button class="more">⋯</button>
-        </div>
+      <div class="pos-meta">Exp 2026-05-29 · 1× contracts · sold $37.28/share</div>
+      <div class="pos-occ">META260529P00630000 📋</div>
+      <div class="hero">
+        <div><div class="v green">+$1,340</div><span class="l">浮盈亏</span></div>
+        <div><div class="v green">+$51</div><span class="l">每日 Theta</span></div>
       </div>
-
-      <!-- NVDA -->
-      <div class="pos-a good">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">NVDA</span>
-            <span class="strike">$180</span>
-            <span class="type-badge call">CALL</span>
-          </div>
-          <span class="status-chip good">健康</span>
-        </div>
-        <div class="pnl-row">
-          <div>
-            <span class="pnl-big green">+$278</span>
-            <span class="pnl-pct green">+58.2%</span>
-          </div>
-          <span class="dte">剩 <strong>14</strong> / 21 天</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 78%"></div></div>
-          <div class="bar-info">
-            <span>$164.85</span>
-            <span class="safe ok">+9.2% 安全</span>
-            <span>行权 $180</span>
-          </div>
-        </div>
-        <div class="chips">
-          <span>Δ <strong>+.18</strong></span>
-          <span class="sep">·</span>
-          <span>IV <strong>38%</strong></span>
-          <span class="sep">·</span>
-          <span>θ <strong>+$42</strong>/日</span>
-          <span class="sep">·</span>
-          <span>2× ctr</span>
-        </div>
-        <div class="actions">
-          <button>平仓</button>
-          <button class="more">⋯</button>
-        </div>
+      <div class="bar">
+        <div class="head"><span>距行权价</span><span class="pct">−2.6% ITM</span></div>
+        <div class="track"><div class="marker" style="left: 18%"></div></div>
+        <div class="endpoints"><span>META $614.23</span><span>行权 $630</span></div>
       </div>
-
+      <div class="time">
+        <div class="head"><span>时间进度 17/29 天</span><span>剩 12 天</span></div>
+        <div class="track"><div class="fill" style="width: 58.6%"></div></div>
+      </div>
+      <button class="small-btn">📊 损益曲线</button>
+      <button class="small-btn">📝 记笔记 / 写交易计划</button>
+      <div class="pos-stats">
+        <div class="stat"><span class="k">Δ</span><span class="v">−0.647</span></div>
+        <div class="stat"><span class="k">IV</span><span class="v">32%</span></div>
+        <div class="stat"><span class="k">Mark</span><span class="v">$23.88</span></div>
+        <div class="stat"><span class="k">$P</span><span class="v">$3,728</span></div>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button>✏️ 编辑</button>
+        <button class="del">🗑 删除</button>
+      </div>
     </div>
+
+    <div class="pos-cur">
+      <div class="row1">
+        <input type="checkbox" checked>
+        <div class="name"><span class="ticker">NVDA</span><span class="strike">$180</span><span class="type-badge call">CALL</span></div>
+        <span class="status good">健康</span>
+        <span class="pct green">+58.2%</span>
+      </div>
+      <div class="pos-meta">Exp 2026-06-05 · 2× contracts · sold $2.40/share</div>
+      <div class="pos-occ">NVDA260605C00180000 📋</div>
+      <div class="hero">
+        <div><div class="v green">+$278</div><span class="l">浮盈亏</span></div>
+        <div><div class="v green">+$42</div><span class="l">每日 Theta</span></div>
+      </div>
+      <div class="bar">
+        <div class="head"><span>距行权价</span><span class="pct">+9.2% 安全</span></div>
+        <div class="track"><div class="marker" style="left: 78%"></div></div>
+        <div class="endpoints"><span>NVDA $164.85</span><span>行权 $180</span></div>
+      </div>
+      <div class="time">
+        <div class="head"><span>时间进度 7/21 天</span><span>剩 14 天</span></div>
+        <div class="track"><div class="fill" style="width: 33%"></div></div>
+      </div>
+      <button class="small-btn">📊 损益曲线</button>
+      <button class="small-btn">📝 记笔记 / 写交易计划</button>
+      <div class="pos-stats">
+        <div class="stat"><span class="k">Δ</span><span class="v">+0.182</span></div>
+        <div class="stat"><span class="k">IV</span><span class="v">38%</span></div>
+        <div class="stat"><span class="k">Mark</span><span class="v">$1.05</span></div>
+        <div class="stat"><span class="k">$P</span><span class="v">$480</span></div>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button>✏️ 编辑</button>
+        <button class="del">🗑 删除</button>
+      </div>
+    </div>
+
   </div>
-
-  <!-- ════════ 方案 B · 分层 (推荐) ════════ -->
-  <div class="col">
-    <div class="col-head">
-      <span class="col-tag" style="color: var(--green);">OPTION B · 推荐</span>
-      <span class="col-title">分层信息</span>
-      <span class="col-desc">顶部细色条提示状态。Hero 居中只放 PnL 一个大字。两条进度条紧凑同框。Greeks 单行。</span>
-    </div>
-    <div class="col-stack">
-
-      <!-- TSLA -->
-      <div class="pos-b danger">
-        <div class="status-strip"></div>
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">TSLA</span>
-            <span class="strike">$415</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-text danger">接近行权</span>
-        </div>
-        <div class="meta">Exp 5/22 · 3× · sold $2.77</div>
-        <div class="hero">
-          <span class="v red">−$1,254<span class="pct-inline red">−150.9%</span></span>
-          <span class="l">浮盈亏</span>
-        </div>
-        <div class="bars">
-          <div class="bar-line distance">
-            <span class="label">距行权</span>
-            <div class="track-wrap">
-              <div class="track"><div class="marker" style="left: 52%"></div></div>
-            </div>
-            <span class="value ok">+1.7% 安全</span>
-          </div>
-          <div class="bar-line time">
-            <span class="label">时间</span>
-            <div class="track-wrap">
-              <div class="track"><div class="fill" style="width: 37.5%"></div></div>
-            </div>
-            <span class="value">剩 5/8 天</span>
-          </div>
-        </div>
-        <div class="greeks">
-          <span>Δ <strong>−.36</strong></span>
-          <span>IV <strong>44%</strong></span>
-          <span>θ <strong>+$239</strong>/日</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏ 编辑</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-      <!-- META -->
-      <div class="pos-b warn">
-        <div class="status-strip"></div>
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">META</span>
-            <span class="strike">$630</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-text warn">已 ITM</span>
-        </div>
-        <div class="meta">Exp 5/29 · 1× · sold $37.28</div>
-        <div class="hero">
-          <span class="v green">+$1,340<span class="pct-inline green">+35.9%</span></span>
-          <span class="l">浮盈亏</span>
-        </div>
-        <div class="bars">
-          <div class="bar-line distance">
-            <span class="label">距行权</span>
-            <div class="track-wrap">
-              <div class="track"><div class="marker" style="left: 18%"></div></div>
-            </div>
-            <span class="value bad">−2.6% ITM</span>
-          </div>
-          <div class="bar-line time">
-            <span class="label">时间</span>
-            <div class="track-wrap">
-              <div class="track"><div class="fill" style="width: 58.6%"></div></div>
-            </div>
-            <span class="value">剩 12/29 天</span>
-          </div>
-        </div>
-        <div class="greeks">
-          <span>Δ <strong>−.65</strong></span>
-          <span>IV <strong>32%</strong></span>
-          <span>θ <strong>+$51</strong>/日</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏ 编辑</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-      <!-- NVDA -->
-      <div class="pos-b good">
-        <div class="status-strip"></div>
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">NVDA</span>
-            <span class="strike">$180</span>
-            <span class="type-badge call">CALL</span>
-          </div>
-          <span class="status-text good">健康</span>
-        </div>
-        <div class="meta">Exp 6/05 · 2× · sold $2.40</div>
-        <div class="hero">
-          <span class="v green">+$278<span class="pct-inline green">+58.2%</span></span>
-          <span class="l">浮盈亏</span>
-        </div>
-        <div class="bars">
-          <div class="bar-line distance">
-            <span class="label">距行权</span>
-            <div class="track-wrap">
-              <div class="track"><div class="marker" style="left: 78%"></div></div>
-            </div>
-            <span class="value ok">+9.2% 安全</span>
-          </div>
-          <div class="bar-line time">
-            <span class="label">时间</span>
-            <div class="track-wrap">
-              <div class="track"><div class="fill" style="width: 33%"></div></div>
-            </div>
-            <span class="value">剩 14/21 天</span>
-          </div>
-        </div>
-        <div class="greeks">
-          <span>Δ <strong>+.18</strong></span>
-          <span>IV <strong>38%</strong></span>
-          <span>θ <strong>+$42</strong>/日</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏ 编辑</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════════ 方案 C · 标签化 ════════ -->
-  <div class="col">
-    <div class="col-head">
-      <span class="col-tag">OPTION C</span>
-      <span class="col-title">标签化</span>
-      <span class="col-desc">PnL 居中大字 + 副信息。所有 Greeks / 数字变 pill chips。圆角更柔，更像现代 dashboard。</span>
-    </div>
-    <div class="col-stack">
-
-      <!-- TSLA -->
-      <div class="pos-c danger">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">TSLA</span>
-            <span class="strike">$415</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-chip danger">接近行权</span>
-        </div>
-        <div class="pnl">
-          <span class="pnl-big red">−$1,254</span>
-          <span class="pnl-sub"><strong class="red">−150.9%</strong> · 浮盈亏</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 52%"></div></div>
-          <div class="info">
-            <span>$422.24</span>
-            <span class="safe">+1.7% 安全</span>
-            <span>$415</span>
-          </div>
-        </div>
-        <div class="chip-grid">
-          <span class="chip">剩 <strong>5</strong> 天</span>
-          <span class="chip">Δ <strong>−.36</strong></span>
-          <span class="chip">IV <strong>44%</strong></span>
-          <span class="chip">θ <strong>+$239</strong></span>
-          <span class="chip">Mark <strong>$6.95</strong></span>
-          <span class="chip">3× ctr</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-      <!-- META -->
-      <div class="pos-c warn">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">META</span>
-            <span class="strike">$630</span>
-            <span class="type-badge put">PUT</span>
-          </div>
-          <span class="status-chip warn">已 ITM</span>
-        </div>
-        <div class="pnl">
-          <span class="pnl-big green">+$1,340</span>
-          <span class="pnl-sub"><strong class="green">+35.9%</strong> · 浮盈亏</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 18%"></div></div>
-          <div class="info">
-            <span>$614.23</span>
-            <span class="safe bad">−2.6% ITM</span>
-            <span>$630</span>
-          </div>
-        </div>
-        <div class="chip-grid">
-          <span class="chip">剩 <strong>12</strong> 天</span>
-          <span class="chip">Δ <strong>−.65</strong></span>
-          <span class="chip">IV <strong>32%</strong></span>
-          <span class="chip">θ <strong>+$51</strong></span>
-          <span class="chip">Mark <strong>$23.88</strong></span>
-          <span class="chip">1× ctr</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-      <!-- NVDA -->
-      <div class="pos-c">
-        <div class="row1">
-          <input type="checkbox" checked>
-          <div class="name">
-            <span class="ticker">NVDA</span>
-            <span class="strike">$180</span>
-            <span class="type-badge call">CALL</span>
-          </div>
-          <span class="status-chip good">健康</span>
-        </div>
-        <div class="pnl">
-          <span class="pnl-big green">+$278</span>
-          <span class="pnl-sub"><strong class="green">+58.2%</strong> · 浮盈亏</span>
-        </div>
-        <div class="bar">
-          <div class="track"><div class="marker" style="left: 78%"></div></div>
-          <div class="info">
-            <span>$164.85</span>
-            <span class="safe">+9.2% 安全</span>
-            <span>$180</span>
-          </div>
-        </div>
-        <div class="chip-grid">
-          <span class="chip">剩 <strong>14</strong> 天</span>
-          <span class="chip">Δ <strong>+.18</strong></span>
-          <span class="chip">IV <strong>38%</strong></span>
-          <span class="chip">θ <strong>+$42</strong></span>
-          <span class="chip">Mark <strong>$1.05</strong></span>
-          <span class="chip">2× ctr</span>
-        </div>
-        <div class="actions">
-          <button class="primary">平仓</button>
-          <button class="ghost">✏</button>
-          <button class="more">⋯</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
 </div>
 
+
+<!-- ════════════ D · 紧凑行 ════════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-tag">OPTION D</span>
+    <span class="section-title">紧凑行 / Table-like</span>
+  </div>
+  <p class="section-desc">
+    抛弃"卡片"形式，回到密集行表。一行 ~52px 高，一屏看 12+ 持仓。
+    <span class="mode-tag">完整</span>显示 Greeks 一列；
+    <span class="mode-tag">简洁</span>砍掉 Greeks 列，bar 占更宽。
+    适合"管理多个持仓"的扫读视图。
+  </p>
+  <div class="rows-stack">
+
+    <!-- TSLA -->
+    <div class="pos-d danger">
+      <input type="checkbox" checked>
+      <div class="name"><span class="ticker">TSLA</span><span class="strike">$415</span><span class="type-badge put">PUT</span></div>
+      <span class="status-chip danger">接近行权</span>
+      <div class="pnl-block"><span class="pnl red">−$1,254</span><span class="pct red">−150.9%</span></div>
+      <div class="bar-cell">
+        <div class="bar"><div class="marker" style="left: 52%"></div></div>
+        <div class="bar-safe ok">+1.7% 安全</div>
+      </div>
+      <span class="dte">剩 <strong>5</strong>/8 天</span>
+      <div class="greeks">
+        <span>Δ<strong>−.36</strong></span>
+        <span>IV<strong>44%</strong></span>
+        <span>θ<strong>+$239</strong></span>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+    <!-- META -->
+    <div class="pos-d warn">
+      <input type="checkbox" checked>
+      <div class="name"><span class="ticker">META</span><span class="strike">$630</span><span class="type-badge put">PUT</span></div>
+      <span class="status-chip warn">已 ITM</span>
+      <div class="pnl-block"><span class="pnl green">+$1,340</span><span class="pct green">+35.9%</span></div>
+      <div class="bar-cell">
+        <div class="bar"><div class="marker" style="left: 18%"></div></div>
+        <div class="bar-safe bad">−2.6% ITM</div>
+      </div>
+      <span class="dte">剩 <strong>12</strong>/29 天</span>
+      <div class="greeks">
+        <span>Δ<strong>−.65</strong></span>
+        <span>IV<strong>32%</strong></span>
+        <span>θ<strong>+$51</strong></span>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+    <!-- NVDA -->
+    <div class="pos-d good">
+      <input type="checkbox" checked>
+      <div class="name"><span class="ticker">NVDA</span><span class="strike">$180</span><span class="type-badge call">CALL</span></div>
+      <span class="status-chip good">健康</span>
+      <div class="pnl-block"><span class="pnl green">+$278</span><span class="pct green">+58.2%</span></div>
+      <div class="bar-cell">
+        <div class="bar"><div class="marker" style="left: 78%"></div></div>
+        <div class="bar-safe ok">+9.2% 安全</div>
+      </div>
+      <span class="dte">剩 <strong>14</strong>/21 天</span>
+      <div class="greeks">
+        <span>Δ<strong>+.18</strong></span>
+        <span>IV<strong>38%</strong></span>
+        <span>θ<strong>+$42</strong></span>
+      </div>
+      <div class="actions">
+        <button>平仓</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════ E · iOS Stocks 极简 ════════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-tag">OPTION E</span>
+    <span class="section-title">iOS Stocks 极简</span>
+  </div>
+  <p class="section-desc">
+    模仿 Apple Stocks：左 ticker / 右 PnL 大字对齐，副信息缩为 ~11px 灰字。主按钮黑底白字胶囊。
+    <span class="mode-tag">完整</span>显示 Greeks 一行 + 编辑按钮；
+    <span class="mode-tag">简洁</span>砍 Greeks 行 + 编辑按钮，留白更多。
+  </p>
+  <div class="cards-row">
+
+    <!-- TSLA -->
+    <div class="pos-e">
+      <div class="e-row1">
+        <input type="checkbox" checked>
+        <span class="e-ticker">TSLA</span>
+        <span class="e-pnl red">−$1,254</span>
+      </div>
+      <div class="e-row2">
+        <span class="e-meta">$415 <span class="type-badge put">PUT</span> · 3× · 剩 5 天</span>
+        <span class="e-pct red">−150.9%</span>
+      </div>
+      <div class="e-bar">
+        <div class="track"><div class="marker" style="left: 52%"></div></div>
+        <div class="info">
+          <span>$422.24</span>
+          <span class="status-text danger">接近行权 · +1.7%</span>
+          <span>$415</span>
+        </div>
+      </div>
+      <div class="e-greeks">
+        <span>Δ <strong>−.36</strong></span>
+        <span>IV <strong>44%</strong></span>
+        <span>θ <strong>+$239</strong>/日</span>
+      </div>
+      <div class="e-actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+    <!-- META -->
+    <div class="pos-e">
+      <div class="e-row1">
+        <input type="checkbox" checked>
+        <span class="e-ticker">META</span>
+        <span class="e-pnl green">+$1,340</span>
+      </div>
+      <div class="e-row2">
+        <span class="e-meta">$630 <span class="type-badge put">PUT</span> · 1× · 剩 12 天</span>
+        <span class="e-pct green">+35.9%</span>
+      </div>
+      <div class="e-bar">
+        <div class="track"><div class="marker" style="left: 18%"></div></div>
+        <div class="info">
+          <span>$614.23</span>
+          <span class="status-text warn">已 ITM · −2.6%</span>
+          <span>$630</span>
+        </div>
+      </div>
+      <div class="e-greeks">
+        <span>Δ <strong>−.65</strong></span>
+        <span>IV <strong>32%</strong></span>
+        <span>θ <strong>+$51</strong>/日</span>
+      </div>
+      <div class="e-actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+    <!-- NVDA -->
+    <div class="pos-e">
+      <div class="e-row1">
+        <input type="checkbox" checked>
+        <span class="e-ticker">NVDA</span>
+        <span class="e-pnl green">+$278</span>
+      </div>
+      <div class="e-row2">
+        <span class="e-meta">$180 <span class="type-badge call">CALL</span> · 2× · 剩 14 天</span>
+        <span class="e-pct green">+58.2%</span>
+      </div>
+      <div class="e-bar">
+        <div class="track"><div class="marker" style="left: 78%"></div></div>
+        <div class="info">
+          <span>$164.85</span>
+          <span class="status-text good">健康 · +9.2%</span>
+          <span>$180</span>
+        </div>
+      </div>
+      <div class="e-greeks">
+        <span>Δ <strong>+.18</strong></span>
+        <span>IV <strong>38%</strong></span>
+        <span>θ <strong>+$42</strong>/日</span>
+      </div>
+      <div class="e-actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+        <button class="more">⋯</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════ F · 仪表盘 ════════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-tag">OPTION F</span>
+    <span class="section-title">仪表盘 / Gauge</span>
+  </div>
+  <p class="section-desc">
+    一个圆环 gauge 同时表达"时间剩多少"（环填充比例）+"安全度"（环颜色：红/黄/绿），
+    PnL 大字居环中。一眼看到"赚多少 + 还剩多少时间 + 危险吗"。
+    <span class="mode-tag">完整</span>下方还有距行权 / 剩余天 / Greeks；
+    <span class="mode-tag">简洁</span>只剩 gauge + 状态徽章 + 平仓键。
+  </p>
+  <div class="cards-row">
+
+    <!-- TSLA -->
+    <div class="pos-f danger">
+      <div class="f-head">
+        <input type="checkbox" checked>
+        <div class="f-name"><span class="f-ticker">TSLA</span><span class="f-strike">$415</span><span class="type-badge put">PUT</span></div>
+        <button class="more">⋯</button>
+      </div>
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="50"/>
+          <circle class="fill" cx="60" cy="60" r="50"
+                  stroke-dasharray="314.16" stroke-dashoffset="196.35"/>
+        </svg>
+        <div class="gauge-center">
+          <span class="pnl red">−$1,254</span>
+          <span class="pct red">−150.9%</span>
+          <span class="label">浮盈亏</span>
+        </div>
+      </div>
+      <div class="status-wrap">
+        <span class="status-chip danger">接近行权</span>
+      </div>
+      <div class="gauge-meta">
+        <div class="m"><span class="k">距行权</span><span class="v ok">+1.7%</span></div>
+        <div class="m"><span class="k">剩余</span><span class="v">5 / 8 天</span></div>
+      </div>
+      <div class="greeks">
+        <span>Δ<strong>−.36</strong></span>
+        <span>IV<strong>44%</strong></span>
+        <span>θ<strong>+$239</strong></span>
+      </div>
+      <div class="actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+      </div>
+    </div>
+
+    <!-- META -->
+    <div class="pos-f warn">
+      <div class="f-head">
+        <input type="checkbox" checked>
+        <div class="f-name"><span class="f-ticker">META</span><span class="f-strike">$630</span><span class="type-badge put">PUT</span></div>
+        <button class="more">⋯</button>
+      </div>
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="50"/>
+          <circle class="fill" cx="60" cy="60" r="50"
+                  stroke-dasharray="314.16" stroke-dashoffset="130.06"/>
+        </svg>
+        <div class="gauge-center">
+          <span class="pnl green">+$1,340</span>
+          <span class="pct green">+35.9%</span>
+          <span class="label">浮盈亏</span>
+        </div>
+      </div>
+      <div class="status-wrap">
+        <span class="status-chip warn">已 ITM</span>
+      </div>
+      <div class="gauge-meta">
+        <div class="m"><span class="k">距行权</span><span class="v bad">−2.6%</span></div>
+        <div class="m"><span class="k">剩余</span><span class="v">12 / 29 天</span></div>
+      </div>
+      <div class="greeks">
+        <span>Δ<strong>−.65</strong></span>
+        <span>IV<strong>32%</strong></span>
+        <span>θ<strong>+$51</strong></span>
+      </div>
+      <div class="actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+      </div>
+    </div>
+
+    <!-- NVDA -->
+    <div class="pos-f good">
+      <div class="f-head">
+        <input type="checkbox" checked>
+        <div class="f-name"><span class="f-ticker">NVDA</span><span class="f-strike">$180</span><span class="type-badge call">CALL</span></div>
+        <button class="more">⋯</button>
+      </div>
+      <div class="gauge-wrap">
+        <svg class="gauge" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="50"/>
+          <circle class="fill" cx="60" cy="60" r="50"
+                  stroke-dasharray="314.16" stroke-dashoffset="209.55"/>
+        </svg>
+        <div class="gauge-center">
+          <span class="pnl green">+$278</span>
+          <span class="pct green">+58.2%</span>
+          <span class="label">浮盈亏</span>
+        </div>
+      </div>
+      <div class="status-wrap">
+        <span class="status-chip good">健康</span>
+      </div>
+      <div class="gauge-meta">
+        <div class="m"><span class="k">距行权</span><span class="v ok">+9.2%</span></div>
+        <div class="m"><span class="k">剩余</span><span class="v">14 / 21 天</span></div>
+      </div>
+      <div class="greeks">
+        <span>Δ<strong>+.18</strong></span>
+        <span>IV<strong>38%</strong></span>
+        <span>θ<strong>+$42</strong></span>
+      </div>
+      <div class="actions">
+        <button class="primary">平仓</button>
+        <button class="ghost">编辑</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════ G · 双列分区 ════════════ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-tag">OPTION G</span>
+    <span class="section-title">双列分区 / Two-column</span>
+  </div>
+  <p class="section-desc">
+    卡片内左右分区：<strong>左 = 身份 + PnL hero</strong>（淡彩色背景），<strong>右 = 进度条 + Greeks + 操作</strong>。
+    横向 split 让高度比当前版矮 ~50%。
+    <span class="mode-tag">完整</span>右侧显示 Greeks + 编辑按钮；
+    <span class="mode-tag">简洁</span>砍 Greeks + 编辑按钮，只留 2 条进度条 + 平仓。
+  </p>
+  <div class="cards-row">
+
+    <!-- TSLA -->
+    <div class="pos-g danger">
+      <div class="g-left">
+        <div class="g-head">
+          <input type="checkbox" checked>
+          <div class="g-name"><span class="g-ticker">TSLA</span><span class="g-strike">$415</span><span class="type-badge put">PUT</span></div>
+        </div>
+        <div class="g-pnl">
+          <span class="v red">−$1,254</span>
+          <span class="l red">−150.9% · <span style="color:var(--sub);">浮盈亏</span></span>
+        </div>
+        <span class="status-chip danger">接近行权</span>
+      </div>
+      <div class="g-right">
+        <div class="bar-line distance">
+          <span class="label">行权</span>
+          <div class="track-wrap"><div class="track"><div class="marker" style="left: 52%"></div></div></div>
+          <span class="value ok">+1.7%</span>
+        </div>
+        <div class="bar-line time">
+          <span class="label">时间</span>
+          <div class="track-wrap"><div class="track"><div class="fill" style="width: 37.5%"></div></div></div>
+          <span class="value">剩 5/8 天</span>
+        </div>
+        <div class="greeks">
+          <span>Δ<strong>−.36</strong></span>
+          <span>IV<strong>44%</strong></span>
+          <span>θ<strong>+$239</strong></span>
+        </div>
+        <div class="g-actions">
+          <button class="primary">平仓</button>
+          <button class="ghost">编辑</button>
+          <button class="more">⋯</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- META -->
+    <div class="pos-g warn">
+      <div class="g-left">
+        <div class="g-head">
+          <input type="checkbox" checked>
+          <div class="g-name"><span class="g-ticker">META</span><span class="g-strike">$630</span><span class="type-badge put">PUT</span></div>
+        </div>
+        <div class="g-pnl">
+          <span class="v green">+$1,340</span>
+          <span class="l green">+35.9% · <span style="color:var(--sub);">浮盈亏</span></span>
+        </div>
+        <span class="status-chip warn">已 ITM</span>
+      </div>
+      <div class="g-right">
+        <div class="bar-line distance">
+          <span class="label">行权</span>
+          <div class="track-wrap"><div class="track"><div class="marker" style="left: 18%"></div></div></div>
+          <span class="value bad">−2.6%</span>
+        </div>
+        <div class="bar-line time">
+          <span class="label">时间</span>
+          <div class="track-wrap"><div class="track"><div class="fill" style="width: 58.6%"></div></div></div>
+          <span class="value">剩 12/29 天</span>
+        </div>
+        <div class="greeks">
+          <span>Δ<strong>−.65</strong></span>
+          <span>IV<strong>32%</strong></span>
+          <span>θ<strong>+$51</strong></span>
+        </div>
+        <div class="g-actions">
+          <button class="primary">平仓</button>
+          <button class="ghost">编辑</button>
+          <button class="more">⋯</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NVDA -->
+    <div class="pos-g good">
+      <div class="g-left">
+        <div class="g-head">
+          <input type="checkbox" checked>
+          <div class="g-name"><span class="g-ticker">NVDA</span><span class="g-strike">$180</span><span class="type-badge call">CALL</span></div>
+        </div>
+        <div class="g-pnl">
+          <span class="v green">+$278</span>
+          <span class="l green">+58.2% · <span style="color:var(--sub);">浮盈亏</span></span>
+        </div>
+        <span class="status-chip good">健康</span>
+      </div>
+      <div class="g-right">
+        <div class="bar-line distance">
+          <span class="label">行权</span>
+          <div class="track-wrap"><div class="track"><div class="marker" style="left: 78%"></div></div></div>
+          <span class="value ok">+9.2%</span>
+        </div>
+        <div class="bar-line time">
+          <span class="label">时间</span>
+          <div class="track-wrap"><div class="track"><div class="fill" style="width: 33%"></div></div></div>
+          <span class="value">剩 14/21 天</span>
+        </div>
+        <div class="greeks">
+          <span>Δ<strong>+.18</strong></span>
+          <span>IV<strong>38%</strong></span>
+          <span>θ<strong>+$42</strong></span>
+        </div>
+        <div class="g-actions">
+          <button class="primary">平仓</button>
+          <button class="ghost">编辑</button>
+          <button class="more">⋯</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
 <div class="foot">
-  选定方向后告诉我，我会落地到 <a href="/app">/app</a> 的真实卡片上。
+  4 个方向 paradigm 各不相同：行式 / 极简 / 仪表盘 / 双列。每个都有完整/简洁两种模式。
+  选定方向告诉我（或要混搭哪些元素），我把它落地到 <a href="/app">/app</a> 真实卡片上。
 </div>
 
 </div>
 
 <script>
+  function setDensity(d) {
+    document.documentElement.setAttribute('data-density', d);
+    document.getElementById('density-full').classList.toggle('active', d === 'full');
+    document.getElementById('density-simple').classList.toggle('active', d === 'simple');
+    try { localStorage.setItem('preview-density', d); } catch(e) {}
+  }
   function setTheme(t) {
     if (t === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -1493,8 +1515,10 @@
     try { localStorage.setItem('preview-theme', t); } catch(e) {}
   }
   try {
-    const saved = localStorage.getItem('preview-theme');
-    if (saved === 'dark') setTheme('dark');
+    const savedD = localStorage.getItem('preview-density');
+    if (savedD === 'simple') setDensity('simple');
+    const savedT = localStorage.getItem('preview-theme');
+    if (savedT === 'dark') setTheme('dark');
   } catch(e) {}
 </script>
 

@@ -3,9 +3,50 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**早安简报升级 — 预览页待用户挑方案**）
+最后更新：2026-05-17（**子批 B 上线 main · POP 校准 + Exit plan**）
 
-### 🆕 当前 session：早安简报升级（branch `claude/enhance-feature-Efdp9`）
+### 🆕 最新 session：子批 B 落地（POP 校准 + Exit plan 模板）
+
+**Commit `fb344ea`，直接合 main**（用户授权 prod 验证）
+
+**做了什么**：
+
+POP 校准（重写 `_backtest_strategy`）：
+- 窗口 6 月 → **12 个月**（不够回退 6 月），采样 5 天 → **3 天**
+- 用 `_strike_for_delta()` 二分查找让 |Δ(K)|≈delta_target（数值验证 Δ
+  误差 <0.005），不再用 `offset = rv·√T·0.85` 粗估
+- premium 用 BS 算（不再 `offset×0.3`）
+- 同时输出 `win_rate` (历史) + `theoretical_pop` (BS N(d2) 均值) +
+  `calibration_ratio = empirical/theoretical` + `window_months`
+- 后端响应顶层加 `backtest_summary` 字段
+- 前端加 `.calib-pill`：ratio < 0.95 → warn "理论可能偏乐观"；
+  ratio > 1.05 → ok "该方向历史更稳"
+
+Exit plan（新 `_exit_plan`）：
+- 矩阵 `risk × kind` 5×3 矩阵：
+  - csp / covered_call：30/None, 50/None, 75/None（不止损 = 接货/被叫走）
+  - short_premium 裸卖：30/100, 50/200, 75/300
+  - leaps：50/50, 100/50, 200/50
+  - long_other：50/50, 100/50, 150/50
+- 输出 `profit_target_pct / stop_loss_pct / exit_at_price / stop_at_price
+  / roll_trigger / summary_vars`
+- 每个 candidate 都有 `c.exit_plan`
+- 前端 `renderExitPlan()`：暖金 inline 行在 acctBar 下方，3 段 segment
+  （锁利/止损/Roll），状态色独立
+
+三语 i18n 完整：出场计划/锁利/止损/不止损/被指派接货/被叫走持股 + 三个
+结构化 key (exit_roll_dte7_delta50 / historical_below_theory /
+historical_above_theory)。
+
+**未做 / 待验证**：
+- [ ] 用户 prod 验证 exit-plan inline 出来对不对（CSP/CC/裸卖/LEAPS 都看）
+- [ ] 用户 prod 验证 calib-pill 出来的条件（需要 historical vs theoretical
+      ratio < 0.95 或 > 1.05 才显示）
+- [ ] 子批 C（表单双轨模式）— 待做
+
+---
+
+### 并行 session：早安简报升级（branch `claude/enhance-feature-Efdp9`）
 
 **用户诉求**：当前早安简报「太简单」。锁定 feature 目标 = "简洁有效的信息做判断，活体提供新的信号，比如要来财报、重大信息"。
 

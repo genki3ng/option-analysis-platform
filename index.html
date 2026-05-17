@@ -1662,6 +1662,131 @@
     border-radius: 6px; padding: 7px 10px; font-size: 13px;
     color: var(--text); font-family: inherit; width: 120px;
   }
+  /* ── 双轨 tab ────────────────────────────────────────────────── */
+  .rec-form .rec-mode-tabs {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 14px;
+    gap: 0;
+  }
+  .rec-form .rmt-tab {
+    padding: 10px 10px;
+    background: transparent;
+    border: none; color: var(--sub);
+    font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    font-family: inherit;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 5px;
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .rec-form .rmt-tab:hover { color: var(--text); }
+  .rec-form .rmt-tab.active {
+    background: var(--accent);
+    color: #0A0A0B;
+    box-shadow: 0 2px 8px rgba(230,184,106,0.28);
+  }
+  .rec-form .rmt-tab .ic { font-size: 14px; line-height: 1; }
+
+  /* ── 🎯 目标驱动子表单 ───────────────────────────────────────── */
+  .rec-form .row[data-section="goal"] {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px; margin-bottom: 14px; align-items: stretch;
+  }
+  .rec-form .row[data-section="goal"] .label { grid-column: 1 / -1; }
+  .rec-form .goal-card {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    column-gap: 10px;
+    align-items: center;
+    text-align: left;
+    padding: 12px 14px;
+    background: transparent;
+    border: 1.5px solid var(--line-2);
+    border-radius: 10px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .rec-form .goal-card:hover {
+    border-color: var(--accent);
+    background: rgba(230,184,106,0.07);
+  }
+  .rec-form .goal-card.selected {
+    background: var(--accent);
+    color: #0A0A0B;
+    border-color: var(--accent);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.28) inset,
+                0 4px 14px rgba(230,184,106,0.30);
+  }
+  .rec-form .goal-card .gc-ic {
+    font-size: 20px; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .rec-form .goal-card .gc-body {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  }
+  .rec-form .goal-card .gc-t {
+    font-size: 13.5px; font-weight: 600;
+    letter-spacing: -0.01em; line-height: 1.25;
+  }
+  .rec-form .goal-card .gc-s {
+    font-size: 11px; color: var(--sub);
+    line-height: 1.35;
+  }
+  .rec-form .goal-card.selected .gc-s { color: rgba(10,10,11,0.72); }
+
+  .rec-form .rec-goal-num {
+    display: inline-flex; align-items: center;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    background: var(--card2);
+    padding: 6px 12px;
+    gap: 4px;
+    width: fit-content;
+  }
+  .rec-form .rec-goal-num .pre,
+  .rec-form .rec-goal-num .post {
+    color: var(--sub); font-size: 12px;
+  }
+  .rec-form .rec-goal-num input {
+    border: none; background: transparent;
+    outline: none; color: var(--text);
+    font-size: 14px; font-weight: 700;
+    width: 90px;
+    padding: 2px 0;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+  }
+  .rec-form .rec-goal-num input::-webkit-outer-spin-button,
+  .rec-form .rec-goal-num input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .rec-form .goal-num-hint {
+    font-size: 11px; color: var(--sub);
+    margin-left: 10px;
+  }
+  .rec-form .rec-goal-preview {
+    font-size: 12px;
+    background: rgba(230,184,106,0.10);
+    border: 1px solid var(--accent-2, rgba(184,146,85,0.6));
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .rec-form .rec-goal-preview .arrow {
+    color: var(--accent); font-weight: 700; margin-right: 6px;
+  }
+  .rec-form .rec-goal-preview strong { color: var(--text); }
+
   .rec-form .preset-row {
     background: var(--card2);
     border: 1px solid var(--line);
@@ -3717,6 +3842,76 @@
 
   <div id="rec-acct-hint" class="rec-acct-hint"></div>
 
+  <!-- 双轨切换：🎯 目标驱动 / ⚙️ 策略驱动（默认） -->
+  <div class="rec-mode-tabs" id="rec-mode-tabs" role="tablist">
+    <button type="button" class="rmt-tab" data-mode="goal" role="tab">
+      <span class="ic" aria-hidden="true">🎯</span><span data-i18n="目标驱动">目标驱动</span>
+    </button>
+    <button type="button" class="rmt-tab active" data-mode="strategy" role="tab">
+      <span class="ic" aria-hidden="true">⚙️</span><span data-i18n="策略驱动">策略驱动</span>
+    </button>
+  </div>
+
+  <div class="row" data-section="ticker">
+    <span class="label" data-i18n="标的 Ticker">标的 Ticker</span>
+    <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
+    <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
+  </div>
+
+  <!-- 🎯 目标驱动子表单（默认 hidden） -->
+  <div id="rec-goal-mode" class="rec-goal-mode" hidden>
+    <div class="row" data-section="goal">
+      <span class="label" data-i18n="我想要…">我想要…</span>
+      <button class="goal-card" data-goal="stable_rent">
+        <span class="gc-ic" aria-hidden="true">💵</span>
+        <span class="gc-body">
+          <span class="gc-t" data-i18n="拿稳定租金">拿稳定租金</span>
+          <span class="gc-s" data-i18n="每月固定收入，14-21 DTE / Δ 0.20">每月固定收入，14-21 DTE / Δ 0.20</span>
+        </span>
+      </button>
+      <button class="goal-card" data-goal="max_safety">
+        <span class="gc-ic" aria-hidden="true">🛡</span>
+        <span class="gc-body">
+          <span class="gc-t" data-i18n="最大化安全度">最大化安全度</span>
+          <span class="gc-s" data-i18n="≥ 85% 安全概率，DTE 长 / Δ 浅">≥ 85% 安全概率，DTE 长 / Δ 浅</span>
+        </span>
+      </button>
+      <button class="goal-card" data-goal="max_yield">
+        <span class="gc-ic" aria-hidden="true">📊</span>
+        <span class="gc-body">
+          <span class="gc-t" data-i18n="最高年化">最高年化</span>
+          <span class="gc-s" data-i18n="激进风险 / 短期 / Δ 接近 0.30">激进风险 / 短期 / Δ 接近 0.30</span>
+        </span>
+      </button>
+      <button class="goal-card" data-goal="assign_stock">
+        <span class="gc-ic" aria-hidden="true">🎁</span>
+        <span class="gc-body">
+          <span class="gc-t" data-i18n="想在某价位接货">想在某价位接货</span>
+          <span class="gc-s" data-i18n="CSP 卖跌，被指派就买入正股">CSP 卖跌，被指派就买入正股</span>
+        </span>
+      </button>
+    </div>
+
+    <div class="row" id="rec-goal-num-row" data-section="goal-num" hidden>
+      <span class="label" id="rec-goal-num-label" data-i18n="目标数值">目标数值</span>
+      <div class="rec-goal-num">
+        <span class="pre" id="rec-goal-num-pre">$</span>
+        <input type="number" id="rec-goal-num" inputmode="decimal" step="any">
+        <span class="post" id="rec-goal-num-post"></span>
+      </div>
+      <span class="goal-num-hint" id="rec-goal-num-hint"></span>
+    </div>
+
+    <div class="rec-goal-preview" id="rec-goal-preview" hidden>
+      <span class="arrow">→</span>
+      <span data-i18n="倒推参数">倒推参数</span>:
+      <strong id="rec-goal-preview-text">—</strong>
+    </div>
+  </div>
+
+  <!-- ⚙️ 策略驱动子表单（默认显示，包含 preset / direction / intent / timeframe / risk） -->
+  <div id="rec-strategy-mode" class="rec-strategy-mode">
+
   <div class="row preset-row">
     <span class="label" data-i18n="📖 大佬策略模板（一键填表）">📖 大佬策略模板（一键填表）</span>
     <button class="preset-btn" data-preset="value_leaps" data-i18n="📖 价值哥 LEAPS">📖 价值哥 LEAPS</button>
@@ -3726,14 +3921,8 @@
     <button class="preset-btn" data-preset="iron_condor_neutral" data-i18n="↔️ 区间震荡">↔️ 区间震荡</button>
   </div>
 
-  <div class="row" data-section="ticker">
-    <span class="label" data-i18n="1. 标的 Ticker">1. 标的 Ticker</span>
-    <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
-    <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
-  </div>
-
   <div class="row" data-section="direction">
-    <span class="label" data-i18n="2. 你的方向看法">2. 你的方向看法</span>
+    <span class="label" data-i18n="1. 你的方向看法">1. 你的方向看法</span>
     <button class="opt-btn" data-group="direction" data-value="bullish">
       <span class="opt-icon" aria-hidden="true">📈</span>
       <span class="opt-text" data-i18n="长期看涨">长期看涨</span>
@@ -3749,7 +3938,7 @@
   </div>
 
   <div class="row" data-section="intent">
-    <span class="label" data-i18n="3. 策略意图">3. 策略意图</span>
+    <span class="label" data-i18n="2. 策略意图">2. 策略意图</span>
     <button class="opt-btn" data-group="intent" data-value="premium" data-i18n="收权利金">收权利金</button>
     <button class="opt-btn" data-group="intent" data-value="csp" data-i18n="准备接货（CSP）">准备接货（CSP）</button>
     <button class="opt-btn" data-group="intent" data-value="covered_call" data-i18n="减仓（Covered Call）">减仓（Covered Call）</button>
@@ -3759,7 +3948,7 @@
   <div id="rec-conflict-hint" style="display:none;font-size:12px;color:var(--yellow);padding:6px 10px;background:rgba(234,179,8,0.08);border-radius:6px;margin-bottom:2px"></div>
 
   <div class="row" data-section="timeframe">
-    <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
+    <span class="label" data-i18n="3. 持仓时长">3. 持仓时长</span>
     <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="当周 1-5天">当周 1-5天</button>
     <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="下周 6-12天">下周 6-12天</button>
     <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="当月 14-30天">当月 14-30天</button>
@@ -3770,7 +3959,7 @@
   </div>
 
   <div class="row" data-section="risk">
-    <span class="label" data-i18n="5. 风险偏好">5. 风险偏好</span>
+    <span class="label" data-i18n="4. 风险偏好">4. 风险偏好</span>
     <button class="opt-btn" data-group="risk" data-value="conservative" id="risk-btn-conservative">
       <span class="opt-icon" aria-hidden="true">🛡</span>
       <span class="opt-title" data-i18n="保守">保守</span>
@@ -3788,6 +3977,8 @@
     </button>
     <span class="risk-hint" id="risk-hint"></span>
   </div>
+
+  </div><!-- /rec-strategy-mode -->
 
   <div class="rec-result" id="rec-result"></div>
 
@@ -4106,11 +4297,35 @@ const I18N = {
     '🔄 Wheel 卖跌接货': '🔄 Wheel 賣跌接貨',
     '💰 周收权利金': '💰 週收權利金',
     '↔️ 区间震荡': '↔️ 區間震盪',
-    '1. 标的 Ticker': '1. 標的 Ticker',
-    '2. 你的方向看法': '2. 你的方向看法',
-    '3. 策略意图': '3. 策略意圖',
-    '4. 持仓时长': '4. 持倉時長',
-    '5. 风险偏好': '5. 風險偏好',
+    '标的 Ticker': '標的 Ticker',
+    '1. 你的方向看法': '1. 你的方向看法',
+    '2. 策略意图': '2. 策略意圖',
+    '3. 持仓时长': '3. 持倉時長',
+    '4. 风险偏好': '4. 風險偏好',
+    // 🎯 目标驱动 mode
+    '目标驱动': '目標驅動',
+    '策略驱动': '策略驅動',
+    '我想要…': '我想要…',
+    '拿稳定租金': '拿穩定租金',
+    '每月固定收入，14-21 DTE / Δ 0.20': '每月固定收入，14-21 DTE / Δ 0.20',
+    '最大化安全度': '最大化安全度',
+    '≥ 85% 安全概率，DTE 长 / Δ 浅': '≥ 85% 安全機率，DTE 長 / Δ 淺',
+    '最高年化': '最高年化',
+    '激进风险 / 短期 / Δ 接近 0.30': '激進風險 / 短期 / Δ 接近 0.30',
+    '想在某价位接货': '想在某價位接貨',
+    'CSP 卖跌，被指派就买入正股': 'CSP 賣跌，被指派就買入正股',
+    '每月目标': '每月目標',
+    '/ 月': '/ 月',
+    '安全度下限': '安全度下限',
+    '目标接货价': '目標接貨價',
+    '估算用 · 实际收益取决于标的 IV 与张数': '預估用 · 實際收益取決於標的 IV 與張數',
+    '估算用 · 由 risk = 保守 + DTE 45d 自动达到': '預估用 · 由 risk = 保守 + DTE 45d 自動達成',
+    '估算用 · 系统按 Δ 0.20-0.35 找 strike，不会严格命中': '預估用 · 系統按 Δ 0.20-0.35 找 strike，不會嚴格命中',
+    '倒推参数': '反推參數',
+    '中性 · 收权利金 · {tf}d · 平衡': '中性 · 收權利金 · {tf}d · 平衡',
+    '中性 · 收权利金 · {tf}d · 保守': '中性 · 收權利金 · {tf}d · 保守',
+    '看涨 · 收权利金 · {tf}d · 激进': '看漲 · 收權利金 · {tf}d · 激進',
+    '看涨 · CSP 接货 · {tf}d · 平衡': '看漲 · CSP 接貨 · {tf}d · 平衡',
     '长期看涨': '長期看漲',
     '长期看跌': '長期看跌',
     '区间震荡': '區間震盪',
@@ -4710,11 +4925,35 @@ const I18N = {
     '🔄 Wheel 卖跌接货': '🔄 Wheel (CSP)',
     '💰 周收权利金': '💰 Weekly Premium',
     '↔️ 区间震荡': '↔️ Range-bound',
-    '1. 标的 Ticker': '1. Ticker',
-    '2. 你的方向看法': '2. Direction',
-    '3. 策略意图': '3. Strategy Intent',
-    '4. 持仓时长': '4. Time Horizon',
-    '5. 风险偏好': '5. Risk Profile',
+    '标的 Ticker': 'Ticker',
+    '1. 你的方向看法': '1. Direction',
+    '2. 策略意图': '2. Strategy Intent',
+    '3. 持仓时长': '3. Time Horizon',
+    '4. 风险偏好': '4. Risk Profile',
+    // 🎯 goal-driven mode
+    '目标驱动': 'Goal-driven',
+    '策略驱动': 'Strategy-driven',
+    '我想要…': 'I want to…',
+    '拿稳定租金': 'Earn steady rent',
+    '每月固定收入，14-21 DTE / Δ 0.20': 'Monthly cash income · 14-21 DTE / Δ 0.20',
+    '最大化安全度': 'Maximize safety',
+    '≥ 85% 安全概率，DTE 长 / Δ 浅': '≥ 85% safety · longer DTE / lower Δ',
+    '最高年化': 'Maximize annual yield',
+    '激进风险 / 短期 / Δ 接近 0.30': 'Aggressive · short DTE · Δ ~0.30',
+    '想在某价位接货': 'Get assigned the stock at a target price',
+    'CSP 卖跌，被指派就买入正股': 'Sell CSP — buy the stock when assigned',
+    '每月目标': 'Monthly target',
+    '/ 月': '/ month',
+    '安全度下限': 'Min safety',
+    '目标接货价': 'Target strike',
+    '估算用 · 实际收益取决于标的 IV 与张数': 'For preview · actual yield depends on IV and contracts',
+    '估算用 · 由 risk = 保守 + DTE 45d 自动达到': 'For preview · achieved by risk = conservative + DTE 45d',
+    '估算用 · 系统按 Δ 0.20-0.35 找 strike，不会严格命中': 'For preview · system picks Δ 0.20-0.35 strikes; won\'t hit exactly',
+    '倒推参数': 'Maps to',
+    '中性 · 收权利金 · {tf}d · 平衡': 'neutral · premium · {tf}d · balanced',
+    '中性 · 收权利金 · {tf}d · 保守': 'neutral · premium · {tf}d · conservative',
+    '看涨 · 收权利金 · {tf}d · 激进': 'bullish · premium · {tf}d · aggressive',
+    '看涨 · CSP 接货 · {tf}d · 平衡': 'bullish · CSP · {tf}d · balanced',
     '长期看涨': 'Long-term Bullish',
     '长期看跌': 'Long-term Bearish',
     '区间震荡': 'Range-bound',
@@ -7262,6 +7501,101 @@ function showPresetNote(note) {
   el.textContent = '💡 ' + note;
 }
 
+// ── 🎯 目标驱动 mode ─────────────────────────────────────────────────
+// 4 个 goal 反向映射到 strategy 参数（direction/intent/timeframe/risk）
+// 数值输入仅作 UI 预览，目前不传给后端
+const REC_GOALS = {
+  stable_rent: {
+    fill: { direction: 'neutral', intent: 'premium', timeframe: '21', risk: 'balanced' },
+    numLabel: '每月目标',
+    numPre: '$',
+    numPost: '/ 月',
+    numDefault: 300,
+    numHint: '估算用 · 实际收益取决于标的 IV 与张数',
+    descTpl: '中性 · 收权利金 · {tf}d · 平衡',
+  },
+  max_safety: {
+    fill: { direction: 'neutral', intent: 'premium', timeframe: '45', risk: 'conservative' },
+    numLabel: '安全度下限',
+    numPre: '',
+    numPost: '%',
+    numDefault: 85,
+    numHint: '估算用 · 由 risk = 保守 + DTE 45d 自动达到',
+    descTpl: '中性 · 收权利金 · {tf}d · 保守',
+  },
+  max_yield: {
+    fill: { direction: 'bullish', intent: 'premium', timeframe: '8', risk: 'aggressive' },
+    descTpl: '看涨 · 收权利金 · {tf}d · 激进',
+  },
+  assign_stock: {
+    fill: { direction: 'bullish', intent: 'csp', timeframe: '21', risk: 'balanced' },
+    numLabel: '目标接货价',
+    numPre: '$',
+    numPost: '',
+    numDefault: null,
+    numHint: '估算用 · 系统按 Δ 0.20-0.35 找 strike，不会严格命中',
+    descTpl: '看涨 · CSP 接货 · {tf}d · 平衡',
+  },
+};
+
+let _recGoalKey = null;
+let _recMode = localStorage.getItem('rec_mode') || 'strategy';
+
+function switchRecMode(mode) {
+  _recMode = (mode === 'goal') ? 'goal' : 'strategy';
+  localStorage.setItem('rec_mode', _recMode);
+  document.querySelectorAll('.rmt-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === _recMode);
+  });
+  const goalBox = document.getElementById('rec-goal-mode');
+  const stratBox = document.getElementById('rec-strategy-mode');
+  if (goalBox) goalBox.hidden = (_recMode !== 'goal');
+  if (stratBox) stratBox.hidden = (_recMode !== 'strategy');
+}
+
+function applyGoal(key) {
+  const g = REC_GOALS[key];
+  if (!g) return;
+  _recGoalKey = key;
+  Object.assign(_recSelection, g.fill);
+  // 写入 localStorage 让下次打开记住（共用 rec_last_choice，本来就有）
+  _savePref('rec_last_choice', JSON.stringify(_recSelection));
+  // 高亮当前 goal card
+  document.querySelectorAll('.goal-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.goal === key);
+  });
+  // 数值输入行
+  const numRow = document.getElementById('rec-goal-num-row');
+  if (numRow) {
+    if (g.numLabel) {
+      numRow.hidden = false;
+      document.getElementById('rec-goal-num-label').textContent = t(g.numLabel);
+      document.getElementById('rec-goal-num-pre').textContent = g.numPre || '';
+      document.getElementById('rec-goal-num-post').textContent = g.numPost ? t(g.numPost) : '';
+      document.getElementById('rec-goal-num-hint').textContent = g.numHint ? t(g.numHint) : '';
+      const numEl = document.getElementById('rec-goal-num');
+      // 仅在用户没填过 / 数值为空时设默认
+      if (!numEl.value && g.numDefault != null) numEl.value = g.numDefault;
+    } else {
+      numRow.hidden = true;
+    }
+  }
+  _renderGoalPreview();
+}
+
+function _renderGoalPreview() {
+  const box = document.getElementById('rec-goal-preview');
+  if (!box || !_recGoalKey) { if (box) box.hidden = true; return; }
+  const g = REC_GOALS[_recGoalKey];
+  if (!g) { box.hidden = true; return; }
+  box.hidden = false;
+  const descKey = g.descTpl || '';
+  // 替换 {tf} 占位
+  const tfLabel = g.fill.timeframe + 'd';
+  const desc = t(descKey).replace('{tf}', tfLabel);
+  document.getElementById('rec-goal-preview-text').textContent = desc;
+}
+
 // ── 维护模式开关 ─────────────────────────────────────────────────────
 // 上游数据源（Yahoo）限流严重，Schwab API 审批通过后撤掉这个开关。
 const REC_MAINTENANCE = {
@@ -7316,6 +7650,23 @@ function showRec() {
   document.querySelectorAll('.rec-form .preset-btn').forEach(btn => {
     btn.onclick = () => applyPreset(btn.dataset.preset);
   });
+  // 🎯 mode tabs
+  document.querySelectorAll('.rmt-tab').forEach(b => {
+    b.onclick = () => switchRecMode(b.dataset.mode);
+  });
+  // 🎯 goal cards
+  document.querySelectorAll('.goal-card').forEach(c => {
+    c.onclick = () => applyGoal(c.dataset.goal);
+  });
+  // 恢复 mode 状态（默认 strategy）
+  switchRecMode(_recMode);
+  // 如果已经选过 goal，恢复高亮 + preview
+  if (_recGoalKey) {
+    document.querySelectorAll('.goal-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.goal === _recGoalKey);
+    });
+    _renderGoalPreview();
+  }
 }
 function hideRec() {
   document.getElementById('rec-form').classList.remove('open');

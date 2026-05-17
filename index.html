@@ -7604,19 +7604,11 @@ async function refresh() {
 loadFromShare();
 
 // 初始化 Supabase（异步，不阻塞首次 refresh）
+// 注意：不要在 load 事件里清 URL 的 ?code=！
+// Supabase PKCE flow 需要异步用 code 换 token，提前清会导致 token 交换失败
+// （iOS Safari 比 Chrome 慢，此 race 更稳定触发 → "登完跳回还显示未登录" 的 bug）
+// Supabase SDK 自己会在成功后清 URL，不用我们多管。
 _initSupabase();
-
-// OAuth 回调时 URL 可能带 ?code= / #access_token=，登录完后清掉
-window.addEventListener('load', () => {
-  const url = new URL(window.location.href);
-  let dirty = false;
-  if (url.searchParams.has('code')) { url.searchParams.delete('code'); dirty = true; }
-  if (url.hash && (url.hash.includes('access_token') || url.hash.includes('error'))) {
-    url.hash = '';
-    dirty = true;
-  }
-  if (dirty) history.replaceState({}, '', url.toString());
-});
 
 refresh();
 setInterval(refresh, 30000);

@@ -1517,13 +1517,18 @@
   .rec-form.open { display: block; }
   .rec-form h4 {
     font-size: 14px; color: var(--accent);
-    margin-bottom: 14px; font-weight: 700;
+    font-weight: 700;
     display: flex; justify-content: space-between; align-items: center;
-    position: sticky; top: 0; z-index: 4;
+    position: sticky; top: -24px; z-index: 10;
     background: var(--card);
-    padding-bottom: 10px;
+    padding: 24px 0 10px;
+    margin: -24px -24px 14px;
+    padding-left: 24px; padding-right: 24px;
     border-bottom: 1px solid var(--line);
-    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  }
+  :root[data-theme="light"] .rec-form h4 {
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
   }
   .rec-form h4 .x {
     cursor: pointer; color: var(--sub); font-size: 20px;
@@ -1692,10 +1697,15 @@
 
   .rec-form .submit-row {
     display: flex; gap: 8px; justify-content: flex-end;
-    margin-top: 10px; padding: 12px 0 4px;
+    margin: 10px -24px 0;
+    padding: 12px 24px 20px;
     border-top: 1px solid var(--line);
-    position: sticky; bottom: 0; z-index: 4;
+    position: sticky; bottom: -24px; z-index: 10;
     background: var(--card);
+    box-shadow: 0 -8px 20px rgba(0,0,0,0.18);
+  }
+  :root[data-theme="light"] .rec-form .submit-row {
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.07);
   }
   .rec-form button.submit {
     background: var(--accent); color: #0A0A0B;
@@ -7196,8 +7206,8 @@ async function submitRec() {
 
   const out = document.getElementById('rec-result');
   out.innerHTML = '<div class="loading">🔍 抓取期权链 + 评分中（5-15 秒）...</div>';
-  // 自动滚动到结果区，避免用户看不到 loading / 结果
-  setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  // 滚到 loading 让用户看到等待状态
+  setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 
   try {
     const r = await fetch('/api/state', {
@@ -7224,6 +7234,11 @@ async function submitRec() {
       return;
     }
     renderRecResult(data);
+    // 滚到算法徽章行（"包租公算法 1.x"），给 DOM 渲染留 100ms
+    setTimeout(() => {
+      const target = document.querySelector('#rec-result .algo-badge') || out;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   } catch (e) {
     out.innerHTML = '<div class="empty">❌ 网络错误: ' + e.message + '</div>';
   }

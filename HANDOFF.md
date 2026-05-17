@@ -3,9 +3,32 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**Wheel 闭环提示 三箭齐发 debug**）
+最后更新：2026-05-17（**早安简报升级 — 预览页待用户挑方案**）
 
-### 🆕 最新 session：Wheel 闭环提示 debug（Batch 4 中点）
+### 🆕 当前 session：早安简报升级（branch `claude/enhance-feature-Efdp9`）
+
+**用户诉求**：当前早安简报「太简单」。锁定 feature 目标 = "简洁有效的信息做判断，活体提供新的信号，比如要来财报、重大信息"。
+
+**现状盘点**（`api/state.py:2336 _generate_morning_brief`）：6 条固定规则的 ul 列表 — 市场涨跌 / 累计 P&L / 财报警告 / 80% 锁利 / ≤3 天到期 / 危险持仓。每类只取 1 个，纯规则零交互。
+
+**预览页**：`morning-preview.html` + 路由 `/morning-preview`（已 commit 到 `claude/enhance-feature-Efdp9`），3 个 UX 方向 × 桌面+手机：
+- **方案 A · 新闻播报**：Hero "今日 3 件事" + 行动按钮 + 底部 chips。最简洁可扫读。
+- **方案 B · Dashboard**：4 格 KPI（VIX/SPY/P&L/Theta）+ 双列「新事件 / 今日该做」+ 14 天日历条。信息密度最大，活体新信号空间足。
+- **方案 C · 对话式**：LLM (Claude Haiku) 生成自然语言摘要 + 3 个 chip + 展开数据。最个性化，要 API key + ~$0.001/用户/天。
+
+**底层信号扩充**（三个方案都包含的"活体新信号"层）：
+- VIX 当前值 + 隔夜变化
+- SPY/QQQ 盘前 %
+- 持仓 ticker 隔夜涨跌
+- 今日 Theta 入账
+- 跨日 diff（哪些指标 since 昨天突破阈值）
+- 集中度（最大单 ticker 保证金占比）
+- 未来 14 天财报 + 到期日历
+- 用户操作历史习惯（C 方案才能用）
+
+**等用户挑**：A / B / C 任意 1 个 → 落地到 `index.html` `_generate_morning_brief` + 前端 `renderMorningBrief` + 删除预览页。
+
+### 📋 上一个 session：Wheel 闭环提示 debug（Batch 4 中点）
 
 **分支**：`claude/batch-4-midpoint-6gjJE` → **已合 main**（cherry-pick `4cae7fd`）
 **原 feature commit**：`4d69f2c`

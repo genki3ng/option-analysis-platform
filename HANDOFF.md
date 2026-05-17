@@ -10,14 +10,16 @@
 ## 1. 最近 12 个 commit（按新到旧）
 
 ```
+06772eb feat: 简洁模式 toggle（持仓卡 + 推荐卡）
+66d80cc feat: 偏好设置（lang/theme/tier_filter/rec_last_*）云端同步
+1193853 docs: HANDOFF rebase 后 SHA 更新
 9ff7d00 docs: 授权 — 部署/合并 main 不再单独问
 69d26f9 docs: HANDOFF 更新 — 算法 1.2 + Massive 移除 + 数据源 pill
 f773187 feat: 推荐列表顶部加数据源降级 pill
 0fc47de remove: Massive API（30 天历史价位带特性弃用）+ Schwab 错误日志
-8103520 algo 1.2: 财报因子改成距财报天数衰减（替代 1.1 的 cross 二元否决）
+8103520 algo 1.2: 财报因子改成距财报天数衰减
 88643f3 security: 加强 .gitignore + HANDOFF.md 补 public repo 注意事项
 3a47516 docs: 加 CLAUDE.md + HANDOFF.md
-ca2d251 fix: 持仓选择 (selectedIds) 在手机刷新后被清空
 a973cbb fix: sweep stale supabase auth keys on init (prevent PKCE drift)
 a4bf629 debug: visible auth diagnostic for mobile sign-in failures
 51a4a96 fix: don't strip ?code= from URL on load (Supabase PKCE needs it async)
@@ -32,6 +34,30 @@ db30630 Deploy: bump trigger (stability test)
 ```
 
 ## 2. 本 session（cloud / 2026-05-17）做了什么
+
+分支 `claude/product-suggestions-TzFsz` 合到 main 后又追加了 2 个 feature commit。
+
+**追加 D. 偏好云同步**（`66d80cc`）
+- state._meta.prefs 命名空间，存 lang/theme/density/rec_tier_filter/rec_last_ticker/rec_last_choice
+- 新 _savePref / _applyCloudPrefs / _migrateLocalPrefsToCloud 三个 helper
+- 接入 setLang / toggleTheme / setTierFilter / rec form submit / toggleDensity
+- realtime 推送也会触发 _applyCloudPrefs，跨设备 lang/theme 实时生效
+
+**追加 E. 简洁模式 toggle**（`06772eb`）
+- 全局 data-density="simple|full"，CSS 接管隐藏次要字段
+- 简洁下藏：pos-meta/pos-occ/pos-stats、rec-compare-check
+- 保留：pos-row1/hero/bar/time/actions、推荐卡所有主体
+- pos-toolbar 多 📐 按钮；prefs 入 density，跨设备同步
+- 默认 full，首次切换后会上云
+
+**算法 1.2 验证 A/B（一次性脚本，不入 repo）**：
+NVDA balanced 跨财报 → 1.1 是 0.55，1.2 是 0.75 (+36%)；NVDA conservative
+跨财报 → 1.1 全归零 10 个候选都看不到，1.2 救活全 10 个评分到 0.60。
+SPY/TSLA 无财报场景两版本 score 完全一致，零回归。
+
+---
+
+## 2bis. 之前的 cloud session（同日早上）做了什么
 
 分支 `claude/product-suggestions-TzFsz`，3 个 commit：
 
@@ -64,7 +90,7 @@ db30630 Deploy: bump trigger (stability test)
 
 ---
 
-## 2bis. 上一个 session 主要做了什么
+## 2ter. 更早一个 session 主要做了什么
 
 **主题 A — 4 个功能 + 包租公分修复**（commit `a4432f4`, `84ec1dd`）
 - 📊 加仓预览（modal，集中度 / Greeks / 保证金 / 收益）
@@ -114,12 +140,14 @@ db30630 Deploy: bump trigger (stability test)
 **用户上一次报的最后一个问题**：手机刷新后持仓勾选丢失 → 已修（commit `ca2d251`），用户还没回报最新测试结果。**新 session 接手时先问用户**：「ca2d251 修了手机刷新后勾选丢失的 bug，最新部署应该已经修好，你还有什么不对的吗？」
 
 **之前留下的 backlog（用户没有明确说要立刻做）**：
-- 简洁模式 toggle
+- ~~简洁模式 toggle~~ ✅ 06772eb 已做
+- ~~把"⭐过滤 / 语言 / 主题 / 表单上次的值"也同步到云端~~ ✅ 66d80cc 已做
 - Iron Condor / Spread builder
-- 真实历史 IV 接入（用 Massive）
+- 真实历史 IV 接入（已弃 Massive，需找别的源 — 比如 yfinance historical IV / CBOE）
 - 跨 ticker 相关性分析
 - 大佬交易信号（X subscriber post）接入
-- 把"⭐过滤 / 语言 / 主题 / 表单上次的值"也同步到云端（目前只在 localStorage）
+- 移动端持仓表单 Wizard 化（来自更早 backlog）
+- Trade Journal 分享 + LLM 摘要（来自更早 backlog）
 
 ---
 

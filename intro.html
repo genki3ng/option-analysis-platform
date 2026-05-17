@@ -856,7 +856,7 @@
       <div class="step reveal">
         <div>
           <h3 data-i18n>看见每一份"租约"</h3>
-          <p data-i18n>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。</p>
+          <p data-i18n>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、每日 P&L 曲线。临近财报会主动警告。</p>
         </div>
       </div>
       <div class="step reveal">
@@ -877,7 +877,7 @@
     <ul class="caps">
       <li class="reveal">
         <div class="k" data-i18n>实时市场数据</div>
-        <div class="v" data-i18n>期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。</div>
+        <div class="v" data-i18n>期权 mark 优先走 Schwab Market Data API（实时），失败兜底 Yahoo / yfinance，BS 模型保底。</div>
       </li>
       <li class="reveal">
         <div class="k" data-i18n>包租公算法 1.1</div>
@@ -1157,14 +1157,14 @@
       '录入你的"房产"': '錄入你的「房產」',
       '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。': '從券商複製 OCC 合約代碼（例如 <code>TSLA260515P00400000</code>）貼進來，自動解析。同一張合約多次賣出會自動按張數加權合併。',
       '看见每一份"租约"': '看見每一份「租約」',
-      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。': '每個持倉自動顯示：即時 Mark、Δ、Θ、距行權距離、損益曲線、操作建議、Massive 30 天價位帶、每日 P&L 曲線。臨近財報會主動警告。',
+      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、每日 P&L 曲线。临近财报会主动警告。': '每個持倉自動顯示：即時 Mark、Δ、Θ、距行權距離、損益曲線、操作建議、每日 P&L 曲線。臨近財報會主動警告。',
       '用包租公推荐指数找下一套': '用包租公推薦指數找下一套',
       '告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。': '告訴系統你的看法（看漲/看跌/區間）、意圖（收權利金/CSP/Wheel/LEAPS）、時間窗口、風險偏好，<strong>包租公推薦指數</strong>會從期權鏈裡給每張合約打分排序。⭐⭐⭐⭐⭐ 永遠在最前。',
       // Capabilities
       '配套能力': '配套能力',
       '不仅看清现状，<br>还能优化决策。': '不僅看清現狀，<br>還能優化決策。',
       '实时市场数据': '即時市場資料',
-      '期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。': '期權 mark 優先從 yfinance 即時拉取，BS 模型保底；Massive API 提供 30 天歷史價位帶。',
+      '期权 mark 优先走 Schwab Market Data API（实时），失败兜底 Yahoo / yfinance，BS 模型保底。': '期權 mark 優先走 Schwab Market Data API（即時），失敗兜底 Yahoo / yfinance，BS 模型保底。',
       '包租公算法 1.1': '包租公演算法 1.1',
       '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。': '房東視角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜區 × Delta 甜蜜區 × IV rank × 流動性</strong>。保守模式下，跨財報合約 = 一律不接。⭐⭐⭐⭐⭐ 永遠在前。',
       '财报 + IV crush 警告': '財報 + IV crush 警告',
@@ -1265,13 +1265,13 @@
       '录入你的"房产"': 'Enter your "properties"',
       '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。': 'Copy the OCC contract code from your broker (e.g. <code>TSLA260515P00400000</code>) and paste it in. Auto-parsed. Same contract sold multiple times is auto-merged with weighted-average pricing.',
       '看见每一份"租约"': 'See every "lease"',
-      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、Massive 30 天价位带、每日 P&L 曲线。临近财报会主动警告。': 'Each position shows live Mark, Δ, Θ, distance to strike, payoff curve, action suggestions, 30-day price band, daily P&L curve. Auto-warns on approaching earnings.',
+      '每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、每日 P&L 曲线。临近财报会主动警告。': 'Each position shows live Mark, Δ, Θ, distance to strike, payoff curve, action suggestions, daily P&L curve. Auto-warns on approaching earnings.',
       '用包租公推荐指数找下一套': 'Find the next one with the Landlord Rec Index',
       '告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。': 'Tell the system your view (bullish/bearish/neutral), intent (premium/CSP/Wheel/LEAPS), time horizon, risk tolerance — the <strong>Landlord Rec Index</strong> scores and ranks every contract in the chain. ⭐⭐⭐⭐⭐ always first.',
       '配套能力': 'Capabilities',
       '不仅看清现状，<br>还能优化决策。': 'Not just clarity —<br>better decisions, too.',
       '实时市场数据': 'Live market data',
-      '期权 mark 优先从 yfinance 实时拉取，BS 模型保底；Massive API 提供 30 天历史价位带。': 'Option marks pulled live from yfinance, with Black-Scholes as fallback. Massive API provides 30-day historical price bands.',
+      '期权 mark 优先走 Schwab Market Data API（实时），失败兜底 Yahoo / yfinance，BS 模型保底。': 'Option marks pulled live from Schwab Market Data API; falls back to Yahoo / yfinance; Black-Scholes as ultimate fallback.',
       '包租公算法 1.1': 'Landlord Algorithm 1.1',
       '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。': 'Landlord\'s-eye ranking: <strong>annualized rent × safety(BS) × DTE sweet spot × Delta sweet spot × IV rank × liquidity</strong>. In conservative mode, contracts spanning earnings = always rejected. ⭐⭐⭐⭐⭐ always first.',
       '财报 + IV crush 警告': 'Earnings + IV crush warnings',

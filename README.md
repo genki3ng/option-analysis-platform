@@ -47,7 +47,7 @@
 
 - **Frontend:** vanilla HTML/CSS/JS, Chart.js via CDN
 - **Backend:** Python serverless function (`/api/state`)
-- **Market data:** yfinance（实时 option chain + 历史） + Massive API（30 天 OCC 历史价位带）
+- **Market data:** Schwab Market Data API（主，实时） → Yahoo via curl_cffi → yfinance（兜底）
 - **Deploy:** Vercel（custom domain via Namecheap CNAME）
 
 ## Routes

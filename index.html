@@ -3532,6 +3532,7 @@
   }
   /* 账户类型 segmented control */
   .account-modal .am-seg { display: flex; gap: 6px; }
+  .account-modal .am-seg-mini .am-seg-btn { padding: 6px 8px; font-size: 11.5px; }
   .account-modal .am-seg-btn {
     flex: 1; text-align: center;
     background: var(--card2);
@@ -3544,6 +3545,79 @@
                 color 0.18s cubic-bezier(0.16,1,0.3,1),
                 transform 0.18s cubic-bezier(0.16,1,0.3,1),
                 box-shadow 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  /* 多账户 card 样式 */
+  .account-modal .am-multi-hint {
+    font-size: 11.5px; color: var(--sub);
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 12px; line-height: 1.5;
+  }
+  .account-modal .am-account-card {
+    background: var(--card2);
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .account-modal .am-acard-head {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .account-modal .am-acard-name {
+    flex: 1; min-width: 0;
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 7px 10px; font-size: 12.5px;
+    font-family: inherit;
+  }
+  .account-modal .am-acard-name:focus { border-color: var(--accent); outline: none; }
+  .account-modal .am-acard-broker {
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 7px 8px; font-size: 12.5px;
+    font-family: inherit; cursor: pointer;
+    min-width: 110px;
+  }
+  .account-modal .am-acard-broker:focus { border-color: var(--accent); outline: none; }
+  .account-modal .am-acard-del {
+    background: transparent; border: none;
+    color: var(--sub); font-size: 18px;
+    width: 28px; height: 28px; line-height: 1;
+    cursor: pointer; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .account-modal .am-acard-del:hover { background: rgba(248,113,113,0.12); color: var(--red); }
+  .account-modal .am-acard-row {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 10px;
+  }
+  .account-modal .am-acard-row.stack { flex-direction: column; align-items: stretch; gap: 6px; }
+  .account-modal .am-mini-label {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    min-width: 60px;
+    font-weight: 500;
+  }
+  .account-modal .am-acard-stocks { display: flex; flex-direction: column; gap: 4px; }
+  .account-modal .am-add-account {
+    display: block; width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--line-2);
+    color: var(--sub); border-radius: 10px;
+    padding: 10px 14px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit;
+    margin-bottom: 12px;
+    transition: border-color 0.18s, color 0.18s, background 0.18s;
+  }
+  .account-modal .am-add-account:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(230,184,106,0.05);
+  }
+  @media (max-width: 500px) {
+    .account-modal .am-acard-broker { min-width: 90px; font-size: 11.5px; }
+    .account-modal .am-mini-label { min-width: 48px; font-size: 10.5px; }
   }
   .account-modal .am-seg-btn:hover {
     border-color: var(--accent); color: var(--text); transform: scale(1.02);
@@ -3729,31 +3803,13 @@
     <button class="am-close" onclick="hideAccountSettings()">×</button>
   </div>
 
-  <div class="am-field">
-    <span class="am-label" data-i18n="账户类型">账户类型</span>
-    <div class="am-seg am-seg-3">
-      <button class="am-seg-btn" data-group="acct_type" data-value="cash" id="acct-type-cash" data-i18n="💵 现金 / IRA">💵 现金 / IRA</button>
-      <button class="am-seg-btn" data-group="acct_type" data-value="margin_l2" id="acct-type-margin-l2" data-i18n="📈 Margin L2">📈 Margin L2</button>
-      <button class="am-seg-btn" data-group="acct_type" data-value="margin_l3" id="acct-type-margin-l3" data-i18n="📈 Margin L3+">📈 Margin L3+</button>
-    </div>
-    <div class="am-hint" data-i18n="acct_type_hint">L2 sell put 是 CSP（全额锁 strike × 100）· L3+ 可裸卖（Reg-T，BPR ≈ 20% underlying）</div>
+  <div class="am-multi-hint" data-i18n="多账户提示">
+    支持多账户管理。每个账户独立：券商 + 类型 + 保证金 + 正股。推荐时按所有账户合并算。
   </div>
 
-  <div class="am-field">
-    <span class="am-label" data-i18n="可用保证金 / 现金">可用保证金 / 现金</span>
-    <div class="am-input-wrap">
-      <span class="am-currency">$</span>
-      <input type="number" id="account-margin" class="am-input" placeholder="50000" min="0" step="1000">
-    </div>
-    <div class="am-hint" data-i18n="用于计算推荐候选的资金占比和张数建议">用于计算推荐候选的资金占比和张数建议</div>
-  </div>
+  <div id="am-accounts-list"></div>
 
-  <div class="am-field">
-    <span class="am-label" data-i18n="正股持仓">正股持仓</span>
-    <div id="stock-pos-list"></div>
-    <button class="add-stock-btn" onclick="addStockRow()" data-i18n="+ 添加一行">+ 添加一行</button>
-    <div class="am-hint" data-i18n="用于 Covered Call 检测：你有几股就能卖几张">用于 Covered Call 检测：你有几股就能卖几张</div>
-  </div>
+  <button class="am-add-account" onclick="addAccountCard()" data-i18n="+ 添加账户">+ 添加账户</button>
 
   <div class="am-actions">
     <button class="am-cancel" onclick="hideAccountSettings()" data-i18n="取消">取消</button>
@@ -4359,6 +4415,16 @@ const I18N = {
     '📈 Margin L2': '📈 Margin L2',
     '📈 Margin L3+': '📈 Margin L3+',
     'acct_type_hint': 'L2 sell put 是 CSP（全额锁 strike × 100）· L3+ 可裸卖（Reg-T，BPR ≈ 20% underlying）',
+    '多账户提示': '支持多账户管理。每个账户独立：券商 + 类型 + 保证金 + 正股。推荐时按所有账户合并算。',
+    '+ 添加账户': '+ 添加账户',
+    '账户名（可选）': '账户名（可选）',
+    '类型': '类型',
+    '保证金': '保证金',
+    '正股': '正股',
+    '+ 加正股': '+ 加正股',
+    '删除该账户': '删除该账户',
+    '至少保留 1 个账户': '至少保留 1 个账户',
+    '其他': '其他',
   },
 
   zh_tw: {
@@ -4943,6 +5009,16 @@ const I18N = {
     '📈 Margin L2': '📈 Margin L2',
     '📈 Margin L3+': '📈 Margin L3+',
     'acct_type_hint': 'L2 sell put 是 CSP（全額鎖 strike × 100）· L3+ 可裸賣（Reg-T，BPR ≈ 20% underlying）',
+    '多账户提示': '支援多帳戶管理。每個帳戶獨立：券商 + 類型 + 保證金 + 正股。推薦時按所有帳戶合併算。',
+    '+ 添加账户': '+ 新增帳戶',
+    '账户名（可选）': '帳戶名（可選）',
+    '类型': '類型',
+    '保证金': '保證金',
+    '正股': '正股',
+    '+ 加正股': '+ 加正股',
+    '删除该账户': '刪除該帳戶',
+    '至少保留 1 个账户': '至少保留 1 個帳戶',
+    '其他': '其他',
   },
 
   en: {
@@ -5619,6 +5695,16 @@ const I18N = {
     '📈 Margin L2': '📈 Margin L2',
     '📈 Margin L3+': '📈 Margin L3+',
     'acct_type_hint': 'L2 sell put = CSP (full collateral, strike × 100) · L3+ allows naked (Reg-T, BPR ≈ 20% underlying)',
+    '多账户提示': 'Multi-account supported. Each account: broker + type + margin + stocks. Recommendations combine all accounts.',
+    '+ 添加账户': '+ Add account',
+    '账户名（可选）': 'Account name (optional)',
+    '类型': 'Type',
+    '保证金': 'Margin',
+    '正股': 'Stocks',
+    '+ 加正股': '+ Add stock',
+    '删除该账户': 'Delete this account',
+    '至少保留 1 个账户': 'At least 1 account required',
+    '其他': 'Other',
   },
 };
 
@@ -10002,16 +10088,61 @@ function _sigOf(c) {
 }
 
 // ── 账户设置（state._meta.account 命名空间）──────────────────────────────────
-function _getAccountMeta() {
+// 多账户：底层 raw / accounts 数组
+function _getAccountMetaRaw() {
   if (_currentUser && _cloudReady && _cloudCache) {
     const cloudMeta = _cloudCache.state?._meta?.account;
     if (cloudMeta) return cloudMeta;
-    // 云端无 account 块 → 退回 localStorage（早期未迁移的数据）
   }
   try { return JSON.parse(localStorage.getItem('account_meta') || '{}'); } catch(e) { return {}; }
 }
 
-function _setAccountMeta(val) {
+// 返回账户数组（含旧格式自动迁移）
+function _getAccountsList() {
+  const raw = _getAccountMetaRaw();
+  if (raw.accounts && Array.isArray(raw.accounts) && raw.accounts.length > 0) {
+    return raw.accounts;
+  }
+  // 旧格式：自动转成单个默认账户
+  if (raw.available_margin || raw.account_type || (raw.stock_positions && raw.stock_positions.length)) {
+    const type = raw.account_type === 'margin' ? 'margin_l3' : (raw.account_type || 'cash');
+    return [{
+      id: 'default',
+      name: '',
+      broker: 'other',
+      type,
+      available_margin: raw.available_margin || null,
+      stock_positions: raw.stock_positions || [],
+    }];
+  }
+  return [];
+}
+
+// 兼容旧 API — 返回合并视图：sum margin、最允许 type、union stocks
+function _getAccountMeta() {
+  const accounts = _getAccountsList();
+  if (accounts.length === 0) return {};
+  const totalMargin = accounts.reduce((s, a) => s + (Number(a.available_margin) || 0), 0);
+  const types = accounts.map(a => a.type);
+  let effectiveType = 'cash';
+  if (types.includes('margin_l3')) effectiveType = 'margin_l3';
+  else if (types.includes('margin_l2')) effectiveType = 'margin_l2';
+  const stockMap = {};
+  accounts.forEach(a => (a.stock_positions || []).forEach(p => {
+    if (!p.ticker || !p.shares) return;
+    const tk = String(p.ticker).toUpperCase();
+    stockMap[tk] = (stockMap[tk] || 0) + Number(p.shares);
+  }));
+  return {
+    available_margin: totalMargin || null,
+    account_type: effectiveType,
+    stock_positions: Object.entries(stockMap).map(([ticker, shares]) => ({ ticker, shares })),
+    accounts,
+  };
+}
+
+function _setAccountsList(accounts) {
+  const val = { accounts };
   localStorage.setItem('account_meta', JSON.stringify(val));
   if (_currentUser && _cloudReady && _cloudCache) {
     _cloudCache.state = _cloudCache.state || {};
@@ -10021,40 +10152,132 @@ function _setAccountMeta(val) {
   }
 }
 
-function addStockRow(ticker = '', shares = '') {
-  const list = document.getElementById('stock-pos-list');
-  const row = document.createElement('div');
-  row.className = 'stock-row';
-  row.innerHTML = `
-    <input type="text" class="sr-ticker" placeholder="TSLA" maxlength="6" value="${ticker}"
-           style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-    <input type="number" class="sr-shares" placeholder="100" min="1" step="1" value="${shares}">
-    <button class="rm-btn" onclick="this.parentElement.remove()">×</button>
-  `;
-  list.appendChild(row);
+// legacy 单账户 set（保留兼容性，不直接用了）
+function _setAccountMeta(val) {
+  if (val.accounts) {
+    localStorage.setItem('account_meta', JSON.stringify(val));
+    if (_currentUser && _cloudReady && _cloudCache) {
+      _cloudCache.state = _cloudCache.state || {};
+      _cloudCache.state._meta = _cloudCache.state._meta || {};
+      _cloudCache.state._meta.account = val;
+      _saveCloud();
+    }
+  } else {
+    _setAccountsList([{
+      id: 'default', name: '', broker: 'other',
+      type: val.account_type || 'cash',
+      available_margin: val.available_margin || null,
+      stock_positions: val.stock_positions || [],
+    }]);
+  }
+}
+
+const _BROKERS = [
+  { value: 'schwab', label: 'Schwab' },
+  { value: 'robinhood', label: 'Robinhood' },
+  { value: 'ib', label: 'Interactive Brokers' },
+  { value: 'tastytrade', label: 'TastyTrade' },
+  { value: 'fidelity', label: 'Fidelity' },
+  { value: 'etrade', label: 'E*Trade' },
+  { value: 'td', label: 'TD Ameritrade' },
+  { value: 'webull', label: 'Webull' },
+  { value: 'other', label: '__OTHER__' },  // render 时翻译
+];
+
+let _amCardCounter = 0;
+function _renderAccountCardHtml(acct) {
+  _amCardCounter++;
+  const cid = 'amc-' + _amCardCounter;
+  const brokerOpts = _BROKERS.map(b => {
+    const label = b.label === '__OTHER__' ? t('其他') : b.label;
+    return `<option value="${b.value}" ${acct.broker === b.value ? 'selected' : ''}>${label}</option>`;
+  }).join('');
+  const type = acct.type || 'cash';
+  return `
+    <div class="am-account-card" data-cid="${cid}">
+      <div class="am-acard-head">
+        <input type="text" class="am-acard-name" placeholder="${t('账户名（可选）')}" value="${acct.name || ''}">
+        <select class="am-acard-broker">${brokerOpts}</select>
+        <button class="am-acard-del" onclick="removeAccountCard(this)" title="${t('删除该账户')}">×</button>
+      </div>
+      <div class="am-acard-row">
+        <span class="am-mini-label" data-i18n="类型">${t('类型')}</span>
+        <div class="am-seg am-seg-3 am-seg-mini" data-group="acct_type">
+          <button type="button" class="am-seg-btn ${type==='cash'?'active':''}" data-value="cash" data-i18n="💵 现金 / IRA">${t('💵 现金 / IRA')}</button>
+          <button type="button" class="am-seg-btn ${type==='margin_l2'?'active':''}" data-value="margin_l2" data-i18n="📈 Margin L2">${t('📈 Margin L2')}</button>
+          <button type="button" class="am-seg-btn ${type==='margin_l3'?'active':''}" data-value="margin_l3" data-i18n="📈 Margin L3+">${t('📈 Margin L3+')}</button>
+        </div>
+      </div>
+      <div class="am-acard-row">
+        <span class="am-mini-label" data-i18n="保证金">${t('保证金')}</span>
+        <div class="am-input-wrap">
+          <span class="am-currency">$</span>
+          <input type="number" class="am-input am-acard-margin" placeholder="50000" min="0" step="1000" value="${acct.available_margin || ''}">
+        </div>
+      </div>
+      <div class="am-acard-row stack">
+        <span class="am-mini-label" data-i18n="正股">${t('正股')}</span>
+        <div class="am-acard-stocks">
+          ${(acct.stock_positions || []).map(p => _renderStockRowHtml(p.ticker, p.shares)).join('')}
+        </div>
+        <button class="add-stock-btn" type="button" onclick="addStockRowInCard(this)" data-i18n="+ 加正股">+ 加正股</button>
+      </div>
+    </div>`;
+}
+
+function _renderStockRowHtml(ticker = '', shares = '') {
+  return `
+    <div class="stock-row">
+      <input type="text" class="sr-ticker" placeholder="TSLA" maxlength="6" value="${ticker}"
+             style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <input type="number" class="sr-shares" placeholder="100" min="1" step="1" value="${shares}">
+      <button class="rm-btn" type="button" onclick="this.parentElement.remove()">×</button>
+    </div>`;
+}
+
+function addStockRowInCard(btn) {
+  const wrap = btn.closest('.am-acard-row').querySelector('.am-acard-stocks');
+  wrap.insertAdjacentHTML('beforeend', _renderStockRowHtml());
+}
+
+function addAccountCard(acct = null) {
+  const list = document.getElementById('am-accounts-list');
+  list.insertAdjacentHTML('beforeend', _renderAccountCardHtml(acct || {
+    name: '', broker: 'other', type: 'cash', available_margin: null, stock_positions: [],
+  }));
+  _bindCardEvents(list.lastElementChild);
+}
+
+function removeAccountCard(btn) {
+  const card = btn.closest('.am-account-card');
+  const list = document.getElementById('am-accounts-list');
+  // 至少保留 1 个账户
+  if (list.children.length <= 1) {
+    alert(t('至少保留 1 个账户'));
+    return;
+  }
+  card.remove();
+}
+
+function _bindCardEvents(card) {
+  // type segment 按钮：点击切 active
+  card.querySelectorAll('[data-group="acct_type"] .am-seg-btn').forEach(b => {
+    b.onclick = () => {
+      b.parentElement.querySelectorAll('.am-seg-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    };
+  });
 }
 
 function showAccountSettings() {
-  const acct = _getAccountMeta();
-  document.getElementById('account-margin').value = acct.available_margin || '';
-  // 账户类型按钮状态 — 兼容旧值（'margin' → 'margin_l3'，因为旧逻辑就是 Reg-T 裸卖）
-  let atype = acct.account_type || 'cash';
-  if (atype === 'margin') atype = 'margin_l3';
-  ['cash', 'margin-l2', 'margin-l3'].forEach(v => {
-    const btn = document.getElementById(`acct-type-${v}`);
-    if (btn) btn.classList.toggle('active', v.replace('-', '_') === atype);
-  });
-  // 账户类型按钮 onclick（modal 内部）
-  document.querySelectorAll('.account-modal [data-group="acct_type"]').forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll('.account-modal [data-group="acct_type"]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    };
-  });
-  const list = document.getElementById('stock-pos-list');
+  const list = document.getElementById('am-accounts-list');
   list.innerHTML = '';
-  (acct.stock_positions || []).forEach(p => addStockRow(p.ticker, p.shares));
-  if (!list.children.length) addStockRow();
+  const accounts = _getAccountsList();
+  if (accounts.length === 0) {
+    addAccountCard();
+  } else {
+    accounts.forEach(a => addAccountCard(a));
+  }
   document.getElementById('account-backdrop').style.display = 'block';
   const modal = document.getElementById('account-modal');
   modal.style.display = 'block';
@@ -10069,20 +10292,37 @@ function hideAccountSettings() {
 }
 
 function saveAccountSettings() {
-  const margin = parseFloat(document.getElementById('account-margin').value) || 0;
-  const activeType = document.querySelector('.account-modal [data-group="acct_type"].active');
-  const account_type = activeType ? activeType.dataset.value : 'cash';
-  const rows = document.querySelectorAll('#stock-pos-list .stock-row');
-  const positions = [];
-  rows.forEach(r => {
-    const ticker = r.querySelector('.sr-ticker').value.trim().toUpperCase();
-    const shares = parseInt(r.querySelector('.sr-shares').value) || 0;
-    if (ticker && shares > 0) positions.push({ ticker, shares });
+  const accounts = [];
+  document.querySelectorAll('#am-accounts-list .am-account-card').forEach((card, idx) => {
+    const name = card.querySelector('.am-acard-name').value.trim();
+    const broker = card.querySelector('.am-acard-broker').value;
+    const activeType = card.querySelector('[data-group="acct_type"] .am-seg-btn.active');
+    const type = activeType ? activeType.dataset.value : 'cash';
+    const margin = parseFloat(card.querySelector('.am-acard-margin').value) || 0;
+    const stockRows = card.querySelectorAll('.am-acard-stocks .stock-row');
+    const stock_positions = [];
+    stockRows.forEach(r => {
+      const ticker = r.querySelector('.sr-ticker').value.trim().toUpperCase();
+      const shares = parseInt(r.querySelector('.sr-shares').value) || 0;
+      if (ticker && shares > 0) stock_positions.push({ ticker, shares });
+    });
+    accounts.push({
+      id: 'a' + (idx + 1),
+      name, broker, type,
+      available_margin: margin || null,
+      stock_positions,
+    });
   });
-  _setAccountMeta({ available_margin: margin || null, account_type, stock_positions: positions });
+  _setAccountsList(accounts);
   hideAccountSettings();
-  // 立即刷新 Wheel 提示（不等 30s 轮询）
   if (window._currentData) renderWheelHints(window._currentData.positions || []);
+}
+
+// legacy 兼容：addStockRow 旧调用方（已废弃，但保留兼容）
+function addStockRow(ticker = '', shares = '') {
+  const list = document.getElementById('stock-pos-list');
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend', _renderStockRowHtml(ticker, shares));
 }
 
 // ── 偏好设置云端同步（state._meta.prefs 命名空间） ─────────────────────────
@@ -10160,7 +10400,9 @@ function _migrateLocalAccountToCloud() {
   let local = null;
   try { local = JSON.parse(localStorage.getItem('account_meta') || 'null'); } catch(e) {}
   if (!local) return;
-  const hasData = (local.stock_positions && local.stock_positions.length > 0)
+  // 兼容新旧两种格式：新格式有 accounts 数组；旧格式直接 flat 字段
+  const hasData = (local.accounts && local.accounts.length > 0)
+                  || (local.stock_positions && local.stock_positions.length > 0)
                   || local.available_margin || local.account_type;
   if (!hasData) return;
   _cloudCache.state = _cloudCache.state || {};

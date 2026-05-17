@@ -3,9 +3,42 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**持仓卡片重设计 H 方案落地**）
+最后更新：2026-05-17（**Batch 4 中点 · Wheel 闭环提示 debug**）
 
-### 🆕 最新 session：持仓卡片重设计（方案 H · E+G 综合）
+### 🆕 当前 session：Wheel 闭环提示 三箭齐发 debug
+
+**分支**：`claude/batch-4-midpoint-6gjJE`（**未合 main，待用户决定**）
+**Commit**：`4d69f2c`
+
+**症状**：用户报"账户设置里存了 ≥100 股，但 Wheel 闭环提示不出来"。
+
+**根因（找到 3 个独立 bug）**：
+1. **`_getAccountMeta` cloud-empty 不 fallback localStorage** —— 已登录 + cloud
+   ready 时只读云端，云端无 `_meta.account` 就返回 `{}`，把 localStorage
+   里的数据完全忽略。早期在未登录状态下保存过 account_meta 的用户登录
+   后彻底失效。
+2. **登录后 account_meta 没人帮搬到云端** —— `_migrateLocalPrefsToCloud`
+   只迁 `_PREF_KEYS = ['lang','theme','density','rec_tier_filter',
+   'rec_last_ticker','rec_last_choice']`，`account_meta` 不在 list 里。
+3. **`close_reason='expired_itm'` 全 codebase 没人写** —— 路径 2（CSP 到期
+   被指派 → 进入 Wheel 下半场）从功能上就是死的。`submitClose` 只会
+   set `'manual'`，也没自动到期检测。
+
+**修法（一个 commit 三处改 index.html）**：
+1. `_getAccountMeta` (8587): 云端无 `_meta.account` 时退回 localStorage
+2. 新增 `_migrateLocalAccountToCloud` (8738) + 在 `_onSignedIn` (8529) 调用
+3. `renderWheelHints` (8213) 加 path B：`!p.closed && p.days<=0 && p.underlying<p.strike`
+   时自动认作"30 天内被指派"（前端推断，不污染 close_reason 写入）
+
+**未做 / 待验证**：
+- [ ] 用户在生产 / 预览上验证 Wheel hint 现在能出来了
+- [ ] 三个浏览器矩阵（Mac Chrome / iPhone Safari / Android）测同步迁移逻辑
+- [ ] 子批 B（POP 校准 + Exit plan）— 待做（用户排在 Wheel debug 之后）
+- [ ] 子批 C（表单双轨模式）— 待做
+
+---
+
+### 上一个 session：持仓卡片重设计（方案 H · E+G 综合）
 
 **分支**：`claude/redesign-holdings-visual-hierarchy-qAsag` → 已合 main
 

@@ -1475,6 +1475,18 @@
     border: 1px solid var(--line); border-radius: 10px;
     padding: 14px 16px; margin: 14px 0;
   }
+  /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
+  .ds-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(230, 184, 106, 0.08);
+    border: 1px solid rgba(230, 184, 106, 0.35);
+    color: var(--accent);
+    padding: 8px 12px; border-radius: 8px;
+    margin: 10px 0 14px;
+    font-size: 12px; line-height: 1.4;
+  }
+  .ds-pill .ds-icon { font-size: 13px; }
+  .ds-pill .ds-detail { color: var(--sub); font-size: 11px; }
   .iv-rank-bar { margin-bottom: 8px; }
   .iv-rank-track {
     position: relative; display: block;
@@ -3212,6 +3224,8 @@ const I18N = {
     '区间': '區間',
     '扫描到期日:': '掃描到期日:',
     '数据时间': '資料時間',
+    '⚠️ 当前为延迟数据源': '⚠️ 目前為延遲資料源',
+    '主数据源 (Schwab) 暂时不可用，已切到备用源': '主資料源 (Schwab) 暫時不可用，已切到備用源',
     '🔥 IV 偏高 — 卖期权好时机（权利金贵）': '🔥 IV 偏高 — 賣期權好時機（權利金貴）',
     '⚠️ IV 偏高 — 买期权偏贵': '⚠️ IV 偏高 — 買期權偏貴',
     '❄️ IV 偏低 — 卖期权权利金少': '❄️ IV 偏低 — 賣期權權利金少',
@@ -3755,6 +3769,8 @@ const I18N = {
     '区间': 'range',
     '扫描到期日:': 'Scanning expiries:',
     '数据时间': 'Data time',
+    '⚠️ 当前为延迟数据源': '⚠️ Currently using delayed data source',
+    '主数据源 (Schwab) 暂时不可用，已切到备用源': 'Primary source (Schwab) is temporarily unavailable — fell back to backup',
     '🔥 IV 偏高 — 卖期权好时机（权利金贵）': '🔥 IV is high — good time to sell options (rich premium)',
     '⚠️ IV 偏高 — 买期权偏贵': '⚠️ IV is high — options are expensive to buy',
     '❄️ IV 偏低 — 卖期权权利金少': '❄️ IV is low — selling options yields little premium',
@@ -6201,6 +6217,19 @@ function renderRecResult(d) {
     ${t('数据时间')} ${d.timestamp}
   `;
 
+  // 数据源降级 pill（Schwab 不可用、走了 Yahoo/yfinance 兜底）
+  let dsPill = '';
+  if (d.data_source && d.data_source.is_fallback) {
+    const src = d.data_source.primary || 'unknown';
+    dsPill = `
+      <div class="ds-pill">
+        <span class="ds-icon">📡</span>
+        <span><strong>${t('⚠️ 当前为延迟数据源')} (${src})</strong></span>
+        <span class="ds-detail">— ${t('主数据源 (Schwab) 暂时不可用，已切到备用源')}</span>
+      </div>
+    `;
+  }
+
   // IV rank 横幅
   let ivBanner = '';
   if (d.iv_rank) {
@@ -6397,6 +6426,7 @@ function renderRecResult(d) {
   document.getElementById('rec-result').innerHTML = `
     ${algoBadge}
     <div class="summary">${summary}</div>
+    ${dsPill}
     ${ivBanner}
     <div class="disclaimer">
       ${t('rec_disclaimer_html')}

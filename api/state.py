@@ -596,7 +596,7 @@ def fetch_chain(ticker: str, expiry_str: str) -> Dict:
                 oi = int(row.get("openInterest", 0) or 0)
                 out[(float(row["strike"]), type_)] = {
                     "bid": bid, "ask": ask, "mid": mid, "last": last, "iv": iv,
-                    "volume": volume, "oi": oi,
+                    "volume": volume, "oi": oi, "source": "yfinance",
                 }
         if out:
             _cache_chain[key] = out
@@ -1444,6 +1444,22 @@ def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool) -> tu
     return 1.0, None
 
 
+def _summarize_data_source(chain_stats: dict) -> dict:
+    """汇总本次推荐用到的数据源：primary = 出现最多的；is_fallback = 不是 schwab。"""
+    sources = chain_stats.get("sources") or {}
+    primary = "unknown"
+    if sources:
+        primary = max(sources.items(), key=lambda kv: kv[1])[0]
+    return {
+        "chains_ok": chain_stats["good_count"],
+        "chains_empty": chain_stats["empty_count"],
+        "total_chains": chain_stats["total"],
+        "sources": sources,
+        "primary": primary,
+        "is_fallback": primary not in ("schwab", "unknown"),
+    }
+
+
 def _earnings_factor(days_to_earnings: int, risk: str) -> float:
     """财报因子（包租公 1.2）：按距财报天数衰减，替代原 1.1 的 cross 二元否决。
 
@@ -1824,11 +1840,18 @@ def recommend(req: dict) -> dict:
     today = date.today()
 
     candidates = []
-    chain_stats = {"empty_count": 0, "good_count": 0, "total": len(target_exps)}
+    chain_stats = {"empty_count": 0, "good_count": 0, "total": len(target_exps),
+                   "sources": {}}
     for exp_str in target_exps:
         chain = fetch_chain(ticker, exp_str)
         if chain:
             chain_stats["good_count"] += 1
+            # 取该 chain 任一条记录的 source（fetch_chain 内每条都标了同源）
+            try:
+                src = next(iter(chain.values())).get("source", "unknown")
+            except StopIteration:
+                src = "unknown"
+            chain_stats["sources"][src] = chain_stats["sources"].get(src, 0) + 1
         else:
             chain_stats["empty_count"] += 1
 
@@ -1954,9 +1977,7 @@ def recommend(req: dict) -> dict:
             "error_kind": "data_unavailable",
             "ticker": ticker,
             "data_source": {
-                "chains_ok": chain_stats["good_count"],
-                "chains_empty": chain_stats["empty_count"],
-                "total_chains": chain_stats["total"],
+                **_summarize_data_source(chain_stats),
                 "schwab_last_err": _schwab_last_err,
             },
         }
@@ -2045,11 +2066,7 @@ def recommend(req: dict) -> dict:
         },
         "candidates": candidates[:10],
         "total_examined": len(candidates),
-        "data_source": {
-            "chains_ok": chain_stats["good_count"],
-            "chains_empty": chain_stats["empty_count"],
-            "total_chains": chain_stats["total"],
-        },
+        "data_source": _summarize_data_source(chain_stats),
     }
 
 

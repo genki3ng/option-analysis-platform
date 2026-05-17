@@ -3,9 +3,23 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**持仓卡片重设计 H 方案落地**）
+最后更新：2026-05-17（**UX 优化 + 删「复用上次」**）
 
-### 🆕 最新 session：持仓卡片重设计（方案 H · E+G 综合）
+### 🆕 最新 session：UX 按钮 / 推荐模组 / 账户设置 重设计 + 删「复用上次」
+
+**做了什么**（commit `586ba35`，branch main）：
+- 全局按钮 B 风格：10px 圆角 + 1.5px 描边 + `scale(1.03)` hover + `cubic-bezier(0.16,1,0.3,1)` 过渡
+- 账户设置 modal 重写：`.am-*` scoped CSS，补 `position:fixed` 居中，去掉外借样式
+- 推荐模组（rec-form）紧凑化：section 间距 22→14px，opt-btn padding 缩减，timeframe 3→4 列
+- rec-form sticky header（h4）+ sticky footer（submit-row），负 margin 补齐 padding 穿模
+- 点击「找出最佳」后自动滚到 `.algo-badge`（加载中先滚到 #rec-result）
+- **删「复用上次」功能**：移除 `.rerun-btn` CSS / HTML 按钮 / `renderRerunBtn` / `rerunLastRec` / DOMContentLoaded 监听 / submitRec 内调用 / zh_tw+en i18n 条目
+- 保留 `rec_last_ticker` / `rec_last_choice` localStorage 写入（仍用于表单预填）
+- 建预览页 `buttons.html`（`/buttons`）和 `rec-redesign.html`（`/rec-redesign`）已保留在 repo
+
+---
+
+### 持仓卡片重设计（方案 H · E+G 综合）
 
 **分支**：`claude/redesign-holdings-visual-hierarchy-qAsag` → 已合 main
 

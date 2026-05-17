@@ -470,6 +470,144 @@
     padding: 1px 5px; border-radius: 3px;
   }
 
+  /* ─── Feature Grid (Hero 下 · 一屏看清能干啥) ─── */
+  .feat-grid-wrap {
+    margin-top: 18px;
+  }
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 28px;
+  }
+  @media (max-width: 1023px) {
+    .feat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .feat-grid { grid-template-columns: 1fr; gap: 10px; }
+  }
+  .feat-cell {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .feat-cell:hover {
+    border-color: var(--line-2);
+  }
+  .feat-cell.new {
+    border-color: rgba(230, 184, 106, 0.4);
+    background: linear-gradient(180deg, rgba(230,184,106,0.04) 0%, var(--card) 100%);
+  }
+  .feat-cell .ic {
+    font-size: 22px;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .feat-cell .name {
+    font-size: 14.5px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .feat-cell .name .new-tag {
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #0A0A0B;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+  }
+  .feat-cell .desc {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  /* ─── Workflow 7 steps（替代「三步」）─── */
+  .workflow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-width: 1080px;
+    margin-top: 28px;
+  }
+  @media (max-width: 880px) {
+    .workflow { grid-template-columns: 1fr; gap: 12px; }
+  }
+  .wf-step {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 22px 22px 76px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .wf-step:hover { border-color: var(--line-2); }
+  .wf-step::before {
+    content: attr(data-n);
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0A0A0B;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .wf-step h3 {
+    font-size: 15.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .wf-step h3 .new-tag {
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #0A0A0B;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+  .wf-step p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .wf-step p code {
+    background: var(--bg-2);
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .wf-step.span-2 {
+    grid-column: span 2;
+  }
+  @media (max-width: 880px) {
+    .wf-step.span-2 { grid-column: auto; }
+    .wf-step { padding: 18px 18px 18px 66px; }
+    .wf-step::before { left: 18px; top: 18px; width: 32px; height: 32px; font-size: 14px; }
+  }
+
   /* ── Algorithm methodology section ──────────────── */
   .algo-lede {
     max-width: 760px;
@@ -725,6 +863,79 @@
   </div>
 </header>
 
+<!-- ─── Feature Grid (Hero 下 · 一屏看清能干啥) ─── -->
+<section>
+  <div class="wrap feat-grid-wrap">
+    <div class="eyebrow reveal" data-i18n>能干啥</div>
+    <h2 class="reveal" style="max-width:760px" data-i18n>10 个核心能力，一屏看完。</h2>
+    <p class="lead reveal" style="margin-top:10px" data-i18n>持仓监控、推荐引擎、决策辅助、云同步 —— 不用翻 5 屏才知道这个工具有啥。NEW 是 2026 春季落地的。</p>
+
+    <div class="feat-grid">
+
+      <div class="feat-cell new reveal">
+        <div class="ic">🏠</div>
+        <div class="name"><span data-i18n>包租公推荐指数</span><span class="new-tag">v1.3</span></div>
+        <div class="desc" data-i18n>八因子打分，五星 tier 排序。DTE / Delta 甜蜜区自适应。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">☀️</div>
+        <div class="name"><span data-i18n>包租公管家</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>LLM 生成 ≤80 字早安摘要 + 今日 Top 3 关注 + 14 天关键日历。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">📊</div>
+        <div class="name"><span data-i18n>加仓预览</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>选合约前看「加进组合」的集中度 / Greeks / 保证金 / 收益变化。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">⚖️</div>
+        <div class="name"><span data-i18n>候选对比</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>勾 2-5 个候选浮 pill → 弹表 12 指标横向，绿/红高亮最优最差。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">🛡</div>
+        <div class="name"><span data-i18n>POP 校准 + Exit plan</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>历史模拟胜率 vs BS 理论 PoP；自动锁利 / 止损 / Roll 触发条件。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">🔁</div>
+        <div class="name"><span data-i18n>Wheel 闭环提示</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>100+ 股 / CSP 被指派后自动建议下一步「卖 covered call」。</div>
+      </div>
+
+      <div class="feat-cell new reveal">
+        <div class="ic">☁</div>
+        <div class="name"><span data-i18n>Google 登录 + 云同步</span><span class="new-tag">NEW</span></div>
+        <div class="desc" data-i18n>Supabase + RLS，多设备实时同步。不登录也能纯本地用。</div>
+      </div>
+
+      <div class="feat-cell reveal">
+        <div class="ic">📚</div>
+        <div class="name" data-i18n>大佬策略预设</div>
+        <div class="desc" data-i18n>价值哥 LEAPS / Wheel / 周收权利金 等 5 个一键填表预设。</div>
+      </div>
+
+      <div class="feat-cell reveal">
+        <div class="ic">📈</div>
+        <div class="name" data-i18n>实时持仓监控</div>
+        <div class="desc" data-i18n>Greeks · P&L · 损益曲线 · 距行权温度计 · 财报警告。</div>
+      </div>
+
+      <div class="feat-cell reveal">
+        <div class="ic">📚</div>
+        <div class="name" data-i18n>期权小白指南</div>
+        <div class="desc" data-i18n>25 个核心术语（ITM/OTM/Wheel/LEAPS…）大白话 + 实例。</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <section id="concept">
   <div class="wrap">
     <div class="definition split">
@@ -843,28 +1054,47 @@
 
 <section>
   <div class="wrap">
-    <div class="eyebrow reveal" data-i18n>使用流程</div>
-    <h2 class="reveal" style="max-width:680px" data-i18n>三步当上包租公。</h2>
+    <div class="eyebrow reveal" data-i18n>完整工作流</div>
+    <h2 class="reveal" style="max-width:780px" data-i18n>从早上起床到挂出场单，七步走完。</h2>
+    <p class="lead reveal" style="margin-top:10px;max-width:680px" data-i18n>每一步都是 app 里真实的路径。点开 /app 跟着走一遍就懂了。</p>
 
-    <div class="steps">
-      <div class="step reveal">
-        <div>
-          <h3 data-i18n>录入你的"房产"</h3>
-          <p data-i18n-html>从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘贴进来，自动解析。同一张合约多次卖出会自动按张数加权合并。</p>
-        </div>
+    <div class="workflow">
+
+      <div class="wf-step reveal" data-n="1">
+        <h3><span data-i18n>早上打开 app，先看包租公管家</span><span class="new-tag">NEW</span></h3>
+        <p data-i18n>Claude Haiku 4.5 一句话告诉你昨夜变化 + 今天 Top 3 要关注（80% 利润 / 进 7d 窗口 / 新 ITM / 财报临近 / VIX 跳涨）+ 未来 14 天关键日历。</p>
       </div>
-      <div class="step reveal">
-        <div>
-          <h3 data-i18n>看见每一份"租约"</h3>
-          <p data-i18n>每个持仓自动显示：实时 Mark、Δ、Θ、距行权距离、损益曲线、操作建议、每日 P&L 曲线。临近财报会主动警告。</p>
-        </div>
+
+      <div class="wf-step reveal" data-n="2">
+        <h3 data-i18n>录入"房产"</h3>
+        <p data-i18n-html>从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘进来自动解析。同一张合约多次卖出按张数加权合并。</p>
       </div>
-      <div class="step reveal">
-        <div>
-          <h3 data-i18n>用包租公推荐指数找下一套</h3>
-          <p data-i18n-html>告诉系统你的看法（看涨/看跌/区间）、意图（收权利金/CSP/Wheel/LEAPS）、时间窗口、风险偏好，<strong>包租公推荐指数</strong>会从期权链里给每张合约打分排序。⭐⭐⭐⭐⭐ 永远在最前。</p>
-        </div>
+
+      <div class="wf-step reveal" data-n="3">
+        <h3 data-i18n>问推荐：「我想 XX」</h3>
+        <p data-i18n-html>填 ticker + 方向 + 意图（CSP / Covered Call / LEAPS）+ 风险偏好，点「找出最佳」。或一键点 <code>📖 大佬策略预设</code>。</p>
       </div>
+
+      <div class="wf-step reveal" data-n="4">
+        <h3><span data-i18n>看推荐结果（包租公分排序）</span><span class="new-tag">v1.3</span></h3>
+        <p data-i18n-html>五星 tier + 算法 1.3 八因子展开 + <strong>POP 校准 pill</strong>（理论 vs 历史）+ <strong>Exit plan</strong> inline 锁利 / 止损 / Roll。</p>
+      </div>
+
+      <div class="wf-step reveal" data-n="5">
+        <h3><span data-i18n>加仓预览：先看影响再下单</span><span class="new-tag">NEW</span></h3>
+        <p data-i18n>点候选的「📊 预览」→ 看加进组合后的集中度变化 / Greeks 偏移 / 保证金占用 / 预期租金。</p>
+      </div>
+
+      <div class="wf-step reveal" data-n="6">
+        <h3><span data-i18n>对比：勾 2-5 个比着挑</span><span class="new-tag">NEW</span></h3>
+        <p data-i18n>勾选 checkbox → 浮 pill 弹表 12 指标横向对比。绿色高亮最优、红色最弱，几秒拍板。</p>
+      </div>
+
+      <div class="wf-step reveal span-2" data-n="7">
+        <h3 data-i18n>下单后回到持仓页 → 监控 → 到期复盘 → 循环</h3>
+        <p data-i18n-html>实时 Greeks / P&L / 距行权温度计；<strong>Wheel 闭环提示</strong>被指派后自动建议卖 CC；<strong>简洁/完整双密度</strong>切换；到期按 Exit plan 锁利或止损；复盘报告 + Trade Journal 笔记；第二天管家自动算 diff 找质变，重新开始。</p>
+      </div>
+
     </div>
   </div>
 </section>
@@ -880,12 +1110,28 @@
         <div class="v" data-i18n>期权 mark 优先走 Schwab Market Data API（实时），失败兜底 Yahoo / yfinance，BS 模型保底。</div>
       </li>
       <li class="reveal">
-        <div class="k" data-i18n>包租公算法 1.1</div>
-        <div class="v" data-i18n-html>房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性</strong>。保守模式下，跨财报合约 = 一律不接。⭐⭐⭐⭐⭐ 永远在前。</div>
+        <div class="k" data-i18n>包租公算法 1.3</div>
+        <div class="v" data-i18n-html>房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性 × 财报衰减 × 12 月回测</strong>。v1.3 DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank 自适应。⭐⭐⭐⭐⭐ 永远在前。</div>
+      </li>
+      <li class="reveal">
+        <div class="k" data-i18n>POP 校准 + Exit plan</div>
+        <div class="v" data-i18n-html>历史模拟胜率 vs BS 理论 PoP，比值 &lt; 0.95 弹"理论偏乐观"警示。每个候选自动生成 <strong>Exit plan</strong>（锁利 / 止损 / Roll 触发条件）。</div>
+      </li>
+      <li class="reveal">
+        <div class="k" data-i18n>加仓预览 + 候选对比</div>
+        <div class="v" data-i18n>下单前看"加进组合后"的集中度 / Greeks / 保证金变化；勾 2-5 个候选浮 pill 弹表 12 指标横向对比。</div>
+      </li>
+      <li class="reveal">
+        <div class="k" data-i18n>包租公管家 · 早安简报 v2</div>
+        <div class="v" data-i18n-html>Claude Haiku 4.5 生成 ≤80 字人格化早安摘要 + <strong>今日要关注 Top 3</strong>（跨日 diff 找质变事件）+ 14 天关键日历。</div>
+      </li>
+      <li class="reveal">
+        <div class="k" data-i18n>Wheel 闭环 + 简洁双密度</div>
+        <div class="v" data-i18n>100+ 股 / CSP 被指派后自动建议"卖 covered call"。一键在 完整 / 简洁 两种信息密度间切换。</div>
       </li>
       <li class="reveal">
         <div class="k" data-i18n>财报 + IV crush 警告</div>
-        <div class="v" data-i18n>持仓到期跨越财报 → 自动 flag。推荐时跨财报的合约扣分 + 提示提前平仓。</div>
+        <div class="v" data-i18n>持仓到期跨越财报 → 自动 flag。推荐时按距财报天数衰减（5 档），保守模式 ≤5 天硬否决。</div>
       </li>
       <li class="reveal">
         <div class="k" data-i18n>损益曲线 (Payoff)</div>
@@ -900,8 +1146,8 @@
         <div class="v" data-i18n>25 个核心术语（ITM/OTM/ATM/CSP/Wheel/LEAPS…）大白话 + 实例 + 实战建议。</div>
       </li>
       <li class="reveal">
-        <div class="k" data-i18n>跨设备同步</div>
-        <div class="v" data-i18n>浏览器 File System Access API 连到 Google Drive 文件夹 → 多设备共用同一份数据。</div>
+        <div class="k" data-i18n>Google 登录 + 实时云同步</div>
+        <div class="v" data-i18n-html>Supabase + Postgres + RLS —— <strong>只有你能读自己那行数据</strong>。多设备 1 秒内双向同步。未登录走 localStorage，无缝降级。</div>
       </li>
       <li class="reveal">
         <div class="k" data-i18n>三语 · 双主题</div>
@@ -911,12 +1157,12 @@
   </div>
 </section>
 
-<!-- ── 包租公算法 1.1 方法论 ─────────────────────────────────────── -->
+<!-- ── 包租公算法 1.3 方法论 ─────────────────────────────────────── -->
 <section id="algo">
   <div class="wrap">
-    <div class="eyebrow reveal" data-i18n>包租公算法 1.1 · Methodology</div>
+    <div class="eyebrow reveal" data-i18n>包租公算法 1.3 · Methodology</div>
     <h2 class="reveal" style="max-width:820px" data-i18n-html>不是黑盒，是<br>八个能讲清楚的因子。</h2>
-    <p class="lead algo-lede reveal" data-i18n-html>大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。</p>
+    <p class="lead algo-lede reveal" data-i18n-html>大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。<br>v1.3 升级：DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank <strong>自适应</strong>，财报因子 <strong>距财报天数衰减</strong>，回测窗口扩到 <strong>12 个月</strong> + BS premium。</p>
 
     <!-- Formula -->
     <div class="formula reveal">
@@ -965,9 +1211,9 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">03</span>
-          <span class="f-name" data-i18n>DTE 甜蜜区</span>
+          <span class="f-name" data-i18n-html>DTE 甜蜜区 <sup>v1.3</sup></span>
         </div>
-        <div class="f-desc" data-i18n-html><strong>14 天到期 = 峰值 1.20×。</strong> 7-21 天是周租周期，资金流转最快。&lt;5 天 gamma 风险骤增；&gt;35 天钱躺得太久、灵活度差。</div>
+        <div class="f-desc" data-i18n-html><strong>跟用户 timeframe 自适应</strong>：选 7d 周租峰值落在 ~10d；选 30d 月度峰值落在 ~28d；选 LEAPS 180d+ 关掉这条。&lt;5 天 gamma 风险骤增；曲线总尾部下衰。</div>
         <div class="f-viz">
           <svg viewBox="0 0 260 70" aria-hidden="true">
             <line x1="10" y1="38" x2="250" y2="38" stroke="#1C1C1F" stroke-width="1" stroke-dasharray="2,3"/>
@@ -988,9 +1234,9 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">04</span>
-          <span class="f-name" data-i18n>Delta 甜蜜区</span>
+          <span class="f-name" data-i18n-html>Delta 甜蜜区 <sup>v1.3</sup></span>
         </div>
-        <div class="f-desc" data-i18n-html><strong>|Δ| ≈ 0.22 = 峰值 1.15×。</strong> 0.15-0.30 是奶牛区——既能收到合理租金、又不容易被指派。Δ &lt; 0.10 收得太少（保险费太怂），Δ &gt; 0.40 风险溢出。</div>
+        <div class="f-desc" data-i18n-html><strong>跟 IV rank 自适应</strong>：IV 高时甜蜜区右移到 |Δ| ≈ 0.30 —— 既然权利金贵，多承担一点风险；IV 低时左移到 |Δ| ≈ 0.18 —— 保险费便宜就求安全。0.15-0.30 是奶牛区基准。</div>
         <div class="f-viz">
           <svg viewBox="0 0 260 70" aria-hidden="true">
             <line x1="10" y1="38" x2="250" y2="38" stroke="#1C1C1F" stroke-width="1" stroke-dasharray="2,3"/>
@@ -1029,18 +1275,18 @@
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">07</span>
-          <span class="f-name" data-i18n>财报因子</span>
+          <span class="f-name" data-i18n-html>财报因子 <sup>v1.2</sup></span>
         </div>
-        <div class="f-desc" data-i18n-html>合约到期日跨越下次财报 → <strong>保守模式硬否决</strong>（<code>×0</code>，tier 封顶 2 星），平衡模式 <code>×0.55</code>，激进模式 <code>×0.78</code>。IV crush 一夜归零的故事见太多了。</div>
+        <div class="f-desc" data-i18n-html><strong>距财报天数衰减（5 档）</strong>：≤2 / ≤7 / ≤14 / ≤21 / &gt;21 各档不同惩罚，不再一刀切 ×0 误杀大量 14+ 天后才到期的合约。保守模式 ≤5 天硬否决，激进模式 ×1.15 基线调升。</div>
         <div class="f-viz"></div>
       </div>
 
       <div class="factor reveal">
         <div class="f-head">
           <span class="f-num">08</span>
-          <span class="f-name" data-i18n>回测胜率</span>
+          <span class="f-name" data-i18n-html>回测胜率 <sup>v1.B</sup></span>
         </div>
-        <div class="f-desc" data-i18n-html>过去 6 个月类似策略（同 ticker、同 DTE、同 delta target）的模拟胜率。≥ 75% → <code>×1.12</code>；&lt; 45% → <code>×0.85</code>。历史不重复，但常常压韵。</div>
+        <div class="f-desc" data-i18n-html><strong>12 个月窗口</strong> + 二分查找精确 Δ + BS 真实 premium。同时输出 <code>theoretical_pop</code>（BS 理论）和 <code>calibration_ratio</code>（历史/理论）。比值 &lt; 0.95 弹"理论可能偏乐观"警示。</div>
         <div class="f-viz"></div>
       </div>
 
@@ -1052,7 +1298,7 @@
       <div class="p-list">
         <div><span class="p-n">01</span><span data-i18n-html><span class="em">稳定的周租 &gt; 一次性的暴利。</span> 包租公分对"高年化但低胜率"的合约不感冒。</span></div>
         <div><span class="p-n">02</span><span data-i18n-html><span class="em">损失厌恶。</span> cons 数量超过 pros 时，额外扣 1 分——房东最讨厌麻烦。</span></div>
-        <div><span class="p-n">03</span><span data-i18n-html><span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。</span></div>
+        <div><span class="p-n">03</span><span data-i18n-html><span class="em">保守 = 真保守。</span> ≤5 天跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。</span></div>
         <div><span class="p-n">04</span><span data-i18n-html><span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。</span></div>
       </div>
     </div>
@@ -1213,6 +1459,73 @@
       '<strong>选用云同步</strong>：登录 Google 后，数据加密存储在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能读写自己那行</strong>，连我们也看不到。多设备实时同步。': '<strong>選用雲同步</strong>：登入 Google 後，資料加密儲存在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能讀寫自己那行</strong>，連我們也看不到。多裝置即時同步。',
       '无 PII：我们只存合约信息（ticker / 行权价 / 张数 / 日期），不收集姓名、电话、券商账号、社保号等任何身份信息。': '無 PII：我們只存合約資訊（ticker / 行權價 / 張數 / 日期），不收集姓名、電話、券商帳號、社保號等任何身份資訊。',
       '不卖数据、不投放广告、不做用户画像 — 永远。': '不賣資料、不投放廣告、不做用戶畫像 — 永遠。',
+      // Feature Grid (2026-05 升级)
+      '能干啥': '能幹啥',
+      '10 个核心能力，一屏看完。': '10 個核心能力，一屏看完。',
+      '持仓监控、推荐引擎、决策辅助、云同步 —— 不用翻 5 屏才知道这个工具有啥。NEW 是 2026 春季落地的。': '持倉監控、推薦引擎、決策輔助、雲同步 —— 不用翻 5 屏才知道這個工具有啥。NEW 是 2026 春季落地的。',
+      '包租公推荐指数': '包租公推薦指數',
+      '八因子打分，五星 tier 排序。DTE / Delta 甜蜜区自适应。': '八因子打分，五星 tier 排序。DTE / Delta 甜蜜區自適應。',
+      '包租公管家': '包租公管家',
+      'LLM 生成 ≤80 字早安摘要 + 今日 Top 3 关注 + 14 天关键日历。': 'LLM 生成 ≤80 字早安摘要 + 今日 Top 3 關注 + 14 天關鍵日曆。',
+      '加仓预览': '加倉預覽',
+      '选合约前看「加进组合」的集中度 / Greeks / 保证金 / 收益变化。': '選合約前看「加進組合」的集中度 / Greeks / 保證金 / 收益變化。',
+      '候选对比': '候選對比',
+      '勾 2-5 个候选浮 pill → 弹表 12 指标横向，绿/红高亮最优最差。': '勾 2-5 個候選浮 pill → 彈表 12 指標橫向，綠/紅高亮最優最差。',
+      'POP 校准 + Exit plan': 'POP 校準 + Exit plan',
+      '历史模拟胜率 vs BS 理论 PoP；自动锁利 / 止损 / Roll 触发条件。': '歷史模擬勝率 vs BS 理論 PoP；自動鎖利 / 止損 / Roll 觸發條件。',
+      'Wheel 闭环提示': 'Wheel 閉環提示',
+      '100+ 股 / CSP 被指派后自动建议下一步「卖 covered call」。': '100+ 股 / CSP 被指派後自動建議下一步「賣 covered call」。',
+      'Google 登录 + 云同步': 'Google 登入 + 雲同步',
+      'Supabase + RLS，多设备实时同步。不登录也能纯本地用。': 'Supabase + RLS，多裝置即時同步。不登入也能純本機用。',
+      '大佬策略预设': '大佬策略預設',
+      '价值哥 LEAPS / Wheel / 周收权利金 等 5 个一键填表预设。': '價值哥 LEAPS / Wheel / 週收權利金 等 5 個一鍵填表預設。',
+      '实时持仓监控': '即時持倉監控',
+      'Greeks · P&L · 损益曲线 · 距行权温度计 · 财报警告。': 'Greeks · P&L · 損益曲線 · 距行權溫度計 · 財報警告。',
+      '期权小白指南': '期權小白指南',
+      '25 个核心术语（ITM/OTM/Wheel/LEAPS…）大白话 + 实例。': '25 個核心術語（ITM/OTM/Wheel/LEAPS…）大白話 + 實例。',
+      // Workflow 7 steps
+      '完整工作流': '完整工作流',
+      '从早上起床到挂出场单，七步走完。': '從早上起床到掛出場單，七步走完。',
+      '每一步都是 app 里真实的路径。点开 /app 跟着走一遍就懂了。': '每一步都是 app 裡真實的路徑。點開 /app 跟著走一遍就懂了。',
+      '早上打开 app，先看包租公管家': '早上打開 app，先看包租公管家',
+      'Claude Haiku 4.5 一句话告诉你昨夜变化 + 今天 Top 3 要关注（80% 利润 / 进 7d 窗口 / 新 ITM / 财报临近 / VIX 跳涨）+ 未来 14 天关键日历。': 'Claude Haiku 4.5 一句話告訴你昨夜變化 + 今天 Top 3 要關注（80% 利潤 / 進 7d 窗口 / 新 ITM / 財報臨近 / VIX 跳漲）+ 未來 14 天關鍵日曆。',
+      '录入"房产"': '錄入"房產"',
+      '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘进来自动解析。同一张合约多次卖出按张数加权合并。': '從券商複製 OCC 合約代碼（例如 <code>TSLA260515P00400000</code>）貼進來自動解析。同一張合約多次賣出按張數加權合併。',
+      '问推荐：「我想 XX」': '問推薦：「我想 XX」',
+      '填 ticker + 方向 + 意图（CSP / Covered Call / LEAPS）+ 风险偏好，点「找出最佳」。或一键点 <code>📖 大佬策略预设</code>。': '填 ticker + 方向 + 意圖（CSP / Covered Call / LEAPS）+ 風險偏好，點「找出最佳」。或一鍵點 <code>📖 大佬策略預設</code>。',
+      '看推荐结果（包租公分排序）': '看推薦結果（包租公分排序）',
+      '五星 tier + 算法 1.3 八因子展开 + <strong>POP 校准 pill</strong>（理论 vs 历史）+ <strong>Exit plan</strong> inline 锁利 / 止损 / Roll。': '五星 tier + 演算法 1.3 八因子展開 + <strong>POP 校準 pill</strong>（理論 vs 歷史）+ <strong>Exit plan</strong> inline 鎖利 / 止損 / Roll。',
+      '加仓预览：先看影响再下单': '加倉預覽：先看影響再下單',
+      '点候选的「📊 预览」→ 看加进组合后的集中度变化 / Greeks 偏移 / 保证金占用 / 预期租金。': '點候選的「📊 預覽」→ 看加進組合後的集中度變化 / Greeks 偏移 / 保證金佔用 / 預期租金。',
+      '对比：勾 2-5 个比着挑': '對比：勾 2-5 個比著挑',
+      '勾选 checkbox → 浮 pill 弹表 12 指标横向对比。绿色高亮最优、红色最弱，几秒拍板。': '勾選 checkbox → 浮 pill 彈表 12 指標橫向對比。綠色高亮最優、紅色最弱，幾秒拍板。',
+      '下单后回到持仓页 → 监控 → 到期复盘 → 循环': '下單後回到持倉頁 → 監控 → 到期復盤 → 循環',
+      '实时 Greeks / P&L / 距行权温度计；<strong>Wheel 闭环提示</strong>被指派后自动建议卖 CC；<strong>简洁/完整双密度</strong>切换；到期按 Exit plan 锁利或止损；复盘报告 + Trade Journal 笔记；第二天管家自动算 diff 找质变，重新开始。': '即時 Greeks / P&L / 距行權溫度計；<strong>Wheel 閉環提示</strong>被指派後自動建議賣 CC；<strong>簡潔/完整雙密度</strong>切換；到期按 Exit plan 鎖利或止損；復盤報告 + Trade Journal 筆記；第二天管家自動算 diff 找質變，重新開始。',
+      // 配套能力 update
+      '包租公算法 1.3': '包租公演算法 1.3',
+      '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性 × 财报衰减 × 12 月回测</strong>。v1.3 DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank 自适应。⭐⭐⭐⭐⭐ 永远在前。': '房東視角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜區 × Delta 甜蜜區 × IV rank × 流動性 × 財報衰減 × 12 月回測</strong>。v1.3 DTE / Delta 甜蜜區跟用戶 timeframe 和 IV rank 自適應。⭐⭐⭐⭐⭐ 永遠在前。',
+      '历史模拟胜率 vs BS 理论 PoP，比值 &lt; 0.95 弹"理论偏乐观"警示。每个候选自动生成 <strong>Exit plan</strong>（锁利 / 止损 / Roll 触发条件）。': '歷史模擬勝率 vs BS 理論 PoP，比值 &lt; 0.95 彈"理論偏樂觀"警示。每個候選自動生成 <strong>Exit plan</strong>（鎖利 / 止損 / Roll 觸發條件）。',
+      '加仓预览 + 候选对比': '加倉預覽 + 候選對比',
+      '下单前看"加进组合后"的集中度 / Greeks / 保证金变化；勾 2-5 个候选浮 pill 弹表 12 指标横向对比。': '下單前看"加進組合後"的集中度 / Greeks / 保證金變化；勾 2-5 個候選浮 pill 彈表 12 指標橫向對比。',
+      '包租公管家 · 早安简报 v2': '包租公管家 · 早安簡報 v2',
+      'Claude Haiku 4.5 生成 ≤80 字人格化早安摘要 + <strong>今日要关注 Top 3</strong>（跨日 diff 找质变事件）+ 14 天关键日历。': 'Claude Haiku 4.5 生成 ≤80 字人格化早安摘要 + <strong>今日要關注 Top 3</strong>（跨日 diff 找質變事件）+ 14 天關鍵日曆。',
+      'Wheel 闭环 + 简洁双密度': 'Wheel 閉環 + 簡潔雙密度',
+      '100+ 股 / CSP 被指派后自动建议"卖 covered call"。一键在 完整 / 简洁 两种信息密度间切换。': '100+ 股 / CSP 被指派後自動建議"賣 covered call"。一鍵在 完整 / 簡潔 兩種資訊密度間切換。',
+      '持仓到期跨越财报 → 自动 flag。推荐时按距财报天数衰减（5 档），保守模式 ≤5 天硬否决。': '持倉到期跨越財報 → 自動 flag。推薦時按距財報天數衰減（5 檔），保守模式 ≤5 天硬否決。',
+      'Google 登录 + 实时云同步': 'Google 登入 + 即時雲同步',
+      'Supabase + Postgres + RLS —— <strong>只有你能读自己那行数据</strong>。多设备 1 秒内双向同步。未登录走 localStorage，无缝降级。': 'Supabase + Postgres + RLS —— <strong>只有你能讀自己那行資料</strong>。多裝置 1 秒內雙向同步。未登入走 localStorage，無縫降級。',
+      // Algorithm section update
+      '包租公算法 1.3 · Methodology': '包租公演算法 1.3 · Methodology',
+      '大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。<br>v1.3 升级：DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank <strong>自适应</strong>，财报因子 <strong>距财报天数衰减</strong>，回测窗口扩到 <strong>12 个月</strong> + BS premium。': '大部分期權工具只看年化收益和 delta，結果你看到的"高回報"經常踩坑。<strong>包租公演算法</strong>把每筆賣期權當成「出租一套房」——<strong>穩定的週租 &gt; 一次性的暴利</strong>。<br>v1.3 升級：DTE / Delta 甜蜜區跟用戶 timeframe 和 IV rank <strong>自適應</strong>，財報因子 <strong>距財報天數衰減</strong>，回測窗口擴到 <strong>12 個月</strong> + BS premium。',
+      'DTE 甜蜜区 <sup>v1.3</sup>': 'DTE 甜蜜區 <sup>v1.3</sup>',
+      '<strong>跟用户 timeframe 自适应</strong>：选 7d 周租峰值落在 ~10d；选 30d 月度峰值落在 ~28d；选 LEAPS 180d+ 关掉这条。&lt;5 天 gamma 风险骤增；曲线总尾部下衰。': '<strong>跟用戶 timeframe 自適應</strong>：選 7d 週租峰值落在 ~10d；選 30d 月度峰值落在 ~28d；選 LEAPS 180d+ 關掉這條。&lt;5 天 gamma 風險驟增；曲線總尾部下衰。',
+      'Delta 甜蜜区 <sup>v1.3</sup>': 'Delta 甜蜜區 <sup>v1.3</sup>',
+      '<strong>跟 IV rank 自适应</strong>：IV 高时甜蜜区右移到 |Δ| ≈ 0.30 —— 既然权利金贵，多承担一点风险；IV 低时左移到 |Δ| ≈ 0.18 —— 保险费便宜就求安全。0.15-0.30 是奶牛区基准。': '<strong>跟 IV rank 自適應</strong>：IV 高時甜蜜區右移到 |Δ| ≈ 0.30 —— 既然權利金貴，多承擔一點風險；IV 低時左移到 |Δ| ≈ 0.18 —— 保險費便宜就求安全。0.15-0.30 是奶牛區基準。',
+      '财报因子 <sup>v1.2</sup>': '財報因子 <sup>v1.2</sup>',
+      '<strong>距财报天数衰减（5 档）</strong>：≤2 / ≤7 / ≤14 / ≤21 / &gt;21 各档不同惩罚，不再一刀切 ×0 误杀大量 14+ 天后才到期的合约。保守模式 ≤5 天硬否决，激进模式 ×1.15 基线调升。': '<strong>距財報天數衰減（5 檔）</strong>：≤2 / ≤7 / ≤14 / ≤21 / &gt;21 各檔不同懲罰，不再一刀切 ×0 誤殺大量 14+ 天後才到期的合約。保守模式 ≤5 天硬否決，激進模式 ×1.15 基線調升。',
+      '回测胜率 <sup>v1.B</sup>': '回測勝率 <sup>v1.B</sup>',
+      '<strong>12 个月窗口</strong> + 二分查找精确 Δ + BS 真实 premium。同时输出 <code>theoretical_pop</code>（BS 理论）和 <code>calibration_ratio</code>（历史/理论）。比值 &lt; 0.95 弹"理论可能偏乐观"警示。': '<strong>12 個月窗口</strong> + 二分查找精確 Δ + BS 真實 premium。同時輸出 <code>theoretical_pop</code>（BS 理論）和 <code>calibration_ratio</code>（歷史/理論）。比值 &lt; 0.95 彈"理論可能偏樂觀"警示。',
+      '<span class="em">保守 = 真保守。</span> ≤5 天跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。': '<span class="em">保守 = 真保守。</span> ≤5 天跨財報合約在保守模式下直接否決，不給"我評估一下"的機會。',
       '🔒 Google OAuth 登录（无密码）': '🔒 Google OAuth 登入（無密碼）',
       '🛡 行级安全（RLS）— 只能看自己数据': '🛡 行級安全（RLS）— 只能看自己資料',
       '☁ 多设备实时同步（可选）': '☁ 多裝置即時同步（可選）',
@@ -1331,6 +1644,73 @@
       '把你的股票租出去，每周收租。': 'Rent your stocks. Collect weekly.',
       '应用': 'App',
       '<strong>⚠ 免责声明 / Disclaimer</strong><br>本工具仅供学习研究，<strong>不构成任何投资建议</strong>。期权交易有亏损全部本金甚至更多的风险。所有数据 / 推荐基于市场数据 + 数学模型，无法预测未来。决策前请自行验证 / 咨询持牌顾问。<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.': '<strong>⚠ Disclaimer</strong><br>This tool is for educational and research purposes only and <strong>does not constitute investment advice</strong>. Options trading involves the risk of losing all or more of your principal. All data and recommendations are based on market data and mathematical models — they cannot predict the future. Always verify and consult a licensed advisor before making decisions.<br><br>Not financial advice. For educational use only. Options trading involves substantial risk of loss. Always consult a licensed advisor before making investment decisions.',
+      // Feature Grid (2026-05 升级)
+      '能干啥': 'What it does',
+      '10 个核心能力，一屏看完。': '10 core capabilities — at a glance.',
+      '持仓监控、推荐引擎、决策辅助、云同步 —— 不用翻 5 屏才知道这个工具有啥。NEW 是 2026 春季落地的。': 'Position monitoring, recommendation engine, decision aids, cloud sync — no need to scroll 5 screens to find out what it can do. NEW = landed Spring 2026.',
+      '包租公推荐指数': 'Landlord Recommendation Index',
+      '八因子打分，五星 tier 排序。DTE / Delta 甜蜜区自适应。': '8-factor scoring, 5-star tier ranking. DTE / Delta sweet zones now adaptive.',
+      '包租公管家': 'Landlord Concierge',
+      'LLM 生成 ≤80 字早安摘要 + 今日 Top 3 关注 + 14 天关键日历。': 'LLM-generated ≤80-char morning brief + Top 3 of the day + 14-day key calendar.',
+      '加仓预览': 'Add-Position Preview',
+      '选合约前看「加进组合」的集中度 / Greeks / 保证金 / 收益变化。': 'See concentration / Greeks / collateral / yield impact before adding a contract.',
+      '候选对比': 'Candidate Comparison',
+      '勾 2-5 个候选浮 pill → 弹表 12 指标横向，绿/红高亮最优最差。': 'Check 2-5 candidates → floating pill opens table with 12 metrics side-by-side. Green/red highlights best/worst.',
+      'POP 校准 + Exit plan': 'POP Calibration + Exit plan',
+      '历史模拟胜率 vs BS 理论 PoP；自动锁利 / 止损 / Roll 触发条件。': 'Historical sim win-rate vs BS theoretical PoP; auto-generated profit lock / stop / roll triggers.',
+      'Wheel 闭环提示': 'Wheel Loop Hint',
+      '100+ 股 / CSP 被指派后自动建议下一步「卖 covered call」。': '100+ shares / assigned CSP → auto-suggests next step "sell covered call".',
+      'Google 登录 + 云同步': 'Google Sign-in + Cloud Sync',
+      'Supabase + RLS，多设备实时同步。不登录也能纯本地用。': 'Supabase + RLS, real-time multi-device sync. Local-only mode also works.',
+      '大佬策略预设': 'Guru Strategy Presets',
+      '价值哥 LEAPS / Wheel / 周收权利金 等 5 个一键填表预设。': '5 one-click form presets: Value LEAPS / Wheel / Weekly Premium etc.',
+      '实时持仓监控': 'Real-Time Position Monitor',
+      'Greeks · P&L · 损益曲线 · 距行权温度计 · 财报警告。': 'Greeks · P&L · payoff curve · strike thermometer · earnings warning.',
+      '期权小白指南': 'Options Beginner Guide',
+      '25 个核心术语（ITM/OTM/Wheel/LEAPS…）大白话 + 实例。': '25 core terms (ITM/OTM/Wheel/LEAPS…) in plain English + real examples.',
+      // Workflow 7 steps
+      '完整工作流': 'Full Workflow',
+      '从早上起床到挂出场单，七步走完。': 'Seven steps — from morning coffee to placing the exit order.',
+      '每一步都是 app 里真实的路径。点开 /app 跟着走一遍就懂了。': 'Every step is a real path inside the app. Walk through /app once and you\'ll get it.',
+      '早上打开 app，先看包租公管家': 'Morning: open app, read the Landlord Concierge first',
+      'Claude Haiku 4.5 一句话告诉你昨夜变化 + 今天 Top 3 要关注（80% 利润 / 进 7d 窗口 / 新 ITM / 财报临近 / VIX 跳涨）+ 未来 14 天关键日历。': 'Claude Haiku 4.5 tells you in one sentence what changed overnight + today\'s Top 3 (80% profit / entering 7d window / newly ITM / earnings imminent / VIX spike) + a 14-day key calendar.',
+      '录入"房产"': 'Enter your "properties"',
+      '从券商复制 OCC 合约代码（例如 <code>TSLA260515P00400000</code>）粘进来自动解析。同一张合约多次卖出按张数加权合并。': 'Paste an OCC contract code from your broker (e.g. <code>TSLA260515P00400000</code>) — auto-parsed. Multiple sells of the same contract are weight-merged by lot size.',
+      '问推荐：「我想 XX」': 'Ask for a recommendation: "I want to XX"',
+      '填 ticker + 方向 + 意图（CSP / Covered Call / LEAPS）+ 风险偏好，点「找出最佳」。或一键点 <code>📖 大佬策略预设</code>。': 'Fill ticker + direction + intent (CSP / Covered Call / LEAPS) + risk preference, hit "Find best". Or one-click a <code>📖 Guru preset</code>.',
+      '看推荐结果（包租公分排序）': 'Read results (Landlord Score ranked)',
+      '五星 tier + 算法 1.3 八因子展开 + <strong>POP 校准 pill</strong>（理论 vs 历史）+ <strong>Exit plan</strong> inline 锁利 / 止损 / Roll。': '5-star tiers + algorithm 1.3 with 8-factor expansion + <strong>POP calibration pill</strong> (theory vs history) + inline <strong>Exit plan</strong> (lock-profit / stop / roll).',
+      '加仓预览：先看影响再下单': 'Preview: see the impact before placing the order',
+      '点候选的「📊 预览」→ 看加进组合后的集中度变化 / Greeks 偏移 / 保证金占用 / 预期租金。': 'Click "📊 Preview" on a candidate → see concentration shift / Greeks delta / collateral usage / expected rent after adding it.',
+      '对比：勾 2-5 个比着挑': 'Compare: check 2-5 and decide',
+      '勾选 checkbox → 浮 pill 弹表 12 指标横向对比。绿色高亮最优、红色最弱，几秒拍板。': 'Check the boxes → floating pill opens a table with 12-metric side-by-side comparison. Green = best on this metric, red = worst. Decide in seconds.',
+      '下单后回到持仓页 → 监控 → 到期复盘 → 循环': 'After placing → monitor → expire & review → loop',
+      '实时 Greeks / P&L / 距行权温度计；<strong>Wheel 闭环提示</strong>被指派后自动建议卖 CC；<strong>简洁/完整双密度</strong>切换；到期按 Exit plan 锁利或止损；复盘报告 + Trade Journal 笔记；第二天管家自动算 diff 找质变，重新开始。': 'Real-time Greeks / P&L / strike thermometer; <strong>Wheel loop hint</strong> suggests "sell CC" after assignment; <strong>simple/full density</strong> toggle; lock profit or stop per Exit plan on expiry; review report + Trade Journal notes; next morning the Concierge auto-diffs material changes and starts again.',
+      // 配套能力 update
+      '包租公算法 1.3': 'Landlord Algorithm 1.3',
+      '房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性 × 财报衰减 × 12 月回测</strong>。v1.3 DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank 自适应。⭐⭐⭐⭐⭐ 永远在前。': 'Landlord-view ranking: <strong>annualized rent × safety(BS) × DTE sweet zone × Delta sweet zone × IV rank × liquidity × earnings decay × 12-month backtest</strong>. v1.3: DTE / Delta sweet zones adapt to user timeframe and IV rank. ⭐⭐⭐⭐⭐ always first.',
+      '历史模拟胜率 vs BS 理论 PoP，比值 &lt; 0.95 弹"理论偏乐观"警示。每个候选自动生成 <strong>Exit plan</strong>（锁利 / 止损 / Roll 触发条件）。': 'Historical sim win-rate vs BS theoretical PoP — ratio &lt; 0.95 raises a "theory may be optimistic" warning. Every candidate auto-generates an <strong>Exit plan</strong> (lock-profit / stop / roll triggers).',
+      '加仓预览 + 候选对比': 'Add Preview + Compare',
+      '下单前看"加进组合后"的集中度 / Greeks / 保证金变化；勾 2-5 个候选浮 pill 弹表 12 指标横向对比。': 'See concentration / Greeks / collateral impact before adding; check 2-5 candidates → floating pill → 12-metric side-by-side table.',
+      '包租公管家 · 早安简报 v2': 'Landlord Concierge · Morning Brief v2',
+      'Claude Haiku 4.5 生成 ≤80 字人格化早安摘要 + <strong>今日要关注 Top 3</strong>（跨日 diff 找质变事件）+ 14 天关键日历。': 'Claude Haiku 4.5 generates a ≤80-char personified morning brief + <strong>today\'s Top 3 to watch</strong> (day-over-day diff finds material events) + 14-day key calendar.',
+      'Wheel 闭环 + 简洁双密度': 'Wheel Loop + Dual Density',
+      '100+ 股 / CSP 被指派后自动建议"卖 covered call"。一键在 完整 / 简洁 两种信息密度间切换。': '100+ shares / assigned CSP → auto-suggests "sell covered call". One-click toggle between full and compact info density.',
+      '持仓到期跨越财报 → 自动 flag。推荐时按距财报天数衰减（5 档），保守模式 ≤5 天硬否决。': 'Position expiry spanning earnings → auto-flagged. Recommendations decay by days-to-earnings (5 tiers); conservative mode hard-rejects ≤5 days.',
+      'Google 登录 + 实时云同步': 'Google Sign-in + Real-Time Cloud Sync',
+      'Supabase + Postgres + RLS —— <strong>只有你能读自己那行数据</strong>。多设备 1 秒内双向同步。未登录走 localStorage，无缝降级。': 'Supabase + Postgres + RLS — <strong>only you can read your own row</strong>. Bidirectional sync within 1 second across devices. Falls back to localStorage when signed out — seamless degradation.',
+      // Algorithm section update
+      '包租公算法 1.3 · Methodology': 'Landlord Algorithm 1.3 · Methodology',
+      '大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。<br>v1.3 升级：DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank <strong>自适应</strong>，财报因子 <strong>距财报天数衰减</strong>，回测窗口扩到 <strong>12 个月</strong> + BS premium。': 'Most option tools just look at annualized return and delta — and the "high returns" you see often blow up. <strong>The Landlord Algorithm</strong> treats every short option as "renting a property" — <strong>steady weekly rent &gt; one-time windfall</strong>.<br>v1.3 upgrade: DTE / Delta sweet zones <strong>adapt</strong> to user timeframe and IV rank; earnings factor uses <strong>distance-to-earnings decay</strong>; backtest window expanded to <strong>12 months</strong> with BS premium.',
+      'DTE 甜蜜区 <sup>v1.3</sup>': 'DTE Sweet Zone <sup>v1.3</sup>',
+      '<strong>跟用户 timeframe 自适应</strong>：选 7d 周租峰值落在 ~10d；选 30d 月度峰值落在 ~28d；选 LEAPS 180d+ 关掉这条。&lt;5 天 gamma 风险骤增；曲线总尾部下衰。': '<strong>Adapts to user timeframe</strong>: 7d (weekly) peaks ~10d; 30d (monthly) peaks ~28d; LEAPS 180d+ disables this factor. &lt;5 days = gamma risk explodes; curve always decays at the tail.',
+      'Delta 甜蜜区 <sup>v1.3</sup>': 'Delta Sweet Zone <sup>v1.3</sup>',
+      '<strong>跟 IV rank 自适应</strong>：IV 高时甜蜜区右移到 |Δ| ≈ 0.30 —— 既然权利金贵，多承担一点风险；IV 低时左移到 |Δ| ≈ 0.18 —— 保险费便宜就求安全。0.15-0.30 是奶牛区基准。': '<strong>Adapts to IV rank</strong>: high IV shifts sweet zone right to |Δ| ≈ 0.30 — premium is rich, take more risk; low IV shifts left to |Δ| ≈ 0.18 — insurance is cheap, prioritize safety. 0.15-0.30 is the cash-cow baseline.',
+      '财报因子 <sup>v1.2</sup>': 'Earnings Factor <sup>v1.2</sup>',
+      '<strong>距财报天数衰减（5 档）</strong>：≤2 / ≤7 / ≤14 / ≤21 / &gt;21 各档不同惩罚，不再一刀切 ×0 误杀大量 14+ 天后才到期的合约。保守模式 ≤5 天硬否决，激进模式 ×1.15 基线调升。': '<strong>Days-to-earnings decay (5 tiers)</strong>: ≤2 / ≤7 / ≤14 / ≤21 / &gt;21 — each tier with different penalty. No more one-size ×0 over-killing 14+ day-out contracts. Conservative mode hard-rejects ≤5 days; aggressive mode applies a ×1.15 baseline boost.',
+      '回测胜率 <sup>v1.B</sup>': 'Backtest Win-Rate <sup>v1.B</sup>',
+      '<strong>12 个月窗口</strong> + 二分查找精确 Δ + BS 真实 premium。同时输出 <code>theoretical_pop</code>（BS 理论）和 <code>calibration_ratio</code>（历史/理论）。比值 &lt; 0.95 弹"理论可能偏乐观"警示。': '<strong>12-month window</strong> + binary-search precise Δ + BS-real premium. Outputs both <code>theoretical_pop</code> (BS theory) and <code>calibration_ratio</code> (empirical/theory). Ratio &lt; 0.95 raises a "theory may be optimistic" warning.',
+      '<span class="em">保守 = 真保守。</span> ≤5 天跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。': '<span class="em">Conservative = truly conservative.</span> Contracts expiring within ≤5 days of earnings are hard-rejected in conservative mode — no "let me evaluate" option.',
     },
   };
 

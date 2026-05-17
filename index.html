@@ -2710,6 +2710,17 @@
     transition: transform 0.15s, box-shadow 0.15s;
   }
   .mb-focus-action:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(230,184,106,0.25); }
+  a.mb-focus-action {
+    text-decoration: none; display: inline-flex; align-items: center;
+    line-height: 1;
+  }
+  .mb-focus-link {
+    text-decoration: none; color: inherit; cursor: pointer;
+    display: block;
+  }
+  .mb-focus-link:hover strong { color: var(--accent); }
+  .mb-focus-item.is-news { cursor: default; }
+  .mb-focus-item.is-news:hover { border-color: var(--line-2); }
   /* chips */
   .mb-chips {
     display: flex; flex-wrap: wrap; gap: 6px;
@@ -4403,6 +4414,7 @@ const I18N = {
     '持仓到期': '持倉到期',
     '看持仓 →': '看持倉 →',
     '看推荐 →': '看推薦 →',
+    '看原文 →': '看原文 →',
     '损益曲线': '損益曲線',
     '分享': '分享',
     '🔗 生成只读链接': '🔗 產生唯讀連結',
@@ -4985,6 +4997,7 @@ const I18N = {
     '持仓到期': 'Expiry',
     '看持仓 →': 'View →',
     '看推荐 →': 'Recommend →',
+    '看原文 →': 'Article →',
     '损益曲线': 'Payoff Diagram',
     '分享': 'Share',
     '🔗 生成只读链接': '🔗 Generate read-only link',
@@ -9438,15 +9451,23 @@ function _mbToneClass(tone) {
 function _mbRenderFocusItem(item) {
   const action = item.action;
   let btn = '';
-  if (action === 'view_position' && item.position_id) {
+  if (action === 'open_news' && item.link) {
+    btn = `<a class="mb-focus-action" href="${_mbEscape(item.link)}" target="_blank" rel="noopener noreferrer">${t('看原文 →')}</a>`;
+  } else if (action === 'view_position' && item.position_id) {
     btn = `<button class="mb-focus-action" onclick="_mbFocusPosition('${_mbEscape(item.position_id)}')">${t('看持仓 →')}</button>`;
   } else if (action === 'view_recommend') {
     btn = `<button class="mb-focus-action" onclick="_mbOpenRec()">${t('看推荐 →')}</button>`;
   }
   const detail = item.detail ? `<div class="mb-detail">${_mbEscape(item.detail)}</div>` : '';
-  return `<div class="mb-focus-item">
+  // 新闻 card 整张可点击外链（headline + detail 区域）
+  const isNews = action === 'open_news' && item.link;
+  const textWrapStart = isNews
+    ? `<a class="mb-focus-text mb-focus-link" href="${_mbEscape(item.link)}" target="_blank" rel="noopener noreferrer">`
+    : `<div class="mb-focus-text">`;
+  const textWrapEnd = isNews ? `</a>` : `</div>`;
+  return `<div class="mb-focus-item${isNews ? ' is-news' : ''}">
     <div class="mb-focus-icon">${_mbEscape(item.icon || '•')}</div>
-    <div class="mb-focus-text"><strong>${_mbEscape(item.headline || '')}</strong>${detail}</div>
+    ${textWrapStart}<strong>${_mbEscape(item.headline || '')}</strong>${detail}${textWrapEnd}
     ${btn}
   </div>`;
 }

@@ -2653,6 +2653,13 @@ def _fetch_position_news(positions: List[dict],
                 title = (content.get("title") or "").strip()
                 publisher = ((content.get("provider") or {}).get("displayName")
                              or content.get("publisher") or "").strip()
+                # link: 新 schema canonicalUrl / clickThroughUrl，旧 schema link
+                link = ""
+                ct_url = content.get("canonicalUrl") or content.get("clickThroughUrl")
+                if isinstance(ct_url, dict):
+                    link = ct_url.get("url", "")
+                if not link:
+                    link = content.get("link") or n.get("link") or ""
                 pub_iso = content.get("pubDate") or ""
                 pub_time = 0
                 if isinstance(pub_iso, str) and pub_iso:
@@ -2668,6 +2675,7 @@ def _fetch_position_news(positions: List[dict],
                     "ticker": tk,
                     "title": title,
                     "publisher": publisher,
+                    "link": link,
                     "hours_ago": max(1, int((now - pub_time) / 3600)),
                     "pub_time": int(pub_time),
                 })
@@ -2700,7 +2708,8 @@ def _detect_news_alerts(news: List[Dict], lang: str) -> List[Dict]:
                            tk=n["ticker"],
                            title=(n["title"][:50] + "…" if len(n["title"]) > 50 else n["title"])),
             "detail": _T(lang, "{pub} · {h}h 前", pub=n["publisher"], h=n["hours_ago"]),
-            "action": "view_position",
+            "link": n.get("link") or "",
+            "action": "open_news",
         })
         if len(alerts) >= 3:
             break

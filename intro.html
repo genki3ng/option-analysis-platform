@@ -6,6 +6,10 @@
 <title>包租公 · Landlord — 把你的股票租出去，每周收租</title>
 <meta name="description" content="包租公：把股票'租'出去（Covered Call / CSP），每周收'租金'。期权新手友好的可视化工具。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
+<!-- Vercel Web Analytics -->
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -1060,19 +1064,22 @@
     <div class="two-col">
       <div class="copy reveal">
         <div class="eyebrow" data-i18n>数据归你</div>
-        <h2 data-i18n-html>不开账户，<br>不传服务器。</h2>
-        <p data-i18n-html>所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。</p>
-        <p data-i18n>后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。</p>
+        <h2 data-i18n-html>你的数据，<br>由你掌控。</h2>
+        <p data-i18n-html><strong>默认本地</strong>：未登录时持仓只存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code>，从不上传任何服务器。</p>
+        <p data-i18n-html><strong>选用云同步</strong>：登录 Google 后，数据加密存储在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能读写自己那行</strong>，连我们也看不到。多设备实时同步。</p>
+        <p data-i18n-html>无 PII：我们只存合约信息（ticker / 行权价 / 张数 / 日期），不收集姓名、电话、券商账号、社保号等任何身份信息。</p>
+        <p data-i18n>不卖数据、不投放广告、不做用户画像 — 永远。</p>
       </div>
       <div class="reveal">
         <ul class="privacy-list">
-          <li data-i18n>无需注册账号</li>
-          <li data-i18n>无需绑定券商</li>
-          <li data-i18n>无需输入任何身份信息</li>
-          <li data-i18n>数据加密存储在你的浏览器</li>
-          <li data-i18n>可一键导出 JSON 备份</li>
-          <li data-i18n>可断开同步随时清除</li>
-          <li data-i18n>开源代码（GitHub）</li>
+          <li data-i18n>🔒 Google OAuth 登录（无密码）</li>
+          <li data-i18n>🛡 行级安全（RLS）— 只能看自己数据</li>
+          <li data-i18n>☁ 多设备实时同步（可选）</li>
+          <li data-i18n>📥 未登录时纯本地，零上传</li>
+          <li data-i18n>🚫 不绑券商 · 不收 PII · 不做画像</li>
+          <li data-i18n>💾 一键导出 JSON 备份</li>
+          <li data-i18n>📂 开源代码（GitHub）可审计</li>
+          <li data-i18n-html>📧 隐私问题：<a href="mailto:hi@congyangwang.com" style="color:var(--accent);text-decoration:underline">hi@congyangwang.com</a></li>
         </ul>
       </div>
     </div>
@@ -1094,9 +1101,10 @@
         <div style="color:var(--text);font-weight:500;margin-bottom:8px">包租公 · Landlord</div>
         <div data-i18n>把你的股票租出去，每周收租。</div>
       </div>
-      <div style="display:flex;gap:24px">
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
         <a href="/app" data-i18n>应用</a>
         <a href="https://github.com/genki3ng/baozugong">GitHub</a>
+        <a href="mailto:hi@congyangwang.com">hi@congyangwang.com</a>
       </div>
     </div>
 
@@ -1200,16 +1208,19 @@
       '<span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。': '<span class="em">一個數字就夠。</span> 包租公分把 8 個因子壓成一個可比較的標量，但展開就能看清每一項的貢獻。',
       // Privacy
       '数据归你': '資料歸你',
-      '不开账户，<br>不传服务器。': '不開帳戶，<br>不傳伺服器。',
-      '所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。': '所有持倉資料存在你自己瀏覽器的 <code style="color:var(--accent)">localStorage</code> 裡。其他人打開同一個網址，看到的是<strong>他們自己</strong>的資料，互相不可見。',
-      '后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。': '後端 Serverless 函式完全無狀態：每次請求處理完即釋放，不存任何 PII。',
-      '无需注册账号': '無需註冊帳號',
-      '无需绑定券商': '無需綁定券商',
-      '无需输入任何身份信息': '無需輸入任何身份資訊',
-      '数据加密存储在你的浏览器': '資料加密儲存在你的瀏覽器',
-      '可一键导出 JSON 备份': '可一鍵匯出 JSON 備份',
-      '可断开同步随时清除': '可斷開同步隨時清除',
-      '开源代码（GitHub）': '開源代碼（GitHub）',
+      '你的数据，<br>由你掌控。': '你的資料，<br>由你掌控。',
+      '<strong>默认本地</strong>：未登录时持仓只存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code>，从不上传任何服务器。': '<strong>預設本機</strong>：未登入時持倉只存在你自己瀏覽器的 <code style="color:var(--accent)">localStorage</code>，從不上傳任何伺服器。',
+      '<strong>选用云同步</strong>：登录 Google 后，数据加密存储在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能读写自己那行</strong>，连我们也看不到。多设备实时同步。': '<strong>選用雲同步</strong>：登入 Google 後，資料加密儲存在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能讀寫自己那行</strong>，連我們也看不到。多裝置即時同步。',
+      '无 PII：我们只存合约信息（ticker / 行权价 / 张数 / 日期），不收集姓名、电话、券商账号、社保号等任何身份信息。': '無 PII：我們只存合約資訊（ticker / 行權價 / 張數 / 日期），不收集姓名、電話、券商帳號、社保號等任何身份資訊。',
+      '不卖数据、不投放广告、不做用户画像 — 永远。': '不賣資料、不投放廣告、不做用戶畫像 — 永遠。',
+      '🔒 Google OAuth 登录（无密码）': '🔒 Google OAuth 登入（無密碼）',
+      '🛡 行级安全（RLS）— 只能看自己数据': '🛡 行級安全（RLS）— 只能看自己資料',
+      '☁ 多设备实时同步（可选）': '☁ 多裝置即時同步（可選）',
+      '📥 未登录时纯本地，零上传': '📥 未登入時純本機，零上傳',
+      '🚫 不绑券商 · 不收 PII · 不做画像': '🚫 不綁券商 · 不收 PII · 不做畫像',
+      '💾 一键导出 JSON 备份': '💾 一鍵匯出 JSON 備份',
+      '📂 开源代码（GitHub）可审计': '📂 開源代碼（GitHub）可審計',
+      '📧 隐私问题：<a href="mailto:hi@congyangwang.com" style="color:var(--accent);text-decoration:underline">hi@congyangwang.com</a>': '📧 隱私問題：<a href="mailto:hi@congyangwang.com" style="color:var(--accent);text-decoration:underline">hi@congyangwang.com</a>',
       // Final + Footer
       '准备好<br><span style="color:var(--accent)">当包租公</span>了吗？': '準備好<br><span style="color:var(--accent)">當包租公</span>了嗎？',
       '无需注册。30 秒上手。免费使用。': '無需註冊。30 秒上手。免費使用。',
@@ -1302,16 +1313,19 @@
       '<span class="em">保守 = 真保守。</span> 跨财报合约在保守模式下直接否决，不给"我评估一下"的机会。': '<span class="em">Conservative means conservative.</span> Earnings-spanning contracts are auto-rejected in conservative mode — no "let me think about it" room.',
       '<span class="em">一个数字就够。</span> 包租公分把 8 个因子压成一个可比较的标量，但展开就能看清每一项的贡献。': '<span class="em">One number is enough.</span> Landlord Score compresses 8 factors into a comparable scalar — expandable to inspect each contribution.',
       '数据归你': 'Your data, yours',
-      '不开账户，<br>不传服务器。': 'No account.<br>No server upload.',
-      '所有持仓数据存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code> 里。其他人打开同一个网址，看到的是<strong>他们自己</strong>的数据，互相不可见。': 'All position data lives in your browser\'s <code style="color:var(--accent)">localStorage</code>. Anyone else opening the same URL sees <strong>their own</strong> data — no cross-visibility.',
-      '后端 Serverless 函数完全无状态：每次请求处理完即释放，不存任何 PII。': 'The backend Serverless function is fully stateless — released after each request, no PII stored.',
-      '无需注册账号': 'No account signup',
-      '无需绑定券商': 'No broker linking',
-      '无需输入任何身份信息': 'No identity info required',
-      '数据加密存储在你的浏览器': 'Encrypted-at-rest in your browser',
-      '可一键导出 JSON 备份': 'One-click JSON export',
-      '可断开同步随时清除': 'Disconnect sync, wipe anytime',
-      '开源代码（GitHub）': 'Open source (GitHub)',
+      '你的数据，<br>由你掌控。': 'Your data,<br>your control.',
+      '<strong>默认本地</strong>：未登录时持仓只存在你自己浏览器的 <code style="color:var(--accent)">localStorage</code>，从不上传任何服务器。': '<strong>Local by default</strong>: while signed out, positions live only in your browser\'s <code style="color:var(--accent)">localStorage</code> — never uploaded.',
+      '<strong>选用云同步</strong>：登录 Google 后，数据加密存储在 Supabase（Postgres），RLS 策略兜底 —— <strong>只有你自己能读写自己那行</strong>，连我们也看不到。多设备实时同步。': '<strong>Opt-in cloud sync</strong>: after signing in with Google, data is encrypted-at-rest in Supabase (Postgres) with Row-Level Security — <strong>only you can read or write your own row</strong>, not even us. Realtime multi-device sync.',
+      '无 PII：我们只存合约信息（ticker / 行权价 / 张数 / 日期），不收集姓名、电话、券商账号、社保号等任何身份信息。': 'No PII: we only store contract data (ticker / strike / contracts / dates). No names, phone numbers, broker accounts, or SSN collected.',
+      '不卖数据、不投放广告、不做用户画像 — 永远。': 'No selling, no ads, no profiling — ever.',
+      '🔒 Google OAuth 登录（无密码）': '🔒 Sign in with Google (passwordless)',
+      '🛡 行级安全（RLS）— 只能看自己数据': '🛡 Row-Level Security — only your data is visible',
+      '☁ 多设备实时同步（可选）': '☁ Realtime multi-device sync (optional)',
+      '📥 未登录时纯本地，零上传': '📥 Local-only while signed out, zero uploads',
+      '🚫 不绑券商 · 不收 PII · 不做画像': '🚫 No broker · No PII · No profiling',
+      '💾 一键导出 JSON 备份': '💾 One-click JSON export',
+      '📂 开源代码（GitHub）可审计': '📂 Open source (GitHub) — auditable',
+      '📧 隐私问题：<a href="mailto:hi@congyangwang.com" style="color:var(--accent);text-decoration:underline">hi@congyangwang.com</a>': '📧 Privacy questions: <a href="mailto:hi@congyangwang.com" style="color:var(--accent);text-decoration:underline">hi@congyangwang.com</a>',
       '准备好<br><span style="color:var(--accent)">当包租公</span>了吗？': 'Ready to be<br><span style="color:var(--accent)">the landlord</span>?',
       '无需注册。30 秒上手。免费使用。': 'No signup. 30 seconds to start. Free.',
       '把你的股票租出去，每周收租。': 'Rent your stocks. Collect weekly.',

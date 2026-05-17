@@ -6,6 +6,10 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Vercel Web Analytics -->
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 <style>
   /* ── 主题：默认夜间（与 /intro 一致），[data-theme="light"] 切换到白天 ── */
   :root {
@@ -7195,7 +7199,17 @@ function _initSupabase() {
     return;
   }
   _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      // PKCE flow：用 ?code= query string 而非 #access_token= hash
+      // 对 iOS Safari 友好（ITP 不会拦截 query），且更安全
+      flowType: 'pkce',
+      // localStorage 是默认存储；显式声明便于排查
+      storage: window.localStorage,
+      storageKey: 'sb-baozugong-auth',
+    },
   });
   _sb.auth.onAuthStateChange((event, session) => {
     const wasUser = _currentUser?.id;

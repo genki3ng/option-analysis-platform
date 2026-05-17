@@ -10,9 +10,12 @@
 ## 1. 最近 12 个 commit（按新到旧）
 
 ```
-6f8e3a3 feat: 推荐列表顶部加数据源降级 pill
-6c9a11c remove: Massive API（30 天历史价位带特性弃用）+ Schwab 错误日志
-eb0b3a6 algo 1.2: 财报因子改成距财报天数衰减（替代 1.1 的 cross 二元否决）
+9ff7d00 docs: 授权 — 部署/合并 main 不再单独问
+69d26f9 docs: HANDOFF 更新 — 算法 1.2 + Massive 移除 + 数据源 pill
+f773187 feat: 推荐列表顶部加数据源降级 pill
+0fc47de remove: Massive API（30 天历史价位带特性弃用）+ Schwab 错误日志
+8103520 algo 1.2: 财报因子改成距财报天数衰减（替代 1.1 的 cross 二元否决）
+88643f3 security: 加强 .gitignore + HANDOFF.md 补 public repo 注意事项
 3a47516 docs: 加 CLAUDE.md + HANDOFF.md
 ca2d251 fix: 持仓选择 (selectedIds) 在手机刷新后被清空
 a973cbb fix: sweep stale supabase auth keys on init (prevent PKCE drift)
@@ -32,13 +35,13 @@ db30630 Deploy: bump trigger (stability test)
 
 分支 `claude/product-suggestions-TzFsz`，3 个 commit：
 
-**A. 包租公算法 1.2 — 财报因子距离衰减**（`eb0b3a6`）
+**A. 包租公算法 1.2 — 财报因子距离衰减**（`8103520`）
 - 原 1.1：cross 就 ×0（保守）/ 0.55 / 0.78 — 一刀切，误杀大量 14+ 天后到期合约
 - 新 1.2：按距财报天数衰减（≤2/≤7/≤14/≤21/>21 五档），保守模式仅 ≤5 天硬否决
 - 风险偏好做基线调整：conservative ×0.80，aggressive ×1.15
 - `_earnings_factor()` 是纯函数，单测过 — 见 commit 信息
 
-**B. 删 Massive + 清 Schwab print 日志**（`6c9a11c`）
+**B. 删 Massive + 清 Schwab print 日志**（`0fc47de`）
 - 用户说 Massive 已弃用 → 全删：MASSIVE_KEY、fetch_massive_option_history、
   _build_occ_symbol、_cache_occ_hist、_wheel_friendly_factor / _make_verdict
   的 price_band 参数、recommend 富集循环、renderPriceBand JS、.price-band CSS、
@@ -46,7 +49,7 @@ db30630 Deploy: bump trigger (stability test)
 - print(f"[schwab] {err}") 4 处删掉。错误仍存 _schwab_last_err，
   通过 debug_env action 可查（不在标准响应里裸露）。
 
-**C. 数据源降级 pill**（`6f8e3a3`）
+**C. 数据源降级 pill**（`f773187`）
 - fetch_chain 三个分支（schwab/yahoo/yfinance）每条 quote 都标 source
 - 新 _summarize_data_source()：取出现最多的源做 primary，
   非 schwab 即 is_fallback=true（unknown 不算 fallback）

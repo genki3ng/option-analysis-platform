@@ -2612,7 +2612,10 @@ _news_cache: Dict[str, Tuple[list, float]] = {}  # ticker -> (items, fetched_at)
 _NEGATIVE_NEWS_KEYWORDS = (
     "downgrade", "loss", "lawsuit", "sec", "investigation", "bankrupt", "fraud",
     "miss", "cut", "warn", "recall", "subpoena", "delist", "fall", "plunge",
+    "layoff", "lay off", "job cut", "fire", "fired", "restructur", "guidance cut",
+    "merger", "acquir", "spinoff", "split",
     "降级", "亏损", "诉讼", "调查", "破产", "欺诈", "下调", "未达预期", "暴跌", "召回",
+    "裁员", "解雇", "重组", "并购", "收购", "分拆", "拆分", "停牌",
 )
 
 

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>包租公 · intro 改版预览（3 方案）</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0B;
+    --bg-2: #101012;
+    --card: #131316;
+    --card-2: #17171B;
+    --line: #25252B;
+    --line-2: #2F2F36;
+    --text: #E8E8EA;
+    --muted: #9C9CA3;
+    --muted-2: #6A6A72;
+    --accent: #E6B86A;
+    --accent-tint: rgba(230, 184, 106, 0.08);
+    --accent-light: #F0C778;
+    --green: #4ADE80;
+    --red: #EF4444;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "PingFang SC",
+                 "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding: 24px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  .page-head {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .page-head h1 {
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .page-head .sub {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .page-head .note {
+    margin-top: 14px;
+    background: var(--accent-tint);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    text-align: left;
+    color: var(--muted);
+    display: inline-block;
+  }
+
+  /* —— 三方案布局 —— */
+  .approach {
+    margin-bottom: 56px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--card);
+  }
+  .approach-head {
+    padding: 18px 22px;
+    background: linear-gradient(180deg, rgba(230,184,106,0.05) 0%, transparent 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .approach-head .ah-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .approach-head h2 {
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  .approach-head .badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--card-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .approach-head p {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 760px;
+  }
+  .approach-head ul {
+    margin-top: 10px;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.85;
+  }
+
+  /* —— 桌面 + 手机并排展示 —— */
+  .frames {
+    display: grid;
+    grid-template-columns: 1fr 396px;
+    gap: 24px;
+    padding: 24px;
+    background: var(--bg-2);
+  }
+  @media (max-width: 1100px) {
+    .frames { grid-template-columns: 1fr; }
+  }
+  .frame {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .frame-label {
+    padding: 8px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--card-2);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .frame-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .frame-body {
+    overflow-y: auto;
+    max-height: 720px;
+  }
+  .frame-mobile .frame-body {
+    width: 100%;
+  }
+
+  /* —— intro 内容 mini-render —— */
+  /* 我们不重渲染整个 intro 页（太重），只渲染 NEW 的关键区块， */
+  /* 用 link 把没改的旧区块标记成 "省略 · 同当前线上版本" */
+  .ghost {
+    padding: 14px 18px;
+    color: var(--muted-2);
+    font-size: 12px;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255,255,255,0.02) 8px,
+      rgba(255,255,255,0.02) 16px
+    );
+    border-radius: 6px;
+    margin: 12px;
+    border: 1px dashed var(--line-2);
+    text-align: center;
+  }
+  .ghost b { color: var(--muted); }
+
+  /* —— 通用区块样式 —— */
+  .section {
+    padding: 22px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section:last-child { border-bottom: none; }
+  .section .eyebrow {
+    font-size: 10.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .section h3 {
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+  .section .lead {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 580px;
+  }
+
+  /* —— Hero (frame 通用) —— */
+  .mini-hero {
+    padding: 26px 18px 18px;
+    text-align: left;
+    background: radial-gradient(circle at 20% 0%, rgba(230,184,106,0.06), transparent 50%);
+    border-bottom: 1px solid var(--line);
+  }
+  .mini-hero .eyebrow {
+    color: var(--accent);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+  .mini-hero h1 {
+    font-size: 26px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .mini-hero h1 .accent { color: var(--accent); }
+  .mini-hero .lead {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .mini-hero .cta {
+    display: inline-flex;
+    align-items: center;
+    background: var(--accent);
+    color: #0A0A0B;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 12.5px;
+  }
+  .frame-mobile .mini-hero h1 { font-size: 22px; }
+
+  /* —— Approach A — 「最近升级」timeline section —— */
+  .timeline {
+    margin-top: 14px;
+  }
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 76px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: start;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-item .date {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+  }
+  .timeline-item .what {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .timeline-item .what .tag {
+    display: inline-block;
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--accent-tint);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .timeline-item .what .desc {
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    margin-top: 4px;
+  }
+  .frame-mobile .timeline-item {
+    grid-template-columns: 60px 1fr;
+    gap: 10px;
+  }
+
+  /* —— Approach B — Feature grid —— */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .frame-mobile .feat-grid { grid-template-columns: 1fr; }
+  .feat-cell {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .feat-cell .ic {
+    font-size: 18px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .feat-cell .name {
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .feat-cell .desc {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .feat-cell.new {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(230,184,106,0.05) 0%, var(--card-2) 100%);
+  }
+  .feat-cell.new .name::after {
+    content: 'NEW';
+    display: inline-block;
+    font-size: 8.5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #0A0A0B;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  /* —— Approach C — Workflow 步骤 —— */
+  .workflow {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .wf-step {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    position: relative;
+    padding-left: 60px;
+  }
+  .wf-step::before {
+    content: attr(data-n);
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0A0A0B;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wf-step .title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .wf-step .title .new-pill {
+    display: inline-block;
+    font-size: 9.5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: #0A0A0B;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .wf-step .desc {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .wf-step .desc code {
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  /* —— Approach 间的 spacer —— */
+  .vs {
+    text-align: center;
+    color: var(--muted-2);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 28px 0;
+  }
+  .vs::before, .vs::after {
+    content: '';
+    display: inline-block;
+    width: 80px;
+    border-top: 1px solid var(--line);
+    vertical-align: middle;
+    margin: 0 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="page-head">
+  <h1>🏠 包租公 · intro 改版预览（3 方案）</h1>
+  <div class="sub">把 2026 春季积累的 ~10 个新功能展示给 intro 访客</div>
+  <div class="note">
+    每个方案显示<b>桌面 + 手机</b>两个视口并排。<br>
+    标着「省略」的灰区块表示<b>沿用当前线上 intro 的对应 section</b>，不会被改。<br>
+    挑一个方向（A / B / C / 都不行），我落地到 <code>intro.html</code> 并删掉预览页。
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- APPROACH A — 「最近升级」timeline                                  -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="approach">
+  <div class="approach-head">
+    <div class="ah-row">
+      <h2>方案 A · 「春季升级」时间轴</h2>
+      <span class="badge">最小改动 · 故事感</span>
+    </div>
+    <p>在现有结构（Hero → 概念 → 实际界面 → 三步 → 算法 → 隐私）中间，<b>新增一个 section</b>：「2026 春季升级」时间轴，
+       展示 ~10 个最近落地的新功能。其它 section 不动，算法版本号更新到 1.3。</p>
+    <ul>
+      <li><b>优点</b>：改动小，老用户回来一眼看到"原来这些是新加的"</li>
+      <li><b>缺点</b>：新功能信息密度低，访客要滚到中段才看到</li>
+      <li><b>适合</b>：你不想大动 intro 结构、又想宣告"产品在迭代"</li>
+    </ul>
+  </div>
+
+  <div class="frames">
+
+    <!-- Desktop frame -->
+    <div class="frame">
+      <div class="frame-label"><span class="dot"></span>桌面（≥1024px）</div>
+      <div class="frame-body">
+        <div class="ghost">省略 · <b>Hero</b>（同当前线上版本，CTA "进入应用 →"）</div>
+        <div class="ghost">省略 · <b>概念区</b>（Covered Call / CSP / Wheel 三术语）</div>
+
+        <div class="section" style="background:linear-gradient(180deg, rgba(230,184,106,0.04), transparent)">
+          <div class="eyebrow">2026 春季升级</div>
+          <h3>我们在 6 周里做了这些。</h3>
+          <p class="lead">10 个核心功能落地。Schwab 实时行情、Supabase 实时云同步、LLM 早安管家、算法 1.3 自适应。</p>
+
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="date">2026·05</div>
+              <div class="what">
+                <span class="tag">推荐</span>包租公算法 1.3 自适应
+                <div class="desc">DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank 自适应。POP 校准、Exit plan 模板。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">2026·05</div>
+              <div class="what">
+                <span class="tag">体验</span>早安简报 v2 · 包租公管家
+                <div class="desc">Claude Haiku 4.5 生成 ≤80 字早安摘要，今日 Top 3 关注点 + 14 天关键日历。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">2026·05</div>
+              <div class="what">
+                <span class="tag">决策</span>加仓预览 + 候选对比
+                <div class="desc">选合约前看「加进组合的影响」；勾 2-5 个候选浮 pill 出表 12 指标对比。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">2026·04</div>
+              <div class="what">
+                <span class="tag">同步</span>Google 登录 + 实时云同步
+                <div class="desc">Supabase + RLS，多设备秒同步。不登录纯本地也能用。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">2026·04</div>
+              <div class="what">
+                <span class="tag">监控</span>Wheel 闭环提示
+                <div class="desc">100+ 股 / CSP 被指派后自动提示"卖 covered call"。</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">2026·03</div>
+              <div class="what">
+                <span class="tag">行情</span>Schwab API 接入主路径
+                <div class="desc">Yahoo / yfinance 限流退化为兜底，加数据源降级 pill 用户可见。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ghost">省略 · <b>实际界面</b>（app 截图区）</div>
+        <div class="ghost">省略 · <b>三步当上包租公</b></div>
+        <div class="ghost">省略 · <b>包租公算法</b> 八因子区</div>
+        <div class="ghost">省略 · <b>数据归你</b>（隐私）</div>
+        <div class="ghost">省略 · <b>Final CTA</b> + Footer</div>
+      </div>
+    </div>
+
+    <!-- Mobile frame -->
+    <div class="frame frame-mobile">
+      <div class="frame-label"><span class="dot"></span>手机（375px）</div>
+      <div class="frame-body" style="width:375px;margin:0 auto">
+        <div class="ghost">省略 · Hero</div>
+        <div class="ghost">省略 · 概念区</div>
+        <div class="section" style="background:linear-gradient(180deg, rgba(230,184,106,0.04), transparent)">
+          <div class="eyebrow">2026 春季升级</div>
+          <h3>6 周做了这些。</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="date">05</div>
+              <div class="what"><span class="tag">推荐</span>算法 1.3<div class="desc">DTE/Δ 自适应 + POP 校准 + Exit plan</div></div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">05</div>
+              <div class="what"><span class="tag">体验</span>包租公管家<div class="desc">LLM 早安摘要 + Top 3 + 14d 日历</div></div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">05</div>
+              <div class="what"><span class="tag">决策</span>加仓预览 + 对比<div class="desc">合约影响预演 + 横向 12 指标对比</div></div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">04</div>
+              <div class="what"><span class="tag">同步</span>Google 实时云同步<div class="desc">Supabase RLS，多设备秒到</div></div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">04</div>
+              <div class="what"><span class="tag">监控</span>Wheel 闭环<div class="desc">被指派后自动提示卖 CC</div></div>
+            </div>
+            <div class="timeline-item">
+              <div class="date">03</div>
+              <div class="what"><span class="tag">行情</span>Schwab 接入<div class="desc">实时数据 + 降级 pill</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="ghost">省略 · 后续 sections</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="vs">vs</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- APPROACH B — Hero 后立刻 Feature Grid                              -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="approach">
+  <div class="approach-head">
+    <div class="ah-row">
+      <h2>方案 B · Hero 后立刻摆「能干啥」grid</h2>
+      <span class="badge">信息密度 · 一屏</span>
+    </div>
+    <p>把当前 intro 的"概念区"<b>下移</b>，Hero 正下方新增 <b>2×4 feature grid</b>，
+       让访客一屏内看清全部能力。每个格子带 NEW 标记新功能。访客不需要滚 5 屏才知道"它有啥"。</p>
+    <ul>
+      <li><b>优点</b>：信息密度最高，"看清版图"诉求最直观。SEO 友好（关键词全在前两屏）</li>
+      <li><b>缺点</b>：故事性弱（概念区下移会让新人更晚理解 Wheel）；info-density 风险</li>
+      <li><b>适合</b>：定位"工具站"而非"教学站"，访客已经懂期权基本概念</li>
+    </ul>
+  </div>
+
+  <div class="frames">
+
+    <!-- Desktop frame -->
+    <div class="frame">
+      <div class="frame-label"><span class="dot"></span>桌面（≥1024px）</div>
+      <div class="frame-body">
+        <div class="mini-hero">
+          <div class="eyebrow">Theta gang · 期权房东</div>
+          <h1>把你的股票<br><span class="accent">"租"出去</span>，每周收租。</h1>
+          <p class="lead">一个工具看清你的"房产"：现在收了多少租金、租约什么时候到期、有没有违约风险。</p>
+          <a href="/app" class="cta">进入应用 →</a>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">能干啥</div>
+          <h3>10 个核心能力，一屏看完。</h3>
+          <p class="lead">不用读 5 屏。这个工具能做什么、新加了什么，全在下面。</p>
+
+          <div class="feat-grid">
+            <div class="feat-cell new">
+              <div class="ic">🏠</div>
+              <div class="name">包租公推荐指数</div>
+              <div class="desc">算法 1.3，八因子打分，五星 tier 排序</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">☀️</div>
+              <div class="name">包租公管家 · LLM 早安简报</div>
+              <div class="desc">Claude Haiku 4.5 ≤80 字摘要 + Top 3 关注</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">📊</div>
+              <div class="name">加仓预览</div>
+              <div class="desc">看「加进组合」的集中度 / Greeks / 保证金变化</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">⚖️</div>
+              <div class="name">候选对比</div>
+              <div class="desc">勾 2-5 个浮 pill → 表 12 指标横向比</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">🛡</div>
+              <div class="name">POP 校准 + Exit plan</div>
+              <div class="desc">历史模拟 vs BS 理论；自动止盈 / 止损 / Roll</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">🔁</div>
+              <div class="name">Wheel 闭环提示</div>
+              <div class="desc">被指派后自动建议"卖 covered call"</div>
+            </div>
+            <div class="feat-cell new">
+              <div class="ic">☁</div>
+              <div class="name">Google 登录 + 实时云同步</div>
+              <div class="desc">Supabase + RLS，多设备秒到</div>
+            </div>
+            <div class="feat-cell">
+              <div class="ic">📚</div>
+              <div class="name">大佬策略预设</div>
+              <div class="desc">价值哥 LEAPS / Wheel / 周收等 5 个一键预设</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ghost">省略 · <b>概念区</b>（Covered Call / CSP / Wheel）— 下移到这</div>
+        <div class="ghost">省略 · <b>实际界面</b>截图区</div>
+        <div class="ghost">省略 · <b>三步操作</b></div>
+        <div class="ghost">省略 · <b>算法</b>八因子区</div>
+        <div class="ghost">省略 · <b>隐私</b> + <b>CTA</b> + Footer</div>
+      </div>
+    </div>
+
+    <!-- Mobile frame -->
+    <div class="frame frame-mobile">
+      <div class="frame-label"><span class="dot"></span>手机（375px）</div>
+      <div class="frame-body" style="width:375px;margin:0 auto">
+        <div class="mini-hero">
+          <div class="eyebrow">Theta gang · 期权房东</div>
+          <h1>把你的股票<br><span class="accent">"租"出去</span>，每周收租。</h1>
+          <p class="lead">看清"房产"：租金、租约、风险。</p>
+          <a href="/app" class="cta">进入应用 →</a>
+        </div>
+        <div class="section">
+          <div class="eyebrow">能干啥</div>
+          <h3>10 个能力</h3>
+          <div class="feat-grid">
+            <div class="feat-cell new"><div class="ic">🏠</div><div class="name">推荐指数</div><div class="desc">算法 1.3 八因子</div></div>
+            <div class="feat-cell new"><div class="ic">☀️</div><div class="name">LLM 管家</div><div class="desc">早安摘要 + Top 3</div></div>
+            <div class="feat-cell new"><div class="ic">📊</div><div class="name">加仓预览</div><div class="desc">组合影响预演</div></div>
+            <div class="feat-cell new"><div class="ic">⚖️</div><div class="name">候选对比</div><div class="desc">12 指标横向</div></div>
+            <div class="feat-cell new"><div class="ic">🛡</div><div class="name">POP+Exit</div><div class="desc">校准 + 自动出场</div></div>
+            <div class="feat-cell new"><div class="ic">🔁</div><div class="name">Wheel 闭环</div><div class="desc">指派后提示 CC</div></div>
+            <div class="feat-cell new"><div class="ic">☁</div><div class="name">云同步</div><div class="desc">Google + RLS</div></div>
+            <div class="feat-cell"><div class="ic">📚</div><div class="name">大佬预设</div><div class="desc">5 个一键</div></div>
+          </div>
+        </div>
+        <div class="ghost">省略 · 后续 sections</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="vs">vs</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- APPROACH C — Workflow 完整流程 7 步                                -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="approach">
+  <div class="approach-head">
+    <div class="ah-row">
+      <h2>方案 C · 「完整工作流」7 步</h2>
+      <span class="badge">叙事最强 · 体验导向</span>
+    </div>
+    <p>把当前的"三步当上包租公"<b>扩成 7 步完整工作流</b>，把所有新功能<b>融在流程里</b>讲。
+       不再单列 feature，访客顺着"早上起床 → 查推荐 → 预览 → 对比 → 加仓 → 看管家 → 出场"读完，自然理解整个产品。</p>
+    <ul>
+      <li><b>优点</b>：故事感最强，新人最容易跟上；新功能融在自然路径里不显堆砌</li>
+      <li><b>缺点</b>：开发量最大（要重写"三步"区块）；老用户找特定 feature 不如 grid 直接</li>
+      <li><b>适合</b>：把 intro 当"产品 onboarding"，希望访客读完就懂怎么用</li>
+    </ul>
+  </div>
+
+  <div class="frames">
+
+    <!-- Desktop frame -->
+    <div class="frame">
+      <div class="frame-label"><span class="dot"></span>桌面（≥1024px）</div>
+      <div class="frame-body">
+        <div class="ghost">省略 · <b>Hero</b>（同当前线上版本）</div>
+        <div class="ghost">省略 · <b>概念区</b>（Covered Call / CSP / Wheel）</div>
+
+        <div class="section">
+          <div class="eyebrow">完整工作流</div>
+          <h3>从早上起床到挂出场单，<br>7 步走完。</h3>
+          <p class="lead">每一步都是真实的 app 路径。点开 <a href="/app" style="color:var(--accent)">/app</a> 跟着走一遍就懂了。</p>
+
+          <div class="workflow">
+            <div class="wf-step" data-n="1">
+              <div class="title">早上打开 app，先看 <span class="new-pill">NEW</span>包租公管家</div>
+              <div class="desc">Claude Haiku 4.5 一句话告诉你昨夜变化 + 今天 Top 3 要关注（80% 利润 / 7d 到期 / 新 ITM）+ 未来 14 天日历。</div>
+            </div>
+            <div class="wf-step" data-n="2">
+              <div class="title">问推荐：「我想 XX」</div>
+              <div class="desc">填 ticker + 方向 + 意图（CSP / Covered Call / LEAPS）+ 风险偏好，点「找出最佳」。或一键点 <code>📖 大佬策略预设</code>。</div>
+            </div>
+            <div class="wf-step" data-n="3">
+              <div class="title">看推荐结果（包租公分排序）</div>
+              <div class="desc">五星 tier + 算法 1.3 八因子展开 + <span class="new-pill">NEW</span> <b>POP 校准 pill</b>（理论 vs 历史）+ Exit plan inline。</div>
+            </div>
+            <div class="wf-step" data-n="4">
+              <div class="title"><span class="new-pill">NEW</span>加仓预览：先看影响</div>
+              <div class="desc">点候选的「📊 预览」→ 看加进组合后的<b>集中度变化</b> / Greeks 偏移 / 保证金占用 / 预期租金。</div>
+            </div>
+            <div class="wf-step" data-n="5">
+              <div class="title"><span class="new-pill">NEW</span>对比：勾 2-5 个比着挑</div>
+              <div class="desc">勾选 checkbox → 浮 pill 弹表 12 指标横向。绿色高亮最优、红色最弱，几秒拍板。</div>
+            </div>
+            <div class="wf-step" data-n="6">
+              <div class="title">下单后回到持仓页监控</div>
+              <div class="desc">实时 Greeks / P&L / 距行权温度计。<span class="new-pill">NEW</span>简洁/完整双密度切换。<span class="new-pill">NEW</span>Wheel 闭环提示。</div>
+            </div>
+            <div class="wf-step" data-n="7">
+              <div class="title">到期 / 触发出场 → 自动复盘</div>
+              <div class="desc">按 Exit plan 锁利 / 止损 / Roll。复盘报告 + Trade Journal 笔记。<br>第二天 Top 3 自动算 diff 找质变。循环。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ghost">省略 · <b>算法</b>八因子区（保留，但已经在工作流第 3 步预告了）</div>
+        <div class="ghost">省略 · <b>隐私</b>（数据归你）</div>
+        <div class="ghost">省略 · <b>Final CTA</b> + Footer</div>
+      </div>
+    </div>
+
+    <!-- Mobile frame -->
+    <div class="frame frame-mobile">
+      <div class="frame-label"><span class="dot"></span>手机（375px）</div>
+      <div class="frame-body" style="width:375px;margin:0 auto">
+        <div class="ghost">省略 · Hero</div>
+        <div class="ghost">省略 · 概念区</div>
+        <div class="section">
+          <div class="eyebrow">完整工作流</div>
+          <h3>7 步走完。</h3>
+          <div class="workflow">
+            <div class="wf-step" data-n="1">
+              <div class="title">早上 → <span class="new-pill">NEW</span>管家</div>
+              <div class="desc">LLM 摘要 + Top 3 + 14d 日历</div>
+            </div>
+            <div class="wf-step" data-n="2">
+              <div class="title">问推荐</div>
+              <div class="desc">表单 / 大佬预设</div>
+            </div>
+            <div class="wf-step" data-n="3">
+              <div class="title">看结果 + POP 校准</div>
+              <div class="desc">算法 1.3 + Exit plan inline</div>
+            </div>
+            <div class="wf-step" data-n="4">
+              <div class="title"><span class="new-pill">NEW</span>预览</div>
+              <div class="desc">看加进组合影响</div>
+            </div>
+            <div class="wf-step" data-n="5">
+              <div class="title"><span class="new-pill">NEW</span>对比</div>
+              <div class="desc">12 指标横向</div>
+            </div>
+            <div class="wf-step" data-n="6">
+              <div class="title">监控持仓</div>
+              <div class="desc">Greeks + Wheel hint + 双密度</div>
+            </div>
+            <div class="wf-step" data-n="7">
+              <div class="title">出场 + 复盘</div>
+              <div class="desc">Exit plan + Journal + Diff</div>
+            </div>
+          </div>
+        </div>
+        <div class="ghost">省略 · 后续 sections</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--muted);font-size:12px;margin:40px 0 20px">
+  对比看完了。决定 → 告诉我 A / B / C / 都不行 → 我落地到 <code>intro.html</code> 并删掉这个预览页。
+</div>
+
+</div>
+</body>
+</html>

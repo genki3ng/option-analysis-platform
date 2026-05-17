@@ -1419,13 +1419,18 @@
     font-size: 14px; color: var(--accent);
     margin-bottom: 14px; font-weight: 700;
     display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 4;
+    background: var(--card);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 14px;
   }
   .rec-form h4 .x {
     cursor: pointer; color: var(--sub); font-size: 20px;
   }
   .rec-form .row {
     display: flex; flex-wrap: wrap; gap: 6px;
-    margin-bottom: 20px; align-items: center;
+    margin-bottom: 14px; align-items: center;
   }
   .rec-form .label {
     font-size: 11px; color: var(--sub);
@@ -1437,7 +1442,7 @@
     background: transparent;
     border: 1.5px solid var(--line-2);
     color: var(--text); border-radius: 10px;
-    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    padding: 6px 12px; font-size: 12.5px; cursor: pointer;
     transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
                 background 0.18s cubic-bezier(0.16, 1, 0.3, 1),
                 color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1464,28 +1469,28 @@
   /* 方向（3 项互斥）：等宽 segmented-control 风格 */
   .rec-form .row[data-section="direction"] {
     display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 6px; margin-bottom: 22px; align-items: stretch;
+    gap: 6px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="direction"] .label { grid-column: 1 / -1; }
 
   /* 策略意图（5 项）：2 列网格，LEAPS 占整行 */
   .rec-form .row[data-section="intent"] {
     display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 6px; margin-bottom: 22px; align-items: stretch;
+    gap: 6px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="intent"] .label { grid-column: 1 / -1; }
   .rec-form .row[data-section="intent"] .opt-btn[data-value="long_leaps"] {
     grid-column: 1 / -1;
   }
 
-  /* 时长（7 项）：3 列网格 3+3+1，LEAPS 占整行 */
+  /* 时长（7 项）：4 列网格，LEAPS 占最后 2 列 */
   .rec-form .row[data-section="timeframe"] {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 6px; margin-bottom: 22px; align-items: stretch;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 6px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="timeframe"] .label { grid-column: 1 / -1; }
   .rec-form .row[data-section="timeframe"] .opt-btn[data-value="400"] {
-    grid-column: 1 / -1;
+    grid-column: 3 / -1;
   }
 
   /* 方向 opt-btn 内部：emoji + 文字横排 */
@@ -1503,7 +1508,7 @@
   /* 风险（3 项 + Δ 元数据）：等宽 card，emoji + 主副标题 grid 布局 */
   .rec-form .row[data-section="risk"] {
     display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 8px; margin-bottom: 22px; align-items: stretch;
+    gap: 8px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="risk"] .label { grid-column: 1 / -1; }
   .rec-form .row[data-section="risk"] .opt-btn {
@@ -1516,8 +1521,8 @@
     row-gap: 1px;
     align-items: center;
     text-align: left;
-    padding: 10px 12px;
-    min-height: 58px;
+    padding: 8px 10px;
+    min-height: 48px;
   }
   .rec-form .row[data-section="risk"] .opt-icon {
     grid-area: icon;
@@ -1559,8 +1564,8 @@
     background: var(--card2);
     border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 18px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
   }
   .rec-form .preset-btn {
     background: var(--card);
@@ -1587,8 +1592,10 @@
 
   .rec-form .submit-row {
     display: flex; gap: 8px; justify-content: flex-end;
-    margin-top: 16px; padding-top: 14px;
+    margin-top: 10px; padding: 12px 0 4px;
     border-top: 1px solid var(--line);
+    position: sticky; bottom: 0; z-index: 4;
+    background: var(--card);
   }
   .rec-form button.submit {
     background: var(--accent); color: #0A0A0B;
@@ -2773,11 +2780,12 @@
       border-radius: 10px;
     }
 
-    /* timeframe：强制 3 列 grid（7 项 → 3+3+1，LEAPS 独占最后行） */
-    .rec-form .opt-btn[data-group="timeframe"] {
-      flex: 1 1 calc(33.33% - 8px);
-      max-width: calc(33.33% - 8px);
-      font-size: 12px;
+    /* timeframe：移动端回退 3 列 grid（桌面 4 列） */
+    .rec-form .row[data-section="timeframe"] {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .rec-form .row[data-section="timeframe"] .opt-btn[data-value="400"] {
+      grid-column: 1 / -1;
     }
 
     /* intent：2 列，每行 2 个，最后 LEAPS 独占全宽 */
@@ -3530,12 +3538,12 @@
     <span class="risk-hint" id="risk-hint"></span>
   </div>
 
+  <div class="rec-result" id="rec-result"></div>
+
   <div class="submit-row">
     <button class="cancel" onclick="hideRec()" data-i18n="取消">取消</button>
     <button class="submit" onclick="submitRec()" data-i18n="🔍 找出最佳">🔍 找出最佳</button>
   </div>
-
-  <div class="rec-result" id="rec-result"></div>
 </div>
 
 <script>

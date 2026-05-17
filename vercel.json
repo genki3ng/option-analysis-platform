@@ -7,7 +7,8 @@
     { "src": "intro.html", "use": "@vercel/static" },
     { "src": "marks.html", "use": "@vercel/static" },
     { "src": "buttons.html", "use": "@vercel/static" },
-    { "src": "positions-preview.html", "use": "@vercel/static" }
+    { "src": "positions-preview.html", "use": "@vercel/static" },
+    { "src": "rec-redesign.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
@@ -15,6 +16,7 @@
     { "src": "/marks/?", "dest": "/marks.html" },
     { "src": "/buttons/?", "dest": "/buttons.html" },
     { "src": "/positions-preview/?", "dest": "/positions-preview.html" },
+    { "src": "/rec-redesign/?", "dest": "/rec-redesign.html" },
     { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }

@@ -2688,6 +2688,56 @@
   .mb-cal-day .marker.both {
     background: linear-gradient(90deg, var(--red) 50%, var(--accent) 50%);
   }
+  /* 桌面宽屏 — 双栏 layout，避免 cards / 日历一长条占满整屏 */
+  @media (min-width: 900px) {
+    .morning-brief {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      grid-template-areas:
+        "concierge concierge"
+        "focus     side"
+        "chips     side";
+      gap: 14px 20px;
+      padding: 18px 22px;
+    }
+    .morning-brief .mb-close { z-index: 5; }
+    .morning-brief .mb-concierge {
+      grid-area: concierge;
+      margin-bottom: 0;
+      padding-bottom: 14px;
+    }
+    .mb-focus-list {
+      grid-area: focus;
+      margin-bottom: 0;
+      /* 2 列 grid for ≥1200px, 1 列 for 900-1200 (避免太挤) */
+    }
+    @media (min-width: 1200px) {
+      .mb-focus-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .mb-focus-item { padding: 10px 12px; }
+      .mb-focus-text { font-size: 12px; }
+      .mb-focus-text .mb-detail { font-size: 10.5px; }
+    }
+    .mb-chips {
+      grid-area: chips;
+      padding-top: 0;
+      border-top: none;
+      align-self: start;
+    }
+    .mb-calendar {
+      grid-area: side;
+      padding-top: 0;
+      margin-top: 0;
+      border-top: none;
+      border-left: 1px solid var(--line);
+      padding-left: 20px;
+      align-self: start;
+    }
+    .mb-cal-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .mb-cal-track { gap: 3px; }
+    .mb-cal-day { height: 28px; font-size: 10px; }
+    .mb-cal-legend { margin-top: 2px; }
+    .mb-cal-legend > span { margin-left: 0; margin-right: 10px; }
+  }
   /* 手机紧凑 */
   @media (max-width: 600px) {
     .morning-brief { padding: 14px 16px; }

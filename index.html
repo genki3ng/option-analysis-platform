@@ -3720,11 +3720,12 @@
 
   <div class="am-field">
     <span class="am-label" data-i18n="账户类型">账户类型</span>
-    <div class="am-seg">
+    <div class="am-seg am-seg-3">
       <button class="am-seg-btn" data-group="acct_type" data-value="cash" id="acct-type-cash" data-i18n="💵 现金 / IRA">💵 现金 / IRA</button>
-      <button class="am-seg-btn" data-group="acct_type" data-value="margin" id="acct-type-margin" data-i18n="📈 保证金账户">📈 保证金账户</button>
+      <button class="am-seg-btn" data-group="acct_type" data-value="margin_l2" id="acct-type-margin-l2" data-i18n="📈 Margin L2">📈 Margin L2</button>
+      <button class="am-seg-btn" data-group="acct_type" data-value="margin_l3" id="acct-type-margin-l3" data-i18n="📈 Margin L3+">📈 Margin L3+</button>
     </div>
-    <div class="am-hint" data-i18n="影响每张合约的实际资金占用（BPR）计算">影响每张合约的实际资金占用（BPR）计算</div>
+    <div class="am-hint" data-i18n="acct_type_hint">L2 sell put 是 CSP（全额锁 strike × 100）· L3+ 可裸卖（Reg-T，BPR ≈ 20% underlying）</div>
   </div>
 
   <div class="am-field">
@@ -4342,6 +4343,11 @@ const I18N = {
     '账户够': '账户够',
     '账户': '账户',
     '建议最多': '建议最多',
+    // ── 账户类型 ────────────────────────────────────
+    '💵 现金 / IRA': '💵 现金 / IRA',
+    '📈 Margin L2': '📈 Margin L2',
+    '📈 Margin L3+': '📈 Margin L3+',
+    'acct_type_hint': 'L2 sell put 是 CSP（全额锁 strike × 100）· L3+ 可裸卖（Reg-T，BPR ≈ 20% underlying）',
   },
 
   zh_tw: {
@@ -4921,6 +4927,10 @@ const I18N = {
     '账户够': '帳戶夠',
     '账户': '帳戶',
     '建议最多': '建議最多',
+    '💵 现金 / IRA': '💵 現金 / IRA',
+    '📈 Margin L2': '📈 Margin L2',
+    '📈 Margin L3+': '📈 Margin L3+',
+    'acct_type_hint': 'L2 sell put 是 CSP（全額鎖 strike × 100）· L3+ 可裸賣（Reg-T，BPR ≈ 20% underlying）',
   },
 
   en: {
@@ -5592,6 +5602,10 @@ const I18N = {
     '账户够': 'account fits',
     '账户': 'account',
     '建议最多': 'suggested max',
+    '💵 现金 / IRA': '💵 Cash / IRA',
+    '📈 Margin L2': '📈 Margin L2',
+    '📈 Margin L3+': '📈 Margin L3+',
+    'acct_type_hint': 'L2 sell put = CSP (full collateral, strike × 100) · L3+ allows naked (Reg-T, BPR ≈ 20% underlying)',
   },
 };
 
@@ -10002,11 +10016,12 @@ function addStockRow(ticker = '', shares = '') {
 function showAccountSettings() {
   const acct = _getAccountMeta();
   document.getElementById('account-margin').value = acct.available_margin || '';
-  // 账户类型按钮状态
-  const atype = acct.account_type || 'cash';
-  ['cash', 'margin'].forEach(v => {
+  // 账户类型按钮状态 — 兼容旧值（'margin' → 'margin_l3'，因为旧逻辑就是 Reg-T 裸卖）
+  let atype = acct.account_type || 'cash';
+  if (atype === 'margin') atype = 'margin_l3';
+  ['cash', 'margin-l2', 'margin-l3'].forEach(v => {
     const btn = document.getElementById(`acct-type-${v}`);
-    if (btn) btn.classList.toggle('active', v === atype);
+    if (btn) btn.classList.toggle('active', v.replace('-', '_') === atype);
   });
   // 账户类型按钮 onclick（modal 内部）
   document.querySelectorAll('.account-modal [data-group="acct_type"]').forEach(btn => {

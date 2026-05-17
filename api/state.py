@@ -2252,7 +2252,10 @@ def recommend(req: dict) -> dict:
     # 账户 context（可选）
     account = req.get("account") or {}
     avail_margin = float(account.get("available_margin") or 0)
-    account_type = account.get("account_type", "cash")  # "cash" | "margin"
+    # account_type: cash | margin_l2 | margin_l3 （legacy: margin → margin_l3）
+    account_type = account.get("account_type", "cash")
+    if account_type == "margin":
+        account_type = "margin_l3"
     stock_map = {
         p["ticker"].upper(): int(p.get("shares") or 0)
         for p in (account.get("stock_positions") or [])
@@ -2512,8 +2515,8 @@ def recommend(req: dict) -> dict:
         shares_held = stock_map.get(ticker, 0)
         is_covered_call = is_short and is_call and (shares_held >= 100)
 
-        # BPR：保证金账户 + 非 covered 时，算 Reg-T BPR
-        if account_type == "margin" and is_short and not is_covered_call:
+        # BPR：仅 margin L3+ 裸卖才用 Reg-T BPR；L2/cash 用全额抵押
+        if account_type == "margin_l3" and is_short and not is_covered_call:
             bpr = _margin_bpr(c["strike"], underlying, is_call, c["mid"])
             c["bpr_per_contract"] = round(bpr, 0)
             if bpr > 0:
@@ -2521,8 +2524,8 @@ def recommend(req: dict) -> dict:
         elif is_covered_call:
             c["bpr_per_contract"] = 0  # covered — no margin used
 
-        # 资金占比 & 张数建议
-        effective_capital = c.get("bpr_per_contract", collateral) if account_type == "margin" else collateral
+        # 资金占比 & 张数建议（L3+ 用 BPR，cash/L2 用全额 collateral）
+        effective_capital = c.get("bpr_per_contract", collateral) if account_type == "margin_l3" else collateral
         if avail_margin > 0 and effective_capital > 0:
             c["margin_pct"] = round(effective_capital / avail_margin * 100, 1)
             c["suggested_contracts"] = max(1, int(avail_margin * 0.20 / effective_capital))

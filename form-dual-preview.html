@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>表单双轨模式 · 预览</title>
+<style>
+  :root {
+    --bg:        #0A0A0B;
+    --card:      #0F0F11;
+    --card2:     #16161A;
+    --card3:     #1C1C20;
+    --text:      #EDEDEC;
+    --sub:       #888889;
+    --line:      #232328;
+    --line-2:    #2E2E36;
+    --accent:    #E6B86A;
+    --accent-2:  #B89255;
+    --accent-light: #F0C778;
+    --accent-tint: rgba(230,184,106,0.10);
+    --accent-tint-strong: rgba(230,184,106,0.18);
+    --green:     #34D399;
+    --green-tint: rgba(52,211,153,0.12);
+    --red:       #F87171;
+    --red-tint:  rgba(248,113,113,0.12);
+    --blue:      #60A5FA;
+    --blue-tint: rgba(96,165,250,0.12);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    font-feature-settings: "cv11", "tnum";
+    line-height: 1.5;
+  }
+  .page-header {
+    padding: 40px 32px 28px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(230,184,106,0.04), transparent);
+  }
+  .page-header h1 {
+    margin: 0 0 8px; font-size: 26px; font-weight: 700;
+  }
+  .page-header .goal {
+    color: var(--accent); font-size: 13px; font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .page-header p {
+    margin: 0; color: var(--sub); font-size: 14px; max-width: 900px;
+  }
+  .page-header p strong { color: var(--text); }
+  .section {
+    padding: 40px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section h2 {
+    margin: 0 0 6px; font-size: 20px; font-weight: 700;
+  }
+  .section .sub {
+    color: var(--sub); font-size: 13px; margin-bottom: 24px;
+    max-width: 760px;
+  }
+  .section .sub strong { color: var(--accent); }
+  .preview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 375px;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .preview-grid { grid-template-columns: 1fr; }
+  }
+  .frame {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .frame-label {
+    position: absolute; top: 8px; right: 12px;
+    font-size: 10px; color: var(--sub);
+    font-weight: 600; letter-spacing: 0.5px;
+    background: rgba(0,0,0,0.5);
+    padding: 3px 8px; border-radius: 4px;
+    z-index: 10;
+  }
+  .frame-inner { padding: 24px; }
+  .frame-inner.mobile { padding: 16px 12px; }
+
+  /* ─────────── 共用 form 容器 ─────────── */
+  .form-box {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px 18px 18px;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .form-box.mobile { padding: 16px 14px 14px; }
+  .form-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 12px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .form-head h4 {
+    margin: 0; font-size: 15px; font-weight: 700;
+  }
+  .form-head .x {
+    color: var(--sub); font-size: 18px; cursor: pointer;
+    width: 28px; height: 28px; line-height: 28px; text-align: center;
+    border-radius: 6px;
+  }
+  .form-head .x:hover { background: var(--card2); }
+  .form-label {
+    font-size: 11px; font-weight: 600; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .form-row { margin-bottom: 14px; }
+  .opt-row {
+    display: grid; gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+  .opt-btn {
+    padding: 9px 8px; border-radius: 8px;
+    border: 1.5px solid var(--line);
+    background: var(--card2); color: var(--text);
+    font-size: 12px; cursor: pointer;
+    transition: all 200ms cubic-bezier(0.16,1,0.3,1);
+    text-align: center;
+  }
+  .opt-btn:hover { border-color: var(--accent-2); background: var(--card3); }
+  .opt-btn.selected {
+    background: var(--accent-tint-strong);
+    border-color: var(--accent);
+    color: var(--accent-light); font-weight: 700;
+  }
+  .submit-row {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--line);
+    display: flex; justify-content: flex-end;
+  }
+  .submit-btn {
+    padding: 10px 22px; border-radius: 10px;
+    background: var(--accent); color: #1a1408; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 200ms;
+  }
+  .submit-btn:hover { background: var(--accent-light); transform: scale(1.03); }
+
+  /* ─────────── 现状（baseline） ─────────── */
+  .baseline-form .opt-row.timeframe { grid-template-columns: repeat(4, 1fr); }
+
+  /* ─────────── 方案 A · 顶部 Tab 切换 ─────────── */
+  .a-tabs {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .a-tab {
+    padding: 10px 10px; text-align: center;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--sub); cursor: pointer;
+    border-radius: 8px;
+    transition: all 250ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .a-tab.active {
+    background: var(--accent);
+    color: #1a1408;
+    box-shadow: 0 2px 8px rgba(230,184,106,0.25);
+  }
+  .a-tab .ic { margin-right: 4px; }
+  .a-goal-section { margin-bottom: 14px; }
+  .a-goal-card {
+    padding: 14px; border: 1.5px solid var(--line);
+    border-radius: 10px; background: var(--card2);
+    cursor: pointer; display: flex; gap: 12px; align-items: center;
+    margin-bottom: 8px;
+    transition: all 200ms;
+  }
+  .a-goal-card:hover { border-color: var(--accent-2); }
+  .a-goal-card.selected {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+  }
+  .a-goal-card .gc-ic { font-size: 22px; }
+  .a-goal-card .gc-t { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .a-goal-card .gc-s { font-size: 11px; color: var(--sub); line-height: 1.4; }
+  .a-num-input {
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 0 6px;
+  }
+  .a-num-input .lbl { font-size: 12px; color: var(--sub); }
+  .a-num-input .wrap {
+    flex: 1; display: flex; align-items: center;
+    border: 1.5px solid var(--accent); border-radius: 8px;
+    background: var(--card2); padding: 8px 12px;
+  }
+  .a-num-input .wrap .pre { color: var(--sub); font-size: 13px; margin-right: 6px; }
+  .a-num-input .wrap input {
+    border: none; background: none; outline: none;
+    color: var(--text); font-size: 15px; font-weight: 700; flex: 1;
+    font-feature-settings: "tnum";
+  }
+  .a-num-input .wrap .post { color: var(--sub); font-size: 11px; }
+  .a-result-preview {
+    margin-top: 10px;
+    padding: 10px 12px; border-radius: 8px;
+    background: var(--accent-tint);
+    border: 1px solid var(--accent-2);
+    font-size: 12px; line-height: 1.5;
+  }
+  .a-result-preview .arrow { color: var(--accent); }
+  .a-result-preview strong { color: var(--text); }
+
+  /* ─────────── 方案 B · 入口卡片 Picker ─────────── */
+  .b-picker {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-bottom: 18px;
+  }
+  .b-picker.mobile { grid-template-columns: 1fr; }
+  .b-card {
+    border: 1.5px solid var(--line);
+    border-radius: 12px; padding: 18px 16px;
+    background: var(--card2);
+    cursor: pointer; text-align: center;
+    transition: all 250ms cubic-bezier(0.16,1,0.3,1);
+    min-height: 140px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .b-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+    transform: translateY(-2px);
+  }
+  .b-card .bc-ic { font-size: 32px; margin-bottom: 8px; }
+  .b-card .bc-t {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .b-card .bc-s {
+    font-size: 11px; color: var(--sub); line-height: 1.4;
+  }
+  .b-back-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+    font-size: 12px; color: var(--sub);
+    cursor: pointer;
+  }
+  .b-back-row:hover { color: var(--accent); }
+  .b-back-row .ic { font-size: 16px; }
+  .b-current-mode {
+    display: inline-flex; gap: 6px; align-items: center;
+    background: var(--accent-tint); border: 1px solid var(--accent-2);
+    color: var(--accent-light); padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    margin-left: auto;
+  }
+
+  /* ─────────── 方案 C · 一句话提问 ─────────── */
+  .c-search-box {
+    background: var(--card2);
+    border: 1.5px solid var(--accent);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+    box-shadow: 0 0 0 4px rgba(230,184,106,0.08);
+  }
+  .c-search-box .ic { font-size: 18px; color: var(--accent); }
+  .c-search-box .body { flex: 1; }
+  .c-search-box .prompt {
+    font-size: 11px; color: var(--sub); margin-bottom: 4px;
+  }
+  .c-search-box .input {
+    width: 100%; padding: 8px 0; border: none; background: none; outline: none;
+    color: var(--text); font-size: 14px; font-family: inherit;
+    border-bottom: 1px dashed var(--line);
+  }
+  .c-search-box .input::placeholder { color: var(--sub); }
+  .c-chips {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .c-chip {
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--card2); border: 1px solid var(--line);
+    font-size: 12px; cursor: pointer;
+    transition: all 200ms;
+  }
+  .c-chip:hover { background: var(--card3); border-color: var(--accent-2); color: var(--accent-light); }
+  .c-chip .ic { margin-right: 4px; }
+  .c-parsed {
+    padding: 12px 14px;
+    background: var(--card2);
+    border: 1px dashed var(--accent-2);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    font-size: 12px; line-height: 1.6;
+  }
+  .c-parsed .p-title { color: var(--accent); font-weight: 700; margin-bottom: 6px; font-size: 11px; }
+  .c-parsed strong { color: var(--text); }
+  .c-fallback {
+    text-align: center;
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .c-fallback a {
+    color: var(--accent); font-size: 11.5px;
+    text-decoration: none; border-bottom: 1px dashed var(--accent-2);
+  }
+  .c-strategy-form {
+    display: none;
+  }
+  .c-strategy-form.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="goal">子批 C · UX 大改：表单双轨模式</div>
+  <h1>推荐表单：目标驱动 vs 策略驱动</h1>
+  <p>
+    现在的表单是<strong>策略驱动</strong>（你选 direction × intent × timeframe × risk → 看候选）。
+    需求是加一条<strong>目标驱动</strong>路径（你说想拿多少租金 / 想接货 / 最大化安全度 → 系统倒推参数）。
+    下面 3 个 UX 方向，每个都展示桌面 + 手机两个视口。挑一个我落地。
+  </p>
+</div>
+
+<!-- ─────────── 现状 baseline ─────────── -->
+<div class="section">
+  <h2>📋 现状 · baseline</h2>
+  <div class="sub">当前生产版只有<strong>策略驱动</strong>这一轨。direction × intent × timeframe × risk 四段 + 5 个预设按钮。</div>
+  <div class="preview-grid">
+    <div class="frame">
+      <span class="frame-label">DESKTOP · BASELINE</span>
+      <div class="frame-inner">
+        <div class="form-box baseline-form">
+          <div class="form-head">
+            <h4>🏠 找出最佳房客</h4>
+            <span class="x">×</span>
+          </div>
+          <div class="form-row">
+            <div class="form-label">方向</div>
+            <div class="opt-row">
+              <div class="opt-btn">📈 看涨</div>
+              <div class="opt-btn selected">📊 中性</div>
+              <div class="opt-btn">📉 看跌</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">意图</div>
+            <div class="opt-row">
+              <div class="opt-btn selected">收权利金</div>
+              <div class="opt-btn">CSP 接货</div>
+              <div class="opt-btn">Covered Call</div>
+              <div class="opt-btn">LEAPS</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">时长 DTE</div>
+            <div class="opt-row timeframe">
+              <div class="opt-btn">7d</div>
+              <div class="opt-btn selected">14d</div>
+              <div class="opt-btn">21d</div>
+              <div class="opt-btn">30d</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">风险</div>
+            <div class="opt-row">
+              <div class="opt-btn">保守</div>
+              <div class="opt-btn selected">平衡</div>
+              <div class="opt-btn">激进</div>
+            </div>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">MOBILE · 375PX</span>
+      <div class="frame-inner mobile">
+        <div class="form-box mobile baseline-form">
+          <div class="form-head"><h4>🏠 找出最佳房客</h4><span class="x">×</span></div>
+          <div class="form-row">
+            <div class="form-label">方向</div>
+            <div class="opt-row">
+              <div class="opt-btn">📈 涨</div>
+              <div class="opt-btn selected">📊 中</div>
+              <div class="opt-btn">📉 跌</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">意图</div>
+            <div class="opt-row">
+              <div class="opt-btn selected">收租</div>
+              <div class="opt-btn">CSP</div>
+              <div class="opt-btn">CC</div>
+              <div class="opt-btn">LEAPS</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">DTE</div>
+            <div class="opt-row timeframe">
+              <div class="opt-btn">7d</div>
+              <div class="opt-btn selected">14d</div>
+              <div class="opt-btn">21d</div>
+              <div class="opt-btn">30d</div>
+            </div>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── 方案 A · 顶部切换 Tab ─────────── -->
+<div class="section">
+  <h2>A · 顶部 Tab 切换 <span style="color:var(--sub);font-weight:400;font-size:13px">— 两个 tab 共存，最常规直观</span></h2>
+  <div class="sub">
+    打开 modal 顶部一个 <strong>Segment control</strong> 切换「🎯 目标驱动」/「⚙️ 策略驱动」。
+    切换瞬间 form 全部替换。简单直观，但<strong>切换瞬间内容变化大</strong>，可能让用户有"刚才填的东西哪去了"的感觉。
+  </div>
+  <div class="preview-grid">
+    <div class="frame">
+      <span class="frame-label">DESKTOP · A</span>
+      <div class="frame-inner">
+        <div class="form-box">
+          <div class="form-head"><h4>🏠 找出最佳房客</h4><span class="x">×</span></div>
+          <div class="a-tabs">
+            <div class="a-tab active"><span class="ic">🎯</span>目标驱动</div>
+            <div class="a-tab"><span class="ic">⚙️</span>策略驱动</div>
+          </div>
+          <div class="a-goal-section">
+            <div class="form-label">我想要…</div>
+            <div class="a-goal-card selected">
+              <div class="gc-ic">💵</div>
+              <div>
+                <div class="gc-t">拿稳定租金</div>
+                <div class="gc-s">每月固定 $$$，自动选 14-21 DTE / Δ 0.20</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">🛡</div>
+              <div>
+                <div class="gc-t">最大化安全度</div>
+                <div class="gc-s">≥ 85% 安全概率，DTE 长 / Δ 浅</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">📊</div>
+              <div>
+                <div class="gc-t">最高年化</div>
+                <div class="gc-s">激进风险 / 短期 / Δ 接近 0.30</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">🎁</div>
+              <div>
+                <div class="gc-t">想在某价位接货 / 卖股</div>
+                <div class="gc-s">指定 ticker + 目标价，自动 CSP / CC</div>
+              </div>
+            </div>
+          </div>
+          <div class="a-num-input">
+            <div class="lbl">每月目标:</div>
+            <div class="wrap">
+              <span class="pre">$</span>
+              <input type="number" value="300">
+              <span class="post">/ 月</span>
+            </div>
+          </div>
+          <div class="a-result-preview">
+            <span class="arrow">→</span> 倒推参数：<strong>premium / neutral / 14 DTE / balanced</strong>
+            · 预估每月 ~$310（取决于标的 IV）
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">MOBILE · A</span>
+      <div class="frame-inner mobile">
+        <div class="form-box mobile">
+          <div class="form-head"><h4>🏠 找出最佳房客</h4><span class="x">×</span></div>
+          <div class="a-tabs">
+            <div class="a-tab active"><span class="ic">🎯</span>目标</div>
+            <div class="a-tab"><span class="ic">⚙️</span>策略</div>
+          </div>
+          <div class="a-goal-section">
+            <div class="form-label">我想要…</div>
+            <div class="a-goal-card selected">
+              <div class="gc-ic">💵</div>
+              <div>
+                <div class="gc-t">拿稳定租金</div>
+                <div class="gc-s">每月 $$$ · 14-21d / Δ 0.20</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">🛡</div>
+              <div>
+                <div class="gc-t">最大化安全度</div>
+                <div class="gc-s">≥ 85% · DTE 长 / Δ 浅</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">📊</div>
+              <div>
+                <div class="gc-t">最高年化</div>
+                <div class="gc-s">激进 / 短期 / Δ 0.30</div>
+              </div>
+            </div>
+          </div>
+          <div class="a-num-input">
+            <div class="lbl">目标 $/月</div>
+            <div class="wrap">
+              <span class="pre">$</span>
+              <input type="number" value="300">
+            </div>
+          </div>
+          <div class="a-result-preview">
+            <span class="arrow">→</span> <strong>premium·neutral·14d·balanced</strong> · ~$310/月
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── 方案 B · 入口卡片 Picker ─────────── -->
+<div class="section">
+  <h2>B · 入口卡片 Picker <span style="color:var(--sub);font-weight:400;font-size:13px">— 进 modal 先选 mode，最少决策路径</span></h2>
+  <div class="sub">
+    点击「找出最佳」打开 modal，<strong>第一屏看到两张大卡片</strong>选择路径，然后展开对应表单。
+    顶部「← 返回选择」可换 mode。<strong>每次首次进来都要做一个额外选择</strong>，但对新手非常友好。
+  </div>
+  <div class="preview-grid">
+    <div class="frame">
+      <span class="frame-label">DESKTOP · B · 选择屏</span>
+      <div class="frame-inner">
+        <div class="form-box">
+          <div class="form-head"><h4>🏠 找出最佳房客</h4><span class="x">×</span></div>
+          <div class="form-label" style="text-align:center;margin-bottom:14px">你今天来干嘛 ？</div>
+          <div class="b-picker">
+            <div class="b-card">
+              <div class="bc-ic">🎯</div>
+              <div class="bc-t">告诉我目标</div>
+              <div class="bc-s">想拿多少 / 接货哪只 / 安全度多高<br>系统倒推参数</div>
+            </div>
+            <div class="b-card">
+              <div class="bc-ic">⚙️</div>
+              <div class="bc-t">我懂策略</div>
+              <div class="bc-s">直接选 intent × DTE × risk<br>看排序候选</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">DESKTOP · B · 已选目标</span>
+      <div class="frame-inner">
+        <div class="form-box">
+          <div class="form-head">
+            <h4>🏠 找出最佳房客</h4>
+            <span class="b-current-mode">🎯 目标驱动</span>
+            <span class="x" style="margin-left:8px">×</span>
+          </div>
+          <div class="b-back-row"><span class="ic">←</span> 返回选择 mode</div>
+          <div class="a-goal-section">
+            <div class="form-label">我想要…</div>
+            <div class="a-goal-card selected">
+              <div class="gc-ic">💵</div>
+              <div>
+                <div class="gc-t">拿稳定租金</div>
+                <div class="gc-s">每月固定 $$$</div>
+              </div>
+            </div>
+            <div class="a-goal-card">
+              <div class="gc-ic">🎁</div>
+              <div>
+                <div class="gc-t">在某价位接货</div>
+                <div class="gc-s">指定 ticker + strike</div>
+              </div>
+            </div>
+          </div>
+          <div class="a-num-input">
+            <div class="lbl">$/月</div>
+            <div class="wrap">
+              <span class="pre">$</span>
+              <input type="number" value="300">
+            </div>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="preview-grid" style="margin-top:24px">
+    <div class="frame">
+      <span class="frame-label">MOBILE · B · 选择屏</span>
+      <div class="frame-inner mobile">
+        <div class="form-box mobile">
+          <div class="form-head"><h4>找出最佳房客</h4><span class="x">×</span></div>
+          <div class="form-label" style="text-align:center;margin-bottom:12px">你今天来干嘛 ？</div>
+          <div class="b-picker mobile">
+            <div class="b-card">
+              <div class="bc-ic">🎯</div>
+              <div class="bc-t">告诉我目标</div>
+              <div class="bc-s">系统倒推参数</div>
+            </div>
+            <div class="b-card">
+              <div class="bc-ic">⚙️</div>
+              <div class="bc-t">我懂策略</div>
+              <div class="bc-s">直接选参数</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">MOBILE · B · 目标驱动</span>
+      <div class="frame-inner mobile">
+        <div class="form-box mobile">
+          <div class="form-head">
+            <h4>🎯 目标驱动</h4>
+            <span class="x">×</span>
+          </div>
+          <div class="b-back-row"><span class="ic">←</span> 换 mode</div>
+          <div class="a-goal-card selected">
+            <div class="gc-ic">💵</div>
+            <div>
+              <div class="gc-t">拿稳定租金</div>
+              <div class="gc-s">每月固定 $$$</div>
+            </div>
+          </div>
+          <div class="a-num-input">
+            <div class="lbl">$/月</div>
+            <div class="wrap">
+              <span class="pre">$</span>
+              <input type="number" value="300">
+            </div>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── 方案 C · 一句话提问 ─────────── -->
+<div class="section">
+  <h2>C · 一句话提问 + 快捷 chips <span style="color:var(--sub);font-weight:400;font-size:13px">— 自然语言入口，最贴近聊天</span></h2>
+  <div class="sub">
+    打开 modal 顶部一个 <strong>自然语言输入框</strong>「我想…」+ 下面 chips 是最常见目标的一键填充。
+    输入后用规则 parser 解析 ticker / $ / 安全度 等 → 倒推参数 → 显示 parsed 结果让用户确认。
+    实在解析不了 → fallback 链接「→ 切换到策略驱动表单」。
+    <strong>对老手快</strong>（敲一句就跳）；<strong>对新手友好</strong>（chips 是 fallback）；
+    parser 失败的容错很重要。
+  </div>
+  <div class="preview-grid">
+    <div class="frame">
+      <span class="frame-label">DESKTOP · C</span>
+      <div class="frame-inner">
+        <div class="form-box">
+          <div class="form-head"><h4>🏠 找出最佳房客</h4><span class="x">×</span></div>
+          <div class="c-search-box">
+            <div class="ic">💬</div>
+            <div class="body">
+              <div class="prompt">我想…</div>
+              <input class="input" type="text" value="每月拿 300 美金 NVDA 租金">
+            </div>
+          </div>
+          <div class="form-label">或选一个常见目标</div>
+          <div class="c-chips">
+            <div class="c-chip"><span class="ic">💵</span>稳定租金 $300/月</div>
+            <div class="c-chip"><span class="ic">🛡</span>≥85% 安全度</div>
+            <div class="c-chip"><span class="ic">📊</span>最高年化</div>
+            <div class="c-chip"><span class="ic">🎁</span>NVDA 接货 $400</div>
+            <div class="c-chip"><span class="ic">📦</span>SPY Wheel</div>
+            <div class="c-chip"><span class="ic">📖</span>NVDA LEAPS</div>
+          </div>
+          <div class="c-parsed">
+            <div class="p-title">📐 解析为</div>
+            标的 <strong>NVDA</strong> · 意图 <strong>premium</strong> · DTE <strong>14d</strong> ·
+            风险 <strong>balanced</strong> · 目标 <strong>~$300/月</strong>（每月卖 1 张 NVDA 14d 0.20Δ 收 ~$310）
+          </div>
+          <div class="c-fallback">
+            <a>找不到合适？→ 切换到策略驱动表单</a>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">MOBILE · C</span>
+      <div class="frame-inner mobile">
+        <div class="form-box mobile">
+          <div class="form-head"><h4>找出最佳房客</h4><span class="x">×</span></div>
+          <div class="c-search-box">
+            <div class="ic">💬</div>
+            <div class="body">
+              <div class="prompt">我想…</div>
+              <input class="input" type="text" value="每月 $300 NVDA 租金">
+            </div>
+          </div>
+          <div class="form-label">常见目标</div>
+          <div class="c-chips">
+            <div class="c-chip">💵 稳定 $300/月</div>
+            <div class="c-chip">🛡 ≥85% 安全度</div>
+            <div class="c-chip">📊 最高年化</div>
+            <div class="c-chip">🎁 接货</div>
+          </div>
+          <div class="c-parsed">
+            <div class="p-title">📐 解析为</div>
+            <strong>NVDA</strong> · premium · <strong>14d</strong> · balanced · ~$310/月
+          </div>
+          <div class="c-fallback">
+            <a>切换到策略驱动 →</a>
+          </div>
+          <div class="submit-row">
+            <button class="submit-btn">找出最佳 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── footer ─────────── -->
+<div class="section" style="border-bottom:none">
+  <h2>方向对比</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px">
+    <div style="padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--card)">
+      <strong style="color:var(--accent)">A · Tab 切换</strong>
+      <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6">
+        ✓ 两轨可见可切<br>
+        ✓ 开发量适中<br>
+        × 切换瞬间内容变化大<br>
+        × 老手嫌多余
+      </div>
+    </div>
+    <div style="padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--card)">
+      <strong style="color:var(--accent)">B · 入口 Picker</strong>
+      <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6">
+        ✓ 新手最友好<br>
+        ✓ Mode 分得最清<br>
+        × 每次都多一次点击<br>
+        × 难加默认偏好（"我老用目标驱动"）
+      </div>
+    </div>
+    <div style="padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--card)">
+      <strong style="color:var(--accent)">C · 一句话</strong>
+      <div style="font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6">
+        ✓ 老手最快<br>
+        ✓ 像聊天工具<br>
+        × Parser 复杂度高<br>
+        × 解析失败时体验差
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 让卡片可点切换 selected 状态（纯演示）
+  document.querySelectorAll('.a-tab').forEach(t => {
+    t.addEventListener('click', e => {
+      const sib = t.parentElement.querySelectorAll('.a-tab');
+      sib.forEach(s => s.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.a-goal-card, .b-card, .c-chip, .opt-btn').forEach(el => {
+    el.addEventListener('click', () => {
+      // 不真做单选，只演示
+      el.classList.toggle('selected');
+    });
+  });
+</script>
+
+</body>
+</html>

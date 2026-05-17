@@ -3925,7 +3925,7 @@ function t(s) {
 
 function setLang(lang) {
   _lang = lang;
-  localStorage.setItem('lang', lang);
+  _savePref('lang', lang);
   document.documentElement.lang =
     lang === 'zh_tw' ? 'zh-TW' : lang === 'en' ? 'en' : 'zh-CN';
   applyTranslations();
@@ -3984,7 +3984,7 @@ function applyTheme(theme) {
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme || 'dark';
   const next = cur === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('theme', next);
+  _savePref('theme', next);
   applyTheme(next);
   // 重画图（chart 颜色需要更新）
   if (chart && window._currentData) {
@@ -6158,8 +6158,8 @@ async function submitRec() {
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
   };
-  localStorage.setItem('rec_last_ticker', ticker);
-  localStorage.setItem('rec_last_choice', JSON.stringify(_recSelection));
+  _savePref('rec_last_ticker', ticker);
+  _savePref('rec_last_choice', JSON.stringify(_recSelection));
   renderRerunBtn();
 
   const out = document.getElementById('rec-result');
@@ -6198,7 +6198,7 @@ async function submitRec() {
 // Cache last rec data so tier filter can re-render without re-fetching
 let _lastRecData = null;
 function setTierFilter(val) {
-  localStorage.setItem('rec_tier_filter', val);
+  _savePref('rec_tier_filter', val);
   if (_lastRecData) renderRecResult(_lastRecData);
 }
 
@@ -7300,6 +7300,8 @@ function _initSupabase() {
 async function _onSignedIn(isFresh) {
   _setSyncStatus('syncing', t('☁ 加载中...'));
   await _loadCloudData();
+  _applyCloudPrefs();  // 在 refresh 前把云端 lang/theme apply 到 UI
+  _migrateLocalPrefsToCloud();  // 云端没 prefs 时，把本地已有的推上去
   await _checkMigration();
   _subscribeCloud();
   _renderUserBadge();
@@ -7356,6 +7358,68 @@ function _sigOf(c) {
   return JSON.stringify(c?.positions || []) + '||' + JSON.stringify(c?.state || {});
 }
 
+// ── 偏好设置云端同步（state._meta.prefs 命名空间） ─────────────────────────
+// 同步范围：lang / theme / rec_tier_filter / rec_last_ticker / rec_last_choice
+const _PREF_KEYS = ['lang', 'theme', 'rec_tier_filter', 'rec_last_ticker', 'rec_last_choice'];
+
+function _savePref(key, value) {
+  localStorage.setItem(key, value);
+  if (_currentUser && _cloudReady && _cloudCache) {
+    _cloudCache.state = _cloudCache.state || {};
+    _cloudCache.state._meta = _cloudCache.state._meta || {};
+    _cloudCache.state._meta.prefs = _cloudCache.state._meta.prefs || {};
+    _cloudCache.state._meta.prefs[key] = value;
+    _saveCloud();
+  }
+}
+
+// 把云端 prefs 应用到本地：登录后 / realtime 推送后调用。
+// 策略：云端有 → 用云端；本地有云端没有 → 不动；都没 → 不动。
+function _applyCloudPrefs() {
+  if (!_currentUser || !_cloudReady || !_cloudCache) return;
+  const prefs = _cloudCache?.state?._meta?.prefs;
+  if (!prefs) return;
+  // lang — 走 setLang 触发完整重渲染
+  if (prefs.lang && prefs.lang !== _lang) {
+    _lang = prefs.lang;
+    localStorage.setItem('lang', prefs.lang);
+    document.documentElement.lang =
+      prefs.lang === 'zh_tw' ? 'zh-TW' : prefs.lang === 'en' ? 'en' : 'zh-CN';
+    applyTranslations();
+    document.querySelectorAll('.lang-selector button').forEach(b =>
+      b.classList.toggle('active', b.dataset.lang === prefs.lang));
+  }
+  // theme — 直接 apply（不需要重画 chart，applyTheme 是纯 DOM）
+  if (prefs.theme && prefs.theme !== (document.documentElement.dataset.theme || 'dark')) {
+    localStorage.setItem('theme', prefs.theme);
+    applyTheme(prefs.theme);
+  }
+  // tier_filter / rec_last_ticker / rec_last_choice — 只写 localStorage，
+  // 下次打开推荐 modal / 渲染 tier pill 时自然生效
+  ['rec_tier_filter', 'rec_last_ticker', 'rec_last_choice'].forEach(k => {
+    if (prefs[k]) localStorage.setItem(k, prefs[k]);
+  });
+}
+
+// 首次登录：若云端无 prefs，把本地已有的偏好（lang/theme/...）推上去
+function _migrateLocalPrefsToCloud() {
+  if (!_currentUser || !_cloudReady || !_cloudCache) return;
+  const cloudPrefs = _cloudCache?.state?._meta?.prefs;
+  if (cloudPrefs && Object.keys(cloudPrefs).length > 0) return;  // 云端已有，跳过
+  let pushed = 0;
+  _PREF_KEYS.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v !== null) {
+      _cloudCache.state = _cloudCache.state || {};
+      _cloudCache.state._meta = _cloudCache.state._meta || {};
+      _cloudCache.state._meta.prefs = _cloudCache.state._meta.prefs || {};
+      _cloudCache.state._meta.prefs[k] = v;
+      pushed++;
+    }
+  });
+  if (pushed > 0) _saveCloud();
+}
+
 async function _saveCloud() {
   if (!_sb || !_currentUser || !_cloudReady || !_cloudCache) return;
   clearTimeout(_saveDebounce);
@@ -7398,6 +7462,7 @@ function _subscribeCloud() {
         state: row.state || {},
       };
       _lastSavedSignature = inboundSig;
+      _applyCloudPrefs();  // 另一台设备改了 lang/theme，本机跟着切
       _setSyncStatus('synced', t('☁ 已同步 (远程更新)'));
       // 远端可能改了 selection；让下次 refresh 用云端最新的重新设
       selectedIds = null;

@@ -3,11 +3,63 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**子批 B 上线 main · POP 校准 + Exit plan**）
+最后更新：2026-05-17（**早安简报 v2 — 包租公管家 + LLM 加持 落地**）
 
-### 🆕 最新 session：子批 B 落地（POP 校准 + Exit plan 模板）
+### 🆕 当前 session：早安简报升级 落地（branch `claude/enhance-feature-Efdp9`）
 
-**Commit `fb344ea`，直接合 main**（用户授权 prod 验证）
+**用户选了"方案 D 混搭" + LLM 加持**。设计：A 骨架 + B 14 天日历 + C 管家人格化（LLM 真生成）。
+
+**已落地（在分支上）**：
+
+**后端 `api/state.py`**：
+- 新增 `_get_anthropic_client()` —— lazy load anthropic SDK + env var
+- 新增 `_fetch_vix_quote()` —— yfinance `^VIX` 当前 + 前收盘
+- 新增 `_compute_concentration(positions)` —— 最大单 ticker 占保证金 %
+- 新增 `_compute_calendar_14d(positions, today)` —— 未来 14 天财报点 + 到期点
+- 新增 `_load_brief_snapshot(state)` / `_make_brief_snapshot(...)` —— 跨日 diff 基础
+- 新增 `_compute_diff_events(yesterday, positions, market, lang)` —— 找 since 昨天的"质变"事件：
+  - profit_threshold（80% 跨越）
+  - dte_window（进入 7 天窗口）
+  - newly_itm（昨天 OTM 今天 ITM）
+  - earnings_imminent（≤5 天）
+  - vix_spike（≥20% 跳涨）
+- 新增 `_rank_top_3_focus(events, positions, lang)` —— 选 top 3，不足补 ≥70% 利润 / 距行权 <5%
+- 新增 `_build_focus_chips(...)` —— 健康 chips：P&L / 已实现 / Theta / SPY / QQQ / 集中度 / 7d 到期数
+- 新增 `_template_concierge(top_3, market, lang)` —— LLM 失败兜底
+- 新增 `_generate_concierge_llm(top_3, market, total_pnl, total_theta, conc, lang)`
+  —— Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) 生成 ≤80 字管家摘要
+- 重构 `_generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta, state, lang)`
+  返回 dict：`{ concierge_text, generated_by, top_3_focus, chips, calendar_14d, today_date, next_snapshot }`
+- `compute()` 主入口：传 `total_theta` 和 `state`
+- 三语 dict（TRANS_EN / TRANS_TW）补 ~25 条新文案
+
+**前端 `index.html`**：
+- `.morning-brief` CSS 完全重写（管家 hero + focus list + chips + 14d 日历）
+- HTML `<div id="morning-brief">` 改成空 container，JS 动态构造
+- 新 `renderMorningBrief(brief)` 接受 dict，按 dismiss state 判断显示
+- helper：`_mbRenderFocusItem` / `_mbRenderChip` / `_mbRenderCalendar` /
+  `_mbFocusPosition(pid)` (点"看持仓"滚到对应卡 + 短暂金色描边) /
+  `_mbOpenRec()` (点"看推荐"打开 rec 表单) /
+  `_mbSaveSnapshot(snap)` —— 通过 `saveStateMap` 写 `state._meta.brief_snapshot`
+- 三语 dict 补：包租公管家 / 今日要关注 / 📅 未来 14 天关键日 / 财报 / 持仓到期 / 看持仓 → / 看推荐 →
+
+**预算**：anthropic Haiku ~$0.001/用户/天 (= $0.36/年)。失败自动 fallback 到模板版本。
+
+**依赖**：
+- `requirements.txt` 加 `anthropic>=0.40.0`
+- Vercel 项目要配 `ANTHROPIC_API_KEY` env var（用户去自己配）
+
+**清理**：删 `morning-preview.html` + vercel.json `/morning-preview` 路由 + builds entry
+
+**接下来用户要做的**：
+1. ⚠️ Rotate 之前在 chat 里发的 API key（已暴露），创建新 key 命名 `baozugong-vercel-prod`
+2. Vercel `option-analysis-platform-web` Settings → Environment Variables → 加 `ANTHROPIC_API_KEY` = 新 key（环境 = Production）
+3. Vercel auto-deploy 后验证 `/app` 早安简报，应该看到「☀️ 包租公管家 · 今日…」段
+4. 验证：dismiss 后今天不再出现 / 第二天再开应该有跨日 diff（今日是首日，明天起 diff 生效）
+
+### 📋 上一个 session：子批 B 落地（POP 校准 + Exit plan 模板）
+
+**Commit `fb344ea` → main**（用户授权 prod 验证）
 
 **做了什么**：
 
@@ -32,44 +84,18 @@ Exit plan（新 `_exit_plan`）：
   / roll_trigger / summary_vars`
 - 每个 candidate 都有 `c.exit_plan`
 - 前端 `renderExitPlan()`：暖金 inline 行在 acctBar 下方，3 段 segment
-  （锁利/止损/Roll），状态色独立
 
 三语 i18n 完整：出场计划/锁利/止损/不止损/被指派接货/被叫走持股 + 三个
 结构化 key (exit_roll_dte7_delta50 / historical_below_theory /
 historical_above_theory)。
 
 **未做 / 待验证**：
-- [ ] 用户 prod 验证 exit-plan inline 出来对不对（CSP/CC/裸卖/LEAPS 都看）
-- [ ] 用户 prod 验证 calib-pill 出来的条件（需要 historical vs theoretical
-      ratio < 0.95 或 > 1.05 才显示）
+- [ ] 用户 prod 验证 exit-plan inline + calib-pill
 - [ ] 子批 C（表单双轨模式）— 待做
 
 ---
 
-### 并行 session：早安简报升级（branch `claude/enhance-feature-Efdp9`）
-
-**用户诉求**：当前早安简报「太简单」。锁定 feature 目标 = "简洁有效的信息做判断，活体提供新的信号，比如要来财报、重大信息"。
-
-**现状盘点**（`api/state.py:2336 _generate_morning_brief`）：6 条固定规则的 ul 列表 — 市场涨跌 / 累计 P&L / 财报警告 / 80% 锁利 / ≤3 天到期 / 危险持仓。每类只取 1 个，纯规则零交互。
-
-**预览页**：`morning-preview.html` + 路由 `/morning-preview`（已 commit 到 `claude/enhance-feature-Efdp9`），3 个 UX 方向 × 桌面+手机：
-- **方案 A · 新闻播报**：Hero "今日 3 件事" + 行动按钮 + 底部 chips。最简洁可扫读。
-- **方案 B · Dashboard**：4 格 KPI（VIX/SPY/P&L/Theta）+ 双列「新事件 / 今日该做」+ 14 天日历条。信息密度最大，活体新信号空间足。
-- **方案 C · 对话式**：LLM (Claude Haiku) 生成自然语言摘要 + 3 个 chip + 展开数据。最个性化，要 API key + ~$0.001/用户/天。
-
-**底层信号扩充**（三个方案都包含的"活体新信号"层）：
-- VIX 当前值 + 隔夜变化
-- SPY/QQQ 盘前 %
-- 持仓 ticker 隔夜涨跌
-- 今日 Theta 入账
-- 跨日 diff（哪些指标 since 昨天突破阈值）
-- 集中度（最大单 ticker 保证金占比）
-- 未来 14 天财报 + 到期日历
-- 用户操作历史习惯（C 方案才能用）
-
-**等用户挑**：A / B / C 任意 1 个 → 落地到 `index.html` `_generate_morning_brief` + 前端 `renderMorningBrief` + 删除预览页。
-
-### 📋 上一个 session：Wheel 闭环提示 debug（Batch 4 中点）
+### 📋 更早一个 session：Wheel 闭环提示 debug（Batch 4 中点）
 
 **分支**：`claude/batch-4-midpoint-6gjJE` → **已合 main**（cherry-pick `4cae7fd`）
 **原 feature commit**：`4d69f2c`

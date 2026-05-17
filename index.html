@@ -2460,22 +2460,118 @@
     margin-bottom: 16px;
     position: relative;
   }
-  .morning-brief .mb-title {
-    font-size: 12px; font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 8px;
-    display: flex; justify-content: space-between; align-items: center;
-  }
   .morning-brief .mb-close {
+    position: absolute; top: 12px; right: 14px;
     cursor: pointer; color: var(--sub);
     font-size: 16px; line-height: 1;
   }
-  .morning-brief ul {
-    margin: 0; padding: 0; list-style: none;
-    font-size: 12px; line-height: 1.7;
-  }
-  .morning-brief li { padding: 2px 0; }
   .morning-brief.collapsed { display: none; }
+  /* 包租公管家 hero */
+  .morning-brief .mb-concierge {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .morning-brief .mb-avatar {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 12px rgba(230,184,106,0.25);
+  }
+  .morning-brief .mb-bubble { flex: 1; min-width: 0; }
+  .morning-brief .mb-greeting {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.3px;
+    margin-bottom: 3px;
+  }
+  .morning-brief .mb-text {
+    font-size: 13px; line-height: 1.55;
+    color: var(--text);
+  }
+  .morning-brief .mb-text .vix-up { color: var(--accent); font-weight: 600; }
+  .morning-brief .mb-text strong { color: var(--accent-light); }
+  /* 今日 N 件事 */
+  .mb-focus-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .mb-focus-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    background: var(--card2);
+    border-radius: 10px;
+    border: 1px solid var(--line);
+  }
+  .mb-focus-icon { font-size: 18px; flex-shrink: 0; }
+  .mb-focus-text { flex: 1; font-size: 13px; line-height: 1.45; min-width: 0; }
+  .mb-focus-text strong { color: var(--accent-light); }
+  .mb-focus-text .mb-detail { color: var(--sub); font-size: 11px; margin-top: 2px; }
+  .mb-focus-action {
+    background: var(--accent); color: #000;
+    border: none; padding: 6px 11px; border-radius: 6px;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; font-family: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .mb-focus-action:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(230,184,106,0.25); }
+  /* chips */
+  .mb-chips {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding-top: 12px; border-top: 1px solid var(--line);
+  }
+  .mb-chip {
+    font-size: 11px; padding: 4px 9px;
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 14px;
+    color: var(--sub);
+    white-space: nowrap;
+  }
+  .mb-chip strong { color: var(--text); font-weight: 600; margin-left: 4px; }
+  .mb-chip.up strong { color: var(--green); }
+  .mb-chip.down strong { color: var(--red); }
+  .mb-chip.warn { border-color: var(--accent-tint-strong); }
+  .mb-chip.warn strong { color: var(--accent); }
+  /* 14 天日历 */
+  .mb-calendar { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
+  .mb-cal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; font-weight: 700; color: var(--sub);
+    margin-bottom: 8px;
+  }
+  .mb-cal-legend { font-size: 10px; font-weight: 500; }
+  .mb-cal-legend > span { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+  .mb-cal-legend .swatch { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .mb-cal-track {
+    display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px;
+  }
+  .mb-cal-day {
+    height: 22px; background: var(--card2);
+    border-radius: 3px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--sub);
+  }
+  .mb-cal-day.today {
+    background: var(--accent-tint-strong);
+    color: var(--accent); font-weight: 700;
+  }
+  .mb-cal-day .marker {
+    position: absolute; bottom: -2px;
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .mb-cal-day .marker.earn { background: var(--red); }
+  .mb-cal-day .marker.exp { background: var(--accent); }
+  .mb-cal-day .marker.both {
+    background: linear-gradient(90deg, var(--red) 50%, var(--accent) 50%);
+  }
+  /* 手机紧凑 */
+  @media (max-width: 600px) {
+    .morning-brief { padding: 14px 16px; }
+    .morning-brief .mb-avatar { width: 32px; height: 32px; font-size: 16px; }
+    .morning-brief .mb-text { font-size: 12px; }
+    .mb-focus-text { font-size: 12px; }
+    .mb-focus-action { padding: 5px 9px; font-size: 10px; }
+    .mb-cal-day { height: 18px; font-size: 8px; }
+  }
 
   /* 📝 Trade Journal — extras 内 dashed button */
   .journal-btn {
@@ -3385,13 +3481,7 @@
     ℹ️ 数据存储 & 备份说明 — 点击展开
   </div>
 
-  <div class="morning-brief" id="morning-brief" style="display:none">
-    <div class="mb-title">
-      <span>☀️ <span data-i18n="今日早安">今日早安</span></span>
-      <span class="mb-close" onclick="dismissMorningBrief()">×</span>
-    </div>
-    <ul id="morning-brief-list"></ul>
-  </div>
+  <div class="morning-brief" id="morning-brief" style="display:none"></div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
   <div class="summary">
@@ -3885,6 +3975,14 @@ const I18N = {
     '📚 期权小白指南': '📚 期權小白指南',
     '不懂某个指标？点开看大白话解释': '不懂某個指標？點開看大白話解釋',
     '今日早安': '今日早安',
+    '包租公管家': '包租公管家',
+    '今日要关注': '今日要關注',
+    '组合健康': '組合健康',
+    '📅 未来 14 天关键日': '📅 未來 14 天關鍵日',
+    '财报': '財報',
+    '持仓到期': '持倉到期',
+    '看持仓 →': '看持倉 →',
+    '看推荐 →': '看推薦 →',
     '损益曲线': '損益曲線',
     '分享': '分享',
     '🔗 生成只读链接': '🔗 產生唯讀連結',
@@ -4388,6 +4486,14 @@ const I18N = {
     '📚 期权小白指南': '📚 Options 101',
     '不懂某个指标？点开看大白话解释': "Don't know an indicator? Click to expand for plain-English explanation",
     '今日早安': 'Good Morning',
+    '包租公管家': 'Landlord Concierge',
+    '今日要关注': 'Today’s focus',
+    '组合健康': 'Portfolio health',
+    '📅 未来 14 天关键日': '📅 Next 14 days',
+    '财报': 'Earnings',
+    '持仓到期': 'Expiry',
+    '看持仓 →': 'View →',
+    '看推荐 →': 'Recommend →',
     '损益曲线': 'Payoff Diagram',
     '分享': 'Share',
     '🔗 生成只读链接': '🔗 Generate read-only link',
@@ -8311,23 +8417,147 @@ function rerenderFromCache() {
   if (window._currentData) renderAll(window._currentData);
 }
 
-// ── ☀️ Morning Brief ─────────────────────────────────────────────────
+// ── ☀️ Morning Brief — 包租公管家 + 今日要关注 + chips + 14 天关键日 ──
+function _mbEscape(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function _mbToneClass(tone) {
+  return tone === 'up' ? ' up' : tone === 'down' ? ' down' : tone === 'warn' ? ' warn' : '';
+}
+function _mbRenderFocusItem(item) {
+  const action = item.action;
+  let btn = '';
+  if (action === 'view_position' && item.position_id) {
+    btn = `<button class="mb-focus-action" onclick="_mbFocusPosition('${_mbEscape(item.position_id)}')">${t('看持仓 →')}</button>`;
+  } else if (action === 'view_recommend') {
+    btn = `<button class="mb-focus-action" onclick="_mbOpenRec()">${t('看推荐 →')}</button>`;
+  }
+  const detail = item.detail ? `<div class="mb-detail">${_mbEscape(item.detail)}</div>` : '';
+  return `<div class="mb-focus-item">
+    <div class="mb-focus-icon">${_mbEscape(item.icon || '•')}</div>
+    <div class="mb-focus-text"><strong>${_mbEscape(item.headline || '')}</strong>${detail}</div>
+    ${btn}
+  </div>`;
+}
+function _mbRenderChip(c) {
+  return `<span class="mb-chip${_mbToneClass(c.tone)}">${_mbEscape(c.label)} <strong>${_mbEscape(c.value)}</strong></span>`;
+}
+function _mbRenderCalendar(markers, todayISO) {
+  if (!Array.isArray(markers)) markers = [];
+  const today = todayISO ? new Date(todayISO + 'T00:00:00') : new Date();
+  // 按 offset 分桶
+  const byOffset = {};
+  markers.forEach(m => {
+    const k = m.offset;
+    if (!byOffset[k]) byOffset[k] = new Set();
+    byOffset[k].add(m.type);
+  });
+  let cells = '';
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today.getTime()); d.setDate(d.getDate() + i);
+    const day = d.getDate();
+    const types = byOffset[i] || new Set();
+    let marker = '';
+    if (types.has('earnings') && types.has('expiry')) marker = '<span class="marker both"></span>';
+    else if (types.has('earnings')) marker = '<span class="marker earn"></span>';
+    else if (types.has('expiry')) marker = '<span class="marker exp"></span>';
+    cells += `<div class="mb-cal-day${i === 0 ? ' today' : ''}">${day}${marker}</div>`;
+  }
+  const hasEarn = markers.some(m => m.type === 'earnings');
+  const hasExp = markers.some(m => m.type === 'expiry');
+  const legend = [];
+  if (hasEarn) legend.push(`<span><span class="swatch" style="background:var(--red)"></span>${t('财报')}</span>`);
+  if (hasExp) legend.push(`<span><span class="swatch" style="background:var(--accent)"></span>${t('持仓到期')}</span>`);
+  return `<div class="mb-calendar">
+    <div class="mb-cal-head">
+      <span>${t('📅 未来 14 天关键日')}</span>
+      <span class="mb-cal-legend">${legend.join('')}</span>
+    </div>
+    <div class="mb-cal-track">${cells}</div>
+  </div>`;
+}
+function _mbFocusPosition(pid) {
+  if (!pid) return;
+  const elPos = document.getElementById('pos-' + pid);
+  if (elPos) {
+    elPos.scrollIntoView({behavior: 'smooth', block: 'center'});
+    elPos.style.outline = '2px solid var(--accent)';
+    setTimeout(() => { elPos.style.outline = ''; }, 1800);
+  } else {
+    const list = document.getElementById('positions');
+    if (list) list.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+}
+function _mbOpenRec() {
+  const recBtn = document.querySelector('.rec-btn-large, [onclick*="openRecForm"]');
+  if (recBtn) recBtn.click();
+  else {
+    const recPanel = document.getElementById('rec-panel') || document.getElementById('recommend-panel');
+    if (recPanel) recPanel.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+}
+function _mbFormatTime() {
+  const d = new Date();
+  const mm = d.getMonth() + 1, dd = d.getDate();
+  const wkday = ['日','一','二','三','四','五','六'][d.getDay()];
+  const hh = d.getHours().toString().padStart(2,'0');
+  const mn = d.getMinutes().toString().padStart(2,'0');
+  return `${mm}/${dd} 周${wkday} · ${hh}:${mn}`;
+}
+function _mbSaveSnapshot(snap) {
+  if (!snap) return;
+  try {
+    const state = (typeof loadStateMap === 'function') ? loadStateMap() : {};
+    state._meta = state._meta || {};
+    state._meta.brief_snapshot = snap;
+    if (typeof saveStateMap === 'function') saveStateMap(state);
+  } catch (e) {}
+}
+
 function renderMorningBrief(brief) {
   const el = document.getElementById('morning-brief');
-  const list = document.getElementById('morning-brief-list');
-  if (!el || !list) return;
-  // 如果用户今天已经关闭过，就别再显示
+  if (!el) return;
+  // 用户今天已关闭过 → 不再显示
   const today = new Date().toISOString().slice(0, 10);
   if (localStorage.getItem('mb_dismissed_date') === today) {
     el.style.display = 'none';
     return;
   }
-  if (!brief || !brief.length) {
+  // 防御：旧 list 格式 / 空数据 → 隐藏
+  if (!brief || typeof brief !== 'object' || Array.isArray(brief) || !brief.concierge_text) {
     el.style.display = 'none';
     return;
   }
-  list.innerHTML = brief.map(line => `<li>${line}</li>`).join('');
+  const top = Array.isArray(brief.top_3_focus) ? brief.top_3_focus : [];
+  const chips = Array.isArray(brief.chips) ? brief.chips : [];
+  const cal = Array.isArray(brief.calendar_14d) ? brief.calendar_14d : [];
+
+  const topHtml = top.length
+    ? `<div class="mb-focus-list">${top.map(_mbRenderFocusItem).join('')}</div>`
+    : '';
+  const chipsHtml = chips.length
+    ? `<div class="mb-chips">${chips.map(_mbRenderChip).join('')}</div>`
+    : '';
+  const calHtml = cal.length ? _mbRenderCalendar(cal, brief.today_date) : '';
+
+  el.innerHTML = `
+    <span class="mb-close" onclick="dismissMorningBrief()">×</span>
+    <div class="mb-concierge">
+      <div class="mb-avatar">☀️</div>
+      <div class="mb-bubble">
+        <div class="mb-greeting">${t('包租公管家')} · ${_mbFormatTime()}</div>
+        <div class="mb-text">${_mbEscape(brief.concierge_text)}</div>
+      </div>
+    </div>
+    ${topHtml}
+    ${chipsHtml}
+    ${calHtml}
+  `;
   el.style.display = 'block';
+
+  // 把今天的 snapshot 写回 state._meta.brief_snapshot（下次启动时用作 diff 基准）
+  if (brief.next_snapshot) _mbSaveSnapshot(brief.next_snapshot);
 }
 
 function dismissMorningBrief() {

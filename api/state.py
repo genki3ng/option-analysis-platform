@@ -104,6 +104,36 @@ TRANS_EN = {
     "组合总抵押暴露 ${exp}": "Total collateral exposure ${exp}",
     "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。":
       "💡 If that ticker tanks, IV spikes, or earnings blow up — there's no cushion.",
+    # ── Morning brief v2: 包租公管家 + Top 3 + chips ──
+    "包租公管家": "Landlord Concierge",
+    "持仓 P&L": "P&L",
+    "今日 Theta": "Today Theta",
+    "未来 7 天到期": "Next 7d expiry",
+    "个": "",
+    "今日 {n} 件事要看": "{n} items to watch today",
+    "持仓平稳，无紧急信号": "Portfolio calm — no urgent signals",
+    "{tk} 集中度": "{tk} concentration",
+    "跳到": "jumped to",
+    "跌到": "dropped to",
+    "隔夜 VIX {v} {verb} {p} ({c}%)": "VIX {v} {verb} {p} overnight ({c}%)",
+    "VIX 跳涨 {pct}% 至 {v}": "VIX spiked {pct}% to {v}",
+    "卖权利金窗口期，扫一眼推荐": "Premium-selling window — check recommendations",
+    "{label} 进入 ITM": "{label} entered ITM",
+    "昨天还安全，今天突破行权 — 留意指派": "Was safe yesterday, breached strike today — watch assignment",
+    "{tk} {d} 天后财报，{label} 跨越": "{tk} earnings in {d}d, {label} crosses it",
+    "留意 IV crush 风险": "Watch for IV crush risk",
+    "昨天 {yp}%，突破 80% — 可考虑锁利":
+      "Yesterday {yp}%, now past 80% — consider locking in profit",
+    "{label} 剩 {d} 天到期": "{label} expires in {d}d",
+    "进入 7 天到期窗口，准备处理": "Entered 7-day window — prep an exit",
+    "接近锁利窗口": "Near profit-taking window",
+    "{label} 距行权仅 {pct}%": "{label} only {pct}% from strike",
+    "gamma 风险大": "high gamma risk",
+    "看持仓 →": "View →",
+    "看推荐 →": "Recommend →",
+    "📅 未来 14 天关键日": "📅 Next 14 days",
+    "财报": "Earnings",
+    "持仓到期": "Expiry",
 }
 
 TRANS_TW = {
@@ -184,6 +214,35 @@ TRANS_TW = {
     "组合总抵押暴露 ${exp}": "組合總抵押暴露 ${exp}",
     "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。":
       "💡 一只標的大跌、IV 飆升、財報暴雷 — 全靠它一個，沒有緩衝。",
+    # ── Morning brief v2 ──
+    "包租公管家": "包租公管家",
+    "持仓 P&L": "持倉 P&L",
+    "今日 Theta": "今日 Theta",
+    "未来 7 天到期": "未來 7 天到期",
+    "个": "個",
+    "今日 {n} 件事要看": "今日 {n} 件事要看",
+    "持仓平稳，无紧急信号": "持倉平穩，無緊急信號",
+    "{tk} 集中度": "{tk} 集中度",
+    "跳到": "跳到",
+    "跌到": "跌到",
+    "隔夜 VIX {v} {verb} {p} ({c}%)": "隔夜 VIX {v} {verb} {p} ({c}%)",
+    "VIX 跳涨 {pct}% 至 {v}": "VIX 跳漲 {pct}% 至 {v}",
+    "卖权利金窗口期，扫一眼推荐": "賣權利金窗口期，掃一眼推薦",
+    "{label} 进入 ITM": "{label} 進入 ITM",
+    "昨天还安全，今天突破行权 — 留意指派": "昨天還安全，今天突破行權 — 留意指派",
+    "{tk} {d} 天后财报，{label} 跨越": "{tk} {d} 天後財報，{label} 跨越",
+    "留意 IV crush 风险": "留意 IV crush 風險",
+    "昨天 {yp}%，突破 80% — 可考虑锁利": "昨天 {yp}%，突破 80% — 可考慮鎖利",
+    "{label} 剩 {d} 天到期": "{label} 剩 {d} 天到期",
+    "进入 7 天到期窗口，准备处理": "進入 7 天到期窗口，準備處理",
+    "接近锁利窗口": "接近鎖利窗口",
+    "{label} 距行权仅 {pct}%": "{label} 距行權僅 {pct}%",
+    "gamma 风险大": "gamma 風險大",
+    "看持仓 →": "看持倉 →",
+    "看推荐 →": "看推薦 →",
+    "📅 未来 14 天关键日": "📅 未來 14 天關鍵日",
+    "财报": "財報",
+    "持仓到期": "持倉到期",
 }
 
 def _T(lang: str, key: str, **vars) -> str:
@@ -1175,7 +1234,11 @@ def compute(payload):
         if x.get("closed") and x.get("close_price") is not None
     )
 
-    morning_brief = _generate_morning_brief(enriched, prices, total_pnl - total_realized, total_realized, lang=lang)
+    morning_brief = _generate_morning_brief(
+        enriched, prices,
+        total_pnl - total_realized, total_realized, total_theta,
+        state=state, lang=lang,
+    )
 
     return {
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -2497,68 +2560,393 @@ def recommend(req: dict) -> dict:
     }
 
 
-def _generate_morning_brief(positions: List[dict], prices: Dict[str, Dict],
-                             total_pnl: float, total_realized: float,
-                             lang: str = "zh") -> List[str]:
-    """生成基于规则的每日 brief（非 AI，但是数据驱动且个性化）"""
-    lines = []
+# ── Anthropic SDK (LLM 包租公管家) ───────────────────────────────────
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+_anthropic_client = None
 
-    # 1. 今日市场
-    today_chgs = []
-    for tk, info in prices.items():
-        if not info or info.get("prev", 0) == 0: continue
-        pct = (info["price"] - info["prev"]) / info["prev"] * 100
-        arrow = "📈" if pct >= 0 else "📉"
-        today_chgs.append(f"{tk} ${info['price']:.0f} {arrow}{abs(pct):.1f}%")
-    if today_chgs:
-        lines.append(_T(lang, "📊 今日市场:") + " " + " · ".join(today_chgs[:4]))
+def _get_anthropic_client():
+    global _anthropic_client
+    if _anthropic_client is not None:
+        return _anthropic_client
+    if not ANTHROPIC_API_KEY:
+        return None
+    try:
+        import anthropic
+        _anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=8.0)
+        return _anthropic_client
+    except Exception:
+        return None
 
-    # 2. 今日组合 P&L
-    active = [p for p in positions if not p["closed"] and p["days"] >= 0]
-    if active:
-        emoji_key = "🟢 持仓累计浮盈亏" if total_pnl >= 0 else "🔴 持仓累计浮盈亏"
-        line = f"{_T(lang, emoji_key)} ${total_pnl:+,.0f}"
-        if total_realized:
-            line += f" · {_T(lang, '已实现')} ${total_realized:+,.0f}"
-        lines.append(line)
 
-    # 3. 财报警告（最近 1 个）
-    earnings_alerts = [p for p in active if p.get("earnings_before_expiry")
-                       and p.get("earnings_days_until", 999) <= 21]
-    if earnings_alerts:
-        e = sorted(earnings_alerts, key=lambda p: p["earnings_days_until"])[0]
-        lines.append(
-            f"⚠️ {e['ticker']} {_T(lang, '财报剩')} {e['earnings_days_until']} {_T(lang, '天')} "
-            f"({e['earnings_date']}), {e['label']} {e['expiry']} "
-            f"{_T(lang, '到期跨越 — 留意 IV crush')}"
+# ── Morning brief — 信号扩充 + 跨日 diff + 包租公管家 ────────────────
+
+def _fetch_vix_quote() -> Optional[Dict]:
+    """VIX 当前 + 前收盘。失败返回 None。"""
+    try:
+        import yfinance as yf
+        session = _get_yf_session()
+        t = yf.Ticker("^VIX", session=session) if session else yf.Ticker("^VIX")
+        fi = t.fast_info
+        return {"price": float(fi.last_price), "prev": float(fi.previous_close)}
+    except Exception:
+        return None
+
+
+def _compute_concentration(positions: List[dict]) -> Dict:
+    """最大单 ticker 占持仓暴露的百分比。"""
+    active = [p for p in positions if not p.get("closed") and p.get("days", 0) >= 0]
+    exposure = {}
+    for p in active:
+        tk = p["ticker"]
+        exp = p.get("strike", 0) * p.get("contracts", 0) * 100
+        exposure[tk] = exposure.get(tk, 0) + exp
+    total = sum(exposure.values())
+    if total <= 0:
+        return {"top_ticker": "", "top_pct": 0, "n_tickers": len(exposure)}
+    top_tk = max(exposure, key=exposure.get)
+    return {
+        "top_ticker": top_tk,
+        "top_pct": exposure[top_tk] / total * 100,
+        "n_tickers": len(exposure),
+    }
+
+
+def _compute_calendar_14d(positions: List[dict], today: date) -> List[Dict]:
+    """未来 14 天 markers (财报红点 + 持仓到期金点)。"""
+    end = today + timedelta(days=14)
+    markers = []
+    seen_earn = set()
+    for p in positions:
+        if p.get("closed") or p.get("days", 0) < 0:
+            continue
+        # 持仓到期
+        try:
+            exp_date = datetime.strptime(p["expiry"], "%Y-%m-%d").date()
+            if today <= exp_date <= end:
+                markers.append({
+                    "offset": (exp_date - today).days,
+                    "date": exp_date.isoformat(),
+                    "type": "expiry",
+                    "ticker": p["ticker"],
+                    "label": p.get("label", ""),
+                })
+        except Exception:
+            pass
+        # 财报
+        earn = p.get("earnings_date")
+        if earn:
+            try:
+                earn_date = datetime.strptime(earn, "%Y-%m-%d").date()
+                key = f"{p['ticker']}_{earn}"
+                if today <= earn_date <= end and key not in seen_earn:
+                    seen_earn.add(key)
+                    markers.append({
+                        "offset": (earn_date - today).days,
+                        "date": earn_date.isoformat(),
+                        "type": "earnings",
+                        "ticker": p["ticker"],
+                        "label": p["ticker"],
+                    })
+            except Exception:
+                pass
+    return markers
+
+
+def _load_brief_snapshot(state: dict) -> dict:
+    meta = state.get("_meta", {}) if isinstance(state, dict) else {}
+    snap = meta.get("brief_snapshot", {})
+    return snap if isinstance(snap, dict) else {}
+
+
+def _make_brief_snapshot(positions: List[dict], market: dict, today: date) -> dict:
+    pos_snap = {}
+    for p in positions:
+        if p.get("closed") or p.get("days", 0) < 0:
+            continue
+        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pos_snap[pid] = {
+            "pnl_pct": p.get("pnl_pct", 0),
+            "days": p.get("days", 0),
+            "moneyness": p.get("moneyness", 0),
+            "earnings_date": p.get("earnings_date"),
+        }
+    return {
+        "date": today.isoformat(),
+        "vix": (market.get("vix") or {}).get("price"),
+        "positions": pos_snap,
+    }
+
+
+def _compute_diff_events(yesterday_snap, positions, market, lang):
+    """对比昨天，找 since 昨天的"质变"事件（80% 跨越 / 进入 7 天窗口 / 新 ITM / 财报临近 / VIX 跳变）。"""
+    events = []
+    today_pos = {}
+    for p in positions:
+        if p.get("closed") or p.get("days", 0) < 0:
+            continue
+        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        today_pos[pid] = p
+    y_pos = yesterday_snap.get("positions", {}) if isinstance(yesterday_snap, dict) else {}
+
+    for pid, p in today_pos.items():
+        y = y_pos.get(pid)
+        pct = p.get("pnl_pct", 0)
+        days = p.get("days", 0)
+        money = p.get("moneyness", 0)
+        is_call = p.get("type") == "call"
+        is_itm = (is_call and money < 0) or ((not is_call) and money > 0)
+        label = p.get("label", "")
+
+        if y and y.get("pnl_pct", 0) < 80 <= pct:
+            events.append({
+                "kind": "profit_threshold", "priority": 90,
+                "position_id": pid, "ticker": p["ticker"], "label": label,
+                "icon": "🎯",
+                "headline": _T(lang, "{label} 已实现 {pct}% 权利金", label=label, pct=f"{pct:.0f}"),
+                "detail": _T(lang, "昨天 {yp}%，突破 80% — 可考虑锁利", yp=f"{y.get('pnl_pct',0):.0f}"),
+                "action": "view_position",
+            })
+        if y and y.get("days", 999) > 7 >= days >= 0:
+            events.append({
+                "kind": "dte_window", "priority": 70,
+                "position_id": pid, "ticker": p["ticker"], "label": label,
+                "icon": "⏱️",
+                "headline": _T(lang, "{label} 剩 {d} 天到期", label=label, d=days),
+                "detail": _T(lang, "进入 7 天到期窗口，准备处理"),
+                "action": "view_position",
+            })
+        if y:
+            y_money = y.get("moneyness", 0)
+            y_is_itm = (is_call and y_money < 0) or ((not is_call) and y_money > 0)
+            if is_itm and not y_is_itm:
+                events.append({
+                    "kind": "newly_itm", "priority": 95,
+                    "position_id": pid, "ticker": p["ticker"], "label": label,
+                    "icon": "🚨",
+                    "headline": _T(lang, "{label} 进入 ITM", label=label),
+                    "detail": _T(lang, "昨天还安全，今天突破行权 — 留意指派"),
+                    "action": "view_position",
+                })
+
+    # 财报临近（不用 diff，直接判断 ≤5 天）
+    for p in positions:
+        if p.get("closed") or p.get("days", 0) < 0:
+            continue
+        earn_days = p.get("earnings_days_until")
+        if earn_days is not None and 0 < earn_days <= 5 and p.get("earnings_before_expiry"):
+            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+            events.append({
+                "kind": "earnings_imminent", "priority": 100,
+                "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
+                "icon": "📅",
+                "headline": _T(lang, "{tk} {d} 天后财报，{label} 跨越", tk=p["ticker"], d=earn_days, label=p.get("label", "")),
+                "detail": _T(lang, "留意 IV crush 风险"),
+                "action": "view_position",
+            })
+
+    # VIX 异动
+    vix = market.get("vix") or {}
+    if vix.get("prev", 0) > 0:
+        chg = (vix["price"] - vix["prev"]) / vix["prev"] * 100
+        if chg >= 20:
+            events.append({
+                "kind": "vix_spike", "priority": 85,
+                "position_id": None, "ticker": "$VIX", "label": "VIX",
+                "icon": "⚡",
+                "headline": _T(lang, "VIX 跳涨 {pct}% 至 {v}", pct=f"{chg:.0f}", v=f"{vix['price']:.1f}"),
+                "detail": _T(lang, "卖权利金窗口期，扫一眼推荐"),
+                "action": "view_recommend",
+            })
+
+    events.sort(key=lambda e: -e["priority"])
+    return events
+
+
+def _rank_top_3_focus(events, positions, lang):
+    """从 events 选 top 3，不足则补 ≥70% 利润 + 危险临近持仓。"""
+    seen = set()
+    out = []
+    for e in events:
+        pid = e.get("position_id") or f"_{e['kind']}"
+        if pid in seen:
+            continue
+        seen.add(pid)
+        out.append(e)
+        if len(out) >= 3:
+            break
+
+    if len(out) < 3:
+        actionable = [p for p in positions
+                      if not p.get("closed") and p.get("days", 0) >= 0
+                      and p.get("pnl_pct", 0) >= 70]
+        actionable.sort(key=lambda p: -p.get("pnl_pct", 0))
+        for p in actionable:
+            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+            if pid in seen:
+                continue
+            seen.add(pid)
+            out.append({
+                "kind": "profit_opportunity", "priority": 50,
+                "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
+                "icon": "🎯",
+                "headline": _T(lang, "{label} 已实现 {pct}% 权利金",
+                               label=p.get("label", ""), pct=f"{p['pnl_pct']:.0f}"),
+                "detail": _T(lang, "接近锁利窗口"),
+                "action": "view_position",
+            })
+            if len(out) >= 3:
+                break
+
+    if len(out) < 3:
+        # 距行权 <5% 的危险持仓
+        danger = [p for p in positions
+                  if not p.get("closed") and p.get("days", 0) >= 0
+                  and (((p.get("type") == "call") and p.get("moneyness", 100) < 5)
+                       or ((p.get("type") == "put") and p.get("moneyness", -100) > -5))]
+        for p in danger:
+            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+            if pid in seen:
+                continue
+            seen.add(pid)
+            out.append({
+                "kind": "near_strike", "priority": 40,
+                "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
+                "icon": "🚨",
+                "headline": _T(lang, "{label} 距行权仅 {pct}%",
+                               label=p.get("label", ""), pct=f"{abs(p.get('moneyness',0)):.1f}"),
+                "detail": _T(lang, "gamma 风险大"),
+                "action": "view_position",
+            })
+            if len(out) >= 3:
+                break
+    return out[:3]
+
+
+def _build_focus_chips(positions, market, total_pnl, total_realized, total_theta, concentration, lang):
+    chips = []
+    chips.append({"label": _T(lang, "持仓 P&L"),
+                  "value": f"${total_pnl:+,.0f}",
+                  "tone": "up" if total_pnl >= 0 else "down"})
+    if total_realized:
+        chips.append({"label": _T(lang, "已实现"),
+                      "value": f"${total_realized:+,.0f}",
+                      "tone": "up" if total_realized >= 0 else "down"})
+    if total_theta:
+        chips.append({"label": _T(lang, "今日 Theta"),
+                      "value": f"${total_theta:+,.0f}", "tone": "up"})
+    for tk in ("SPY", "QQQ"):
+        info = (market.get("indices") or {}).get(tk)
+        if info and info.get("prev", 0) > 0:
+            chg = (info["price"] - info["prev"]) / info["prev"] * 100
+            chips.append({"label": tk, "value": f"{chg:+.1f}%",
+                          "tone": "up" if chg >= 0 else "down"})
+    if concentration.get("top_pct", 0) >= 40 and concentration.get("top_ticker"):
+        chips.append({
+            "label": _T(lang, "{tk} 集中度", tk=concentration["top_ticker"]),
+            "value": f"{concentration['top_pct']:.0f}%",
+            "tone": "warn",
+        })
+    near_exp = sum(1 for p in positions
+                   if not p.get("closed") and 0 <= p.get("days", 999) <= 7)
+    if near_exp:
+        chips.append({"label": _T(lang, "未来 7 天到期"),
+                      "value": f"{near_exp} {_T(lang, '个')}", "tone": "neutral"})
+    return chips[:6]
+
+
+def _template_concierge(top_3, market, lang):
+    """模板版管家一句话（LLM 不可用时的兜底）。"""
+    parts = []
+    vix = market.get("vix") or {}
+    if vix.get("prev", 0) > 0:
+        chg = (vix["price"] - vix["prev"]) / vix["prev"] * 100
+        if abs(chg) >= 10:
+            verb = _T(lang, "跳到") if chg > 0 else _T(lang, "跌到")
+            parts.append(_T(lang, "隔夜 VIX {v} {verb} {p} ({c}%)",
+                            v=f"{vix['prev']:.1f}", verb=verb,
+                            p=f"{vix['price']:.1f}", c=f"{chg:+.0f}"))
+    n = len(top_3)
+    if n > 0:
+        parts.append(_T(lang, "今日 {n} 件事要看", n=n))
+    if not parts:
+        return _T(lang, "持仓平稳，无紧急信号")
+    return "，".join(parts) + "。"
+
+
+def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration, lang):
+    """调 Claude Haiku 生成 ≤80 字管家摘要。失败返回 None。"""
+    client = _get_anthropic_client()
+    if not client:
+        return None
+
+    signal_lines = []
+    vix = market.get("vix") or {}
+    if vix.get("prev", 0) > 0:
+        chg = (vix["price"] - vix["prev"]) / vix["prev"] * 100
+        signal_lines.append(f"VIX: {vix['prev']:.1f} -> {vix['price']:.1f} ({chg:+.0f}%)")
+    signal_lines.append(f"Portfolio P&L: ${total_pnl:+,.0f}, today Theta: ${total_theta:+,.0f}")
+    if concentration.get("top_pct", 0) >= 40:
+        signal_lines.append(f"{concentration['top_ticker']} concentration: {concentration['top_pct']:.0f}%")
+    for idx, e in enumerate(top_3[:3], 1):
+        signal_lines.append(f"{idx}. {e['icon']} {e['headline']} - {e['detail']}")
+
+    lang_word = {"en": "English", "zh_tw": "繁體中文"}.get(lang, "简体中文")
+
+    system_prompt = (
+        f"你是\"包租公管家\"，给一个用美股期权赚租金的散户写早安一句话总览。\n"
+        f"风格：亲切、直接、像老友，有人情味但不啰嗦。\n"
+        f"长度：1-2 句，{lang_word}，≤80 个字符。\n"
+        f"不要以\"早安\"开头（前端已经写了\"早安\"前缀）。直接说当下值得关注的核心信号。\n"
+        f"不要列项，不要项目符号。不要编造数字 — 只用我给的数据。\n"
+        f"如果信号都很平静，就说一句让人安心的短话。"
+    )
+
+    user_prompt = "今早信号：\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写一两句话总览。"
+
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=200,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
         )
+        text = (resp.content[0].text if resp.content else "").strip()
+        return text or None
+    except Exception:
+        return None
 
-    # 4. 利润目标 / 风险
-    actionable = [p for p in active if p["pnl_pct"] >= 80]
-    if actionable:
-        a = max(actionable, key=lambda p: p["pnl_pct"])
-        achieved = _T(lang, "已实现 {pct}% 权利金", pct=f"{a['pnl_pct']:.0f}")
-        consider = _T(lang, "可考虑平仓锁利")
-        lines.append(f"🎯 {a['label']} {achieved} (${a['pnl']:+,.0f}), {consider}")
 
-    # 5. 即将到期
-    expiring = [p for p in active if p["days"] <= 3]
-    if expiring:
-        e = min(expiring, key=lambda p: p["days"])
-        money = e.get("moneyness", 0)
-        is_call = e["type"] == "call"
-        is_itm = (is_call and money < 0) or (not is_call and money > 0)
-        risk_note = _T(lang, "已 ITM，关注指派风险") if is_itm else _T(lang, "OTM 距 {pct}%", pct=f"{abs(money):.1f}")
-        lines.append(f"⏱️ {e['label']} " + _T(lang, "剩 {days} 天到期 · {note}", days=e['days'], note=risk_note))
+def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta,
+                              state=None, lang="zh"):
+    """结构化早安简报 — 返回 dict（管家文 + top 3 + chips + 14 天日历 + snapshot）。"""
+    today = date.today()
+    state = state if isinstance(state, dict) else {}
 
-    # 6. 危险持仓警告
-    danger = [p for p in active if (p["type"] == "call" and p["moneyness"] < 5)
-              or (p["type"] == "put" and p["moneyness"] > -5)]
-    if danger and not any("ITM" in l for l in lines):
-        d = danger[0]
-        lines.append(f"🚨 {d['label']} " + _T(lang, "距行权仅 {pct}%，gamma 风险大", pct=f"{abs(d['moneyness']):.1f}"))
+    market = {"indices": prices, "vix": _fetch_vix_quote()}
+    concentration = _compute_concentration(positions)
+    calendar = _compute_calendar_14d(positions, today)
+    yesterday_snap = _load_brief_snapshot(state)
+    diff_events = _compute_diff_events(yesterday_snap, positions, market, lang)
+    top_3 = _rank_top_3_focus(diff_events, positions, lang)
+    chips = _build_focus_chips(positions, market, total_pnl, total_realized, total_theta,
+                                concentration, lang)
 
-    return lines
+    concierge_text = _generate_concierge_llm(top_3, market, total_pnl, total_theta,
+                                              concentration, lang)
+    by = "llm"
+    if not concierge_text:
+        concierge_text = _template_concierge(top_3, market, lang)
+        by = "template"
+
+    return {
+        "concierge_text": concierge_text,
+        "generated_by": by,
+        "top_3_focus": top_3,
+        "chips": chips,
+        "calendar_14d": calendar,
+        "today_date": today.isoformat(),
+        "next_snapshot": _make_brief_snapshot(positions, market, today),
+    }
 
 
 def _check_yf():

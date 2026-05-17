@@ -57,6 +57,18 @@
 3. Vercel auto-deploy 后验证 `/app` 早安简报，应该看到「☀️ 包租公管家 · 今日…」段
 4. 验证：dismiss 后今天不再出现 / 第二天再开应该有跨日 diff（今日是首日，明天起 diff 生效）
 
+### 🆕 并行：子批 C 预览页 上线（Commit `b12d152`）
+
+**地址**：https://trade.congyangwang.com/form-dual-preview
+
+3 个 UX 方向 × 桌面+手机：
+- **A · 顶部 Tab 切换** — Segmented control，目标驱动 / 策略驱动两 tab 共存
+- **B · 入口卡片 Picker** — 进 modal 先选 mode（"告诉我目标" vs "我懂策略"）
+- **C · 一句话提问 + chips** — 自然语言输入框 + 常见目标 chips fallback
+
+目标驱动覆盖 4 种 goal：💵 稳定租金 / 🛡 最大化安全度 / 📊 最高年化 / 🎁 想接货卖股。
+等用户挑方向 → 落地到 `index.html` `rec-form` + 移除预览页。
+
 ### 📋 上一个 session：子批 B 落地（POP 校准 + Exit plan 模板）
 
 **Commit `fb344ea` → main**（用户授权 prod 验证）

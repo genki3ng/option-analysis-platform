@@ -7244,9 +7244,6 @@ function renderRecResult(d) {
     ${dsPill}
     ${ivBanner}
     ${pcPanel}
-    <div class="disclaimer">
-      ${t('rec_disclaimer_html')}
-    </div>
     ${tierPills}
     ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
@@ -7254,7 +7251,7 @@ function renderRecResult(d) {
       ${t('rec_algo_tip_html').replace('{algo}', algo.name || t('评级'))}
     </div>
     <div class="disclaimer" style="margin-top:8px">
-      ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.
+      ${t('rec_disclaimer_html')}
     </div>
   `;
 

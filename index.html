@@ -2921,18 +2921,16 @@
   }
 
   /* ─── 账户设置 modal ─── */
-  /* 账户 modal 应当浮在 rec form 上层，需要 backdrop z-index 比 rec-form 高 */
+  /* backdrop 浮在 rec-form 上层 */
   #account-backdrop { z-index: 1099 !important; }
 
-  /* 表单顶部账户状态薄行 */
+  /* 推荐表单顶部账户状态薄行 */
   .rec-acct-hint {
-    font-size: 12px; line-height: 1.5;
-    color: var(--sub);
+    font-size: 12px; line-height: 1.5; color: var(--sub);
     padding: 8px 12px;
-    background: rgba(91, 124, 245, 0.05);
-    border: 1px solid rgba(91, 124, 245, 0.20);
-    border-radius: 8px;
-    margin: -4px 0 14px;
+    background: rgba(91,124,245,0.05);
+    border: 1px solid rgba(91,124,245,0.20);
+    border-radius: 8px; margin: -4px 0 14px;
   }
   .rec-acct-hint:empty { display: none; }
   .rec-acct-hint a { color: var(--accent); text-decoration: none; }
@@ -2943,45 +2941,139 @@
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1100;
-    width: 460px; max-width: calc(100vw - 32px);
+    width: min(460px, calc(100vw - 32px));
     max-height: 90vh; overflow-y: auto;
     background: var(--card); border: 1px solid var(--line-2);
     border-radius: 14px; padding: 24px;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
-                0 28px 80px rgba(0,0,0,0.55),
-                0 4px 24px rgba(0,0,0,0.3);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 28px 80px rgba(0,0,0,0.55),
+      0 4px 24px rgba(0,0,0,0.3);
   }
   .account-modal.show { display: block; }
-  .account-modal h4 {
+  .account-modal .am-header {
     display: flex; justify-content: space-between; align-items: center;
-    font-size: 15px; font-weight: 600; margin-bottom: 18px;
-    color: var(--accent);
+    margin-bottom: 22px;
   }
+  .account-modal .am-title {
+    font-size: 15px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .account-modal .am-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--sub); font-size: 20px; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+  }
+  .account-modal .am-close:hover { color: var(--text); background: var(--card2); transform: none; }
+  .account-modal .am-field { margin-bottom: 18px; }
+  .account-modal .am-label {
+    font-size: 11px; font-weight: 600; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin-bottom: 8px; display: block;
+  }
+  .account-modal .am-hint {
+    font-size: 11px; color: var(--dim);
+    margin-top: 6px; line-height: 1.5;
+  }
+  /* 账户类型 segmented control */
+  .account-modal .am-seg { display: flex; gap: 6px; }
+  .account-modal .am-seg-btn {
+    flex: 1; text-align: center;
+    background: var(--card2);
+    border: 1.5px solid var(--line-2);
+    color: var(--sub); border-radius: 8px;
+    padding: 8px 10px; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; font-family: inherit; line-height: 1.3;
+    transition: border-color 0.18s cubic-bezier(0.16,1,0.3,1),
+                background 0.18s cubic-bezier(0.16,1,0.3,1),
+                color 0.18s cubic-bezier(0.16,1,0.3,1),
+                transform 0.18s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.18s cubic-bezier(0.16,1,0.3,1);
+  }
+  .account-modal .am-seg-btn:hover {
+    border-color: var(--accent); color: var(--text); transform: scale(1.02);
+  }
+  .account-modal .am-seg-btn.active {
+    background: var(--accent); color: #0A0A0B;
+    border-color: var(--accent); font-weight: 600;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(230,184,106,0.30);
+  }
+  /* 保证金输入框 */
+  .account-modal .am-input-wrap {
+    display: flex; align-items: center;
+    background: var(--card2); border: 1.5px solid var(--line-2);
+    border-radius: 8px; overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  .account-modal .am-input-wrap:focus-within { border-color: var(--accent); }
+  .account-modal .am-currency {
+    padding: 0 10px; color: var(--sub); font-size: 13px;
+    font-family: "SF Mono", monospace; user-select: none;
+    border-right: 1px solid var(--line);
+    align-self: stretch; display: flex; align-items: center;
+  }
+  .account-modal .am-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 8px 10px; font-size: 13px;
+    font-family: "SF Mono", monospace; font-variant-numeric: tabular-nums;
+  }
+  /* 正股持仓行 */
   .stock-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 6px;
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 6px; align-items: center; margin-bottom: 6px;
   }
   .stock-row input[type="text"],
   .stock-row input[type="number"] {
-    padding: 6px 10px; border-radius: 6px;
-    border: 1px solid var(--line-2); background: var(--bg);
-    color: var(--text); font-size: 13px;
+    padding: 7px 10px; border-radius: 8px;
+    border: 1.5px solid var(--line-2); background: var(--card2);
+    color: var(--text); font-size: 13px; outline: none; font-family: inherit;
+    transition: border-color 0.15s;
   }
+  .stock-row input:focus { border-color: var(--accent); }
   .stock-row .rm-btn {
-    background: none; border: 1px solid var(--line-2); border-radius: 6px;
-    color: var(--sub); cursor: pointer; padding: 4px 8px; font-size: 13px;
-    line-height: 1;
+    background: var(--card2); border: 1.5px solid var(--line-2); border-radius: 8px;
+    color: var(--sub); cursor: pointer; padding: 6px 9px; font-size: 13px; line-height: 1;
   }
-  .stock-row .rm-btn:hover { background: var(--card2); color: var(--red); }
+  .stock-row .rm-btn:hover {
+    background: rgba(248,113,113,0.10); color: var(--red);
+    border-color: rgba(248,113,113,0.40); transform: scale(1.06);
+  }
   .add-stock-btn {
-    margin-top: 6px; background: none; border: 1px dashed var(--line-2);
-    border-radius: 6px; color: var(--sub); cursor: pointer;
-    padding: 5px 12px; font-size: 12px; width: 100%;
+    margin-top: 6px; background: none; border: 1.5px dashed var(--line-2);
+    border-radius: 8px; color: var(--sub); cursor: pointer;
+    padding: 7px 12px; font-size: 12px; width: 100%; font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .add-stock-btn:hover { background: var(--card2); color: var(--accent); }
+  .add-stock-btn:hover {
+    background: var(--accent-tint); color: var(--accent);
+    border-color: rgba(230,184,106,0.40); transform: none;
+  }
+  /* modal footer */
+  .account-modal .am-actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .account-modal .am-cancel {
+    background: transparent; color: var(--sub);
+    border: 1.5px solid var(--line-2); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+  }
+  .account-modal .am-cancel:hover { color: var(--text); border-color: var(--line); transform: scale(1.02); }
+  .account-modal .am-cancel:active { transform: scale(0.97); }
+  .account-modal .am-save {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 10px;
+    padding: 8px 18px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; letter-spacing: -0.005em;
+  }
+  .account-modal .am-save:hover {
+    background: var(--accent-light); transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(230,184,106,0.32);
+  }
+  .account-modal .am-save:active { transform: scale(0.97); box-shadow: none; }
   /* 账户 context badge 行（显示在推荐卡片上） */
   .acct-bar {
     display: flex; flex-wrap: wrap; gap: 5px;
@@ -3035,33 +3127,43 @@
 
 <!-- 账户设置 modal -->
 <div class="modal-backdrop" id="account-backdrop" onclick="hideAccountSettings()" style="display:none"></div>
-<div class="account-modal modal" id="account-modal" style="display:none">
-  <h4>
-    <span>⚙️ <span data-i18n="账户设置">账户设置</span></span>
-    <span class="x" onclick="hideAccountSettings()">×</span>
-  </h4>
-  <div class="row">
-    <span class="label" data-i18n="账户类型">账户类型</span>
-    <button class="opt-btn" data-group="acct_type" data-value="cash" id="acct-type-cash" data-i18n="💵 现金 / IRA">💵 现金 / IRA</button>
-    <button class="opt-btn" data-group="acct_type" data-value="margin" id="acct-type-margin" data-i18n="📈 保证金账户">📈 保证金账户</button>
-    <span style="color:var(--sub);font-size:11px" data-i18n="影响每张合约的实际资金占用（BPR）计算">影响每张合约的实际资金占用（BPR）计算</span>
+<div class="account-modal" id="account-modal" style="display:none">
+
+  <div class="am-header">
+    <span class="am-title">⚙️ <span data-i18n="账户设置">账户设置</span></span>
+    <button class="am-close" onclick="hideAccountSettings()">×</button>
   </div>
-  <div class="row">
-    <span class="label" data-i18n="可用保证金 / 现金">可用保证金 / 现金</span>
-    <input type="number" id="account-margin" placeholder="例如 50000" min="0" step="1000"
-           style="width:160px;padding:6px 10px;border-radius:6px;border:1px solid var(--line-2);background:var(--bg);color:var(--text);font-size:13px">
-    <span style="color:var(--sub);font-size:11px" data-i18n="用于计算推荐候选的资金占比和张数建议">用于计算推荐候选的资金占比和张数建议</span>
+
+  <div class="am-field">
+    <span class="am-label" data-i18n="账户类型">账户类型</span>
+    <div class="am-seg">
+      <button class="am-seg-btn" data-group="acct_type" data-value="cash" id="acct-type-cash" data-i18n="💵 现金 / IRA">💵 现金 / IRA</button>
+      <button class="am-seg-btn" data-group="acct_type" data-value="margin" id="acct-type-margin" data-i18n="📈 保证金账户">📈 保证金账户</button>
+    </div>
+    <div class="am-hint" data-i18n="影响每张合约的实际资金占用（BPR）计算">影响每张合约的实际资金占用（BPR）计算</div>
   </div>
-  <div class="row">
-    <span class="label" data-i18n="正股持仓">正股持仓</span>
+
+  <div class="am-field">
+    <span class="am-label" data-i18n="可用保证金 / 现金">可用保证金 / 现金</span>
+    <div class="am-input-wrap">
+      <span class="am-currency">$</span>
+      <input type="number" id="account-margin" class="am-input" placeholder="50000" min="0" step="1000">
+    </div>
+    <div class="am-hint" data-i18n="用于计算推荐候选的资金占比和张数建议">用于计算推荐候选的资金占比和张数建议</div>
+  </div>
+
+  <div class="am-field">
+    <span class="am-label" data-i18n="正股持仓">正股持仓</span>
     <div id="stock-pos-list"></div>
     <button class="add-stock-btn" onclick="addStockRow()" data-i18n="+ 添加一行">+ 添加一行</button>
-    <span style="color:var(--sub);font-size:11px" data-i18n="用于 Covered Call 检测：你有几股就能卖几张">用于 Covered Call 检测：你有几股就能卖几张</span>
+    <div class="am-hint" data-i18n="用于 Covered Call 检测：你有几股就能卖几张">用于 Covered Call 检测：你有几股就能卖几张</div>
   </div>
-  <div class="submit-row" style="margin-top:20px">
-    <button class="cancel" onclick="hideAccountSettings()" data-i18n="取消">取消</button>
-    <button class="submit" onclick="saveAccountSettings()" data-i18n="💾 保存">💾 保存</button>
+
+  <div class="am-actions">
+    <button class="am-cancel" onclick="hideAccountSettings()" data-i18n="取消">取消</button>
+    <button class="am-save" onclick="saveAccountSettings()" data-i18n="💾 保存">💾 保存</button>
   </div>
+
 </div>
 
 <!-- 迁移确认 modal -->
@@ -7331,9 +7433,6 @@ function renderRecResult(d) {
     ${ivBanner}
     ${skewPill}
     ${pcPanel}
-    <div class="disclaimer">
-      ${t('rec_disclaimer_html')}
-    </div>
     ${tierPills}
     ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
@@ -7341,7 +7440,7 @@ function renderRecResult(d) {
       ${t('rec_algo_tip_html').replace('{algo}', algo.name || t('评级'))}
     </div>
     <div class="disclaimer" style="margin-top:8px">
-      ⚠️ Not financial advice. For educational use only. Options trading involves substantial risk of loss.
+      ${t('rec_disclaimer_html')}
     </div>
   `;
 

@@ -1371,14 +1371,25 @@
   }
   .rec-form .opt-btn {
     background: var(--card2); border: 1px solid var(--line);
-    color: var(--text); border-radius: 6px;
-    padding: 7px 12px; font-size: 12px; cursor: pointer;
-    transition: all 0.15s;
+    color: var(--text); border-radius: 8px;
+    padding: 8px 14px; font-size: 12.5px; cursor: pointer;
+    transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: -0.005em;
+    line-height: 1.3;
   }
-  .rec-form .opt-btn:hover { border-color: var(--accent); }
+  .rec-form .opt-btn:hover {
+    border-color: var(--line-2);
+    background: var(--card3);
+  }
   .rec-form .opt-btn.selected {
-    background: var(--accent); color: #0A0A0B;
-    border-color: var(--accent); font-weight: 600;
+    background: var(--accent);
+    color: #0A0A0B;
+    border-color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 2px 8px rgba(230,184,106,0.22);
   }
   .rec-form input[type="text"], .rec-form input[type="number"] {
     background: var(--card2); border: 1px solid var(--line);
@@ -2483,9 +2494,42 @@
     input[type="text"], input[type="number"], input[type="date"],
     .rec-form input[type="text"], .rec-form input[type="number"],
     textarea { font-size: 16px !important; }
-    /* row 里的 opt-btn 在长文本时溢出/不换行 → 强制可换行 + 单 button 不超容器 */
+    /* rec-form 移动端布局全面重做 */
     .rec-form .row { row-gap: 8px; }
-    .rec-form .opt-btn { max-width: 100%; white-space: normal; line-height: 1.3; }
+
+    /* 所有 opt-btn：Apple HIG 最小触控目标 44px，居中对齐 */
+    .rec-form .opt-btn {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: normal;
+      text-align: center;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    /* timeframe：强制 3 列 grid（7 项 → 3+3+1，LEAPS 独占最后行） */
+    .rec-form .opt-btn[data-group="timeframe"] {
+      flex: 1 1 calc(33.33% - 8px);
+      max-width: calc(33.33% - 8px);
+      font-size: 12px;
+    }
+
+    /* intent：2 列，每行 2 个，最后 LEAPS 独占全宽 */
+    .rec-form .opt-btn[data-group="intent"] {
+      flex: 1 1 calc(50% - 6px);
+      max-width: calc(50% - 6px);
+    }
+    .rec-form .opt-btn[data-group="intent"][data-value="long_leaps"] {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+
+    /* 工具栏按钮：至少 36px 高保证触控 */
+    .pos-toolbar button, .pos-toolbar select {
+      min-height: 36px;
+    }
 
     .summary { grid-template-columns: repeat(2, 1fr); padding: 16px 12px; gap: 12px; }
     .summary .item .val { font-size: 19px; }
@@ -2794,7 +2838,7 @@
               <option value="distance_asc" data-i18n="🎯 距行权 · 近→远">🎯 距行权 · 近→远</option>
               <option value="distance_desc" data-i18n="🛡 距行权 · 远→近">🛡 距行权 · 远→近</option>
               <option value="days_asc" data-i18n="⏱️ 到期 · 近→远">⏱️ 到期 · 近→远</option>
-              <option value="days_desc" data-i18n="📅 到期 · 远→近">📅 到期 · 远→近</option>
+              <option value="days_desc" data-i18n="到期 · 远→近">到期 · 远→近</option>
               <option value="sold_desc" data-i18n="🪙 权利金 · 大→小">🪙 权利金 · 大→小</option>
               <option value="theta_desc" data-i18n="⚙️ Theta · 大→小">⚙️ Theta · 大→小</option>
             </select>
@@ -2929,13 +2973,13 @@
 
   <div class="row">
     <span class="label" data-i18n="4. 持仓时长">4. 持仓时长</span>
-    <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="📅 当周 1-5天">📅 当周 1-5天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="📅 下周 6-12天">📅 下周 6-12天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="📅 当月 14-30天">📅 当月 14-30天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="45"  data-i18n="📅 下月 30-60天">📅 下月 30-60天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="90"  data-i18n="📅 季度 60-120天">📅 季度 60-120天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="180" data-i18n="📅 半年 150-240天">📅 半年 150-240天</button>
-    <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="📅 LEAPS 1年+">📅 LEAPS 1年+</button>
+    <button class="opt-btn" data-group="timeframe" data-value="3"   data-i18n="当周 1-5天">当周 1-5天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="8"   data-i18n="下周 6-12天">下周 6-12天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="21"  data-i18n="当月 14-30天">当月 14-30天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="45"  data-i18n="下月 30-60天">下月 30-60天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="90"  data-i18n="季度 60-120天">季度 60-120天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="180" data-i18n="半年 150-240天">半年 150-240天</button>
+    <button class="opt-btn" data-group="timeframe" data-value="400" data-i18n="LEAPS 1年+">LEAPS 1年+</button>
   </div>
 
   <div class="row">
@@ -3173,7 +3217,7 @@ const I18N = {
     '🎯 距行权 · 近→远': '🎯 距行權 · 近→遠',
     '🛡 距行权 · 远→近': '🛡 距行權 · 遠→近',
     '⏱️ 到期 · 近→远': '⏱️ 到期 · 近→遠',
-    '📅 到期 · 远→近': '📅 到期 · 遠→近',
+    '到期 · 远→近': '到期 · 遠→近',
     '🪙 权利金 · 大→小': '🪙 權利金 · 大→小',
     '⚙️ Theta · 大→小': '⚙️ Theta · 大→小',
     '📊 持仓快照 CSV': '📊 持倉快照 CSV',
@@ -3258,13 +3302,13 @@ const I18N = {
     '📤 减仓（Covered Call）': '📤 減倉（Covered Call）',
     '🚀 做多波动率（近期）': '🚀 做多波動率（近期）',
     '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS 股票替代（長期 Long Call）',
-    '📅 当周 1-5天': '📅 當週 1-5天',
-    '📅 下周 6-12天': '📅 下週 6-12天',
-    '📅 当月 14-30天': '📅 當月 14-30天',
-    '📅 下月 30-60天': '📅 下月 30-60天',
-    '📅 季度 60-120天': '📅 季度 60-120天',
-    '📅 半年 150-240天': '📅 半年 150-240天',
-    '📅 LEAPS 1年+': '📅 LEAPS 1年+',
+    '当周 1-5天': '當週 1-5天',
+    '下周 6-12天': '下週 6-12天',
+    '当月 14-30天': '當月 14-30天',
+    '下月 30-60天': '下月 30-60天',
+    '季度 60-120天': '季度 60-120天',
+    '半年 150-240天': '半年 150-240天',
+    'LEAPS 1年+': 'LEAPS 1年+',
     '🛡 保守（Δ < 0.20）': '🛡 保守（Δ < 0.20）',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ 平衡（Δ 0.20-0.35）',
     '🔥 激进（Δ > 0.35）': '🔥 激進（Δ > 0.35）',
@@ -3720,7 +3764,7 @@ const I18N = {
     '🎯 距行权 · 近→远': '🎯 Strike · near→far',
     '🛡 距行权 · 远→近': '🛡 Strike · far→near',
     '⏱️ 到期 · 近→远': '⏱️ Expiry · near→far',
-    '📅 到期 · 远→近': '📅 Expiry · far→near',
+    '到期 · 远→近': 'Expiry · far→near',
     '🪙 权利金 · 大→小': '🪙 Premium · large→small',
     '⚙️ Theta · 大→小': '⚙️ Theta · large→small',
     '📊 持仓快照 CSV': '📊 Positions CSV',
@@ -3805,13 +3849,13 @@ const I18N = {
     '📤 减仓（Covered Call）': '📤 Covered Call',
     '🚀 做多波动率（近期）': '🚀 Long Volatility (near-term)',
     '📖 LEAPS 股票替代（长期 Long Call）': '📖 LEAPS Stock Replacement',
-    '📅 当周 1-5天': '📅 This week 1-5d',
-    '📅 下周 6-12天': '📅 Next week 6-12d',
-    '📅 当月 14-30天': '📅 This month 14-30d',
-    '📅 下月 30-60天': '📅 Next month 30-60d',
-    '📅 季度 60-120天': '📅 Quarterly 60-120d',
-    '📅 半年 150-240天': '📅 6 months 150-240d',
-    '📅 LEAPS 1年+': '📅 LEAPS 1y+',
+    '当周 1-5天': 'This week 1-5d',
+    '下周 6-12天': 'Next week 6-12d',
+    '当月 14-30天': 'This month 14-30d',
+    '下月 30-60天': 'Next month 30-60d',
+    '季度 60-120天': 'Quarterly 60-120d',
+    '半年 150-240天': '6 months 150-240d',
+    'LEAPS 1年+': 'LEAPS 1y+',
     '🛡 保守（Δ < 0.20）': '🛡 Conservative (Δ < 0.20)',
     '⚖️ 平衡（Δ 0.20-0.35）': '⚖️ Balanced (Δ 0.20-0.35)',
     '🔥 激进（Δ > 0.35）': '🔥 Aggressive (Δ > 0.35)',

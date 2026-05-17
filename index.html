@@ -2551,13 +2551,49 @@
 
     /* card 内 padding 全员缩 */
     .card { padding: 16px 14px; }
-    .rec-card { padding: 14px; }
+    .rec-card { padding: 12px !important; }
+    .rec-cards { gap: 8px !important; }
 
-    /* 推荐结果 metrics grid 强制 2 列 */
-    .rec-metrics { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-    .kmet { padding: 8px 10px !important; }
-    .kmet-l { font-size: 9.5px !important; }
-    .kmet-v { font-size: 14px !important; }
+    /* 推荐结果 metrics grid → 3 列 2 行（省一整行高度）*/
+    .rec-metrics { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; margin-bottom: 8px !important; }
+    .kmet { padding: 5px 6px !important; border-radius: 5px !important; }
+    .kmet-l { font-size: 9px !important; margin-bottom: 1px !important; }
+    .kmet-v { font-size: 13px !important; }
+
+    /* 推荐卡 head: rank+title 左，actions 竖排右，不换行 */
+    .rec-head { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 6px !important; }
+    .rec-actions { flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; }
+    .rec-card .add-btn { flex: unset !important; padding: 6px 10px !important; font-size: 11px !important; white-space: nowrap !important; }
+    .rec-actions .preview-btn { padding: 5px 8px !important; font-size: 10.5px !important; text-align: center !important; white-space: nowrap !important; }
+    .rec-contract { gap: 4px; flex-wrap: wrap; }
+    .rec-contract .rec-exp { font-size: 10.5px !important; margin-left: 0 !important; }
+    .rec-head .rec-rank { margin-top: 3px !important; }
+
+    /* 一句话评价：tighter */
+    .rec-oneline { padding: 6px 10px !important; font-size: 11.5px !important; line-height: 1.4 !important; margin-bottom: 8px !important; }
+
+    /* 加入对比 checkbox：compact */
+    .rec-compare-check { padding: 1px 0 !important; font-size: 10.5px !important; margin-bottom: 4px !important; gap: 5px !important; }
+    .rec-compare-check input[type="checkbox"] { width: 12px !important; height: 12px !important; }
+
+    /* algo-badge：紧凑，减少结果区顶部空白 */
+    .algo-badge { padding: 7px 10px !important; gap: 8px !important; margin-bottom: 8px !important; font-size: 11px !important; }
+    .algo-badge .algo-tag { font-size: 10px !important; }
+
+    /* iv-banner：缩 */
+    .iv-banner { padding: 10px 12px !important; margin: 8px 0 !important; }
+    .iv-rank-bar { margin-bottom: 6px !important; }
+    .iv-text { font-size: 11px !important; line-height: 1.4 !important; }
+
+    /* disclaimer：缩 */
+    .disclaimer { padding: 6px 10px !important; font-size: 10.5px !important; margin: 8px 0 !important; }
+
+    /* tier-filter：缩 */
+    .tier-filter { margin: 10px 0 8px !important; gap: 6px !important; }
+    .tier-filter .tf-pill { padding: 4px 10px !important; font-size: 11px !important; }
+
+    /* rec-result summary 文字行 */
+    .rec-result .summary { font-size: 11px !important; margin-bottom: 6px !important; }
 
     /* 推荐表单 grid 收成单列 */
     .rec-form .rf-grid { grid-template-columns: 1fr !important; }
@@ -2568,12 +2604,6 @@
     /* 持仓卡 actions 全宽并列 */
     .pos-actions { flex-wrap: wrap; gap: 6px; }
     .pos-actions button { flex: 1 1 calc(33% - 4px); min-width: 0; font-size: 11px; }
-
-    /* 推荐卡 head 行手机换行 */
-    .rec-head { flex-wrap: wrap; }
-    .rec-card .add-btn { flex: 0 0 auto; }
-    .rec-contract { gap: 4px; }
-    .rec-contract .rec-exp { width: 100%; margin-left: 0; }
 
     /* pros/cons 改单列 */
     .rec-proscons { grid-template-columns: 1fr !important; }

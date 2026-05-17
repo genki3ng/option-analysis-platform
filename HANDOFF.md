@@ -3,9 +3,40 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（**UX 优化 + 删「复用上次」**）
+最后更新：2026-05-17（**Wheel 闭环提示 三箭齐发 debug**）
 
-### 🆕 最新 session：UX 按钮 / 推荐模组 / 账户设置 重设计 + 删「复用上次」
+### 🆕 最新 session：Wheel 闭环提示 debug（Batch 4 中点）
+
+**分支**：`claude/batch-4-midpoint-6gjJE` → **已合 main**（cherry-pick `4cae7fd`）
+**原 feature commit**：`4d69f2c`
+
+**症状**：用户报"账户设置里存了 ≥100 股，但 Wheel 闭环提示不出来"。
+
+**根因（3 个独立 bug）**：
+1. **`_getAccountMeta` cloud-empty 不 fallback localStorage** —— 已登录 +
+   cloud ready 时只读云端，云端无 `_meta.account` 就返回 `{}`，把
+   localStorage 里的数据完全忽略。早期未迁移的用户彻底失效。
+2. **登录后 account_meta 没人帮搬到云端** —— `_migrateLocalPrefsToCloud`
+   只迁 `_PREF_KEYS`（lang/theme/density/rec_*），`account_meta` 不在 list。
+3. **`close_reason='expired_itm'` 全 codebase 没人写** —— `submitClose` 只
+   set `'manual'`，路径 2（CSP 到期被指派 → 进 Wheel 下半场）功能上是死的。
+
+**修法**（一个 commit 三处改 index.html）：
+1. `_getAccountMeta` (8587): 云端无 `_meta.account` 时退回 localStorage
+2. 新增 `_migrateLocalAccountToCloud` (8738) + 在 `_onSignedIn` (8529) 调用
+3. `renderWheelHints` (8213) 加 path B：`!p.closed && p.days<=0 &&
+   p.underlying<p.strike` 时自动认作"30 天内被指派"（前端推断，不污染
+   close_reason 写入）
+
+**未做 / 待验证**：
+- [ ] 用户在 prod 验证 Wheel hint 现在能出来了
+- [ ] 三个浏览器矩阵（Mac Chrome / iPhone Safari / Android）测同步迁移
+- [ ] 子批 B（POP 校准 + Exit plan）— 待做
+- [ ] 子批 C（表单双轨模式）— 待做
+
+---
+
+### 上一个 session：UX 按钮 / 推荐模组 / 账户设置 重设计 + 删「复用上次」
 
 **做了什么**（commit `586ba35`，branch main）：
 - 全局按钮 B 风格：10px 圆角 + 1.5px 描边 + `scale(1.03)` hover + `cubic-bezier(0.16,1,0.3,1)` 过渡
@@ -58,7 +89,8 @@ Batch 4 是用户 priority table 的最后一波，分 3 个子批做：
 
 子批 A 验证清单：
 - [ ] /app 推荐结果里出现 Vol skew pill（put_skew/call_skew，中间值不显示）
-- [ ] 持仓列表上方出现 Wheel 闭环提示（用户必须账户中设过 ≥100 股，或最近 30d 有 CSP expired_itm）
+- [ ] 持仓列表上方出现 Wheel 闭环提示 — **2026-05-17 已 debug** `4cae7fd`，
+      三种触发：账户设≥100 股 / 手动 expired_itm / put 已过期未平仓且 ITM
 - [ ] intent 下拉只剩 4 项：收权利金 / CSP / Covered Call / LEAPS（"做多波动率"已下架）
 - [ ] [推荐 Covered Call →] 按钮一键预填 rec form (covered_call/neutral/21d/balanced)
 

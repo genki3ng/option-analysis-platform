@@ -594,66 +594,67 @@
   .pos.warn-status:hover { border-color: rgba(230,184,106,.50); }
 
   .pos-row1 {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 14px 8px 14px;
+    display: flex; align-items: center; gap: 9px;
+    padding: 14px 14px 0 14px;
   }
   .pos input[type="checkbox"] {
-    width: 17px; height: 17px;
+    width: 16px; height: 16px;
     accent-color: var(--accent);
     cursor: pointer; flex-shrink: 0;
   }
   .pos-name {
     flex: 1; min-width: 0;
-    display: flex; align-items: baseline; gap: 6px;
+    display: flex; align-items: baseline; gap: 5px;
     cursor: pointer; user-select: none;
   }
   .pos-name .ticker {
-    font-size: 14px; font-weight: 600; letter-spacing: -0.005em;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.015em;
   }
   .pos-name .strike {
-    font-size: 13px; font-weight: 600; color: var(--text);
+    font-size: 14.5px; font-weight: 600; color: var(--sub);
     font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
   }
   .pos-name .type-badge {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
-    padding: 2px 6px; border-radius: 3px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 1.5px 5px; border-radius: 3px;
     text-transform: uppercase;
     font-family: "SF Mono", Menlo, monospace;
   }
   .pos-name .type-badge.call { background: rgba(52,211,153,0.14); color: var(--green); }
   .pos-name .type-badge.put  { background: rgba(230,184,106,0.16); color: var(--accent); }
 
+  /* ⋯ 菜单按钮（OCC 一键复制） */
+  .pos-more {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--sub);
+    font-size: 16px;
+    padding: 2px 8px; border-radius: 6px;
+    cursor: pointer; font-family: inherit;
+    line-height: 1; flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .pos-more:hover {
+    background: var(--card2); color: var(--text);
+  }
+  .pos-more.copied {
+    color: var(--green); background: rgba(74,222,128,0.10);
+  }
+  .pos-more.copied::after { content: ' ✓'; font-size: 11px; }
+  :root[data-theme="light"] .pos-more.copied { background: rgba(22,163,74,0.10); }
+
+  /* pos-pct: 已平仓卡片仍用（顶部右侧已实现盈亏） */
   .pos-pct {
-    font-size: 14px; font-weight: 600;
+    font-size: 13px; font-weight: 600;
     font-variant-numeric: tabular-nums; flex-shrink: 0;
     letter-spacing: -0.02em;
   }
 
-  .pos-occ {
-    margin: 0 14px 8px 14px;
-    padding: 4px 8px;
-    background: var(--card2); border-radius: 5px;
-    font-family: "SF Mono", Menlo, monospace;
-    font-size: 11px; color: var(--sub);
-    cursor: pointer; user-select: all;
-    display: flex; align-items: center; gap: 6px;
-    transition: all 0.15s;
-  }
-  .pos-occ:hover {
-    background: var(--card3); color: var(--text);
-  }
-  .pos-occ .code { flex: 1; letter-spacing: 0.3px; }
-  .pos-occ .copy-hint { opacity: 0.5; font-size: 10px; }
-  .pos-occ.copied {
-    background: rgba(74,222,128,0.15);
-    color: var(--green); border: 1px solid var(--green);
-  }
-  .pos-occ.copied .copy-hint::before { content: "✓ 已复制 "; }
-
   .pos-meta {
-    padding: 0 14px 10px 14px;
+    padding: 5px 14px 0 39px;
     font-size: 11px; color: var(--sub);
     line-height: 1.4;
+    font-variant-numeric: tabular-nums;
   }
 
   .pos-hero {
@@ -677,52 +678,120 @@
     font-weight: 500;
   }
 
-  /* Distance-to-strike thermometer */
-  .pos-bar { padding: 12px 14px 10px 14px; }
-  .pos-bar .head {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-bottom: 4px; line-height: 1.2;
+  /* 双列主体 (H 风格 · E+G 综合) */
+  .pos-body {
+    display: grid;
+    grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr);
+    gap: 16px;
+    padding: 10px 14px 12px;
   }
-  .pos-bar .head .pct {
-    font-weight: 700; color: var(--text);
+  .pos-body-left {
+    display: flex; flex-direction: column;
+    padding-right: 12px;
+    border-right: 1px solid var(--line);
+    min-width: 0;
+  }
+  .pos-pnl-block {
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .pos-pnl-big {
+    font-size: 26px; font-weight: 700;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em; line-height: 1;
   }
+  .pos-pnl-pct {
+    font-size: 12px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+  }
+  .pos-pnl-label {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 500;
+    margin-top: 6px;
+  }
+  /* Theta 子块 — 完整模式才显示 */
+  .pos-theta-row {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .pos-theta-row .k {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+  .pos-theta-row .v {
+    font-size: 15px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .pos-body-right {
+    display: flex; flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  /* 距行权温度条 (水平 layout) */
+  .pos-bar {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pos-bar .label {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    width: 32px; flex-shrink: 0;
+    font-weight: 500;
+  }
+  .pos-bar .track-wrap { flex: 1; position: relative; min-width: 0; }
   .pos-bar .track {
     position: relative;
-    height: 6px; border-radius: 3px;
+    height: 4px; border-radius: 3px;
     background: linear-gradient(to right,
-      rgba(248,113,113,0.7) 0%,
-      rgba(250,204,21,0.7) 25%,
-      rgba(74,222,128,0.7) 60%);
+      rgba(248,113,113,0.55) 0%,
+      rgba(250,204,21,0.55) 28%,
+      rgba(74,222,128,0.55) 62%);
+  }
+  :root[data-theme="light"] .pos-bar .track {
+    background: linear-gradient(to right,
+      rgba(220,38,38,0.55) 0%,
+      rgba(245,158,11,0.55) 28%,
+      rgba(22,163,74,0.55) 62%);
   }
   .pos-bar .marker {
     position: absolute; top: -3px;
-    width: 12px; height: 12px;
+    width: 10px; height: 10px;
     background: var(--card);
-    border: 2px solid var(--accent);
+    border: 2px solid var(--text);
     border-radius: 50%;
-    box-shadow: 0 0 0 1px var(--bg);
+    box-shadow: 0 0 0 1.5px var(--bg);
     transform: translateX(-50%);
     transition: left 0.3s;
   }
-  .pos-bar .endpoints {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-top: 4px; font-variant-numeric: tabular-nums;
+  .pos-bar .value {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    width: 90px; text-align: right; flex-shrink: 0;
   }
+  .pos-bar .value.bad { color: var(--red); }
+  .pos-bar .value.ok  { color: var(--green); }
 
-  /* Time progress */
+  /* 时间进度条 (水平 layout) */
   .pos-time {
-    padding: 0 14px 10px 14px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .pos-time .head {
-    display: flex; justify-content: space-between;
-    font-size: 10px; color: var(--sub);
-    margin-bottom: 4px;
+  .pos-time .label {
+    font-size: 9.5px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    width: 32px; flex-shrink: 0;
+    font-weight: 500;
   }
+  .pos-time .track-wrap { flex: 1; position: relative; min-width: 0; }
   .pos-time .track {
-    height: 4px; border-radius: 2px;
+    height: 4px; border-radius: 3px;
     background: var(--card3);
     overflow: hidden;
   }
@@ -730,41 +799,70 @@
     height: 100%; background: var(--accent);
     transition: width 0.3s;
   }
+  .pos-time .value {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    width: 90px; text-align: right; flex-shrink: 0;
+  }
 
-  /* Action row */
+  /* Extras (损益曲线 + 笔记) — 完整模式才显示 */
+  .pos-extras {
+    display: flex; gap: 6px;
+    padding: 0 14px 12px;
+  }
+  .pos-extras > * { flex: 1; min-width: 0; }
+
+  /* Action row — 胶囊按钮 */
   .pos-actions {
-    display: flex; gap: 8px;
-    padding: 10px 14px 12px 14px;
+    display: flex; gap: 8px; align-items: center;
+    padding: 10px 14px 14px;
     border-top: 1px solid var(--line);
   }
-  .pos-actions button {
-    background: var(--accent-tint);
-    border: 1.5px solid rgba(230,184,106,0.35);
-    color: var(--accent);
-    font-size: 11px; font-weight: 600;
-    padding: 5px 12px; border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.18s cubic-bezier(0.16,1,0.3,1),
-                border-color 0.18s cubic-bezier(0.16,1,0.3,1),
-                transform 0.18s cubic-bezier(0.16,1,0.3,1);
+  .pos-actions .primary {
+    background: var(--text); color: var(--card);
+    border: none;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 18px; border-radius: 999px;
+    cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s, transform 0.18s cubic-bezier(0.16,1,0.3,1);
   }
-  .pos-actions button:hover {
-    background: var(--accent-tint-strong);
-    border-color: var(--accent);
-    transform: scale(1.04);
+  .pos-actions .primary:hover { opacity: 0.88; transform: scale(1.03); }
+  .pos-actions .primary:active { transform: scale(0.96); }
+  .pos-actions .ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--sub);
+    font-size: 11.5px; font-weight: 500;
+    padding: 5px 12px; border-radius: 999px;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
   }
-  .pos-actions button:active { transform: scale(0.96); }
+  .pos-actions .ghost:hover {
+    color: var(--text); border-color: var(--line-2);
+    background: var(--card2);
+  }
+  .pos-actions .del-btn {
+    margin-left: auto;
+    border-color: rgba(248,113,113,0.30);
+    color: var(--red);
+  }
+  .pos-actions .del-btn:hover {
+    border-color: var(--red);
+    background: rgba(248,113,113,0.08);
+  }
+  :root[data-theme="light"] .pos-actions .del-btn {
+    border-color: rgba(220,38,38,0.30);
+  }
+  :root[data-theme="light"] .pos-actions .del-btn:hover {
+    background: rgba(220,38,38,0.08);
+  }
+  /* legacy danger-btn 兼容 */
   .pos-actions button.danger-btn {
     background: rgba(248,113,113,0.08);
     border-color: rgba(248,113,113,0.35);
     color: var(--red);
   }
-  .pos-actions button.danger-btn:hover {
-    background: rgba(248,113,113,0.18);
-    border-color: var(--red);
-    transform: scale(1.04);
-  }
-  .pos-actions button.danger-btn:active { transform: scale(0.96); }
 
   /* Inline edit-form — 改 contracts / sell_price / trade_date */
   .edit-form {
@@ -999,33 +1097,29 @@
   }
   .closed-review .cr-undo:hover { color: var(--accent); }
 
-  /* Compact stats row — 2×2 grid，每格 50% 宽度足够装下完整数字 */
+  /* Inline greeks row — 单行 chip 风（H 风格） */
   .pos-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    padding: 10px 14px 12px 14px;
-    border-top: 1px solid var(--line);
-    font-size: 12px;
+    display: flex; flex-wrap: wrap;
+    gap: 4px 12px;
+    padding-top: 6px;
+    font-size: 10.5px;
+    color: var(--sub);
+    font-variant-numeric: tabular-nums;
   }
   .pos-stats .stat {
-    display: flex; align-items: baseline;
-    justify-content: space-between; gap: 4px;
-    padding: 5px 8px; background: var(--card2);
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    min-width: 0;
+    display: inline-flex; align-items: baseline;
+    gap: 3px;
+    cursor: help;
+    white-space: nowrap;
   }
   .pos-stats .stat .k {
-    color: var(--sub); cursor: help;
+    color: var(--sub);
     flex-shrink: 0;
   }
-  .pos-stats .stat .v {
-    font-family: "SF Mono", Menlo, monospace;
-    font-weight: 700; font-variant-numeric: tabular-nums;
-    text-align: right;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    display: inline-flex; align-items: center; gap: 4px;
+  .pos-stats .stat strong {
+    color: var(--text); font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    display: inline-flex; align-items: center; gap: 3px;
   }
   /* 数据源色点（固定大小，不影响对齐） */
   .src-dot {
@@ -1038,16 +1132,16 @@
   .src-dot.closed  { background: var(--sub); }
   .src-dot.expired { background: var(--sub); }
 
-  /* Status pill */
+  /* Status text — 文字色，不用 chip (H 风格) */
   .pos-status {
-    font-size: 10px; font-weight: 700;
-    padding: 3px 7px; border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: -0.005em;
     flex-shrink: 0;
   }
-  .pos-status.good   { background: rgba(74,222,128,0.16); color: var(--green); }
-  .pos-status.warn   { background: rgba(250,204,21,0.16); color: var(--yellow); }
-  .pos-status.danger { background: rgba(248,113,113,0.16); color: var(--red); }
-  .pos-status.info   { background: rgba(230,184,106,0.16); color: var(--accent); }
+  .pos-status.good   { color: var(--green); }
+  .pos-status.warn   { color: var(--yellow); }
+  .pos-status.danger { color: var(--red); }
+  .pos-status.info   { color: var(--accent); }
 
   .pos-toolbar {
     display: flex; align-items: center; gap: 8px;
@@ -2201,17 +2295,25 @@
 
   /* 📊 Payoff Diagram */
   .pos-payoff {
-    margin: 8px 14px 0 14px;
-    border-radius: 6px;
-    background: var(--card2);
+    border-radius: 7px;
+    background: transparent;
+    border: 1px dashed var(--line);
+    overflow: hidden;
+    transition: all 0.15s;
   }
+  .pos-payoff:hover { border-color: var(--line-2); background: var(--card2); }
   .pos-payoff summary {
     padding: 6px 10px; font-size: 11px;
     color: var(--sub); cursor: pointer; user-select: none;
     list-style: none;
+    text-align: center;
   }
   .pos-payoff summary::-webkit-details-marker { display: none; }
-  .pos-payoff summary:hover { color: var(--accent); }
+  .pos-payoff summary:hover { color: var(--text); }
+  .pos-payoff[open] {
+    border-style: solid;
+    background: var(--card2);
+  }
   .pos-payoff[open] summary {
     color: var(--accent);
     border-bottom: 1px solid var(--line);
@@ -2221,7 +2323,7 @@
 
   /* 📊 财报警告 */
   .earnings-warn {
-    margin: 6px 14px 0 14px;
+    margin: 0 14px 10px 14px;
     background: rgba(202,138,4,0.12);
     border-left: 3px solid var(--yellow);
     border-radius: 4px;
@@ -2261,18 +2363,28 @@
   .morning-brief li { padding: 2px 0; }
   .morning-brief.collapsed { display: none; }
 
-  /* 📝 Trade Journal */
+  /* 📝 Trade Journal — extras 内 dashed button */
   .journal-btn {
     background: transparent; border: 1px dashed var(--line);
-    color: var(--sub); font-size: 10px;
-    padding: 3px 8px; border-radius: 4px;
-    cursor: pointer; margin: 0 14px 8px 14px;
-    display: inline-block;
+    color: var(--sub); font-size: 11px;
+    padding: 6px 10px; border-radius: 7px;
+    cursor: pointer; font-family: inherit;
+    text-align: center;
+    transition: all 0.15s;
+    width: 100%;
   }
-  .journal-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .journal-btn:hover {
+    color: var(--text); border-color: var(--line-2);
+    background: var(--card2);
+  }
   .journal-btn.has-notes {
-    background: rgba(230,184,106,0.10); color: var(--accent);
+    background: var(--accent-tint);
+    color: var(--accent-2);
+    border-color: rgba(230,184,106,0.30);
     border-style: solid;
+  }
+  :root[data-theme="light"] .journal-btn.has-notes {
+    border-color: rgba(184,146,85,0.30);
   }
 
   /* 📚 期权小白指南 — 分类折叠 */
@@ -2527,10 +2639,12 @@
   }
 
   /* ── 简洁模式（data-density="simple"）：隐藏次要字段、压缩间距 ─────── */
-  /* 持仓卡：藏次要文字条 / OCC / 小指标网格；hero & 安全度 bar 保留 */
+  /* 持仓卡 (H 风格)：藏副标 / Theta 子块 / Mark+$P / 损益曲线+笔记 / 删除按钮 */
   [data-density="simple"] .pos .pos-meta,
-  [data-density="simple"] .pos .pos-occ,
-  [data-density="simple"] .pos .pos-stats { display: none; }
+  [data-density="simple"] .pos .pos-theta-row,
+  [data-density="simple"] .pos .pos-stats .full-only,
+  [data-density="simple"] .pos .pos-extras,
+  [data-density="simple"] .pos .pos-actions .del-btn { display: none; }
   /* 推荐卡：藏「加入对比」/ #rank 标号 / 一句话评语 / 关键指标网格里跟 head 重复的 */
   [data-density="simple"] .rec-card .rec-compare-check,
   [data-density="simple"] .rec-card .rec-rank,
@@ -2538,11 +2652,6 @@
   /* rec-metrics: 简洁下只保留前 2 个核心（年化租金 / Δ），其余隐藏 */
   [data-density="simple"] .rec-card .rec-metrics .kmet:nth-child(n+3) { display: none; }
   /* 主字体微调 + 卡片间距收紧 */
-  [data-density="simple"] .pos { padding: 12px 14px; }
-  [data-density="simple"] .pos .pos-row1 { margin-bottom: 4px; }
-  [data-density="simple"] .pos .pos-hero { margin-top: 8px; }
-  [data-density="simple"] .pos .pos-bar,
-  [data-density="simple"] .pos .pos-time { margin-top: 6px; }
   [data-density="simple"] .rec-card { padding: 12px 14px; }
 
   .card h3 .h-hint {
@@ -5503,91 +5612,84 @@ function renderPosition(p) {
           <span class="type-badge ${typeCls}">${p.type}</span>
         </div>
         <span class="pos-status ${status.cls}">${status.label}</span>
-        <span class="pos-pct ${colorOf(p.pnl_pct)}">${signed(p.pnl_pct, 1)}%</span>
+        <button class="pos-more"
+                onclick="event.stopPropagation();copyOcc(this, '${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}')"
+                title="${t('点击复制合约代码')}: ${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}">⋯</button>
       </div>
 
       <div class="pos-meta">
         Exp ${p.expiry} · ${p.contracts}× contracts · sold $${fmt(p.sell_price, 2)}/share
       </div>
-      <div class="pos-occ" onclick="copyOcc(this, '${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}')" title="点击复制合约代码">
-        <span class="code">${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}</span>
-        <span class="copy-hint">📋</span>
+
+      <div class="pos-body">
+        <div class="pos-body-left">
+          <div class="pos-pnl-block">
+            <span class="pos-pnl-big ${colorOf(p.pnl)}" title="${TIPS.pnl}">${signed(p.pnl, 0, '$')}</span>
+            <span class="pos-pnl-pct ${colorOf(p.pnl_pct)}">${signed(p.pnl_pct, 1)}%</span>
+          </div>
+          <span class="pos-pnl-label">${t('浮盈亏')}</span>
+          <div class="pos-theta-row" title="${TIPS.theta}">
+            <span class="k">${t('每日 Theta')}</span>
+            <span class="v green">+$${fmt(p.daily_theta, 0)}</span>
+          </div>
+        </div>
+
+        <div class="pos-body-right">
+          <div class="pos-bar">
+            <span class="label">${t('行权')}</span>
+            <div class="track-wrap">
+              <div class="track"><div class="marker" style="left: ${bar.pct}%"></div></div>
+            </div>
+            <span class="value ${bar.safe >= 0 ? 'ok' : 'bad'}">${signed(bar.safe, 1)}% ${bar.safe >= 0 ? t('安全') : 'ITM'}</span>
+          </div>
+
+          <div class="pos-time">
+            <span class="label">${t('时间')}</span>
+            <div class="track-wrap">
+              <div class="track"><div class="fill" style="width: ${elapsedPct.toFixed(1)}%"></div></div>
+            </div>
+            <span class="value">${t('剩')} ${p.days}/${p.total_days} ${t('天')}</span>
+          </div>
+
+          <div class="pos-stats">
+            <span class="stat" title="${TIPS.delta}">
+              <span class="k">Δ</span><strong>${fmt(p.delta, 3)}</strong>
+            </span>
+            <span class="stat" title="${TIPS.iv}">
+              <span class="k">IV</span><strong>${fmt(p.trade_iv, 0)}%</strong>
+            </span>
+            <span class="stat" title="${TIPS.theta}">
+              <span class="k">θ</span><strong>+$${fmt(p.daily_theta, 0)}</strong>
+            </span>
+            <span class="stat full-only" title="${markSrcTip(p.mark_src)}">
+              <span class="k">Mark</span><strong><span class="src-dot ${p.mark_src}"></span>$${fmt(p.mark, 2)}</strong>
+            </span>
+            <span class="stat full-only" title="${TIPS.sold}">
+              <span class="k">$P</span><strong>$${fmt(p.sold, 0)}</strong>
+            </span>
+          </div>
+        </div>
       </div>
-
-      <div class="pos-hero">
-        <div class="stat" title="${TIPS.pnl}">
-          <span class="v ${colorOf(p.pnl)}">${signed(p.pnl, 0, '$')}</span>
-          <span class="l">${t('浮盈亏')}</span>
-        </div>
-        <div class="stat" title="${TIPS.theta}">
-          <span class="v green">+$${fmt(p.daily_theta, 0)}</span>
-          <span class="l">${t('每日 Theta')}</span>
-        </div>
-      </div>
-
-      <div class="pos-bar">
-        <div class="head">
-          <span>${t('距行权价')}</span>
-          <span class="pct">${signed(bar.safe, 1)}% ${bar.safe >= 0 ? t('安全') : 'ITM'}</span>
-        </div>
-        <div class="track">
-          <div class="marker" style="left: ${bar.pct}%"></div>
-        </div>
-        <div class="endpoints">
-          <span>${leftLabel}</span>
-          <span>${rightLabel}</span>
-        </div>
-      </div>
-
-      <div class="pos-time">
-        <div class="head">
-          <span>${t('时间进度')} ${elapsed}/${p.total_days} ${t('天')}</span>
-          <span>${t('剩')} ${p.days} ${t('天')}</span>
-        </div>
-        <div class="track">
-          <div class="fill" style="width: ${elapsedPct.toFixed(1)}%"></div>
-        </div>
-      </div>
-
-      <details class="pos-payoff">
-        <summary>📊 ${t('损益曲线')}</summary>
-        <div class="payoff-body">
-          ${renderPayoffSvg(p)}
-        </div>
-      </details>
-
-      <button class="journal-btn ${(getJournalNotes(p.id).length ? 'has-notes' : '')}" onclick="event.stopPropagation();showJournal('${p.id}')">
-        📝 ${getJournalNotes(p.id).length ? `${getJournalNotes(p.id).length} ${t('条笔记')}` : t('记笔记 / 写交易计划')}
-      </button>
 
       ${p.earnings_before_expiry ? `
       <div class="earnings-warn">
         ${t('earnings_warning_html').replace('{date}', p.earnings_date).replace('{n}', p.earnings_days_until)}
       </div>` : ''}
 
-      <div class="pos-stats">
-        <span class="stat" title="${TIPS.delta}">
-          <span class="k">Δ</span><span class="v">${fmt(p.delta, 3)}</span>
-        </span>
-        <span class="stat" title="${TIPS.iv}">
-          <span class="k">IV</span><span class="v">${fmt(p.trade_iv, 0)}%</span>
-        </span>
-        <span class="stat" title="${markSrcTip(p.mark_src)}">
-          <span class="k">Mark</span>
-          <span class="v">
-            <span class="src-dot ${p.mark_src}"></span>
-            $${fmt(p.mark, 2)}
-          </span>
-        </span>
-        <span class="stat" title="${TIPS.sold}">
-          <span class="k">$P</span><span class="v">$${fmt(p.sold, 0)}</span>
-        </span>
+      <div class="pos-extras">
+        <details class="pos-payoff">
+          <summary>📊 ${t('损益曲线')}</summary>
+          <div class="payoff-body">${renderPayoffSvg(p)}</div>
+        </details>
+        <button class="journal-btn ${(getJournalNotes(p.id).length ? 'has-notes' : '')}" onclick="event.stopPropagation();showJournal('${p.id}')">
+          📝 ${getJournalNotes(p.id).length ? `${getJournalNotes(p.id).length} ${t('条笔记')}` : t('记笔记 / 写交易计划')}
+        </button>
       </div>
 
       <div class="pos-actions">
-        <button onclick="showClose('${p.id}')">${t('平仓')}</button>
-        <button class="edit-btn" onclick="showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
-        <button class="del-btn" onclick="deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
+        <button class="primary" onclick="showClose('${p.id}')">${t('平仓')}</button>
+        <button class="ghost edit-btn" onclick="showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
+        <button class="ghost del-btn" onclick="deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
       </div>
 
       <div class="close-form" id="cf-${p.id}">

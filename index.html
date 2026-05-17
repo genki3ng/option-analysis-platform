@@ -2164,6 +2164,21 @@
     background-position: right 8px center;
   }
 
+  /* ── 简洁模式（data-density="simple"）：隐藏次要字段、压缩间距 ─────── */
+  /* 持仓卡：藏次要文字条 / OCC / 小指标网格；hero & 安全度 bar 保留 */
+  [data-density="simple"] .pos .pos-meta,
+  [data-density="simple"] .pos .pos-occ,
+  [data-density="simple"] .pos .pos-stats { display: none; }
+  /* 推荐卡：藏「加入对比」选项（高级用法），保留所有关键卡面 */
+  [data-density="simple"] .rec-card .rec-compare-check { display: none; }
+  /* 主字体微调 + 卡片间距收紧 */
+  [data-density="simple"] .pos { padding: 12px 14px; }
+  [data-density="simple"] .pos .pos-row1 { margin-bottom: 4px; }
+  [data-density="simple"] .pos .pos-hero { margin-top: 8px; }
+  [data-density="simple"] .pos .pos-bar,
+  [data-density="simple"] .pos .pos-time { margin-top: 6px; }
+  [data-density="simple"] .rec-card { padding: 12px 14px; }
+
   .card h3 .h-hint {
     display: block; font-size: 11px; color: var(--sub);
     font-weight: 400; text-transform: none; letter-spacing: 0;
@@ -2608,6 +2623,7 @@
             <button class="muted small" onclick="selectAll(true)" data-i18n="☑ 全选">☑ 全选</button>
             <button class="muted small" onclick="selectAll(false)" data-i18n="☐ 全不选">☐ 全不选</button>
             <button class="muted small" id="hide-closed-btn" onclick="toggleHideClosed()"></button>
+            <button class="muted small" id="density-btn" onclick="toggleDensity()"></button>
           </div>
 
           <span class="tb-sep"></span>
@@ -2984,6 +3000,8 @@ const I18N = {
     '全不选': '全不選',
     '隐藏已平仓': '隱藏已平倉',
     '显示已平仓': '顯示已平倉',
+    '📐 简洁模式': '📐 簡潔模式',
+    '📐 完整模式': '📐 完整模式',
     '排序': '排序',
     '📥 数据 ▾': '📥 資料 ▾',
     '🔗 同步 ▾': '🔗 同步 ▾',
@@ -3529,6 +3547,8 @@ const I18N = {
     '全不选': 'Deselect All',
     '隐藏已平仓': 'Hide Closed',
     '显示已平仓': 'Show Closed',
+    '📐 简洁模式': '📐 Compact',
+    '📐 完整模式': '📐 Detailed',
     '排序': 'Sort',
     '📥 数据 ▾': '📥 Data ▾',
     '🔗 同步 ▾': '🔗 Sync ▾',
@@ -3957,6 +3977,7 @@ function applyTranslations() {
   });
   // 触发依赖语言的动态元素重渲染
   if (typeof updateHideClosedBtn === 'function') updateHideClosedBtn();
+  if (typeof updateDensityBtn === 'function') updateDensityBtn();
   if (typeof renderEduList === 'function') renderEduList();
 }
 
@@ -4055,6 +4076,31 @@ function updateHideClosedBtn() {
   btn.style.borderColor = hideClosed ? 'var(--accent)' : '';
   btn.style.color = hideClosed ? 'var(--accent)' : '';
 }
+
+// ── 显示密度（simple / full，默认 full）─────────────────────────────────
+function applyDensity(d) {
+  const v = d === 'simple' ? 'simple' : 'full';
+  document.documentElement.dataset.density = v;
+  updateDensityBtn();
+}
+
+function toggleDensity() {
+  const cur = document.documentElement.dataset.density === 'simple' ? 'simple' : 'full';
+  const next = cur === 'simple' ? 'full' : 'simple';
+  _savePref('density', next);
+  applyDensity(next);
+}
+
+function updateDensityBtn() {
+  const btn = document.getElementById('density-btn');
+  if (!btn) return;
+  const isSimple = document.documentElement.dataset.density === 'simple';
+  btn.textContent = isSimple ? t('📐 完整模式') : t('📐 简洁模式');
+  btn.style.borderColor = isSimple ? 'var(--accent)' : '';
+  btn.style.color = isSimple ? 'var(--accent)' : '';
+}
+
+applyDensity(localStorage.getItem('density') || 'full');
 updateHideClosedBtn();
 
 function loadSelection(allIds) {
@@ -7360,7 +7406,7 @@ function _sigOf(c) {
 
 // ── 偏好设置云端同步（state._meta.prefs 命名空间） ─────────────────────────
 // 同步范围：lang / theme / rec_tier_filter / rec_last_ticker / rec_last_choice
-const _PREF_KEYS = ['lang', 'theme', 'rec_tier_filter', 'rec_last_ticker', 'rec_last_choice'];
+const _PREF_KEYS = ['lang', 'theme', 'density', 'rec_tier_filter', 'rec_last_ticker', 'rec_last_choice'];
 
 function _savePref(key, value) {
   localStorage.setItem(key, value);
@@ -7393,6 +7439,11 @@ function _applyCloudPrefs() {
   if (prefs.theme && prefs.theme !== (document.documentElement.dataset.theme || 'dark')) {
     localStorage.setItem('theme', prefs.theme);
     applyTheme(prefs.theme);
+  }
+  // density — 切 data-density 即可，CSS 接管渲染
+  if (prefs.density && prefs.density !== (document.documentElement.dataset.density || 'full')) {
+    localStorage.setItem('density', prefs.density);
+    applyDensity(prefs.density);
   }
   // tier_filter / rec_last_ticker / rec_last_choice — 只写 localStorage，
   // 下次打开推荐 modal / 渲染 tier pill 时自然生效

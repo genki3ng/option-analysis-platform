@@ -2745,33 +2745,38 @@
   .mb-cal-day .marker.both {
     background: linear-gradient(90deg, var(--red) 50%, var(--accent) 50%);
   }
-  /* 桌面宽屏 — 双栏 layout，避免 cards / 日历一长条占满整屏 */
+  /* 桌面宽屏 — 双栏 layout, 日历改 7x2 网格让 cells 大、空间均匀 */
   @media (min-width: 900px) {
     .morning-brief {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 280px;
+      grid-template-columns: minmax(0, 1fr) 240px;
       grid-template-areas:
         "concierge concierge"
         "focus     side"
         "chips     side";
-      gap: 14px 20px;
-      padding: 18px 22px;
+      column-gap: 28px;
+      row-gap: 16px;
+      padding: 22px 24px;
     }
     .morning-brief .mb-close { z-index: 5; }
     .morning-brief .mb-concierge {
       grid-area: concierge;
       margin-bottom: 0;
-      padding: 6px 8px 20px;
+      padding: 6px 4px 18px;
     }
     .morning-brief .mb-text { font-size: 16px; line-height: 1.75; }
     .morning-brief .mb-avatar { width: 56px; height: 56px; font-size: 28px; }
     .mb-focus-list {
       grid-area: focus;
       margin-bottom: 0;
-      /* 2 列 grid for ≥1200px, 1 列 for 900-1200 (避免太挤) */
+      align-items: stretch;
     }
+    /* ≥1200px: focus 2 列 + 等高 cards (新闻 card 2 行 vs detail 单行不齐 fix) */
     @media (min-width: 1200px) {
-      .mb-focus-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .mb-focus-list {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        align-items: stretch;
+      }
       .mb-focus-item { padding: 10px 12px; }
       .mb-focus-text { font-size: 12px; }
       .mb-focus-text .mb-detail { font-size: 10.5px; }
@@ -2784,18 +2789,29 @@
     }
     .mb-calendar {
       grid-area: side;
-      padding-top: 0;
-      margin-top: 0;
+      padding: 0;
+      margin: 0;
       border-top: none;
-      border-left: 1px solid var(--line);
-      padding-left: 20px;
       align-self: start;
     }
-    .mb-cal-head { flex-direction: column; align-items: flex-start; gap: 4px; }
-    .mb-cal-track { gap: 3px; }
-    .mb-cal-day { height: 28px; font-size: 10px; }
-    .mb-cal-legend { margin-top: 2px; }
-    .mb-cal-legend > span { margin-left: 0; margin-right: 10px; }
+    /* 14 天 → 7 列 2 行，每格更大更好读 */
+    .mb-cal-head {
+      flex-direction: column; align-items: flex-start;
+      gap: 4px; margin-bottom: 10px;
+    }
+    .mb-cal-track {
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      row-gap: 6px;
+    }
+    .mb-cal-day {
+      height: 36px;
+      font-size: 11px;
+      border-radius: 6px;
+    }
+    .mb-cal-day .marker { bottom: 4px; }
+    .mb-cal-legend { margin-top: 8px; opacity: 0.8; }
+    .mb-cal-legend > span { margin-left: 0; margin-right: 12px; }
   }
   /* 手机紧凑 */
   @media (max-width: 600px) {

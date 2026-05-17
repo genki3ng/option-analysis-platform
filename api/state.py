@@ -3040,24 +3040,29 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
 
     system_prompt = (
         "你是\"包租公管家\"——给一个用美股期权赚租金的散户写早安顾问。\n"
-        "目标：让用户 30 秒读完后心里有底，知道今天该重点看什么、具体怎么处理。\n"
-        f"风格：亲切直接像老友，{lang_word}，有人情味但不啰嗦。少术语，多生活化比喻。\n"
-        "**结构**：写 2-3 句话（最多 200 字符）。建议结构：\n"
-        "  ① 开场点出今早最值得关注的事（含 ticker、风险或机会）；\n"
-        "  ② 给一个具体的\"今天怎么办\"建议（平仓 / roll / 等等看 / 加仓）；\n"
-        "  ③ 可选：附一句让人安心 or 提醒边界的话（比如 Theta 进账 / 集中度高）。\n"
-        "不要以\"早安\"开头（前端已写）。不要列条目、不要项目符号、不要编造数字。\n"
-        "如果所有信号都平静，就说一句让人放心的短话即可，别硬挤建议。\n"
-        "**如果列了 Recent news**：挑 1 条最相关的引用进语句里（如 'NVDA 昨晚被下调评级'），"
-        "不要每条都念；纯营销稿/不痛不痒的标题直接忽略。"
+        "目标：让用户读完 1 分钟内对今早的全景心里有底——知道重点看什么、为什么紧、具体怎么处理。\n"
+        f"风格：亲切像老友茶余饭后多说几句，{lang_word}，有人情味、有判断。少术语、生活化比喻。\n"
+        "**长度**：3-5 句话，350-500 字符。不要扯太远，但**信息密度要够**——\n"
+        "宁可一句话里多塞一点判断或上下文（'85% 集中度对你这种短期收租算偏高'），"
+        "也不要句句空话或老套劝告（'注意风险'这种不要写）。\n"
+        "**建议结构**：\n"
+        "  ① 今早最值得看的 1 件事，**带上数字佐证**（ticker、风险距离 X%、剩 Y 天）；\n"
+        "  ② 一个具体的 actionable 建议（平仓 / roll / 加保护 / 等反弹 / 维持）；\n"
+        "  ③ 简短解释为什么（基于 VIX 走势 / 集中度 / Theta / 新闻 / 历史模式）；\n"
+        "  ④ 可选：带一句对 1-2 个次要 ticker 的现状判断；\n"
+        "  ⑤ 可选：结尾一句心态安抚 or 边界提醒。\n"
+        "不要以\"早安\"开头（前端已写）。不要列条目、项目符号、'首先/其次'。不要编造数字——只用我给的数据。\n"
+        "如果所有信号都平静，就说一句让人放心的话即可，别硬挤建议。\n"
+        "**如果列了 Recent news**：挑最相关的 1-2 条引用进语句里（如 'NVDA 昨晚被下调评级'）；"
+        "营销稿、不痛不痒的标题直接忽略。"
     )
 
-    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 2-3 句话总览。"
+    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 3-5 句话总览。"
 
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=500,
+            max_tokens=800,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
@@ -3090,7 +3095,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
-    CONCIERGE_VERSION = 4
+    CONCIERGE_VERSION = 5
     cached_text = None
     cached_by = None
     if (yesterday_snap.get("date") == today_iso

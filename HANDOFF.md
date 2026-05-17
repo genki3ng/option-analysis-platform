@@ -3,7 +3,66 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17
+最后更新：2026-05-17（**持仓卡片重设计 H 方案落地**）
+
+### 🆕 最新 session：持仓卡片重设计（方案 H · E+G 综合）
+
+**分支**：`claude/redesign-holdings-visual-hierarchy-qAsag` → 已合 main
+
+**做了什么**：
+- 用户说原持仓卡"视觉一致性 / 主次不分明、要素过多"，要求重设计
+- 走 CLAUDE.md 第 9 节"设计类任务必须先做预览页"流程：
+  - 建 `positions-preview.html`（路由 `/positions-preview`）
+  - v1：3 个方向 A/B/C（紧凑 / 分层 / 标签化） — 用户全否
+  - v2：4 个新方向 D/E/F/G（紧凑行 / iOS / 仪表盘 / 双列） — 用户全否，但点出"E 和 G 综合一下"+"完整模式要保留当前版的所有信息量"
+  - v3：方案 H（E + G 综合，含完整 / 简洁两种模式） — 用户选定
+- 落地到 `/app` 的 `renderPosition()` + .pos 系列 CSS
+
+**方案 H 设计要点**（commit `606d1d1`）：
+- 双列布局：左 PnL 大字 hero (26px) + 完整模式下 Theta block；右 horizontal 双进度条 + inline greeks
+- 状态用文字色（不再用 chip 背景抢戏）
+- 顶部加 `.pos-more` ⋯ 按钮：点击复制 OCC code（旧 .pos-occ DOM 已删）
+- 胶囊按钮：`.primary` 黑底白字「平仓」+ `.ghost`「编辑」+ `.ghost.del-btn`「删除」
+- 损益曲线 + 笔记按钮归入 `.pos-extras` 容器
+- 简洁模式新规则：藏 `.pos-meta` / `.pos-theta-row` / `.pos-stats .full-only` (Mark+$P) / `.pos-extras` / `.pos-actions .del-btn`
+- 完整模式 = 当前版的全部信息量（PnL+Theta+副标+进度条+Δ/IV/θ+Mark/$P+损益曲线+笔记+删除）
+- 简洁模式 = 上面除了"完整 only"的字段
+- `renderClosedPos` 未动，仍用旧 `.pos-hero` 双格 grid（保留旧 CSS 兼容）
+
+**预览页保留**（reference）：https://trade.congyangwang.com/positions-preview
+
+**测试矩阵未跑**：用户已确认方向 OK，但 Mac Chrome / iPhone Safari / Android 实测要他做。
+
+---
+
+### 📦 Batch 4 进行中（推荐引擎进阶 backlog）
+
+Batch 4 是用户 priority table 的最后一波，分 3 个子批做：
+- **子批 A ✅ 已上线**（`d09ab02`）：long_vol 下架 + Vol skew 信号 + Wheel 闭环提示
+- **子批 B 待做**：历史 POP 校准 + Exit plan 模板（~2 天）
+- **子批 C 待做**：表单双轨模式（目标 vs 策略，UX 大改，~1 天）
+
+子批 A 验证清单：
+- [ ] /app 推荐结果里出现 Vol skew pill（put_skew/call_skew，中间值不显示）
+- [ ] 持仓列表上方出现 Wheel 闭环提示（用户必须账户中设过 ≥100 股，或最近 30d 有 CSP expired_itm）
+- [ ] intent 下拉只剩 4 项：收权利金 / CSP / Covered Call / LEAPS（"做多波动率"已下架）
+- [ ] [推荐 Covered Call →] 按钮一键预填 rec form (covered_call/neutral/21d/balanced)
+
+### ⚠️ 新 session 必看：CLAUDE.md 顶部 3 条铁律
+
+1. **开场必报模型**（用户期望 Opus 4.7 1M Max，不是就暂停问用户）
+2. **任务中独立检查**（不要说"我记得"，主动 git pull + 看 HANDOFF）
+3. **收尾必更新 HANDOFF.md**（再 commit + push 再宣告完成）
+
+详见 `CLAUDE.md` 顶部"Session 必读"区块。
+
+### 🎨 旧规约：设计类任务必须先做预览页
+
+任何涉及 UI / 视觉 / 布局 的任务，**不要直接改 index.html / intro.html**。
+先建临时预览页（如 `buttons.html` → `/buttons`），同屏展示 2-4 个方案 × 桌面+手机两个视口，
+让用户选完再改正式页面，然后删预览页。
+
+详见 `CLAUDE.md` 第 9 节。
 
 ---
 

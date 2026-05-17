@@ -129,6 +129,11 @@ TRANS_EN = {
     "接近锁利窗口": "Near profit-taking window",
     "{label} 距行权仅 {pct}%": "{label} only {pct}% from strike",
     "gamma 风险大": "high gamma risk",
+    "剩 {d} 天": "{d}d left",
+    "浮亏 ${pnl}": "down ${pnl}",
+    "考虑买回 / roll": "consider buyback / roll",
+    "盯紧，考虑止损": "watch closely — consider stop",
+    "浮盈 ${pnl} · 剩 {d} 天 · 接近锁利窗口": "${pnl} profit · {d}d left · near lock-in",
     "看持仓 →": "View →",
     "看推荐 →": "Recommend →",
     "📅 未来 14 天关键日": "📅 Next 14 days",
@@ -238,6 +243,11 @@ TRANS_TW = {
     "接近锁利窗口": "接近鎖利窗口",
     "{label} 距行权仅 {pct}%": "{label} 距行權僅 {pct}%",
     "gamma 风险大": "gamma 風險大",
+    "剩 {d} 天": "剩 {d} 天",
+    "浮亏 ${pnl}": "浮虧 ${pnl}",
+    "考虑买回 / roll": "考慮買回 / roll",
+    "盯紧，考虑止损": "盯緊，考慮止損",
+    "浮盈 ${pnl} · 剩 {d} 天 · 接近锁利窗口": "浮盈 ${pnl} · 剩 {d} 天 · 接近鎖利窗口",
     "看持仓 →": "看持倉 →",
     "看推荐 →": "看推薦 →",
     "📅 未来 14 天关键日": "📅 未來 14 天關鍵日",
@@ -2762,63 +2772,88 @@ def _compute_diff_events(yesterday_snap, positions, market, lang):
     return events
 
 
+def _danger_detail(p, lang):
+    """距行权近的持仓 → actionable 细节（剩多少天 + 浮亏 + 建议）。"""
+    parts = []
+    days = p.get("days", 0)
+    if days <= 7:
+        parts.append(_T(lang, "剩 {d} 天", d=days))
+    pnl = p.get("pnl", 0)
+    if pnl < -50:
+        parts.append(_T(lang, "浮亏 ${pnl}", pnl=f"{abs(pnl):,.0f}"))
+    if days <= 3:
+        parts.append(_T(lang, "考虑买回 / roll"))
+    elif p.get("pnl_pct", 0) <= -30:
+        parts.append(_T(lang, "盯紧，考虑止损"))
+    return " · ".join(parts) if parts else _T(lang, "gamma 风险大")
+
+
 def _rank_top_3_focus(events, positions, lang):
-    """从 events 选 top 3，不足则补 ≥70% 利润 + 危险临近持仓。"""
-    seen = set()
+    """从 events 选 top 3，不足则补 ≥70% 利润 + 危险临近持仓。
+    双重 dedup（pid + label）防止同 strike/expiry 重复出现。"""
+    seen_pids = set()
+    seen_labels = set()
     out = []
+
+    def _try_add(item):
+        pid = item.get("position_id") or f"_{item.get('kind','')}"
+        lbl = item.get("label") or pid
+        if pid in seen_pids or lbl in seen_labels:
+            return False
+        seen_pids.add(pid)
+        seen_labels.add(lbl)
+        out.append(item)
+        return True
+
     for e in events:
-        pid = e.get("position_id") or f"_{e['kind']}"
-        if pid in seen:
-            continue
-        seen.add(pid)
-        out.append(e)
+        _try_add(e)
         if len(out) >= 3:
-            break
+            return out[:3]
 
-    if len(out) < 3:
-        actionable = [p for p in positions
-                      if not p.get("closed") and p.get("days", 0) >= 0
-                      and p.get("pnl_pct", 0) >= 70]
-        actionable.sort(key=lambda p: -p.get("pnl_pct", 0))
-        for p in actionable:
-            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
-            if pid in seen:
-                continue
-            seen.add(pid)
-            out.append({
-                "kind": "profit_opportunity", "priority": 50,
-                "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
-                "icon": "🎯",
-                "headline": _T(lang, "{label} 已实现 {pct}% 权利金",
-                               label=p.get("label", ""), pct=f"{p['pnl_pct']:.0f}"),
-                "detail": _T(lang, "接近锁利窗口"),
-                "action": "view_position",
-            })
-            if len(out) >= 3:
-                break
-
-    if len(out) < 3:
-        # 距行权 <5% 的危险持仓
-        danger = [p for p in positions
+    # fallback 1: ≥70% 利润（锁利机会）
+    actionable = [p for p in positions
                   if not p.get("closed") and p.get("days", 0) >= 0
-                  and (((p.get("type") == "call") and p.get("moneyness", 100) < 5)
-                       or ((p.get("type") == "put") and p.get("moneyness", -100) > -5))]
-        for p in danger:
-            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
-            if pid in seen:
-                continue
-            seen.add(pid)
-            out.append({
-                "kind": "near_strike", "priority": 40,
-                "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
-                "icon": "🚨",
-                "headline": _T(lang, "{label} 距行权仅 {pct}%",
-                               label=p.get("label", ""), pct=f"{abs(p.get('moneyness',0)):.1f}"),
-                "detail": _T(lang, "gamma 风险大"),
-                "action": "view_position",
-            })
-            if len(out) >= 3:
-                break
+                  and p.get("pnl_pct", 0) >= 70]
+    actionable.sort(key=lambda p: -p.get("pnl_pct", 0))
+    for p in actionable:
+        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        label = p.get("label", "")
+        days = p.get("days", 0)
+        pnl = p.get("pnl", 0)
+        _try_add({
+            "kind": "profit_opportunity", "priority": 50,
+            "position_id": pid, "ticker": p["ticker"], "label": label,
+            "icon": "🎯",
+            "headline": _T(lang, "{label} 已实现 {pct}% 权利金",
+                           label=label, pct=f"{p['pnl_pct']:.0f}"),
+            "detail": _T(lang, "浮盈 ${pnl} · 剩 {d} 天 · 接近锁利窗口",
+                         pnl=f"{pnl:,.0f}", d=days),
+            "action": "view_position",
+        })
+        if len(out) >= 3:
+            return out[:3]
+
+    # fallback 2: 距行权 <5% 的危险持仓
+    danger = [p for p in positions
+              if not p.get("closed") and p.get("days", 0) >= 0
+              and (((p.get("type") == "call") and p.get("moneyness", 100) < 5)
+                   or ((p.get("type") == "put") and p.get("moneyness", -100) > -5))]
+    # 按距到期升序（最紧迫的在前）
+    danger.sort(key=lambda p: p.get("days", 999))
+    for p in danger:
+        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        label = p.get("label", "")
+        _try_add({
+            "kind": "near_strike", "priority": 40,
+            "position_id": pid, "ticker": p["ticker"], "label": label,
+            "icon": "🚨",
+            "headline": _T(lang, "{label} 距行权仅 {pct}%",
+                           label=label, pct=f"{abs(p.get('moneyness',0)):.1f}"),
+            "detail": _danger_detail(p, lang),
+            "action": "view_position",
+        })
+        if len(out) >= 3:
+            return out[:3]
     return out[:3]
 
 
@@ -2874,7 +2909,7 @@ def _template_concierge(top_3, market, lang):
 
 
 def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration, lang):
-    """调 Claude Haiku 生成 ≤80 字管家摘要。失败返回 None。"""
+    """调 Claude Haiku 生成管家摘要。失败返回 None。"""
     client = _get_anthropic_client()
     if not client:
         return None
@@ -2884,29 +2919,34 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     if vix.get("prev", 0) > 0:
         chg = (vix["price"] - vix["prev"]) / vix["prev"] * 100
         signal_lines.append(f"VIX: {vix['prev']:.1f} -> {vix['price']:.1f} ({chg:+.0f}%)")
-    signal_lines.append(f"Portfolio P&L: ${total_pnl:+,.0f}, today Theta: ${total_theta:+,.0f}")
+    signal_lines.append(f"Portfolio unrealized P&L: ${total_pnl:+,.0f}, today Theta: ${total_theta:+,.0f}")
     if concentration.get("top_pct", 0) >= 40:
         signal_lines.append(f"{concentration['top_ticker']} concentration: {concentration['top_pct']:.0f}%")
-    for idx, e in enumerate(top_3[:3], 1):
-        signal_lines.append(f"{idx}. {e['icon']} {e['headline']} - {e['detail']}")
+    if top_3:
+        for idx, e in enumerate(top_3[:3], 1):
+            signal_lines.append(f"{idx}. {e['icon']} {e['headline']} - {e['detail']}")
+    else:
+        signal_lines.append("(no urgent signals)")
 
     lang_word = {"en": "English", "zh_tw": "繁體中文"}.get(lang, "简体中文")
 
     system_prompt = (
-        f"你是\"包租公管家\"，给一个用美股期权赚租金的散户写早安一句话总览。\n"
-        f"风格：亲切、直接、像老友，有人情味但不啰嗦。\n"
-        f"长度：1-2 句，{lang_word}，≤80 个字符。\n"
-        f"不要以\"早安\"开头（前端已经写了\"早安\"前缀）。直接说当下值得关注的核心信号。\n"
-        f"不要列项，不要项目符号。不要编造数字 — 只用我给的数据。\n"
-        f"如果信号都很平静，就说一句让人安心的短话。"
+        "你是\"包租公管家\"——给一个用美股期权赚租金的散户写早安顾问。\n"
+        "目标：让用户 10 秒读完后知道今天该重点看哪个仓 + 具体怎么办。\n"
+        f"风格：亲切直接像老友，{lang_word}，不堆术语，不喊口号。\n"
+        "格式：1-2 句话，≤100 字符。不要以\"早安\"开头（前端已写）。\n"
+        "**必须包含**：①最重要的 1 件事（哪个 ticker / 什么风险或机会）"
+        "②一个具体的\"今天怎么办\"建议（平仓 / roll / 等等看 / 加仓）。\n"
+        "不要列条目、不要项目符号、不要编造数字。\n"
+        "如果信号都平静，就说一句让人放心的短话即可，不要硬挤建议。"
     )
 
-    user_prompt = "今早信号：\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写一两句话总览。"
+    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 1-2 句话总览。"
 
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=200,
+            max_tokens=240,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
@@ -2918,8 +2958,10 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
 
 def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta,
                               state=None, lang="zh"):
-    """结构化早安简报 — 返回 dict（管家文 + top 3 + chips + 14 天日历 + snapshot）。"""
+    """结构化早安简报 — 返回 dict（管家文 + top 3 + chips + 14 天日历 + snapshot）。
+    Concierge 文本一天一次，缓存到 brief_snapshot；其它信号（top 3 / chips / 日历）每次重算。"""
     today = date.today()
+    today_iso = today.isoformat()
     state = state if isinstance(state, dict) else {}
 
     market = {"indices": prices, "vix": _fetch_vix_quote()}
@@ -2931,12 +2973,30 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     chips = _build_focus_chips(positions, market, total_pnl, total_realized, total_theta,
                                 concentration, lang)
 
-    concierge_text = _generate_concierge_llm(top_3, market, total_pnl, total_theta,
-                                              concentration, lang)
-    by = "llm"
-    if not concierge_text:
-        concierge_text = _template_concierge(top_3, market, lang)
-        by = "template"
+    # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
+    cached_text = None
+    cached_by = None
+    if (yesterday_snap.get("date") == today_iso
+            and yesterday_snap.get("concierge_text")
+            and yesterday_snap.get("concierge_lang") == lang):
+        cached_text = yesterday_snap.get("concierge_text")
+        cached_by = yesterday_snap.get("generated_by") or "cached"
+
+    if cached_text:
+        concierge_text = cached_text
+        by = cached_by
+    else:
+        concierge_text = _generate_concierge_llm(top_3, market, total_pnl, total_theta,
+                                                  concentration, lang)
+        by = "llm"
+        if not concierge_text:
+            concierge_text = _template_concierge(top_3, market, lang)
+            by = "template"
+
+    next_snap = _make_brief_snapshot(positions, market, today)
+    next_snap["concierge_text"] = concierge_text
+    next_snap["concierge_lang"] = lang
+    next_snap["generated_by"] = by
 
     return {
         "concierge_text": concierge_text,
@@ -2945,7 +3005,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         "chips": chips,
         "calendar_14d": calendar,
         "today_date": today.isoformat(),
-        "next_snapshot": _make_brief_snapshot(positions, market, today),
+        "next_snapshot": next_snap,
     }
 
 

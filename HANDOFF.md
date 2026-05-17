@@ -122,3 +122,26 @@ db30630 Deploy: bump trigger (stability test)
 如果用户说"延续上次"或类似，不要假装记得；直接说"我读 HANDOFF + CLAUDE 看到这些 [复述]，对吗？"然后让用户确认或补充。
 
 不要往这两个文件里加水（"我们一起完成了..."这种废话）。每次更新这两个文件只增加**事实**和**对后续 session 有用的信息**。
+
+---
+
+## 9. ⚠️ Public repo 注意事项
+
+本 repo 是 **public**。任何提交都会被全世界看到，包括 git 历史（即使后来 commit 删掉了，rebase 重写之前的版本也能在 GitHub fork / Wayback Machine 找到）。
+
+**永远不要 commit 的东西**：
+- Schwab 三件套（CLIENT_ID / CLIENT_SECRET / REFRESH_TOKEN）
+- Vercel personal token
+- Supabase **service_role** key（注意是 service_role，不是 publishable）
+- 用户的实际持仓数据 / 邮箱 / 电话
+- 任何形式的 `.env` 文件
+
+**已经在 `.gitignore` 防御**：
+- `.env*` / `*token*.txt` / `*secret*.txt` / `*credentials*.json` / `*refresh_token*` 等
+
+**正确做法**：
+- 凭证存 Vercel env vars（dashboard 或 API 设置）
+- 写一次性脚本要凭证 → 用 `getpass` 或 `os.environ.get` 读，**不要 hardcode**
+- 临时 debug 用 token？跑完立刻让用户 rotate 那个 token
+
+**RLS 是 Supabase 安全唯一防线**（publishable key 公开是设计）。改 Supabase schema / policy 一定要测：未登录用户能不能读到别人数据？应该是 NO。

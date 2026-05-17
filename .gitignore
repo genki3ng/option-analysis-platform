@@ -4,4 +4,15 @@ __pycache__/
 .vercel
 .env
 .env.local
+.env.*
 node_modules/
+
+# secrets — 防止手滑 commit
+*token*.txt
+*token*.json
+*secret*.txt
+*credentials*.json
+*refresh_token*
+schwab_creds*
+.vercel_token
+private/

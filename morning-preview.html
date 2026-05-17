@@ -818,6 +818,218 @@
   </div>
 </section>
 
+<!-- 方案 D · 混搭推荐落地版 -->
+<section class="section" style="background:linear-gradient(180deg, rgba(230,184,106,0.05), transparent);border-top:2px solid var(--accent)">
+  <span class="frame-tag" style="background:var(--accent);color:#000">⭐ 方案 D · 用户选定混搭</span>
+  <h2>包租公管家 + 今日 3 件事 + 14 天关键日</h2>
+  <p class="description">
+    <strong>A 骨架 + B 日历 + C 管家人格</strong>。顶部「包租公管家」头像 + 一句话总览（人格化包装），
+    中部 3 件事 + 一键行动按钮，底部健康 chips + 14 天关键日时间线。
+    <br>
+    <span class="pro">优势</span>：人格化亲切、扫读体感强、活体新信号有专属位置、未来 14 天可视化。
+    <span class="con">取舍</span>：「管家一句话」可以是<strong>模板</strong>（零成本、确定性）或 <strong>LLM</strong>（更人性、有成本）— 等你选。
+  </p>
+  <div class="preview-grid">
+    <div class="frame">
+      <span class="frame-label">桌面</span>
+      <div class="frame-inner">
+        <div class="mb mb-a">
+          <span class="mb-close">×</span>
+          <!-- 包租公管家 hero -->
+          <div class="chat" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+            <div class="avatar" style="width:38px;height:38px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 12px rgba(230,184,106,0.25)">☀️</div>
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:0.3px;margin-bottom:2px">包租公管家 · 5/17 周一 9:24 ET 盘前</div>
+              <div style="font-size:13px;line-height:1.5;color:var(--text)">
+                早安，congyang —— 隔夜 <span style="color:var(--accent)">VIX 跳到 18.5 (+30%)</span>，
+                你账户里 <strong>3 件事</strong> 需要看一眼。
+              </div>
+            </div>
+          </div>
+          <!-- 3 件事 -->
+          <div class="focus-list">
+            <div class="focus-item">
+              <div class="focus-icon">📅</div>
+              <div class="focus-text">
+                <span class="tag">3 天</span>
+                <strong>NVDA</strong> 周三 (5/22) 财报，你 5/29 到期的 <strong>145C</strong> 跨越财报日 — 注意 IV crush。
+              </div>
+              <button class="focus-action">看持仓 →</button>
+            </div>
+            <div class="focus-item">
+              <div class="focus-icon">🎯</div>
+              <div class="focus-text">
+                <span class="tag ok">82%</span>
+                <strong>TSLA 230P</strong> 已实现 82% 权利金 ($+574)，距到期还有 248 天 — 可以考虑锁利。
+              </div>
+              <button class="focus-action">看持仓 →</button>
+            </div>
+            <div class="focus-item">
+              <div class="focus-icon">⚡</div>
+              <div class="focus-text">
+                <span class="tag warn">VIX ↑30%</span>
+                隔夜 VIX 14.2 → <strong>18.5</strong>，IV 普涨 — 卖权利金窗口期，是否扫一眼推荐？
+              </div>
+              <button class="focus-action">看推荐 →</button>
+            </div>
+          </div>
+          <!-- chips -->
+          <div class="chips">
+            <span class="chip"><strong>持仓 P&L</strong> $+1,250</span>
+            <span class="chip"><strong>今日 Theta</strong> $+230</span>
+            <span class="chip up">SPY <strong>+0.4%</strong></span>
+            <span class="chip down">QQQ <strong>-0.2%</strong></span>
+            <span class="chip warn">TSLA 集中度 <strong>38%</strong></span>
+            <span class="chip">未来 7 天到期 <strong>2 个</strong></span>
+          </div>
+          <!-- 14 天关键日 -->
+          <div class="calendar" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+            <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+              <span>📅 未来 14 天关键日</span>
+              <span style="font-size:10px;font-weight:500">
+                <span style="display:inline-flex;align-items:center;gap:4px;margin-right:8px"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span>财报</span>
+                <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span>持仓到期</span>
+              </span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:2px">
+              <div class="cal-day today" style="height:22px;background:var(--accent-tint-strong);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);font-weight:700;position:relative">17</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">18</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">19</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">20</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">21</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">22<span style="position:absolute;bottom:-2px;width:6px;height:6px;border-radius:50%;background:var(--red)"></span></div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">23<span style="position:absolute;bottom:-2px;width:6px;height:6px;border-radius:50%;background:var(--accent)"></span></div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">24</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">25</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">26</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">27</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">28</div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">29<span style="position:absolute;bottom:-2px;width:6px;height:6px;border-radius:50%;background:var(--accent)"></span></div>
+              <div class="cal-day" style="height:22px;background:var(--card2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--sub);position:relative">30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <span class="frame-label">手机</span>
+      <div class="mobile-notch">📱 375px</div>
+      <div class="frame-inner mobile">
+        <div class="mb mb-a">
+          <span class="mb-close">×</span>
+          <!-- 管家 hero (mobile) -->
+          <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+            <div style="width:32px;height:32px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:16px">☀️</div>
+            <div style="flex:1">
+              <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:2px">包租公管家 · 5/17 盘前</div>
+              <div style="font-size:12px;line-height:1.5">
+                早安 — 隔夜 <span style="color:var(--accent)">VIX +30%</span>，今日 <strong>3 件事</strong>。
+              </div>
+            </div>
+          </div>
+          <div class="focus-list">
+            <div class="focus-item">
+              <div class="focus-icon">📅</div>
+              <div class="focus-text" style="font-size:12px">
+                <span class="tag">3 天</span>
+                <strong>NVDA</strong> 周三财报，5/29 145C 跨越。
+              </div>
+            </div>
+            <div class="focus-item">
+              <div class="focus-icon">🎯</div>
+              <div class="focus-text" style="font-size:12px">
+                <span class="tag ok">82%</span>
+                <strong>TSLA 230P</strong> 已 82% 权利金。
+              </div>
+            </div>
+            <div class="focus-item">
+              <div class="focus-icon">⚡</div>
+              <div class="focus-text" style="font-size:12px">
+                <span class="tag warn">VIX ↑30%</span>
+                隔夜 VIX 18.5 — 卖权窗口。
+              </div>
+            </div>
+          </div>
+          <div class="chips">
+            <span class="chip"><strong>P&L</strong> $+1,250</span>
+            <span class="chip"><strong>Theta</strong> $+230</span>
+            <span class="chip up">SPY <strong>+0.4%</strong></span>
+            <span class="chip warn">TSLA <strong>38%</strong></span>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+            <div style="font-size:10px;font-weight:700;color:var(--sub);margin-bottom:6px">📅 14 天关键日</div>
+            <div style="display:grid;grid-template-columns:repeat(14,1fr);gap:1px">
+              <div style="height:18px;background:var(--accent-tint-strong);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--accent);font-weight:700">17</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">18</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">19</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">20</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">21</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub);position:relative">22<span style="position:absolute;bottom:-1px;width:4px;height:4px;border-radius:50%;background:var(--red)"></span></div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub);position:relative">23<span style="position:absolute;bottom:-1px;width:4px;height:4px;border-radius:50%;background:var(--accent)"></span></div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">24</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">25</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">26</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">27</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">28</div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub);position:relative">29<span style="position:absolute;bottom:-1px;width:4px;height:4px;border-radius:50%;background:var(--accent)"></span></div>
+              <div style="height:18px;background:var(--card2);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--sub)">30</div>
+            </div>
+            <div style="margin-top:6px;font-size:9px;color:var(--sub);display:flex;gap:10px">
+              <span><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--red)"></span> 财报</span>
+              <span><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent)"></span> 到期</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tldr" style="margin-top:18px">
+    <h3>🤔 管家"一句话总览"实现方式对比</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>模板版（推荐先做）</th>
+          <th>LLM 版（升级版）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>示例输出</td>
+          <td>"早安，congyang —— 隔夜 VIX 跳到 18.5 (+30%)，你账户里 <strong>3 件事</strong> 需要看一眼。"</td>
+          <td>"早安。VIX 跳得这么猛你的 TSLA 仓位别慌，82% 利润可以先吃一半锁住。NVDA 财报跨期那个 call 是当前最大风险点。"</td>
+        </tr>
+        <tr>
+          <td>实现</td>
+          <td>Python 字符串模板 + 信号优先级排序</td>
+          <td>Claude Haiku API + 信号 → prompt 拼装</td>
+        </tr>
+        <tr>
+          <td>成本</td>
+          <td><span class="yes">$0</span></td>
+          <td>~$0.001/用户/天 = $0.36/年</td>
+        </tr>
+        <tr>
+          <td>确定性</td>
+          <td><span class="yes">100%</span></td>
+          <td>偶发 LLM 幻觉</td>
+        </tr>
+        <tr>
+          <td>个性化</td>
+          <td>固定句式 + 信号代入</td>
+          <td>能结合用户过去操作（trade journal、平仓习惯）</td>
+        </tr>
+        <tr>
+          <td>需要的</td>
+          <td>无</td>
+          <td>ANTHROPIC_API_KEY env var</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <!-- 横向对比表 -->
 <section class="section">
   <h2>横向对比</h2>

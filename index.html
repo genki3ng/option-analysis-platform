@@ -2867,10 +2867,37 @@
   }
 
   /* ─── 账户设置 modal ─── */
-  .account-modal {
-    width: 460px;
-    max-width: calc(100vw - 32px);
+  /* 账户 modal 应当浮在 rec form 上层，需要 backdrop z-index 比 rec-form 高 */
+  #account-backdrop { z-index: 1099 !important; }
+
+  /* 表单顶部账户状态薄行 */
+  .rec-acct-hint {
+    font-size: 12px; line-height: 1.5;
+    color: var(--sub);
+    padding: 8px 12px;
+    background: rgba(91, 124, 245, 0.05);
+    border: 1px solid rgba(91, 124, 245, 0.20);
+    border-radius: 8px;
+    margin: -4px 0 14px;
   }
+  .rec-acct-hint:empty { display: none; }
+  .rec-acct-hint a { color: var(--accent); text-decoration: none; }
+  .rec-acct-hint a:hover { text-decoration: underline; }
+
+  .account-modal {
+    display: none;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1100;
+    width: 460px; max-width: calc(100vw - 32px);
+    max-height: 90vh; overflow-y: auto;
+    background: var(--card); border: 1px solid var(--line-2);
+    border-radius: 14px; padding: 24px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
+                0 28px 80px rgba(0,0,0,0.55),
+                0 4px 24px rgba(0,0,0,0.3);
+  }
+  .account-modal.show { display: block; }
   .account-modal h4 {
     display: flex; justify-content: space-between; align-items: center;
     font-size: 15px; font-weight: 600; margin-bottom: 18px;
@@ -3272,6 +3299,8 @@
     <span class="x" onclick="hideRec()">×</span>
   </h4>
 
+  <div id="rec-acct-hint" class="rec-acct-hint"></div>
+
   <div class="row preset-row">
     <span class="label" data-i18n="📖 大佬策略模板（一键填表）">📖 大佬策略模板（一键填表）</span>
     <button class="preset-btn" data-preset="value_leaps" data-i18n="📖 价值哥 LEAPS">📖 价值哥 LEAPS</button>
@@ -3347,7 +3376,6 @@
 
   <div class="submit-row">
     <button class="cancel" onclick="hideRec()" data-i18n="取消">取消</button>
-    <div id="rec-acct-hint" style="font-size:11px;color:var(--sub);flex:1;padding-left:8px"></div>
     <button class="submit" onclick="submitRec()" data-i18n="🔍 找出最佳">🔍 找出最佳</button>
   </div>
 
@@ -6754,9 +6782,9 @@ function showRec() {
       const parts = [];
       if (hasMgn) parts.push(`保证金 $${Number(acct.available_margin).toLocaleString()}`);
       if (hasStk) parts.push(`正股 ${(acct.stock_positions || []).map(p => p.ticker).join('/')}`);
-      hint.innerHTML = `⚙️ ${parts.join(' · ')} · <a href="javascript:void(0)" onclick="hideRec();showAccountSettings()" style="color:var(--accent)">修改</a>`;
+      hint.innerHTML = `⚙️ ${parts.join(' · ')} · <a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">修改</a>`;
     } else {
-      hint.innerHTML = `<a href="javascript:void(0)" onclick="hideRec();showAccountSettings()" style="color:var(--sub)">⚙️ 设置账户可显示资金占比</a>`;
+      hint.innerHTML = `<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--sub)">⚙️ 设置账户可显示资金占比</a>`;
     }
   }
   document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {

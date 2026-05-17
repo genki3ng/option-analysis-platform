@@ -7254,6 +7254,20 @@ function _initSupabase() {
     setTimeout(_initSupabase, 200);
     return;
   }
+  // 清理历史遗留的 supabase localStorage keys（防止 storageKey 配置漂移导致 PKCE 失败）
+  // 历史上我们用过 'sb-baozugong-auth-*'，现在用默认 'sb-<projectref>-auth-*'
+  // 任何不属于当前 project ref 的 key 都视为陈旧 → 清掉，避免误用
+  try {
+    const expectedPrefix = 'sb-nvavwcvxmzksadpbtafs-auth';  // 当前 project ref
+    const staleKeys = Object.keys(localStorage).filter(k =>
+      k.startsWith('sb-') && k.includes('auth') && !k.startsWith(expectedPrefix)
+    );
+    for (const k of staleKeys) {
+      localStorage.removeItem(k);
+      _authLog('cleanup', 'removed stale key: ' + k);
+    }
+  } catch(e) { _authLog('cleanup-err', e.message); }
+
   _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
       autoRefreshToken: true,

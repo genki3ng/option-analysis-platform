@@ -5,6 +5,41 @@
 
 ---
 
+## ⚠️ Session 必读：开场 + 收尾 3 条铁律
+
+用户用 claude.ai 习惯了"一个对话窗口持续聊"，但 Claude Code Web 是 task-isolated session。
+为了让协作不掉链子，**任何 session 严格执行下面 3 条**：
+
+### 1. 开场必报模型
+
+读完 CLAUDE.md + HANDOFF.md 之后、做任何事之前，**告诉用户你正在哪个模型上跑**。
+用户的期望默认：**Claude Opus 4.7 1M Max**。
+
+- 如果你跑的是 Opus 4.7 1M Max → 一句话告知即可："✅ 我在 Opus 4.7 1M Max 上，准备好了"
+- 如果**不是** → 暂停一切，告诉用户："⚠️ 我现在跑的是 X（不是 Opus 4.7 1M Max），你是要换还是接着用？"
+  - 模型不能由 agent 自己切（初始化时定的），但用户能开新 session 时挑
+
+### 2. 任务过程中"独立检查"
+
+如果用户问"另一边 session 做了什么"或"你看到刚才的更新吗"：
+- **绝不能**说"我记得"或"刚才"。每个 session 是空记忆，没有"刚才"。
+- 主动跑 `git pull origin main && git log --oneline -10 && cat HANDOFF.md` 看实际状态
+- 然后复述"我看到 main 上最新是 commit X，HANDOFF.md 里写了 Y，对吗？"
+
+### 3. 收尾必更新 HANDOFF.md
+
+在你**说完"任务做完了"或类似总结之前**，必须：
+1. 简要更新 `HANDOFF.md`（"最后更新"日期 + 本 session 干了啥 + 留下的状态）
+2. `git commit + push`（如果 HANDOFF.md 有改动）
+3. 然后才能宣告完成
+
+**理由**：Claude Code Web 的 session 完成后会被归档，且**用户不会被通知**。
+下一个 session 进来只能靠 HANDOFF.md 接住上下文。你不写，就把下一个 session 坑了。
+
+如果你不确定要不要算"完成了"，也至少写一笔进度。**宁愿多写，不要漏写**。
+
+---
+
 ## 0. 用户 & 一句话
 
 用户 **congyang**（hi@congyangwang.com）。中英文都行，但默认中文回复，专业领域术语保留英文。

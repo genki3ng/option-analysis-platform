@@ -3593,6 +3593,31 @@
   .acct-badge.naked   { background: rgba(239,68,68,0.10);  color: var(--red); }
   .acct-badge.caution { background: rgba(234,179,8,0.12);  color: var(--yellow); }
 
+  /* 🎯 顶部预算 banner */
+  .goal-banner {
+    margin: 10px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(230,184,106,0.06);
+    border: 1px solid rgba(230,184,106,0.3);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .goal-banner.ok   { background: rgba(52,211,153,0.08); border-color: rgba(52,211,153,0.35); }
+  .goal-banner.warn { background: rgba(234,179,8,0.10); border-color: rgba(234,179,8,0.40); }
+  .goal-banner .gb-acct {
+    color: var(--sub); font-size: 11.5px;
+    margin-bottom: 4px;
+  }
+  .goal-banner .gb-line {
+    display: flex; align-items: flex-start; gap: 6px;
+    color: var(--text);
+  }
+  .goal-banner .gb-line .ic { font-size: 14px; line-height: 1.4; flex-shrink: 0; }
+  .goal-banner .gb-line strong { color: var(--text); }
+  .goal-banner.ok .gb-line .ic { color: var(--green); }
+  .goal-banner.warn .gb-line .ic { color: var(--yellow); }
+
   /* 🎯 目标达成度（仅目标驱动 mode 显示） */
   .goal-progress {
     display: flex; align-items: center; gap: 8px;
@@ -4258,6 +4283,20 @@ const I18N = {
     'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 卖出 {ticker}',
     '出场建议': '出场建议',
+    // ── 🎯 Goal banner + 账户预算 ─────────────────────
+    'banner_acct_money':   '账户可用保证金 <strong>{margin}</strong>',
+    'banner_acct_unset':   '未设置账户保证金（<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">点这里设置</a>，可看占比和上限）',
+    'banner_stable_ok':    '卖 <strong>{needed} 张</strong>最优候选 ≈ <strong>{monthly}/月</strong>，已达目标 {target}/月（账户够卖 <strong>{max} 张</strong>）',
+    'banner_stable_short': '需卖 <strong>{needed} 张</strong>才能 {target}/月，但账户最多 <strong>{max} 张</strong> = {maxMonthly}/月，<strong style="color:var(--yellow)">差 {gap}/月</strong>',
+    'banner_stable_no_acct':'需卖 <strong>{needed} 张</strong>达 {target}/月（每张约 {perMonth}/月）',
+    'banner_safety_ok':    '共 <strong>{passed}/{total}</strong> 个候选 ≥ {target}% 安全度（最便宜 BPR {bpr}/张 → 账户够 <strong>{max} 张</strong>）',
+    'banner_safety_empty': '没有候选达到 ≥ {target}% 安全度（共扫描 {total} 个）— 试试降低目标 / 换更长 DTE / 换更稳的 ticker',
+    'banner_assign_summary':'目标接货价 {target} · 最接近 {ticker} <strong>{strike}</strong>（差 {diff} / {diffPct}%）· 1 张抵押 <strong>{collateral}</strong> → 账户够 <strong>{max} 张</strong>',
+    'goal_no_match_safety':'没有候选达到 ≥ {target}% 安全度（共 {n} 个）',
+    '1 张': '1 张',
+    '1 张抵押': '1 张抵押',
+    '账户够': '账户够',
+    '账户': '账户',
   },
 
   zh_tw: {
@@ -4818,6 +4857,20 @@ const I18N = {
     'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 賣出 {ticker}',
     '出场建议': '出場建議',
+    // ── 🎯 Goal banner + 帳戶預算 ─────────────────────
+    'banner_acct_money':   '帳戶可用保證金 <strong>{margin}</strong>',
+    'banner_acct_unset':   '未設定帳戶保證金（<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">點這裡設定</a>，可看佔比和上限）',
+    'banner_stable_ok':    '賣 <strong>{needed} 張</strong>最優候選 ≈ <strong>{monthly}/月</strong>，已達目標 {target}/月（帳戶夠賣 <strong>{max} 張</strong>）',
+    'banner_stable_short': '需賣 <strong>{needed} 張</strong>才能 {target}/月，但帳戶最多 <strong>{max} 張</strong> = {maxMonthly}/月，<strong style="color:var(--yellow)">差 {gap}/月</strong>',
+    'banner_stable_no_acct':'需賣 <strong>{needed} 張</strong>達 {target}/月（每張約 {perMonth}/月）',
+    'banner_safety_ok':    '共 <strong>{passed}/{total}</strong> 個候選 ≥ {target}% 安全度（最便宜 BPR {bpr}/張 → 帳戶夠 <strong>{max} 張</strong>）',
+    'banner_safety_empty': '沒有候選達到 ≥ {target}% 安全度（共掃描 {total} 個）— 試試降低目標 / 換更長 DTE / 換更穩的 ticker',
+    'banner_assign_summary':'目標接貨價 {target} · 最接近 {ticker} <strong>{strike}</strong>（差 {diff} / {diffPct}%）· 1 張抵押 <strong>{collateral}</strong> → 帳戶夠 <strong>{max} 張</strong>',
+    'goal_no_match_safety':'沒有候選達到 ≥ {target}% 安全度（共 {n} 個）',
+    '1 张': '1 張',
+    '1 张抵押': '1 張抵押',
+    '账户够': '帳戶夠',
+    '账户': '帳戶',
   },
 
   en: {
@@ -5470,6 +5523,20 @@ const I18N = {
     'pos_exit_csp':       'Below <strong>{strike}</strong> → assigned {ticker}',
     'pos_exit_cc':        'Above <strong>{strike}</strong> → sell {ticker}',
     '出场建议': 'Exit guide',
+    // ── 🎯 Goal banner + account budget ───────────────
+    'banner_acct_money':   'Account margin available: <strong>{margin}</strong>',
+    'banner_acct_unset':   'No account margin set (<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">click to set</a> to see budget %)',
+    'banner_stable_ok':    'Sell <strong>{needed} contracts</strong> ≈ <strong>{monthly}/mo</strong>, hits target {target}/mo (account fits <strong>{max}</strong>)',
+    'banner_stable_short': 'Need <strong>{needed}</strong> contracts to reach {target}/mo, but account fits <strong>{max}</strong> = {maxMonthly}/mo, <strong style="color:var(--yellow)">short {gap}/mo</strong>',
+    'banner_stable_no_acct':'Need <strong>{needed} contracts</strong> for {target}/mo (each ≈ {perMonth}/mo)',
+    'banner_safety_ok':    '<strong>{passed}/{total}</strong> candidates ≥ {target}% safety (cheapest BPR {bpr}/contract → account fits <strong>{max}</strong>)',
+    'banner_safety_empty': 'No candidates ≥ {target}% safety (scanned {total}) — lower the target / longer DTE / safer ticker',
+    'banner_assign_summary':'Target strike {target} · closest {ticker} <strong>{strike}</strong> (diff {diff} / {diffPct}%) · 1 contract collateral <strong>{collateral}</strong> → account fits <strong>{max}</strong>',
+    'goal_no_match_safety':'No candidates ≥ {target}% safety (scanned {n})',
+    '1 张': '1 contract',
+    '1 张抵押': '1 contract collateral',
+    '账户够': 'account fits',
+    '账户': 'account',
   },
 };
 
@@ -7815,6 +7882,106 @@ let _recMode = localStorage.getItem('rec_mode') || 'strategy';
 // 提交时快照「目标 + 用户输入值」，供结果卡渲染目标达成度
 let _recGoalContext = null;
 
+// 🎯 顶部预算 banner — 显示账户资金 vs 目标，候选数量
+function _renderGoalBanner(ctx, candidates, d) {
+  if (!ctx || !ctx.key || !ctx.value) return '';
+  const acct = _getAccountMeta() || {};
+  const margin = Number(acct.available_margin) || 0;
+  const target = Number(ctx.value);
+  const ticker = (d && d.ticker) || '';
+
+  const fmtMoney = (n) => '$' + fmt(n, 0);
+  const acctLine = margin > 0
+    ? _fillTpl(t('banner_acct_money'), { margin: fmtMoney(margin) })
+    : t('banner_acct_unset');
+
+  // 找最便宜的 BPR（最少抵押）和最优候选用于 callout
+  let cheapestBpr = null, bestPick = null;
+  candidates.forEach(o => {
+    const bpr = Number(o.bpr_per_contract) || (Number(o.collateral_per_contract) || 0);
+    if (bpr > 0 && (cheapestBpr == null || bpr < cheapestBpr)) cheapestBpr = bpr;
+  });
+  if (candidates.length > 0) bestPick = candidates[0];
+
+  // ── stable_rent
+  if (ctx.key === 'stable_rent' && bestPick) {
+    const days = Math.max(1, Number(bestPick.days) || 1);
+    const perMonth = (Number(bestPick.premium_per_contract) || 0) * 30 / days;
+    if (perMonth <= 0) return '';
+    const needed = Math.ceil(target / perMonth);
+    const bpr = cheapestBpr || 0;
+    const maxAffordable = (margin > 0 && bpr > 0) ? Math.floor(margin / bpr) : null;
+    let detail = '';
+    if (maxAffordable != null) {
+      const meetsTarget = needed <= maxAffordable;
+      const cls = meetsTarget ? 'ok' : 'warn';
+      const ic = meetsTarget ? '✓' : '⚠';
+      detail = _fillTpl(t(meetsTarget ? 'banner_stable_ok' : 'banner_stable_short'), {
+        needed, monthly: fmtMoney(perMonth * needed), target: fmtMoney(target),
+        max: maxAffordable, maxMonthly: fmtMoney(perMonth * maxAffordable),
+        gap: fmtMoney(Math.max(0, target - perMonth * maxAffordable)),
+      });
+      return `<div class="goal-banner ${cls}">
+        <div class="gb-acct">💰 ${acctLine}</div>
+        <div class="gb-line"><span class="ic">${ic}</span><span>${detail}</span></div>
+      </div>`;
+    }
+    // 无账户数据
+    detail = _fillTpl(t('banner_stable_no_acct'), {
+      needed, target: fmtMoney(target), perMonth: fmtMoney(perMonth),
+    });
+    return `<div class="goal-banner">
+      <div class="gb-acct">💰 ${acctLine}</div>
+      <div class="gb-line"><span class="ic">ⓘ</span><span>${detail}</span></div>
+    </div>`;
+  }
+
+  // ── max_safety
+  if (ctx.key === 'max_safety') {
+    const total = (d && d.candidates) ? d.candidates.length : 0;
+    const passed = candidates.length;
+    const bpr = cheapestBpr || 0;
+    const maxAffordable = (margin > 0 && bpr > 0) ? Math.floor(margin / bpr) : null;
+    const cls = passed > 0 ? 'ok' : 'warn';
+    const ic = passed > 0 ? '✓' : '⚠';
+    const detail = _fillTpl(t(passed > 0 ? 'banner_safety_ok' : 'banner_safety_empty'), {
+      target, passed, total,
+      max: maxAffordable != null ? maxAffordable : '?',
+      bpr: bpr > 0 ? fmtMoney(bpr) : '—',
+    });
+    return `<div class="goal-banner ${cls}">
+      <div class="gb-acct">💰 ${acctLine}</div>
+      <div class="gb-line"><span class="ic">${ic}</span><span>${detail}</span></div>
+    </div>`;
+  }
+
+  // ── assign_stock
+  if (ctx.key === 'assign_stock' && bestPick) {
+    const strike = Number(bestPick.strike) || 0;
+    const collateral = strike * 100;
+    const diff = strike - target;
+    const diffPct = Math.abs(diff / target * 100);
+    const maxAffordable = (margin > 0 && collateral > 0) ? Math.floor(margin / collateral) : null;
+    let cls = 'ok';
+    let ic = '✓';
+    if (diffPct > 5) { cls = 'warn'; ic = 'ⓘ'; }
+    if (maxAffordable === 0) { cls = 'warn'; ic = '⚠'; }
+    const detail = _fillTpl(t('banner_assign_summary'), {
+      target: fmtMoney(target), strike: fmtMoney(strike), ticker,
+      collateral: fmtMoney(collateral),
+      diff: (diff >= 0 ? '+' : '') + fmtMoney(diff),
+      diffPct: diffPct.toFixed(1),
+      max: maxAffordable != null ? maxAffordable : '?',
+    });
+    return `<div class="goal-banner ${cls}">
+      <div class="gb-acct">💰 ${acctLine}</div>
+      <div class="gb-line"><span class="ic">${ic}</span><span>${detail}</span></div>
+    </div>`;
+  }
+
+  return '';
+}
+
 function _renderGoalProgress(opt, isShort, isLeaps) {
   const ctx = _recGoalContext;
   if (!ctx || !ctx.key) return '';
@@ -7868,18 +8035,24 @@ function _renderGoalProgress(opt, isShort, isLeaps) {
   if (ctx.key === 'max_safety') {
     if (!target) return '';
     const actual = Number(opt.prob_safe_pct) || 0;
-    if (actual >= target) {
-      return `<div class="goal-progress ok">
-        <span class="ic">✓</span>
-        <span>${t('安全度')} <strong>${actual.toFixed(0)}%</strong> ≥ ${t('目标')} ${target.toFixed(0)}%</span>
-      </div>`;
+    const safetyOk = actual >= target;
+    let cls, ic, mainText;
+    if (safetyOk) {
+      cls = 'ok'; ic = '✓';
+      mainText = `${t('安全度')} <strong>${actual.toFixed(0)}%</strong> ≥ ${t('目标')} ${target.toFixed(0)}%`;
+    } else {
+      cls = (target - actual) > 10 ? 'miss' : 'warn';
+      ic = cls === 'miss' ? '✗' : '⚠';
+      mainText = `${t('安全度')} <strong>${actual.toFixed(0)}%</strong> &lt; ${t('目标')} ${target.toFixed(0)}%
+        <span class="delta">（${t('差')} ${(target - actual).toFixed(0)} ${t('个点')}）</span>`;
     }
-    const cls = (target - actual) > 10 ? 'miss' : 'warn';
-    return `<div class="goal-progress ${cls}">
-      <span class="ic">${cls === 'miss' ? '✗' : '⚠'}</span>
-      <span>${t('安全度')} <strong>${actual.toFixed(0)}%</strong> &lt; ${t('目标')} ${target.toFixed(0)}%
-      <span class="delta">（${t('差')} ${(target - actual).toFixed(0)} ${t('个点')}）</span></span>
-    </div>`;
+    // 账户负担：1 张 BPR vs 可用保证金
+    let acctDetail = '';
+    if (bpr > 0 && margin > 0) {
+      const maxN = Math.floor(margin / bpr);
+      acctDetail = `<span class="delta"> · ${t('1 张')} $${fmt(bpr, 0)} → ${t('账户够')} <strong>${maxN}</strong> ${t('张')}</span>`;
+    }
+    return `<div class="goal-progress ${cls}"><span class="ic">${ic}</span><span>${mainText}${acctDetail}</span></div>`;
   }
 
   // ── 🎁 想接货：目标 strike $X ─────────────────────────
@@ -7887,19 +8060,27 @@ function _renderGoalProgress(opt, isShort, isLeaps) {
     if (!target) return '';
     const strike = Number(opt.strike) || 0;
     if (!strike) return '';
+    const collateral = strike * 100;
     const diff = strike - target;
     const diffPct = Math.abs(diff / target * 100);
-    if (diffPct <= 3) {
-      return `<div class="goal-progress ok">
-        <span class="ic">✓</span>
-        <span>${t('接货价')} <strong>$${strike}</strong> ≈ ${t('目标')} $${target.toFixed(0)}</span>
-      </div>`;
+    const close = diffPct <= 3;
+    let cls = close ? 'ok' : '';
+    let ic = close ? '✓' : 'ⓘ';
+    const main = close
+      ? `${t('接货价')} <strong>$${strike}</strong> ≈ ${t('目标')} $${target.toFixed(0)}`
+      : `${t('接货价')} <strong>$${strike}</strong> · ${t('目标')} $${target.toFixed(0)}
+         <span class="delta">（${diff >= 0 ? '+' : ''}$${fmt(diff, 0)} / ${diffPct.toFixed(1)}%）</span>`;
+    let acctDetail = '';
+    if (margin > 0 && collateral > 0) {
+      const maxN = Math.floor(margin / collateral);
+      if (maxN >= 1) {
+        acctDetail = `<span class="delta"> · ${t('1 张抵押')} $${fmt(collateral, 0)} → ${t('账户够')} <strong>${maxN}</strong> ${t('张')}</span>`;
+      } else {
+        cls = 'warn'; ic = '⚠';
+        acctDetail = `<span class="delta"> · ${t('1 张抵押')} $${fmt(collateral, 0)} <strong style="color:var(--red)">&gt; ${t('账户')} $${fmt(margin, 0)}</strong>（${t('差')} $${fmt(collateral - margin, 0)}）</span>`;
+      }
     }
-    return `<div class="goal-progress">
-      <span class="ic">ⓘ</span>
-      <span>${t('接货价')} <strong>$${strike}</strong> · ${t('目标')} $${target.toFixed(0)}
-      <span class="delta">（${diff >= 0 ? '+' : ''}$${fmt(diff, 0)} / ${diffPct.toFixed(1)}%）</span></span>
-    </div>`;
+    return `<div class="goal-progress ${cls}"><span class="ic">${ic}</span><span>${main}${acctDetail}</span></div>`;
   }
 
   return '';
@@ -8330,12 +8511,32 @@ function renderRecResult(d) {
   const tierFilter = localStorage.getItem('rec_tier_filter') || 'all';
   const tierCount = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   d.candidates.forEach(o => { tierCount[o.verdict?.tier || 3]++; });
-  const filteredCandidates = d.candidates.filter(o => {
+  let filteredCandidates = d.candidates.filter(o => {
     const t = o.verdict?.tier || 3;
     if (tierFilter === '5')      return t >= 5;
     if (tierFilter === '4plus')  return t >= 4;
     return true;
   });
+
+  // 🎯 Goal filter / sort — 目标驱动模式的二次过滤
+  let goalEmptyMsg = '';
+  const _goalCtx = _recGoalContext;
+  if (_goalCtx && _goalCtx.value > 0) {
+    if (_goalCtx.key === 'max_safety') {
+      const target = _goalCtx.value;
+      const beforeN = filteredCandidates.length;
+      filteredCandidates = filteredCandidates.filter(o => (o.prob_safe_pct || 0) >= target);
+      if (filteredCandidates.length === 0 && beforeN > 0) {
+        // 提示：无达标候选
+        goalEmptyMsg = _fillTpl(t('goal_no_match_safety'), { target, n: beforeN });
+      }
+    } else if (_goalCtx.key === 'assign_stock') {
+      const target = _goalCtx.value;
+      filteredCandidates = [...filteredCandidates].sort((a, b) =>
+        Math.abs((a.strike || 0) - target) - Math.abs((b.strike || 0) - target)
+      );
+    }
+  }
 
   // 缓存所有候选 — 供 preview/compare modal 用候选 id 查询
   window._lastCandidates = d.candidates;
@@ -8512,8 +8713,11 @@ function renderRecResult(d) {
       </button>
     </div>
   `;
+  // 🎯 Goal banner — 目标驱动模式下顶部账户预算+目标对比
+  const goalBanner = _renderGoalBanner(_recGoalContext, filteredCandidates, d);
+
   const emptyFilterMsg = filteredCandidates.length === 0 ? `
-    <div class="empty">${t('😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。')}</div>
+    <div class="empty">${goalEmptyMsg || t('😶 当前过滤下没有候选。试试切回"全部"或换其他 ticker。')}</div>
   ` : '';
 
   document.getElementById('rec-result').innerHTML = `
@@ -8525,6 +8729,7 @@ function renderRecResult(d) {
     ${calibPill}
     ${pcPanel}
     ${tierPills}
+    ${goalBanner}
     ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">

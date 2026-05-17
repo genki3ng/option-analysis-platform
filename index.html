@@ -808,10 +808,16 @@
 
   /* Extras (损益曲线 + 笔记) — 完整模式才显示 */
   .pos-extras {
-    display: flex; gap: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
     padding: 0 14px 12px;
   }
-  .pos-extras > * { flex: 1; min-width: 0; }
+  .pos-extras > * { min-width: 0; }
+  /* 损益曲线展开时占满整行 — 让 SVG 用上完整卡片宽度 */
+  .pos-extras .pos-payoff[open] {
+    grid-column: 1 / -1;
+  }
 
   /* Action row — 胶囊按钮 */
   .pos-actions {
@@ -2379,8 +2385,8 @@
     color: var(--accent);
     border-bottom: 1px solid var(--line);
   }
-  .pos-payoff .payoff-body { padding: 8px 4px; }
-  .payoff-svg { width: 100%; height: auto; display: block; }
+  .pos-payoff .payoff-body { padding: 10px 8px 12px; }
+  .payoff-svg { width: 100%; height: auto; display: block; max-height: 240px; }
 
   /* 📊 财报警告 */
   .earnings-warn {

@@ -2932,21 +2932,22 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
 
     system_prompt = (
         "你是\"包租公管家\"——给一个用美股期权赚租金的散户写早安顾问。\n"
-        "目标：让用户 10 秒读完后知道今天该重点看哪个仓 + 具体怎么办。\n"
-        f"风格：亲切直接像老友，{lang_word}，不堆术语，不喊口号。\n"
-        "格式：1-2 句话，≤100 字符。不要以\"早安\"开头（前端已写）。\n"
-        "**必须包含**：①最重要的 1 件事（哪个 ticker / 什么风险或机会）"
-        "②一个具体的\"今天怎么办\"建议（平仓 / roll / 等等看 / 加仓）。\n"
-        "不要列条目、不要项目符号、不要编造数字。\n"
-        "如果信号都平静，就说一句让人放心的短话即可，不要硬挤建议。"
+        "目标：让用户 30 秒读完后心里有底，知道今天该重点看什么、具体怎么处理。\n"
+        f"风格：亲切直接像老友，{lang_word}，有人情味但不啰嗦。少术语，多生活化比喻。\n"
+        "**结构**：写 2-3 句话（最多 200 字符）。建议结构：\n"
+        "  ① 开场点出今早最值得关注的事（含 ticker、风险或机会）；\n"
+        "  ② 给一个具体的\"今天怎么办\"建议（平仓 / roll / 等等看 / 加仓）；\n"
+        "  ③ 可选：附一句让人安心 or 提醒边界的话（比如 Theta 进账 / 集中度高）。\n"
+        "不要以\"早安\"开头（前端已写）。不要列条目、不要项目符号、不要编造数字。\n"
+        "如果所有信号都平静，就说一句让人放心的短话即可，别硬挤建议。"
     )
 
-    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 1-2 句话总览。"
+    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 2-3 句话总览。"
 
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=240,
+            max_tokens=500,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
@@ -2975,7 +2976,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
-    CONCIERGE_VERSION = 2
+    CONCIERGE_VERSION = 3
     cached_text = None
     cached_by = None
     if (yesterday_snap.get("date") == today_iso

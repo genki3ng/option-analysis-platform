@@ -2591,30 +2591,38 @@
     font-size: 16px; line-height: 1;
   }
   .morning-brief.collapsed { display: none; }
-  /* 包租公管家 hero */
+  /* 包租公管家 hero — 重点信息，hero 级 spotlight */
   .morning-brief .mb-concierge {
-    display: flex; gap: 12px; align-items: flex-start;
-    padding-bottom: 14px; margin-bottom: 14px;
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 4px 4px 18px;
+    margin-bottom: 16px;
     border-bottom: 1px solid var(--line);
+    position: relative;
   }
   .morning-brief .mb-avatar {
-    width: 38px; height: 38px; flex-shrink: 0;
+    width: 52px; height: 52px; flex-shrink: 0;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    background: linear-gradient(135deg, var(--accent-light), var(--accent-2));
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 12px rgba(230,184,106,0.25);
+    font-size: 26px;
+    box-shadow:
+      0 0 0 4px rgba(230,184,106,0.10),
+      0 0 24px rgba(230,184,106,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.3);
   }
   .morning-brief .mb-bubble { flex: 1; min-width: 0; }
   .morning-brief .mb-greeting {
     font-size: 11px; font-weight: 700;
     color: var(--accent);
-    letter-spacing: 0.3px;
-    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    opacity: 0.85;
   }
   .morning-brief .mb-text {
-    font-size: 13px; line-height: 1.55;
+    font-size: 15px; line-height: 1.7;
     color: var(--text);
+    font-weight: 450;
   }
   .morning-brief .mb-text .vix-up { color: var(--accent); font-weight: 600; }
   .morning-brief .mb-text strong { color: var(--accent-light); }
@@ -2704,8 +2712,10 @@
     .morning-brief .mb-concierge {
       grid-area: concierge;
       margin-bottom: 0;
-      padding-bottom: 14px;
+      padding: 6px 8px 20px;
     }
+    .morning-brief .mb-text { font-size: 16px; line-height: 1.75; }
+    .morning-brief .mb-avatar { width: 56px; height: 56px; font-size: 28px; }
     .mb-focus-list {
       grid-area: focus;
       margin-bottom: 0;
@@ -2741,8 +2751,12 @@
   /* 手机紧凑 */
   @media (max-width: 600px) {
     .morning-brief { padding: 14px 16px; }
-    .morning-brief .mb-avatar { width: 32px; height: 32px; font-size: 16px; }
-    .morning-brief .mb-text { font-size: 12px; }
+    .morning-brief .mb-avatar {
+      width: 42px; height: 42px; font-size: 22px;
+      box-shadow: 0 0 0 3px rgba(230,184,106,0.10),
+                  0 0 16px rgba(230,184,106,0.30);
+    }
+    .morning-brief .mb-text { font-size: 14px; line-height: 1.65; }
     .mb-focus-text { font-size: 12px; }
     .mb-focus-action { padding: 5px 9px; font-size: 10px; }
     .mb-cal-day { height: 18px; font-size: 8px; }

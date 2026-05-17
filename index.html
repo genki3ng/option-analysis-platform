@@ -2336,10 +2336,12 @@
     .side { position: static; max-height: none; }
   }
   @media (max-width: 720px) {
-    /* iOS focus 时不再 zoom-in：所有可输入字段字号 ≥ 16px */
+    /* iOS focus 时不再 zoom-in：所有「文本/数字/日期」输入字段字号 ≥ 16px
+       不包括 select（toolbar 下拉会比同行按钮大一截，且 select picker 是模态弹层
+       而不是粘性 zoom，影响小） */
     input[type="text"], input[type="number"], input[type="date"],
     .rec-form input[type="text"], .rec-form input[type="number"],
-    textarea, select { font-size: 16px !important; }
+    textarea { font-size: 16px !important; }
     /* row 里的 opt-btn 在长文本时溢出/不换行 → 强制可换行 + 单 button 不超容器 */
     .rec-form .row { row-gap: 8px; }
     .rec-form .opt-btn { max-width: 100%; white-space: normal; line-height: 1.3; }

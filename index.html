@@ -8105,10 +8105,11 @@ function renderWheelHints(positions) {
     }
   });
 
-  // 当前已有 short call 的 ticker — 已经在 wheel 下半场，不重复提示
+  // 当前已有 short call 的 ticker（Covered Call，sell_price > 0）— 不重复提示
+  // sell_price <= 0 的 call 是 LEAPS 等 long call，不阻断提示
   const hasShortCall = new Set();
   (positions || []).forEach(p => {
-    if (!p.closed && p.type === 'call') hasShortCall.add(p.ticker);
+    if (!p.closed && p.type === 'call' && (p.sell_price > 0 || p.sold > 0)) hasShortCall.add(p.ticker);
   });
 
   // 汇总：同 ticker 取 max(assignment, stock_positions)
@@ -8527,6 +8528,8 @@ function saveAccountSettings() {
   });
   _setAccountMeta({ available_margin: margin || null, account_type, stock_positions: positions });
   hideAccountSettings();
+  // 立即刷新 Wheel 提示（不等 30s 轮询）
+  if (window._currentData) renderWheelHints(window._currentData.positions || []);
 }
 
 // ── 偏好设置云端同步（state._meta.prefs 命名空间） ─────────────────────────

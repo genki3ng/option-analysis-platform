@@ -8220,20 +8220,35 @@ function renderWheelHints(positions) {
   const acct = _getAccountMeta();
   const stockPos = (acct.stock_positions || []).filter(p => p.shares >= 100);
 
-  // 最近 30 天被指派的 CSP（close_reason=expired_itm + type=put）
+  // 最近 30 天「相当于被指派」的 CSP：两条路径
+  //   A. 手动标记 close_reason='expired_itm'（少见，需用户主动标）
+  //   B. 自动识别：put 已过期 + 仍未平仓 + 当前 underlying < strike
   const today = new Date();
   const RECENT_DAYS = 30;
   const recentAssigned = {};  // ticker -> {date, contracts}
   (positions || []).forEach(p => {
-    if (!p.closed || p.type !== 'put') return;
-    if (p.close_reason !== 'expired_itm') return;
-    if (!p.close_date) return;
-    const cd = new Date(p.close_date);
-    const daysAgo = (today - cd) / 86400000;
-    if (daysAgo > RECENT_DAYS) return;
-    const prev = recentAssigned[p.ticker];
-    if (!prev || cd > new Date(prev.date)) {
-      recentAssigned[p.ticker] = { date: p.close_date, contracts: p.contracts };
+    if (p.type !== 'put') return;
+    // A：手动 expired_itm
+    if (p.closed && p.close_reason === 'expired_itm' && p.close_date) {
+      const cd = new Date(p.close_date);
+      const daysAgo = (today - cd) / 86400000;
+      if (daysAgo > RECENT_DAYS) return;
+      const prev = recentAssigned[p.ticker];
+      if (!prev || cd > new Date(prev.date)) {
+        recentAssigned[p.ticker] = { date: p.close_date, contracts: p.contracts };
+      }
+      return;
+    }
+    // B：未平仓但已过期 + 实际 ITM
+    if (!p.closed && p.days != null && p.days <= 0 && p.expiry &&
+        p.underlying > 0 && p.underlying < p.strike) {
+      const exp = new Date(p.expiry);
+      const daysSinceExp = (today - exp) / 86400000;
+      if (daysSinceExp < 0 || daysSinceExp > RECENT_DAYS) return;
+      const prev = recentAssigned[p.ticker];
+      if (!prev || exp > new Date(prev.date)) {
+        recentAssigned[p.ticker] = { date: p.expiry, contracts: p.contracts };
+      }
     }
   });
 
@@ -8527,6 +8542,7 @@ async function _onSignedIn(isFresh) {
   await _loadCloudData();
   _applyCloudPrefs();  // 在 refresh 前把云端 lang/theme apply 到 UI
   _migrateLocalPrefsToCloud();  // 云端没 prefs 时，把本地已有的推上去
+  _migrateLocalAccountToCloud();  // 云端没 account_meta 时，把本地的推上去（修 Wheel hint 不出）
   await _checkMigration();
   _subscribeCloud();
   _renderUserBadge();
@@ -8586,7 +8602,9 @@ function _sigOf(c) {
 // ── 账户设置（state._meta.account 命名空间）──────────────────────────────────
 function _getAccountMeta() {
   if (_currentUser && _cloudReady && _cloudCache) {
-    return _cloudCache.state?._meta?.account || {};
+    const cloudMeta = _cloudCache.state?._meta?.account;
+    if (cloudMeta) return cloudMeta;
+    // 云端无 account 块 → 退回 localStorage（早期未迁移的数据）
   }
   try { return JSON.parse(localStorage.getItem('account_meta') || '{}'); } catch(e) { return {}; }
 }
@@ -8729,6 +8747,23 @@ function _migrateLocalPrefsToCloud() {
     }
   });
   if (pushed > 0) _saveCloud();
+}
+
+// 首次登录：若云端无 account_meta（保证金/账户类型/正股），把本地有的推上去
+// 防止 Wheel 闭环提示因「云端为空 → 忽略 localStorage」而不出
+function _migrateLocalAccountToCloud() {
+  if (!_currentUser || !_cloudReady || !_cloudCache) return;
+  if (_cloudCache?.state?._meta?.account) return;  // 云端已有，跳过
+  let local = null;
+  try { local = JSON.parse(localStorage.getItem('account_meta') || 'null'); } catch(e) {}
+  if (!local) return;
+  const hasData = (local.stock_positions && local.stock_positions.length > 0)
+                  || local.available_margin || local.account_type;
+  if (!hasData) return;
+  _cloudCache.state = _cloudCache.state || {};
+  _cloudCache.state._meta = _cloudCache.state._meta || {};
+  _cloudCache.state._meta.account = local;
+  _saveCloud();
 }
 
 async function _saveCloud() {

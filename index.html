@@ -1520,6 +1520,7 @@
     border-radius: 14px;
     padding: 6px 12px;
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
     font-family: inherit;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -1532,7 +1533,7 @@
     background: var(--accent);
     color: #0A0A0B;
     border-color: var(--accent);
-    font-weight: 600;
+    /* weight 保持 500 —— active 态不改字重，避免按钮宽度漂移 */
   }
 
   .rec-form .submit-row {
@@ -1799,10 +1800,14 @@
     font-size: 12px; margin-top: 2px; font-weight: 600;
   }
   .rec-card .add-btn {
-    background: var(--accent); color: #0A0A0B; border: none;
-    border-radius: 6px; padding: 7px 14px;
+    background: var(--accent); color: #0A0A0B;
+    border: 1px solid var(--accent);
+    border-radius: 6px; padding: 6px 12px;
     font-size: 12px; cursor: pointer; font-weight: 600;
     flex-shrink: 0; letter-spacing: -0.005em;
+    min-height: 30px; line-height: 1.3;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-sizing: border-box;
   }
   .rec-oneline {
     background: var(--card2);
@@ -1868,12 +1873,15 @@
     color: var(--sub);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 7px 10px;
-    font-size: 11.5px;
+    padding: 6px 12px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.15s;
     font-family: inherit;
     letter-spacing: -0.005em;
+    min-height: 30px; line-height: 1.3;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-sizing: border-box;
   }
   .rec-actions .preview-btn:hover {
     color: var(--accent);
@@ -2108,7 +2116,7 @@
     .compare-table { font-size: 11px; }
     .compare-table th, .compare-table td { padding: 6px 7px; }
     .rec-actions { flex-wrap: wrap; gap: 4px; }
-    .rec-actions .preview-btn { padding: 6px 8px; font-size: 11px; }
+    /* preview-btn 移动尺寸由主移动 block 统一控制，删除冲突 override */
   }
 
   /* 📊 Payoff Diagram */
@@ -2674,8 +2682,15 @@
     /* 推荐卡 head: rank+title 左，actions 竖排右，不换行 */
     .rec-head { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 6px !important; }
     .rec-actions { flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; }
-    .rec-card .add-btn { flex: unset !important; padding: 6px 10px !important; font-size: 11px !important; white-space: nowrap !important; }
-    .rec-actions .preview-btn { padding: 5px 8px !important; font-size: 10.5px !important; text-align: center !important; white-space: nowrap !important; }
+    .rec-card .add-btn,
+    .rec-actions .preview-btn {
+      flex: unset !important;
+      padding: 6px 10px !important;
+      font-size: 11px !important;
+      white-space: nowrap !important;
+      min-height: 30px !important;
+    }
+    .rec-actions .preview-btn { text-align: center !important; }
     .rec-contract { gap: 4px; flex-wrap: wrap; }
     .rec-contract .rec-exp { font-size: 10.5px !important; margin-left: 0 !important; }
     .rec-head .rec-rank { margin-top: 3px !important; }

@@ -5,6 +5,7 @@
 <title data-i18n="包租公 · Landlord — 把你的股票租出去，每周收租">包租公 · Landlord — 把你的股票租出去，每周收租</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   /* ── 主题：默认夜间（与 /intro 一致），[data-theme="light"] 切换到白天 ── */
   :root {
@@ -180,6 +181,97 @@
   .user-badge .name {
     overflow: hidden; text-overflow: ellipsis;
     max-width: 130px;
+  }
+  .user-badge .user-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .user-badge.signed-out {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .user-badge.signed-out:hover {
+    background: rgba(230,184,106,0.08);
+  }
+  .user-badge.signed-in .name {
+    color: var(--accent);
+  }
+
+  /* ─── 用户菜单 popover ─── */
+  .user-menu {
+    position: fixed;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    z-index: 1300;
+    min-width: 240px;
+    padding: 6px;
+    display: none;
+  }
+  .user-menu.show { display: block; }
+  .user-menu .um-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
+  }
+  .user-menu .um-email {
+    font-size: 11.5px; color: var(--sub);
+    overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-menu .um-status {
+    font-size: 10px; color: var(--green);
+    margin-top: 4px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .user-menu .um-status::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+  .user-menu .um-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.12s;
+  }
+  .user-menu .um-item:hover { background: var(--card2); }
+  .user-menu .um-item.danger { color: var(--red); }
+  .user-menu .um-item.danger:hover { background: rgba(239,68,68,0.06); }
+
+  /* ─── 云同步状态指示 ─── */
+  .cloud-sync-status {
+    position: fixed;
+    top: 12px; right: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 10px;
+    color: var(--sub);
+    display: flex; align-items: center; gap: 6px;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .cloud-sync-status.show { opacity: 1; }
+  .cloud-sync-status .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sub);
+  }
+  .cloud-sync-status.syncing .dot { background: var(--accent); animation: pulse 1s infinite; }
+  .cloud-sync-status.synced .dot { background: var(--green); }
+  .cloud-sync-status.error .dot { background: var(--red); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
   /* 数据存储提示卡 — 首次访问展开，可永久折叠 */
@@ -2266,6 +2358,28 @@
 </style>
 </head>
 <body>
+<!-- 云同步状态浮标 -->
+<div class="cloud-sync-status" id="cloud-sync-status">
+  <span class="dot"></span>
+  <span class="label">—</span>
+</div>
+
+<!-- 用户菜单 popover -->
+<div class="user-menu" id="user-menu" onclick="event.stopPropagation()">
+  <div class="um-header">
+    <div class="um-email" id="um-email">—</div>
+    <div class="um-status" id="um-status">☁ <span data-i18n="云同步开启">云同步开启</span></div>
+  </div>
+  <div class="um-item" onclick="hideUserMenu(); editUsername();">
+    <span>✏️</span>
+    <span data-i18n="改昵称">改昵称</span>
+  </div>
+  <div class="um-item danger" onclick="hideUserMenu(); signOutCloud();">
+    <span>🚪</span>
+    <span data-i18n="登出">登出</span>
+  </div>
+</div>
+
 <div class="wrap">
   <div class="header">
     <div class="user-badge" id="user-badge" onclick="editUsername()" data-i18n-title="点击修改用户名（仅本地显示）" title="点击修改用户名（仅本地显示）">
@@ -2666,6 +2780,21 @@ const I18N = {
     'rec_algo_tip_html': '💡 {algo}综合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜区</strong>(7-21天) × <strong>Delta 甜蜜区</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流动性</strong>。保守模式下财报跨期 = 一律不接。',
     '💡 关于包租公分': '💡 关于包租公分',
     'rent_score_not_applicable_html': '<strong>包租公分</strong>仅适用于<strong>卖出期权</strong>（出租场景，CSP / Covered Call）。<br>当前是<strong>买入期权</strong>，请改看：<code>杠杆倍数</code>（钱的效率）、<code>IV</code>（是否贵）、<code>Delta</code>（是否够 ITM）、<code>到期日</code>（时间够不够长）。',
+    'Google 登录': 'Google 登录',
+    '登录后多设备云同步': '登录后多设备云同步 ☁',
+    '点击查看选项': '点击查看选项',
+    '改昵称': '改昵称',
+    '登出': '登出',
+    '云同步开启': '云同步已开启',
+    '☁ 加载中...': '☁ 加载中...',
+    '☁ 同步中...': '☁ 同步中...',
+    '☁ 已同步': '☁ 已同步',
+    '☁ 已同步 (远程更新)': '☁ 已同步 (远程更新)',
+    '☁ 加载失败': '☁ 加载失败',
+    '☁ 同步失败': '☁ 同步失败',
+    '登录失败：': '登录失败：',
+    '确定登出？登出后切回本地模式（本机数据不受影响）。': '确定登出？登出后切回本地模式（本机数据不受影响）。',
+    'migration_prompt': '检测到本地有 {nPos} 个持仓 / {nState} 条状态记录，导入到云端？\n\n点"确定"：导入云端 → 以后多设备实时同步。\n点"取消"：忽略本地数据，云端从空白开始。',
     '加仓预览：看这一笔加进组合的影响': '加仓预览：看这一笔加进组合的影响',
     '预览': '预览',
     '加入对比': '加入对比',
@@ -3051,6 +3180,21 @@ const I18N = {
     'rec_algo_tip_html': '💡 {algo} 綜合考量：<strong>年化租金</strong> × <strong>安全度</strong>(BS) × <strong>DTE 甜蜜區</strong>(7-21天) × <strong>Delta 甜蜜區</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>流動性</strong>。保守模式下財報跨期 = 一律不接。',
     '💡 关于包租公分': '💡 關於包租公分',
     'rent_score_not_applicable_html': '<strong>包租公分</strong>僅適用於<strong>賣出期權</strong>（出租場景，CSP / Covered Call）。<br>目前是<strong>買入期權</strong>，請改看：<code>槓桿倍數</code>（資金效率）、<code>IV</code>（是否貴）、<code>Delta</code>（是否夠 ITM）、<code>到期日</code>（時間夠不夠長）。',
+    'Google 登录': 'Google 登入',
+    '登录后多设备云同步': '登入後多裝置雲同步 ☁',
+    '点击查看选项': '點擊查看選項',
+    '改昵称': '改暱稱',
+    '登出': '登出',
+    '云同步开启': '雲同步已開啟',
+    '☁ 加载中...': '☁ 載入中...',
+    '☁ 同步中...': '☁ 同步中...',
+    '☁ 已同步': '☁ 已同步',
+    '☁ 已同步 (远程更新)': '☁ 已同步（遠端更新）',
+    '☁ 加载失败': '☁ 載入失敗',
+    '☁ 同步失败': '☁ 同步失敗',
+    '登录失败：': '登入失敗：',
+    '确定登出？登出后切回本地模式（本机数据不受影响）。': '確定登出？登出後切回本機模式（本機資料不受影響）。',
+    'migration_prompt': '偵測到本機有 {nPos} 個持倉 / {nState} 條狀態記錄，匯入雲端？\n\n點「確定」：匯入雲端 → 之後多裝置即時同步。\n點「取消」：忽略本機資料，雲端從空白開始。',
     '加仓预览：看这一笔加进组合的影响': '加倉預覽：看這一筆加進組合的影響',
     '预览': '預覽',
     '加入对比': '加入對比',
@@ -3566,6 +3710,21 @@ const I18N = {
     'rec_algo_tip_html': '💡 {algo} composite factors: <strong>annualized rent</strong> × <strong>safety</strong>(BS) × <strong>DTE sweet spot</strong>(7-21d) × <strong>Delta sweet spot</strong>(0.15-0.30) × <strong>IV rank</strong> × <strong>liquidity</strong>. In conservative mode, earnings-spanning contracts are always rejected.',
     '💡 关于包租公分': '💡 About the Landlord Score',
     'rent_score_not_applicable_html': 'The <strong>Landlord Score</strong> only applies when <strong>selling options</strong> (renting out — CSP / Covered Call). For <strong>buying options</strong>, check instead: <code>leverage</code> (capital efficiency), <code>IV</code> (is it cheap?), <code>Delta</code> (is it deep enough ITM?), and <code>days to expiry</code> (enough runway?).',
+    'Google 登录': 'Sign in with Google',
+    '登录后多设备云同步': 'Sign in to enable cross-device cloud sync ☁',
+    '点击查看选项': 'Click for options',
+    '改昵称': 'Edit nickname',
+    '登出': 'Sign out',
+    '云同步开启': 'Cloud sync enabled',
+    '☁ 加载中...': '☁ Loading...',
+    '☁ 同步中...': '☁ Syncing...',
+    '☁ 已同步': '☁ Synced',
+    '☁ 已同步 (远程更新)': '☁ Synced (remote update)',
+    '☁ 加载失败': '☁ Load failed',
+    '☁ 同步失败': '☁ Sync failed',
+    '登录失败：': 'Sign-in failed: ',
+    '确定登出？登出后切回本地模式（本机数据不受影响）。': 'Sign out? You will revert to local-only mode (local data is unaffected).',
+    'migration_prompt': 'Found {nPos} local positions / {nState} state records. Import to cloud?\n\nOK: import to cloud (multi-device realtime sync afterward).\nCancel: ignore local data, start cloud fresh.',
     '加仓预览：看这一笔加进组合的影响': 'Preview the portfolio impact of adding this contract',
     '预览': 'Preview',
     '加入对比': 'Compare',
@@ -7348,10 +7507,272 @@ function renderAll(d) {
     '更新于 ' + d.ts + ' · 自动每 30 秒刷新';
 }
 
-// ── localStorage 数据层 ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// 🔐 Supabase Auth + Cloud Sync
+// 设计：
+//   未登录 → localStorage（原行为不变）
+//   已登录 → cloud cache + Supabase realtime（多设备同步）
+// ═══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://nvavwcvxmzksadpbtafs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws';
+
+let _sb = null;
+let _currentUser = null;
+let _cloudCache = null;     // { positions: [], state: {} }
+let _cloudReady = false;
+let _cloudChannel = null;
+let _saveDebounce = null;
+let _lastSavedSignature = '';
+
+function _setSyncStatus(state, label) {
+  const el = document.getElementById('cloud-sync-status');
+  if (!el) return;
+  if (!state) { el.classList.remove('show'); return; }
+  el.className = 'cloud-sync-status show ' + state;
+  const lab = el.querySelector('.label');
+  if (lab) lab.textContent = label || '';
+  if (state === 'synced') {
+    setTimeout(() => { if (el.classList.contains('synced')) el.classList.remove('show'); }, 2500);
+  }
+}
+
+function _initSupabase() {
+  if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+    console.warn('Supabase SDK not loaded yet, retrying...');
+    setTimeout(_initSupabase, 200);
+    return;
+  }
+  _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+  });
+  _sb.auth.onAuthStateChange((event, session) => {
+    const wasUser = _currentUser?.id;
+    _currentUser = session?.user || null;
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (_currentUser) _onSignedIn(wasUser !== _currentUser.id);
+      else _onSignedOut();
+    } else if (event === 'SIGNED_OUT') {
+      _onSignedOut();
+    } else if (event === 'TOKEN_REFRESHED') {
+      // 无需动作
+    }
+  });
+  // 立刻检查 session（OAuth 回来时 URL hash 里有 token）
+  _sb.auth.getSession().then(({ data }) => {
+    _currentUser = data.session?.user || null;
+    _renderUserBadge();
+    if (_currentUser) _onSignedIn(true);
+  });
+  _renderUserBadge();
+}
+
+async function _onSignedIn(isFresh) {
+  _setSyncStatus('syncing', t('☁ 加载中...'));
+  await _loadCloudData();
+  await _checkMigration();
+  _subscribeCloud();
+  _renderUserBadge();
+  _setSyncStatus('synced', t('☁ 已同步'));
+  if (typeof refresh === 'function') refresh();
+}
+
+async function _onSignedOut() {
+  if (_cloudChannel) {
+    try { _sb.removeChannel(_cloudChannel); } catch(e){}
+    _cloudChannel = null;
+  }
+  _cloudReady = false;
+  _cloudCache = null;
+  _renderUserBadge();
+  _setSyncStatus(null);
+  if (typeof refresh === 'function') refresh();
+}
+
+async function _loadCloudData() {
+  if (!_sb || !_currentUser) return;
+  const { data, error } = await _sb
+    .from('user_data')
+    .select('positions, state')
+    .eq('user_id', _currentUser.id)
+    .maybeSingle();
+  if (error) {
+    console.error('[cloud] load failed', error);
+    _setSyncStatus('error', t('☁ 加载失败'));
+    return;
+  }
+  if (data) {
+    _cloudCache = {
+      positions: Array.isArray(data.positions) ? data.positions : [],
+      state: (data.state && typeof data.state === 'object') ? data.state : {},
+    };
+  } else {
+    // 新用户：插入空行
+    _cloudCache = { positions: [], state: {} };
+    await _sb.from('user_data').insert({
+      user_id: _currentUser.id,
+      positions: [],
+      state: {},
+    });
+  }
+  _lastSavedSignature = _sigOf(_cloudCache);
+  _cloudReady = true;
+}
+
+function _sigOf(c) {
+  return JSON.stringify(c?.positions || []) + '||' + JSON.stringify(c?.state || {});
+}
+
+async function _saveCloud() {
+  if (!_sb || !_currentUser || !_cloudReady || !_cloudCache) return;
+  clearTimeout(_saveDebounce);
+  _saveDebounce = setTimeout(async () => {
+    const sig = _sigOf(_cloudCache);
+    if (sig === _lastSavedSignature) return;  // 无变化
+    _setSyncStatus('syncing', t('☁ 同步中...'));
+    const { error } = await _sb.from('user_data').upsert({
+      user_id: _currentUser.id,
+      positions: _cloudCache.positions,
+      state: _cloudCache.state,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+    if (error) {
+      console.error('[cloud] save failed', error);
+      _setSyncStatus('error', t('☁ 同步失败'));
+    } else {
+      _lastSavedSignature = sig;
+      _setSyncStatus('synced', t('☁ 已同步'));
+    }
+  }, 400);
+}
+
+function _subscribeCloud() {
+  if (!_sb || !_currentUser) return;
+  if (_cloudChannel) try { _sb.removeChannel(_cloudChannel); } catch(e){}
+  _cloudChannel = _sb.channel('user_data_' + _currentUser.id)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'user_data',
+      filter: `user_id=eq.${_currentUser.id}`,
+    }, (payload) => {
+      const row = payload.new;
+      if (!row) return;
+      const inboundSig = JSON.stringify(row.positions || []) + '||' + JSON.stringify(row.state || {});
+      if (inboundSig === _lastSavedSignature) return;  // 自己刚 save 的回声
+      _cloudCache = {
+        positions: row.positions || [],
+        state: row.state || {},
+      };
+      _lastSavedSignature = inboundSig;
+      _setSyncStatus('synced', t('☁ 已同步 (远程更新)'));
+      if (typeof refresh === 'function') refresh();
+    })
+    .subscribe();
+}
+
+async function _checkMigration() {
+  if (!_sb || !_currentUser || !_cloudReady) return;
+  const migKey = 'cloud_migrated_' + _currentUser.id;
+  if (localStorage.getItem(migKey) === '1') return;
+  // 云端非空 → 不迁移（防止覆盖云数据）
+  if ((_cloudCache.positions || []).length > 0 ||
+      Object.keys(_cloudCache.state || {}).length > 0) {
+    localStorage.setItem(migKey, '1');
+    return;
+  }
+  // 本地是否有数据？
+  let localPos = []; let localState = {};
+  try { localPos = JSON.parse(localStorage.getItem('positions') || '[]'); } catch(e){}
+  try { localState = JSON.parse(localStorage.getItem('positionState') || '{}'); } catch(e){}
+  const nPos = localPos.length;
+  const nState = Object.keys(localState).length;
+  if (nPos === 0 && nState === 0) {
+    localStorage.setItem(migKey, '1');
+    return;
+  }
+  const msg = t('migration_prompt').replace('{nPos}', nPos).replace('{nState}', nState);
+  const ok = confirm(msg);
+  if (ok) {
+    _cloudCache.positions = localPos;
+    _cloudCache.state = localState;
+    await _saveCloud();
+  }
+  localStorage.setItem(migKey, '1');
+}
+
+async function signInGoogle() {
+  if (!_sb) return alert('Supabase not ready');
+  const { error } = await _sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/app',
+    },
+  });
+  if (error) alert(t('登录失败：') + error.message);
+}
+
+async function signOutCloud() {
+  if (!_sb) return;
+  if (!confirm(t('确定登出？登出后切回本地模式（本机数据不受影响）。'))) return;
+  await _sb.auth.signOut();
+}
+
+function _renderUserBadge() {
+  const badge = document.getElementById('user-badge');
+  if (!badge) return;
+  if (_currentUser) {
+    const meta = _currentUser.user_metadata || {};
+    const display = meta.full_name || meta.name || _currentUser.email || 'User';
+    const shortName = display.length > 14 ? display.slice(0, 12) + '…' : display;
+    const avatar = meta.avatar_url;
+    badge.className = 'user-badge signed-in';
+    badge.innerHTML = `
+      ${avatar ? `<img src="${avatar}" class="user-avatar" alt="" onerror="this.style.display='none'">` : '<span class="icon">👤</span>'}
+      <span class="name">${shortName}</span>
+    `;
+    badge.title = t('点击查看选项');
+    badge.onclick = showUserMenu;
+    // 顶部菜单填邮箱
+    const emailEl = document.getElementById('um-email');
+    if (emailEl) emailEl.textContent = _currentUser.email || '—';
+  } else {
+    badge.className = 'user-badge signed-out';
+    badge.innerHTML = `<span class="icon">🔐</span><span class="name">${t('Google 登录')}</span>`;
+    badge.title = t('登录后多设备云同步');
+    badge.onclick = signInGoogle;
+  }
+}
+
+function showUserMenu(evt) {
+  if (evt && evt.stopPropagation) evt.stopPropagation();
+  const menu = document.getElementById('user-menu');
+  const badge = document.getElementById('user-badge');
+  if (!menu || !badge) return;
+  const r = badge.getBoundingClientRect();
+  menu.style.top = (r.bottom + 6) + 'px';
+  menu.style.left = Math.max(8, r.left) + 'px';
+  menu.classList.add('show');
+  // 点外部关闭
+  setTimeout(() => {
+    document.addEventListener('click', _userMenuClickAway, { once: true });
+  }, 0);
+}
+
+function hideUserMenu() {
+  document.getElementById('user-menu')?.classList.remove('show');
+}
+
+function _userMenuClickAway(e) {
+  hideUserMenu();
+}
+
+// ── 数据层：登录走云端 / 未登录走 localStorage ───────────────────
 function loadPositions() {
   if (window._isShareView && window._sharedSnapshot) {
     return window._sharedSnapshot.positions || [];
+  }
+  if (_currentUser && _cloudReady && _cloudCache) {
+    return _cloudCache.positions || [];
   }
   try {
     const raw = localStorage.getItem('positions');
@@ -7359,12 +7780,20 @@ function loadPositions() {
   } catch (e) { return []; }
 }
 function savePositions(arr) {
+  if (_currentUser && _cloudReady && _cloudCache) {
+    _cloudCache.positions = arr;
+    _saveCloud();
+  }
+  // 同时写 localStorage：作为离线降级备份
   localStorage.setItem('positions', JSON.stringify(arr));
-  syncOut();  // 异步写到文件（如已连接）
+  syncOut();
 }
 function loadStateMap() {
   if (window._isShareView && window._sharedSnapshot) {
     return window._sharedSnapshot.state || {};
+  }
+  if (_currentUser && _cloudReady && _cloudCache) {
+    return _cloudCache.state || {};
   }
   try {
     const raw = localStorage.getItem('positionState');
@@ -7372,6 +7801,10 @@ function loadStateMap() {
   } catch (e) { return {}; }
 }
 function saveStateMap(obj) {
+  if (_currentUser && _cloudReady && _cloudCache) {
+    _cloudCache.state = obj;
+    _saveCloud();
+  }
   localStorage.setItem('positionState', JSON.stringify(obj));
   syncOut();
 }
@@ -7414,6 +7847,21 @@ async function refresh() {
 
 // 启动前检查是否是 share view
 loadFromShare();
+
+// 初始化 Supabase（异步，不阻塞首次 refresh）
+_initSupabase();
+
+// OAuth 回调时 URL 可能带 ?code= / #access_token=，登录完后清掉
+window.addEventListener('load', () => {
+  const url = new URL(window.location.href);
+  let dirty = false;
+  if (url.searchParams.has('code')) { url.searchParams.delete('code'); dirty = true; }
+  if (url.hash && (url.hash.includes('access_token') || url.hash.includes('error'))) {
+    url.hash = '';
+    dirty = true;
+  }
+  if (dirty) history.replaceState({}, '', url.toString());
+});
 
 refresh();
 setInterval(refresh, 30000);

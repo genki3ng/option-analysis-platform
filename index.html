@@ -574,7 +574,8 @@
     border: 1px solid var(--line);
     transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
                 background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: hidden;
+    /* overflow: visible — 让 ⋯ 下拉菜单能溢出 */
+    overflow: visible;
   }
   .pos:hover {
     border-color: var(--line-2);
@@ -642,6 +643,55 @@
   }
   .pos-more.copied::after { content: ' ✓'; font-size: 11px; }
   :root[data-theme="light"] .pos-more.copied { background: rgba(22,163,74,0.10); }
+
+  /* ⋯ 下拉菜单 */
+  .pos-more-wrap { position: relative; flex-shrink: 0; }
+  .pos-more-menu {
+    display: none;
+    position: absolute;
+    top: 100%; right: 0;
+    margin-top: 4px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 220px;
+    padding: 4px;
+    z-index: 100;
+    font-family: inherit;
+  }
+  .pos-more-menu.open { display: block; }
+  .pos-more-menu .menu-item {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: background 0.12s;
+  }
+  .pos-more-menu .menu-item:hover { background: var(--card2); }
+  .pos-more-menu .menu-item .item-icon {
+    font-size: 14px; flex-shrink: 0;
+    line-height: 1;
+  }
+  .pos-more-menu .menu-item .item-label {
+    flex: 1; white-space: nowrap;
+  }
+  .pos-more-menu .menu-item .item-meta {
+    font-size: 9.5px;
+    color: var(--sub);
+    font-family: "SF Mono", Menlo, monospace;
+    max-width: 92px;
+    overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   /* pos-pct: 已平仓卡片仍用（顶部右侧已实现盈亏） */
   .pos-pct {
@@ -4285,6 +4335,10 @@ const I18N = {
     '建仓日': '建倉日',
     '保存': '儲存',
     '注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。': '注：改 ticker / strike / 類型 / 到期日請用 🗑 刪除 + 重新添加。',
+    '更多操作': '更多操作',
+    '复制合约代码': '複製合約代碼',
+    '复制持仓摘要': '複製持倉摘要',
+    '已复制': '已複製',
   },
 
   en: {
@@ -4866,6 +4920,10 @@ const I18N = {
     '建仓日': 'Trade date',
     '保存': 'Save',
     '注：改 ticker / strike / 类型 / 到期日请用 🗑 删除 + 重新添加。': 'Note: to change ticker / strike / type / expiry, use 🗑 Delete + re-add.',
+    '更多操作': 'More',
+    '复制合约代码': 'Copy OCC code',
+    '复制持仓摘要': 'Copy position summary',
+    '已复制': 'Copied',
   },
 };
 
@@ -5165,6 +5223,53 @@ function copyOcc(el, code) {
     setTimeout(() => el.classList.remove('copied'), 1500);
   });
 }
+
+// 持仓卡 ⋯ 下拉菜单
+function togglePosMenu(btn) {
+  const wrap = btn.closest('.pos-more-wrap');
+  const menu = wrap.querySelector('.pos-more-menu');
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.pos-more-menu.open').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+
+function copyPosItem(btn, text) {
+  const orig = btn.innerHTML;
+  const showCopied = () => {
+    btn.innerHTML = `<span class="item-icon">✓</span><span class="item-label" style="color:var(--green)">${t('已复制')}</span>`;
+    setTimeout(() => {
+      document.querySelectorAll('.pos-more-menu.open').forEach(m => m.classList.remove('open'));
+      btn.innerHTML = orig;
+    }, 700);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showCopied).catch(() => _fallbackCopy(text, showCopied));
+  } else {
+    _fallbackCopy(text, showCopied);
+  }
+}
+
+function _fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  cb && cb();
+}
+
+// 全局：点击空白处或按 ESC 关掉下拉菜单
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.pos-more-wrap')) {
+    document.querySelectorAll('.pos-more-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.pos-more-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
 
 function markSrcTip(src) {
   switch (src) {
@@ -5841,9 +5946,20 @@ function renderPosition(p) {
           <span class="type-badge ${typeCls}">${p.type}</span>
         </div>
         <span class="pos-status ${status.cls}">${status.label}</span>
-        <button class="pos-more"
-                onclick="event.stopPropagation();copyOcc(this, '${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}')"
-                title="${t('点击复制合约代码')}: ${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}">⋯</button>
+        <div class="pos-more-wrap">
+          <button class="pos-more" onclick="event.stopPropagation();togglePosMenu(this)" title="${t('更多操作')}">⋯</button>
+          <div class="pos-more-menu" onclick="event.stopPropagation()">
+            <button class="menu-item" onclick="copyPosItem(this, '${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}')">
+              <span class="item-icon">📋</span>
+              <span class="item-label">${t('复制合约代码')}</span>
+              <span class="item-meta">${buildOccSymbol(p.ticker, p.type, p.strike, p.expiry)}</span>
+            </button>
+            <button class="menu-item" onclick="copyPosItem(this, '${p.ticker} \\$${fmt(p.strike, 0)} ${p.type.toUpperCase()} ×${p.contracts} sold \\$${fmt(p.sell_price, 2)}/sh exp ${p.expiry}')">
+              <span class="item-icon">📝</span>
+              <span class="item-label">${t('复制持仓摘要')}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="pos-meta">

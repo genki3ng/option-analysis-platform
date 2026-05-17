@@ -1389,7 +1389,7 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
 #   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
 # ─────────────────────────────────────────────────────────────────────
 ALGORITHM_NAME = "包租公算法"
-ALGORITHM_VERSION = "1.1"
+ALGORITHM_VERSION = "1.2"
 ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
 # v1.1 changes: 流动性因子从单一 spread% 升级为 spread × OI × volume 复合分
 
@@ -1503,9 +1503,30 @@ def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool,
     return 1.0, None
 
 
+def _earnings_factor(days_to_earnings: int, risk: str) -> float:
+    """财报因子（包租公 1.2）：按距财报天数衰减，替代原 1.1 的 cross 二元否决。
+
+    保守模式下 ≤5 天硬否决（IV crush 风险极高、新手最常踩的坑）；
+    其他时段用距离衰减，避免误杀 14+ 天后到期、风险其实可控的合约。
+    """
+    if risk == "conservative" and days_to_earnings <= 5:
+        return 0.0
+    if days_to_earnings <= 2:    base = 0.20
+    elif days_to_earnings <= 7:  base = 0.50
+    elif days_to_earnings <= 14: base = 0.75
+    elif days_to_earnings <= 21: base = 0.88
+    else:                         base = 0.95
+    if risk == "conservative":
+        return round(base * 0.80, 2)
+    if risk == "aggressive":
+        return round(min(1.0, base * 1.15), 2)
+    return round(base, 2)
+
+
 def _landlord_score(opt: dict, is_csp: bool, underlying: float,
                      iv_rank: Optional[dict], backtest: Optional[dict],
-                     earnings_cross: bool, risk: str) -> dict:
+                     earnings_cross: bool, earnings_days_until: Optional[int],
+                     risk: str) -> dict:
     """
     包租公分（rent_score）— 综合"周租"质量评分。
     返回 {"score": float, "components": {...}}，components 用于解释。
@@ -1542,15 +1563,10 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     # 6. 流动性（包租公 1.1：spread × OI × volume 复合）
     liq_f, liq_breakdown = _liquidity_factor_v11(spread_pct, oi, volume)
 
-    # 7. 财报跨期：保守 = 硬否决，平衡 = 严重扣分，激进 = 轻微
+    # 7. 财报跨期：1.2 用距财报天数衰减（见 _earnings_factor）
     earnings_f = 1.0
-    if earnings_cross:
-        if risk == "conservative":
-            earnings_f = 0.0           # 包租公保守派：财报房客一律不租
-        elif risk == "balanced":
-            earnings_f = 0.55
-        else:
-            earnings_f = 0.78
+    if earnings_cross and earnings_days_until is not None and earnings_days_until >= 0:
+        earnings_f = _earnings_factor(earnings_days_until, risk)
 
     # 8. 回测胜率加成
     bt_f = 1.0
@@ -2080,10 +2096,11 @@ def recommend(req: dict) -> dict:
                 "max_loss": max_loss,
             }
 
-        # 包租公算法 1.0：替换原 score 为 rent_score（仅 short）
+        # 包租公算法 1.2：替换原 score 为 rent_score（仅 short）
+        earnings_days_until = (earnings_date - today).days if earnings_date else None
         if is_short:
             ls = _landlord_score(c, is_csp, underlying, iv_rank, backtest,
-                                  earnings_cross, risk)
+                                  earnings_cross, earnings_days_until, risk)
             c["rent_score"] = ls["score"]
             c["score_components"] = ls["components"]
             c["score"] = ls["score"]   # 排序统一用 rent_score

@@ -18,10 +18,6 @@ from typing import Optional, List, Dict, Tuple
 
 RISK_FREE = 0.045
 
-# Massive (Polygon-style) API key — 历史聚合数据
-MASSIVE_KEY = "LGOwbUJ6_VvPovE08rGOwohlCkt6IFeL"
-MASSIVE_BASE = "https://api.massive.com"
-
 # ── i18n: translation tables for server-rendered strings ───────────
 # Keyed by simplified Chinese (source). For static labels, value is plain text.
 # For templates with placeholders ({key}), use .format(**vars) at call site.
@@ -364,11 +360,9 @@ def _schwab_get_access_token() -> Optional[str]:
         return _schwab_access_token
     except urllib.error.HTTPError as e:
         _schwab_last_err = f"token HTTP {e.code}: {e.read().decode()[:200]}"
-        print(f"[schwab] {_schwab_last_err}")
         return None
     except Exception as e:
         _schwab_last_err = f"token exception: {type(e).__name__}: {e}"
-        print(f"[schwab] {_schwab_last_err}")
         return None
 
 
@@ -398,11 +392,9 @@ def fetch_chain_schwab(ticker: str, expiry_str: str) -> Dict:
             data = json.loads(r.read())
     except urllib.error.HTTPError as e:
         _schwab_last_err = f"chain {ticker} {expiry_str} HTTP {e.code}: {e.read().decode()[:200]}"
-        print(f"[schwab] {_schwab_last_err}")
         return {}
     except Exception as e:
         _schwab_last_err = f"chain {ticker} {expiry_str}: {type(e).__name__}: {e}"
-        print(f"[schwab] {_schwab_last_err}")
         return {}
 
     if data.get("status") != "SUCCESS":
@@ -1222,55 +1214,6 @@ def _decide_strategy(direction: str, intent: str):
     return False, True  # neutral 默认 short put
 
 
-def _build_occ_symbol(ticker: str, expiry: date, strike: float, is_call: bool) -> str:
-    """构造 OCC option 符号，例如 TSLA260520P00400000"""
-    y = expiry.strftime("%y%m%d")
-    cp = "C" if is_call else "P"
-    s = f"{int(round(strike * 1000)):08d}"
-    return f"{ticker}{y}{cp}{s}"
-
-
-_cache_occ_hist: Dict[str, dict] = {}
-
-def fetch_massive_option_history(occ_symbol: str, days_back: int = 30) -> Optional[dict]:
-    """通过 Massive 拉取期权过去 N 天的日 K，计算价位带"""
-    if occ_symbol in _cache_occ_hist:
-        return _cache_occ_hist[occ_symbol]
-
-    end = date.today()
-    start = end - timedelta(days=days_back + 7)  # 多拿几天保险
-    url = (f"{MASSIVE_BASE}/v2/aggs/ticker/O:{occ_symbol}/range/1/day/"
-           f"{start.isoformat()}/{end.isoformat()}"
-           f"?adjusted=true&sort=desc&limit=120&apiKey={MASSIVE_KEY}")
-    try:
-        import urllib.request
-        with urllib.request.urlopen(url, timeout=4) as resp:
-            data = json.loads(resp.read())
-        results = data.get("results", [])
-        if not results:
-            _cache_occ_hist[occ_symbol] = None
-            return None
-        closes = [float(r["c"]) for r in results if r.get("c", 0) > 0]
-        if not closes:
-            return None
-        # 最近 30 天
-        recent = closes[:30]
-        out = {
-            "n_days": len(recent),
-            "low": round(min(recent), 3),
-            "high": round(max(recent), 3),
-            "avg": round(sum(recent) / len(recent), 3),
-            "median": round(sorted(recent)[len(recent)//2], 3),
-            "latest": round(recent[0], 3),
-            "oldest": round(recent[-1], 3),
-        }
-        _cache_occ_hist[occ_symbol] = out
-        return out
-    except Exception:
-        _cache_occ_hist[occ_symbol] = None
-        return None
-
-
 def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
     """用历史 30 天已实现波动率近似 IV rank（粗略但有用）"""
     if current_iv <= 0:
@@ -1482,11 +1425,9 @@ def _liquidity_factor_v11(spread_pct: float, oi: int, volume: int) -> tuple:
     }
 
 
-def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool,
-                            price_band: Optional[dict]) -> tuple:
+def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool) -> tuple:
     """
-    Wheel 友好度：对 CSP，strike 是否在历史合理位置？
-    若 strike 显著低于 30d 均价 → 被指派 = 好价位接货
+    Wheel 友好度：对 CSP，strike 相对现价是否在好接货价位？
     Returns (factor, signal_text or None)
     """
     if not is_csp:
@@ -1595,7 +1536,7 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
 
 
 def _make_verdict(opt: dict, is_short: bool, intent: str,
-                  iv_rank: Optional[dict], price_band: Optional[dict] = None,
+                  iv_rank: Optional[dict],
                   backtest: Optional[dict] = None, risk: str = "balanced",
                   is_csp: bool = False, underlying: float = 0) -> dict:
     """生成一句话推荐 verdict（包租公算法 1.0 — 房东视角，损失厌恶）"""
@@ -1604,7 +1545,7 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
 
     # ── 包租公专属信号 #1：Wheel 友好（CSP strike 是否好接货价）
     if is_csp and underlying > 0:
-        _, wf_signal = _wheel_friendly_factor(opt["strike"], underlying, True, price_band)
+        _, wf_signal = _wheel_friendly_factor(opt["strike"], underlying, True)
         if wf_signal:
             pros.append(wf_signal); weight += 2
 
@@ -1617,37 +1558,6 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
             cons.append(f"📅 仅 {d} 天，gamma 风险大"); weight -= 2
         elif d > 35:
             cons.append(f"📅 {d} 天太长，钱躺得久"); weight -= 1
-
-    # ── Massive 历史价位带信号（最近 30 天）
-    if price_band:
-        mid = opt["mid"]
-        lo, hi, avg = price_band["low"], price_band["high"], price_band["avg"]
-        rng = hi - lo
-        if rng > 0:
-            # 当前价在 30 天区间中的位置（0 = 最低，1 = 最高）
-            pos = (mid - lo) / rng
-            if is_short:
-                # 卖期权：current 高（vs 历史）= 你能收更多权利金 = 好
-                if pos >= 0.75:
-                    pros.append(f"📊 当前 ${mid:.2f} 在 30d 区间高位（${lo:.2f}-${hi:.2f}），收的多")
-                    weight += 2
-                elif pos >= 0.55:
-                    pros.append(f"📊 当前价处于 30d 区间偏高")
-                    weight += 1
-                elif pos <= 0.25:
-                    cons.append(f"📊 当前 ${mid:.2f} 在 30d 区间低位（${lo:.2f}-${hi:.2f}），不如等反弹")
-                    weight -= 2
-            else:
-                # 买期权：current 低 = 便宜 = 好
-                if pos <= 0.25:
-                    pros.append(f"📊 当前 ${mid:.2f} 在 30d 区间低位（${lo:.2f}-${hi:.2f}），买入便宜")
-                    weight += 2
-                elif pos <= 0.45:
-                    pros.append(f"📊 当前价处于 30d 区间偏低")
-                    weight += 1
-                elif pos >= 0.75:
-                    cons.append(f"📊 当前 ${mid:.2f} 在 30d 区间高位（${lo:.2f}-${hi:.2f}），买入偏贵")
-                    weight -= 2
 
     # 流动性（包租公算法 1.1：spread + OI + volume 综合判断）
     if opt["spread_pct"] > 10:
@@ -2105,28 +2015,13 @@ def recommend(req: dict) -> dict:
             c["score_components"] = ls["components"]
             c["score"] = ls["score"]   # 排序统一用 rent_score
 
-        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, None,
+        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank,
                                       backtest, risk=risk, is_csp=is_csp,
                                       underlying=underlying)
 
-    # 5. 排序后保留 top 15，富集 Massive 价位带
+    # 5. 排序后保留 top 15
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
-
-    for c in candidates:
-        occ = _build_occ_symbol(c["ticker"],
-                                 date.fromisoformat(c["expiry"]),
-                                 c["strike"],
-                                 c["type"] == "call")
-        hist = fetch_massive_option_history(occ, days_back=30)
-        if hist:
-            c["price_band"] = hist
-            c["verdict"] = _make_verdict(c, is_short, intent, iv_rank, hist,
-                                          backtest, risk=risk, is_csp=is_csp,
-                                          underlying=underlying)
-
-    # 6. 终极排序
-    candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
 
     return {
         "ticker": ticker,

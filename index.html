@@ -22,10 +22,11 @@
     --text:      #EDEDEC;
     --sub:       #888889;
     --dim:       #5A5A5C;
-    --line:      #1C1C1F;
-    --line-2:    #2A2A2E;
+    --line:      #232328;
+    --line-2:    #2E2E36;
     --accent:    #E6B86A;
     --accent-2:  #B89255;
+    --accent-light: #F0C778;
     --accent-tint: rgba(230,184,106,0.10);
     --accent-tint-strong: rgba(230,184,106,0.18);
     --green:     #34D399;
@@ -34,8 +35,8 @@
     --yellow:    #E6B86A;
     --purple:    #E6B86A;
     --teal:      #34D399;
-    --shadow:    0 1px 2px rgba(0,0,0,0.4);
-    --shadow-lg: 0 12px 36px rgba(0,0,0,0.5);
+    --shadow:    0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.65);
     --header-bg: var(--bg);
     --chart-grid: rgba(255,255,255,0.06);
   }
@@ -48,8 +49,9 @@
     --text:      #1A1A1A;
     --sub:       #6B6B68;
     --dim:       #9A9A95;
-    --line:      #EAE7DC;
-    --line-2:    #D5D2C7;
+    --line:      #D8D4C8;
+    --line-2:    #C6C2B5;
+    --accent-light: #C89850;
     --accent:    #B89255;
     --accent-2:  #8C6E40;
     --accent-tint: rgba(184,146,85,0.10);
@@ -60,8 +62,8 @@
     --yellow:    #B89255;
     --purple:    #B89255;
     --teal:      #16A34A;
-    --shadow:    0 1px 2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 32px rgba(0,0,0,0.08);
+    --shadow:    0 1px 3px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 32px rgba(0,0,0,0.12);
     --header-bg: var(--bg);
     --chart-grid: rgba(0,0,0,0.08);
   }
@@ -305,7 +307,7 @@
   .migrate-modal .btn-import {
     background: var(--accent); color: #0A0A0B;
   }
-  .migrate-modal .btn-import:hover { background: #F0C778; }
+  .migrate-modal .btn-import:hover { background: var(--accent-light); }
   .migrate-modal .btn-skip {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -345,7 +347,6 @@
   .info-card {
     background: var(--card);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 10px;
     padding: 14px 18px;
     margin-bottom: 16px;
@@ -495,7 +496,8 @@
     overflow: hidden;
   }
   .pos:hover {
-    border-color: var(--line-2); transform: translateY(-1px);
+    border-color: var(--line-2);
+    background: rgba(255,255,255,0.007);
   }
   .pos.unchecked { opacity: 0.4; }
   /* 状态描边整体着色，取代左边粗条 */
@@ -577,6 +579,8 @@
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; padding: 10px 14px;
     background: var(--inset);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .pos-hero .stat {
     display: flex; flex-direction: column; gap: 2px;
@@ -614,8 +618,10 @@
   .pos-bar .marker {
     position: absolute; top: -3px;
     width: 12px; height: 12px;
-    background: white; border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--card), 0 2px 5px rgba(15,23,42,0.2);
+    background: var(--card);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--bg);
     transform: translateX(-50%);
     transition: left 0.3s;
   }
@@ -730,7 +736,7 @@
   .edit-form .ef-save {
     background: var(--accent); color: #0A0A0B;
   }
-  .edit-form .ef-save:hover { background: #F0C778; }
+  .edit-form .ef-save:hover { background: var(--accent-light); }
   .edit-form .ef-cancel {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -950,7 +956,7 @@
     background: var(--accent); color: #0A0A0B; border-color: var(--accent);
     font-weight: 600;
   }
-  .pos-toolbar button.add-btn:hover { background: #F0C778; }
+  .pos-toolbar button.add-btn:hover { background: var(--accent-light); }
   .pos-toolbar button.linked {
     background: rgba(74,222,128,0.12);
     border-color: var(--green);
@@ -1029,8 +1035,7 @@
     transition: transform 0.15s;
   }
   .rec-btn-large:hover {
-    background: #F0C778;
-    transform: translateY(-1px);
+    background: var(--accent-light);
   }
 
   /* 维护模式 — 置灰，不可点击的视觉 */
@@ -1332,7 +1337,7 @@
     padding: 9px 18px; font-size: 13px; font-weight: 600;
     cursor: pointer; letter-spacing: -0.005em;
   }
-  .rec-form button.submit:hover { background: #F0C778; }
+  .rec-form button.submit:hover { background: var(--accent-light); }
   .rec-form button.cancel {
     background: transparent; color: var(--sub);
     border: 1px solid var(--line);
@@ -1409,7 +1414,6 @@
     padding: 10px 14px;
     background: var(--card);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 8px;
     margin-bottom: 12px;
     font-size: 12px;
@@ -1523,11 +1527,39 @@
     margin-bottom: 8px;
   }
   .rec-rank {
-    font-size: 18px; font-weight: 800;
-    color: var(--accent); flex-shrink: 0;
-    min-width: 36px;
+    font-size: 11px; font-weight: 600;
+    color: var(--sub);
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    align-self: flex-start;
+    margin-top: 2px;
   }
   .rec-title { flex: 1; min-width: 0; }
+  /* 包租公分视觉条 — 3px 细线，随 verdict 颜色变 */
+  .rec-score-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 5px;
+  }
+  .rec-score-bar {
+    flex: 1; height: 3px;
+    background: var(--card3);
+    border-radius: 2px; overflow: hidden;
+  }
+  .rec-score-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .rec-score-num {
+    font-size: 10px; color: var(--sub);
+    font-variant-numeric: tabular-nums;
+    font-family: "SF Mono", Menlo, monospace;
+    flex-shrink: 0; min-width: 20px; text-align: right;
+  }
   .rec-contract {
     font-size: 14px; font-weight: 600;
     display: flex; align-items: baseline; gap: 6px;
@@ -1560,7 +1592,7 @@
   .rec-oneline {
     background: var(--card2);
     border-left: 3px solid var(--accent);
-    padding: 8px 12px; border-radius: 4px;
+    padding: 8px 12px; border-radius: 6px;
     font-size: 12px; line-height: 1.5;
     margin-bottom: 10px;
   }
@@ -1570,7 +1602,9 @@
     gap: 8px; margin-bottom: 8px;
   }
   .kmet {
-    background: var(--card2); border-radius: 6px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
     padding: 6px 10px; text-align: center;
   }
   .kmet-l { font-size: 10px; color: var(--sub); margin-bottom: 2px; }
@@ -1665,8 +1699,9 @@
     letter-spacing: -0.01em;
   }
   .compare-pill:hover {
-    transform: translateX(-50%) translateY(-2px);
-    box-shadow: 0 12px 32px rgba(230,184,106,0.5);
+    transform: translateX(-50%);
+    background: var(--accent-light);
+    box-shadow: 0 8px 28px rgba(230,184,106,0.55);
   }
   .compare-pill .pill-count {
     background: rgba(0,0,0,0.18);
@@ -1888,7 +1923,6 @@
   .morning-brief {
     background: var(--card);
     border: 1px solid var(--line);
-    border-left: 2px solid var(--accent);
     border-radius: 10px;
     padding: 16px 20px;
     margin-bottom: 16px;
@@ -2130,7 +2164,7 @@
   .add-form .actions .submit {
     background: var(--accent); color: #0A0A0B;
   }
-  .add-form .actions .submit:hover { background: #F0C778; }
+  .add-form .actions .submit:hover { background: var(--accent-light); }
   .add-form .actions .submit:disabled {
     opacity: 0.4; cursor: not-allowed;
   }
@@ -6387,6 +6421,15 @@ function renderRecResult(d) {
       green: 'var(--green)', yellow: 'var(--yellow)',
       orange: 'var(--orange)', red: 'var(--red)',
     }[v.color] || 'var(--accent)';
+    const scoreRaw = opt.rent_score ?? opt.score ?? 0;
+    const scorePct = Math.min(100, Math.round(scoreRaw * 100));
+    const scoreBar = isShort ? `
+      <div class="rec-score-row">
+        <div class="rec-score-bar" title="${t('包租公分')}: ${scorePct}">
+          <div class="rec-score-fill" style="width:${scorePct}%;background:${verdictColor}"></div>
+        </div>
+        <span class="rec-score-num" style="color:${verdictColor}">${scorePct}</span>
+      </div>` : '';
 
     const prosHtml = (v.pros || []).map(p => `<li>✓ ${p}</li>`).join('');
     const consHtml = (v.cons || []).map(co => `<li>✗ ${co}</li>`).join('');
@@ -6405,6 +6448,7 @@ function renderRecResult(d) {
             <div class="rec-verdict" style="color:${verdictColor}">
               ${v.stars || ''} <strong>${v.label ? t(v.label) : ''}</strong>
             </div>
+            ${scoreBar}
           </div>
           <div class="rec-actions">
             <button class="preview-btn" onclick="showPreview('${candId}')" title="${t('加仓预览：看这一笔加进组合的影响')}">📊 ${t('预览')}</button>

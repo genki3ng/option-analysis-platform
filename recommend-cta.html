@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包租公 · 主 CTA highlight 预览</title>
+<style>
+  :root {
+    --bg:        #FAFAF7;
+    --card:      #FFFFFF;
+    --card2:     #F4F2EC;
+    --card3:     #ECE9DF;
+    --text:      #1A1A1A;
+    --sub:       #6B6B68;
+    --dim:       #9A9A95;
+    --line:      #E2DED2;
+    --line-2:    #C6C2B5;
+    --accent:    #B89255;
+    --accent-2:  #8C6E40;
+    --accent-light: #C89850;
+    --accent-tint: rgba(184,146,85,0.10);
+    --accent-tint-strong: rgba(184,146,85,0.18);
+    --shadow:    0 1px 3px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 32px rgba(0,0,0,0.12);
+  }
+  :root[data-theme="dark"] {
+    --bg:        #0A0A0B;
+    --card:      #0F0F11;
+    --card2:     #16161A;
+    --card3:     #1C1C20;
+    --text:      #EDEDEC;
+    --sub:       #888889;
+    --dim:       #5A5A5C;
+    --line:      #232328;
+    --line-2:    #2E2E36;
+    --accent:    #E6B86A;
+    --accent-2:  #B89255;
+    --accent-light: #F0C778;
+    --accent-tint: rgba(230,184,106,0.10);
+    --accent-tint-strong: rgba(230,184,106,0.18);
+    --shadow:    0 1px 3px rgba(0,0,0,0.5);
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.65);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Inter",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 48px max(20px, 4vw);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    font-feature-settings: "ss01", "cv01", "cv11";
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  .page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 8px; gap: 24px; flex-wrap: wrap;
+  }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.025em; }
+  .sub-head {
+    color: var(--sub); font-size: 13px;
+    margin-bottom: 32px; max-width: 700px; line-height: 1.6;
+  }
+  .controls { display: flex; gap: 8px; }
+  .controls button {
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--text); font-family: inherit;
+    padding: 6px 14px; font-size: 12px; border-radius: 7px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button.active {
+    background: var(--accent-tint); color: var(--accent-2);
+    border-color: var(--accent); font-weight: 600;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+    gap: 28px;
+  }
+  .demo {
+    padding: 22px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .demo-tag {
+    font-size: 10.5px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 700; margin-bottom: 4px;
+  }
+  .demo-tag.hero { color: var(--accent); font-weight: 800; }
+  .demo-title {
+    font-size: 17px; font-weight: 600;
+    letter-spacing: -0.015em; margin-bottom: 4px;
+  }
+  .demo-desc {
+    color: var(--sub); font-size: 12.5px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .demo-stage {
+    background: var(--bg);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px dashed var(--line);
+  }
+
+  /* ── 当前版基础 .rent-cur ── */
+  .rent {
+    width: 100%;
+    color: #0A0A0B;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 18px;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    overflow: hidden;
+    letter-spacing: -0.01em;
+    font-family: inherit;
+  }
+  .rent .rent-text { flex: 1; min-width: 0; padding-right: 28px; position: relative; z-index: 2; }
+  .rent .rent-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .rent .rent-sub { font-size: 12px; opacity: 0.75; line-height: 1.4; font-weight: 400; }
+  .rent::after {
+    content: '→';
+    position: absolute;
+    right: 18px; top: 50%; transform: translateY(-50%);
+    font-size: 18px; font-weight: 500;
+    transition: transform 0.15s;
+    z-index: 2;
+  }
+  .rent:hover::after { transform: translateY(-50%) translateX(2px); }
+
+  .review-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    padding: 14px 18px;
+    cursor: pointer; text-align: left;
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 10px;
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .review-btn::after {
+    content: '→';
+    position: absolute;
+    right: 18px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; color: var(--sub);
+  }
+  .review-btn:hover { border-color: var(--line-2); background: var(--card2); }
+  .review-btn .rb-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .review-btn .rb-sub { font-size: 12px; opacity: 0.7; }
+
+  /* ── 当前 ── */
+  .rent-cur {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(184,146,85,0.18);
+    transition: filter 0.25s, box-shadow 0.25s;
+  }
+  .rent-cur:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                0 6px 20px rgba(184,146,85,0.30);
+  }
+
+
+  /* ══════════════════════════════════════════
+     A · 呼吸光环 — Breathing Halo
+  ═══════════════════════════════════════════ */
+  .rent-a {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(184,146,85,0.18),
+                0 0 0 0 rgba(184,146,85,0.45);
+    animation: rent-a-pulse 3.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    transition: filter 0.25s;
+  }
+  :root[data-theme="dark"] .rent-a {
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(230,184,106,0.18),
+                0 0 0 0 rgba(230,184,106,0.50);
+  }
+  @keyframes rent-a-pulse {
+    0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                           0 4px 14px rgba(184,146,85,0.18),
+                           0 0 0 0 rgba(184,146,85,0.40); }
+    50%      { box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                           0 4px 14px rgba(184,146,85,0.20),
+                           0 0 0 9px rgba(184,146,85,0); }
+  }
+  :root[data-theme="dark"] @keyframes rent-a-pulse {
+    0%, 100% { box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                           0 4px 14px rgba(230,184,106,0.20),
+                           0 0 0 0 rgba(230,184,106,0.45); }
+    50%      { box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                           0 4px 14px rgba(230,184,106,0.22),
+                           0 0 0 9px rgba(230,184,106,0); }
+  }
+  .rent-a:hover {
+    filter: brightness(1.05);
+    animation-play-state: paused;
+  }
+
+
+  /* ══════════════════════════════════════════
+     B · 高光扫过 — Light Sweep
+  ═══════════════════════════════════════════ */
+  .rent-b {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset,
+                0 4px 14px rgba(184,146,85,0.18);
+    transition: filter 0.25s, box-shadow 0.25s;
+  }
+  .rent-b::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(110deg,
+      transparent 30%,
+      rgba(255,255,255,0.40) 48%,
+      rgba(255,255,255,0.40) 52%,
+      transparent 70%);
+    transform: translateX(-110%);
+    animation: rent-b-sweep 4.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes rent-b-sweep {
+    0%       { transform: translateX(-110%); }
+    50%      { transform: translateX(110%); }
+    100%     { transform: translateX(110%); }
+  }
+  .rent-b:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+                0 6px 20px rgba(184,146,85,0.30);
+  }
+
+
+  /* ══════════════════════════════════════════
+     C · 金属质感 + 王牌徽章 — Metallic + Ace
+  ═══════════════════════════════════════════ */
+  .rent-c {
+    background: linear-gradient(135deg,
+      #C89850 0%,
+      #E6B86A 28%,
+      #F0C778 50%,
+      #E6B86A 72%,
+      #B89255 100%);
+    border: 1.5px solid #8C6E40;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.30) inset,
+                0 -1px 0 rgba(0,0,0,0.06) inset,
+                0 4px 14px rgba(184,146,85,0.22);
+    transition: filter 0.25s, box-shadow 0.25s;
+  }
+  :root[data-theme="dark"] .rent-c {
+    background: linear-gradient(135deg,
+      #B89255 0%,
+      #E6B86A 28%,
+      #F0C778 50%,
+      #E6B86A 72%,
+      #A88248 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset,
+                0 -1px 0 rgba(0,0,0,0.10) inset,
+                0 4px 14px rgba(230,184,106,0.25);
+  }
+  .rent-c .ace-badge {
+    position: absolute;
+    top: -8px; right: 16px;
+    background: #1A1A1A;
+    color: #F0C778;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase;
+    border: 1px solid #E6B86A;
+    font-family: "SF Mono", Menlo, monospace;
+    z-index: 3;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .rent-c:hover {
+    filter: brightness(1.04) saturate(1.08);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.32) inset,
+                0 -1px 0 rgba(0,0,0,0.06) inset,
+                0 6px 22px rgba(184,146,85,0.32);
+  }
+
+
+  /* ══════════════════════════════════════════
+     D · 双层光晕 — Glowing Halo Ring
+  ═══════════════════════════════════════════ */
+  .rent-d {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.16) inset,
+      0 0 0 4px var(--bg),
+      0 0 0 5px rgba(184,146,85,0.25),
+      0 12px 32px rgba(184,146,85,0.22),
+      0 4px 12px rgba(184,146,85,0.18);
+    transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.25s;
+  }
+  :root[data-theme="dark"] .rent-d {
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.18) inset,
+      0 0 0 4px var(--bg),
+      0 0 0 5px rgba(230,184,106,0.30),
+      0 12px 32px rgba(230,184,106,0.28),
+      0 4px 12px rgba(230,184,106,0.22);
+  }
+  .rent-d:hover {
+    filter: brightness(1.05);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.22) inset,
+      0 0 0 4px var(--bg),
+      0 0 0 6px rgba(184,146,85,0.40),
+      0 16px 40px rgba(184,146,85,0.32),
+      0 4px 12px rgba(184,146,85,0.24);
+  }
+
+
+  /* Footer */
+  .foot {
+    margin-top: 48px; padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--sub); text-align: center;
+  }
+  .foot a { color: var(--accent); text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="page-head">
+  <div>
+    <h1>主 CTA · highlight 候选</h1>
+  </div>
+  <div class="controls">
+    <button id="theme-light" class="active" onclick="setTheme('light')">浅色</button>
+    <button id="theme-dark" onclick="setTheme('dark')">深色</button>
+  </div>
+</div>
+<p class="sub-head">
+  「包租公推荐指数」是产品王牌。当前金色填充已经做了基础视觉权重，但跟「复盘报告」的对比还不够"王牌"。
+  下面 4 个 highlight 方向，全部带 hover 状态，可以鼠标移上去看。
+  注意有动画的方案 (A / B) 在静止图里看不出来。
+</p>
+
+
+<div class="grid">
+
+  <!-- 当前 -->
+  <div class="demo">
+    <span class="demo-tag">CURRENT</span>
+    <div class="demo-title">当前版</div>
+    <p class="demo-desc">金色 linear-gradient 填充 + 暖金阴影晕 + hover brightness 微亮。中规中矩。</p>
+    <div class="demo-stage">
+      <button class="rent rent-cur">
+        <div class="rent-text">
+          <div class="rent-title">包租公推荐指数</div>
+          <div class="rent-sub">房东视角，给每张合约打分排序</div>
+        </div>
+      </button>
+      <button class="review-btn">
+        <div class="rent-text">
+          <div class="rb-title">复盘报告</div>
+          <div class="rb-sub">看你已平仓持仓的胜率、最佳/最差交易</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- A · 呼吸光环 -->
+  <div class="demo">
+    <span class="demo-tag hero">OPTION A</span>
+    <div class="demo-title">呼吸光环 · Breathing Halo</div>
+    <p class="demo-desc">基础保持当前金色填充，外面加一圈金色 box-shadow 做 3.2 秒的呼吸动画（pulse 出去到 9px 然后淡入）。视觉上"自带光环"。hover 时呼吸暂停。</p>
+    <div class="demo-stage">
+      <button class="rent rent-a">
+        <div class="rent-text">
+          <div class="rent-title">包租公推荐指数</div>
+          <div class="rent-sub">房东视角，给每张合约打分排序</div>
+        </div>
+      </button>
+      <button class="review-btn">
+        <div class="rent-text">
+          <div class="rb-title">复盘报告</div>
+          <div class="rb-sub">看你已平仓持仓的胜率、最佳/最差交易</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- B · 高光扫过 -->
+  <div class="demo">
+    <span class="demo-tag hero">OPTION B</span>
+    <div class="demo-title">高光扫过 · Light Sweep</div>
+    <p class="demo-desc">基础保持金色填充，加一条对角的白色高光带，每 4.8 秒从左滑到右。模仿 iOS app icon 在 spotlight 下的反光感。动效轻、不喧宾夺主。</p>
+    <div class="demo-stage">
+      <button class="rent rent-b">
+        <div class="rent-text">
+          <div class="rent-title">包租公推荐指数</div>
+          <div class="rent-sub">房东视角，给每张合约打分排序</div>
+        </div>
+      </button>
+      <button class="review-btn">
+        <div class="rent-text">
+          <div class="rb-title">复盘报告</div>
+          <div class="rb-sub">看你已平仓持仓的胜率、最佳/最差交易</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- C · 金属 + 王牌徽章 -->
+  <div class="demo">
+    <span class="demo-tag hero">OPTION C</span>
+    <div class="demo-title">金属质感 + 王牌徽章 · Metallic + Ace Badge</div>
+    <p class="demo-desc">多层 gradient 营造金属反光（暗→亮→暗），1.5px 深金边框，右上角悬一个深色 <code>★ ACE</code> 徽章。静态、不动，但视觉权重明显更高，"质感"先到。</p>
+    <div class="demo-stage">
+      <button class="rent rent-c">
+        <span class="ace-badge">★ ACE</span>
+        <div class="rent-text">
+          <div class="rent-title">包租公推荐指数</div>
+          <div class="rent-sub">房东视角，给每张合约打分排序</div>
+        </div>
+      </button>
+      <button class="review-btn">
+        <div class="rent-text">
+          <div class="rb-title">复盘报告</div>
+          <div class="rb-sub">看你已平仓持仓的胜率、最佳/最差交易</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- D · 双层光晕 -->
+  <div class="demo" style="grid-column: 1 / -1;">
+    <span class="demo-tag hero">OPTION D</span>
+    <div class="demo-title">双层光晕 · Glowing Halo Ring</div>
+    <p class="demo-desc">按钮外圈"隔空"再加一层金色光环（4px 间隙 + 1px 金色 ring + 大范围模糊光晕）。视觉上像被光照、悬浮在页面上。静态不动，但"光感"非常强。</p>
+    <div class="demo-stage">
+      <button class="rent rent-d">
+        <div class="rent-text">
+          <div class="rent-title">包租公推荐指数</div>
+          <div class="rent-sub">房东视角，给每张合约打分排序</div>
+        </div>
+      </button>
+      <button class="review-btn">
+        <div class="rent-text">
+          <div class="rb-title">复盘报告</div>
+          <div class="rb-sub">看你已平仓持仓的胜率、最佳/最差交易</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  4 个方向各有侧重：A/B 带轻量动画 / C 加徽章信号 / D 完全靠静态光晕。
+  选定后告诉我，我落地到 <a href="/app">/app</a> 的 <code>.rec-btn-large</code> 上。
+</div>
+
+</div>
+
+<script>
+  function setTheme(t) {
+    if (t === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('theme-dark').classList.add('active');
+      document.getElementById('theme-light').classList.remove('active');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('theme-light').classList.add('active');
+      document.getElementById('theme-dark').classList.remove('active');
+    }
+    try { localStorage.setItem('preview-theme', t); } catch(e) {}
+  }
+  try {
+    const saved = localStorage.getItem('preview-theme');
+    if (saved === 'dark') setTheme('dark');
+  } catch(e) {}
+</script>
+
+</body>
+</html>

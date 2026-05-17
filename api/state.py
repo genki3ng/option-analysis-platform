@@ -3004,6 +3004,9 @@ class handler(BaseHTTPRequestHandler):
                     "module_var_refresh_len": len(SCHWAB_REFRESH_TOKEN),
                     "env_keys_count": len(_os.environ),
                     "schwab_env_keys": [k for k in _os.environ if "SCHWAB" in k],
+                    "has_anthropic_key": bool(_os.environ.get("ANTHROPIC_API_KEY")),
+                    "anthropic_key_len": len(_os.environ.get("ANTHROPIC_API_KEY", "")),
+                    "anthropic_client_ready": _get_anthropic_client() is not None,
                 }
             elif action == "recommend":
                 result = recommend(payload)

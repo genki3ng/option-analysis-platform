@@ -2974,11 +2974,14 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
                                 concentration, lang)
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
+    # concierge_version: prompt 改了就 bump，让旧 cache 失效
+    CONCIERGE_VERSION = 2
     cached_text = None
     cached_by = None
     if (yesterday_snap.get("date") == today_iso
             and yesterday_snap.get("concierge_text")
-            and yesterday_snap.get("concierge_lang") == lang):
+            and yesterday_snap.get("concierge_lang") == lang
+            and yesterday_snap.get("concierge_version") == CONCIERGE_VERSION):
         cached_text = yesterday_snap.get("concierge_text")
         cached_by = yesterday_snap.get("generated_by") or "cached"
 
@@ -2996,6 +2999,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     next_snap = _make_brief_snapshot(positions, market, today)
     next_snap["concierge_text"] = concierge_text
     next_snap["concierge_lang"] = lang
+    next_snap["concierge_version"] = CONCIERGE_VERSION
     next_snap["generated_by"] = by
 
     return {

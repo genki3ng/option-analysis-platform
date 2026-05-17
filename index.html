@@ -4072,6 +4072,11 @@ function updateHideClosedBtn() {
 updateHideClosedBtn();
 
 function loadSelection(allIds) {
+  // 已登录：优先读云端的 state._meta.selection（跨设备同步）
+  if (_currentUser && _cloudReady && _cloudCache?.state?._meta?.selection) {
+    const cloud = _cloudCache.state._meta.selection;
+    if (Array.isArray(cloud)) return new Set(cloud);
+  }
   try {
     const raw = localStorage.getItem('selectedPositions');
     if (raw) return new Set(JSON.parse(raw));
@@ -4080,7 +4085,14 @@ function loadSelection(allIds) {
 }
 
 function saveSelection() {
-  localStorage.setItem('selectedPositions', JSON.stringify([...selectedIds]));
+  const arr = [...selectedIds];
+  if (_currentUser && _cloudReady && _cloudCache) {
+    _cloudCache.state = _cloudCache.state || {};
+    _cloudCache.state._meta = _cloudCache.state._meta || {};
+    _cloudCache.state._meta.selection = arr;
+    _saveCloud();
+  }
+  localStorage.setItem('selectedPositions', JSON.stringify(arr));
 }
 
 function togglePos(id) {
@@ -7318,6 +7330,9 @@ async function _onSignedIn(isFresh) {
   _subscribeCloud();
   _renderUserBadge();
   _setSyncStatus('synced', t('☁ 已同步'));
+  // 关键：云数据加载完，把 selectedIds 设回 null，让下次 refresh() 用 cloud
+  // 的 positions 重新初始化选择（之前会用初次 refresh 时空的 positions 把 selection 清空）
+  selectedIds = null;
   if (typeof refresh === 'function') refresh();
 }
 
@@ -7410,6 +7425,8 @@ function _subscribeCloud() {
       };
       _lastSavedSignature = inboundSig;
       _setSyncStatus('synced', t('☁ 已同步 (远程更新)'));
+      // 远端可能改了 selection；让下次 refresh 用云端最新的重新设
+      selectedIds = null;
       if (typeof refresh === 'function') refresh();
     })
     .subscribe();

@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包租公 · 账户设置 modal 重设计预览</title>
+<style>
+  :root {
+    --bg:        #FAFAF7;
+    --card:      #FFFFFF;
+    --card2:     #F4F2EC;
+    --card3:     #ECE9DF;
+    --inset:     rgba(0, 0, 0, 0.025);
+    --text:      #1A1A1A;
+    --sub:       #6B6B68;
+    --dim:       #9A9A95;
+    --line:      #E2DED2;
+    --line-2:    #C6C2B5;
+    --accent:    #B89255;
+    --accent-2:  #8C6E40;
+    --accent-light: #C89850;
+    --accent-tint: rgba(184,146,85,0.10);
+    --accent-tint-strong: rgba(184,146,85,0.18);
+    --green:     #16A34A;
+    --red:       #DC2626;
+    --shadow-lg: 0 10px 32px rgba(0,0,0,0.12);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  :root[data-theme="dark"] {
+    --bg:        #0A0A0B;
+    --card:      #0F0F11;
+    --card2:     #16161A;
+    --card3:     #1C1C20;
+    --inset:     rgba(255, 255, 255, 0.025);
+    --text:      #EDEDEC;
+    --sub:       #888889;
+    --dim:       #5A5A5C;
+    --line:      #232328;
+    --line-2:    #2E2E36;
+    --accent:    #E6B86A;
+    --accent-2:  #B89255;
+    --accent-light: #F0C778;
+    --accent-tint: rgba(230,184,106,0.10);
+    --accent-tint-strong: rgba(230,184,106,0.18);
+    --green:     #34D399;
+    --red:       #F87171;
+    --shadow-lg: 0 16px 48px rgba(0,0,0,0.65);
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Inter",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 40px max(20px, 3vw);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    font-feature-settings: "ss01", "cv01", "cv11";
+  }
+  .wrap { max-width: 1680px; margin: 0 auto; }
+
+  .page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 8px; gap: 24px; flex-wrap: wrap;
+  }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.025em; }
+  .sub-head {
+    color: var(--sub); font-size: 13px;
+    margin-bottom: 32px; max-width: 720px; line-height: 1.6;
+  }
+  .controls { display: flex; gap: 8px; }
+  .controls button {
+    background: var(--card); border: 1px solid var(--line);
+    color: var(--text); font-family: inherit;
+    padding: 6px 14px; font-size: 12px; border-radius: 7px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .controls button.active {
+    background: var(--accent-tint); color: var(--accent-2);
+    border-color: var(--accent); font-weight: 600;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+  @media (max-width: 1400px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .demo-head {
+    display: flex; flex-direction: column; gap: 4px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .demo-tag {
+    font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .demo-tag.hero { color: var(--green); }
+  .demo-title { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+  .demo-desc {
+    font-size: 11.5px; color: var(--sub);
+    line-height: 1.55;
+    min-height: 50px;
+  }
+
+  /* 通用 modal 容器（每列都是一张 modal） */
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════
+     当前版 (.modal-cur)
+  ════════════════════════════════════════════════════════════ */
+  .modal-cur { padding: 24px; }
+  .modal-cur .mc-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px;
+  }
+  .modal-cur .mc-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .modal-cur .mc-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--sub); font-size: 20px; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+  }
+  .modal-cur .mc-hint {
+    font-size: 11.5px; color: var(--sub);
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px;
+    margin-bottom: 12px; line-height: 1.5;
+  }
+  .modal-cur .acct-card {
+    background: var(--card2);
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .modal-cur .acard-head {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-cur .acard-name {
+    flex: 1; min-width: 0;
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 7px 10px; font-size: 12.5px;
+  }
+  .modal-cur .acard-broker {
+    background: var(--card); border: 1.5px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 7px 8px; font-size: 12.5px;
+    min-width: 110px;
+  }
+  .modal-cur .acard-del {
+    background: transparent; border: none;
+    color: var(--sub); font-size: 18px;
+    width: 28px; height: 28px; line-height: 1;
+    border-radius: 6px;
+  }
+  .modal-cur .acard-row {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 10px;
+  }
+  .modal-cur .acard-row.stack { flex-direction: column; align-items: stretch; gap: 6px; }
+  .modal-cur .mini-label {
+    font-size: 11px; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    min-width: 60px; font-weight: 500;
+  }
+  .modal-cur .seg { display: flex; gap: 6px; flex: 1; }
+  .modal-cur .seg-btn {
+    flex: 1; text-align: center;
+    background: var(--card); border: 1.5px solid var(--line-2);
+    color: var(--sub); border-radius: 8px;
+    padding: 8px 6px; font-size: 12px;
+  }
+  .modal-cur .seg-btn.active {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent); font-weight: 600;
+  }
+  .modal-cur .input-wrap {
+    flex: 1; display: flex; align-items: center;
+    background: var(--card); border: 1.5px solid var(--line-2);
+    border-radius: 8px; overflow: hidden;
+  }
+  .modal-cur .currency {
+    padding: 0 10px; color: var(--sub); font-size: 13px;
+    border-right: 1px solid var(--line);
+    align-self: stretch; display: flex; align-items: center;
+    font-family: "SF Mono", monospace;
+  }
+  .modal-cur .input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 8px 10px; font-size: 13px;
+    font-family: "SF Mono", monospace;
+  }
+  .modal-cur .stock-row {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 6px; align-items: center;
+  }
+  .modal-cur .stock-row input {
+    padding: 7px 10px; border-radius: 8px;
+    border: 1.5px solid var(--line-2); background: var(--card);
+    color: var(--text); font-size: 13px;
+  }
+  .modal-cur .rm-btn {
+    background: var(--card); border: 1.5px solid var(--line-2);
+    border-radius: 8px; color: var(--sub);
+    padding: 6px 9px; font-size: 13px;
+  }
+  .modal-cur .add-stock {
+    background: none; border: 1.5px dashed var(--line-2);
+    border-radius: 8px; color: var(--sub);
+    padding: 7px 12px; font-size: 12px; width: 100%;
+  }
+  .modal-cur .add-account {
+    display: block; width: 100%;
+    background: transparent;
+    border: 1.5px dashed var(--line-2);
+    color: var(--sub); border-radius: 10px;
+    padding: 10px 14px; font-size: 12.5px;
+    margin-bottom: 12px;
+  }
+  .modal-cur .actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .modal-cur .btn-cancel {
+    background: transparent; color: var(--sub);
+    border: 1.5px solid var(--line-2); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+  }
+  .modal-cur .btn-save {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    padding: 8px 18px; font-size: 13px; font-weight: 600;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════
+     A · 留白克制 (Spacious Minimal)
+     - 标题升级 hero (20px)
+     - 去掉账户卡的米色背景，仅用细线分隔
+     - 顶部说明改 inline 副标
+     - 字段标签缩短 + 字段水平对齐
+     - sticky footer + 加大 padding
+  ════════════════════════════════════════════════════════════ */
+  .modal-a {
+    padding: 0;
+    display: flex; flex-direction: column;
+    max-height: 720px;
+  }
+  .modal-a .ma-head {
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-a .ma-head-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .modal-a .ma-title {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .modal-a .ma-subtitle {
+    font-size: 12.5px; color: var(--sub);
+    margin-top: 5px; line-height: 1.55;
+    max-width: 380px;
+  }
+  .modal-a .ma-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--sub); font-size: 22px; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+    margin: -2px -4px 0 0;
+  }
+  .modal-a .ma-close:hover { color: var(--text); background: var(--card2); }
+
+  .modal-a .ma-body {
+    flex: 1; overflow-y: auto;
+    padding: 20px 28px;
+  }
+  /* 账户 — 不用 card 框，用 section 分隔 */
+  .modal-a .ma-acct {
+    padding: 18px 0 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-a .ma-acct:last-of-type { border-bottom: none; }
+  .modal-a .ma-acct:first-of-type { padding-top: 6px; }
+
+  .modal-a .ma-acct-head {
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 16px;
+  }
+  .modal-a .ma-acct-num {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .modal-a .ma-acct-name {
+    flex: 1; min-width: 0;
+    background: transparent; border: none;
+    color: var(--text); font-size: 16px;
+    font-weight: 600; padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+    outline: none;
+    letter-spacing: -0.01em;
+  }
+  .modal-a .ma-acct-name::placeholder { color: var(--dim); font-weight: 500; }
+  .modal-a .ma-acct-name:focus { border-bottom-color: var(--accent); }
+  .modal-a .ma-acct-broker {
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 5px 8px; font-size: 11.5px;
+    min-width: 92px;
+  }
+  .modal-a .ma-acct-del {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 16px;
+    width: 24px; height: 24px; line-height: 1;
+    border-radius: 6px; cursor: pointer;
+  }
+  .modal-a .ma-acct-del:hover { background: rgba(248,113,113,0.10); color: var(--red); }
+
+  .modal-a .ma-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-a .ma-row.stack { align-items: flex-start; }
+  .modal-a .ma-label {
+    font-size: 11px; color: var(--sub);
+    font-weight: 500;
+  }
+  /* type segment: 3 大小一致的 button，flex 等宽 */
+  .modal-a .ma-seg { display: flex; gap: 6px; }
+  .modal-a .ma-seg-btn {
+    flex: 1; text-align: center;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--sub); border-radius: 7px;
+    padding: 7px 4px;
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer;
+    height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1.15;
+  }
+  .modal-a .ma-seg-btn:hover { border-color: var(--accent); color: var(--text); }
+  .modal-a .ma-seg-btn.active {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent); font-weight: 600;
+  }
+  .modal-a .ma-input-wrap {
+    display: flex; align-items: center;
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 7px; overflow: hidden;
+    height: 34px;
+  }
+  .modal-a .ma-input-wrap:focus-within { border-color: var(--accent); }
+  .modal-a .ma-currency {
+    padding: 0 10px; color: var(--sub); font-size: 12px;
+    align-self: stretch; display: flex; align-items: center;
+    border-right: 1px solid var(--line);
+    font-family: "SF Mono", monospace;
+  }
+  .modal-a .ma-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 0 10px; font-size: 13px;
+    font-family: "SF Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 正股 list — 紧凑 grid */
+  .modal-a .ma-stocks { display: flex; flex-direction: column; gap: 6px; }
+  .modal-a .ma-stock-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 24px;
+    gap: 6px; align-items: center;
+  }
+  .modal-a .ma-stock-row input {
+    height: 32px;
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 7px;
+    padding: 0 10px; font-size: 12.5px;
+    font-family: "SF Mono", monospace;
+    outline: none;
+  }
+  .modal-a .ma-stock-row input:focus { border-color: var(--accent); }
+  .modal-a .ma-stock-row .rm-btn {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 14px;
+    width: 24px; height: 32px;
+    cursor: pointer; border-radius: 6px;
+    line-height: 1;
+  }
+  .modal-a .ma-stock-row .rm-btn:hover { background: rgba(248,113,113,0.10); color: var(--red); }
+  .modal-a .ma-add-stock {
+    margin-top: 2px;
+    background: transparent;
+    color: var(--sub); font-size: 11.5px;
+    border: none; padding: 4px 0;
+    cursor: pointer; text-align: left;
+    font-family: inherit;
+  }
+  .modal-a .ma-add-stock:hover { color: var(--accent); }
+
+  .modal-a .ma-add-account {
+    margin: 12px 0 4px;
+    display: block; width: 100%;
+    background: transparent;
+    border: 1px dashed var(--line-2);
+    color: var(--sub); border-radius: 8px;
+    padding: 9px 14px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .modal-a .ma-add-account:hover {
+    border-color: var(--accent); color: var(--accent);
+    border-style: solid;
+    background: var(--accent-tint);
+  }
+
+  .modal-a .ma-foot {
+    padding: 14px 28px;
+    border-top: 1px solid var(--line);
+    background: var(--card);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .modal-a .ma-cancel {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line-2); border-radius: 999px;
+    padding: 7px 18px; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+  }
+  .modal-a .ma-save {
+    background: var(--text); color: var(--card);
+    border: none; border-radius: 999px;
+    padding: 7px 22px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .modal-a .ma-save:hover { opacity: 0.88; }
+
+
+  /* ════════════════════════════════════════════════════════════
+     B · Stacked Cards (浮起卡片 + 大标题)
+     - 每个账户是独立 elevated white card
+     - 账户卡顶部 hero header（broker logo + name + type chip）
+     - 字段用 grid 强对齐
+  ════════════════════════════════════════════════════════════ */
+  .modal-b {
+    padding: 0;
+    background: var(--card2); /* 让卡片有"浮"的对比底 */
+    display: flex; flex-direction: column;
+    max-height: 720px;
+  }
+  :root[data-theme="dark"] .modal-b { background: var(--bg); }
+  .modal-b .mb-head {
+    padding: 22px 26px 18px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-b .mb-head-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .modal-b .mb-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.015em;
+  }
+  .modal-b .mb-subtitle {
+    font-size: 12px; color: var(--sub);
+    margin-top: 4px; line-height: 1.5;
+    max-width: 400px;
+  }
+  .modal-b .mb-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--sub); font-size: 22px; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+    margin: -2px -4px 0 0;
+  }
+
+  .modal-b .mb-body {
+    flex: 1; overflow-y: auto;
+    padding: 18px 26px;
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 账户卡 — elevated */
+  .modal-b .mb-acct {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .modal-b .mb-acct-head {
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .modal-b .mb-acct-name {
+    flex: 1; min-width: 0;
+    background: transparent; border: none;
+    color: var(--text); font-size: 15px;
+    font-weight: 700; padding: 0;
+    outline: none;
+    letter-spacing: -0.01em;
+  }
+  .modal-b .mb-acct-name::placeholder { color: var(--dim); font-weight: 500; }
+  .modal-b .mb-acct-broker-chip {
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 999px;
+    padding: 3px 12px; font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .modal-b .mb-acct-broker-chip select {
+    background: transparent; border: none;
+    color: var(--text); font-size: 11px;
+    cursor: pointer; padding: 0;
+    font-family: inherit; font-weight: 500;
+  }
+  .modal-b .mb-acct-del {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 18px;
+    width: 28px; height: 28px; line-height: 1;
+    border-radius: 6px; cursor: pointer;
+  }
+  .modal-b .mb-acct-del:hover { background: rgba(248,113,113,0.10); color: var(--red); }
+
+  .modal-b .mb-acct-body {
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .modal-b .mb-row {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    gap: 12px; align-items: center;
+  }
+  .modal-b .mb-row.stack { align-items: flex-start; }
+  .modal-b .mb-label {
+    font-size: 10.5px; color: var(--sub);
+    font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .modal-b .mb-seg { display: flex; gap: 4px; }
+  .modal-b .mb-seg-btn {
+    flex: 1; text-align: center;
+    background: var(--card2);
+    border: 1px solid transparent;
+    color: var(--sub); border-radius: 6px;
+    padding: 7px 4px;
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer;
+    height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1.15;
+  }
+  .modal-b .mb-seg-btn:hover { color: var(--text); }
+  .modal-b .mb-seg-btn.active {
+    background: var(--text); color: var(--card);
+    border-color: var(--text); font-weight: 600;
+  }
+  .modal-b .mb-input-wrap {
+    display: flex; align-items: center;
+    background: var(--card2); border: 1px solid transparent;
+    border-radius: 6px; overflow: hidden;
+    height: 32px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .modal-b .mb-input-wrap:focus-within {
+    border-color: var(--accent);
+    background: var(--card);
+  }
+  .modal-b .mb-currency {
+    padding: 0 10px; color: var(--sub); font-size: 12px;
+    align-self: stretch; display: flex; align-items: center;
+    font-family: "SF Mono", monospace;
+  }
+  .modal-b .mb-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 0 10px; font-size: 13px;
+    font-family: "SF Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .modal-b .mb-stocks { display: flex; flex-direction: column; gap: 5px; }
+  .modal-b .mb-stock-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 22px;
+    gap: 5px; align-items: center;
+  }
+  .modal-b .mb-stock-row input {
+    height: 30px;
+    background: var(--card2); border: 1px solid transparent;
+    color: var(--text); border-radius: 6px;
+    padding: 0 9px; font-size: 12px;
+    font-family: "SF Mono", monospace;
+    outline: none;
+  }
+  .modal-b .mb-stock-row input:focus { border-color: var(--accent); background: var(--card); }
+  .modal-b .mb-stock-row .rm-btn {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 14px;
+    width: 22px; height: 30px;
+    line-height: 1; border-radius: 5px;
+  }
+  .modal-b .mb-stock-row .rm-btn:hover { background: rgba(248,113,113,0.10); color: var(--red); }
+  .modal-b .mb-add-stock {
+    align-self: flex-start;
+    background: transparent;
+    color: var(--accent); font-size: 11.5px;
+    border: none; padding: 4px 0;
+    cursor: pointer; font-family: inherit;
+    font-weight: 500;
+  }
+
+  .modal-b .mb-add-account {
+    margin-top: 4px;
+    background: transparent;
+    border: 1.5px dashed var(--line-2);
+    color: var(--sub); border-radius: 12px;
+    padding: 14px; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.18s;
+    font-weight: 500;
+  }
+  .modal-b .mb-add-account:hover {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(184,146,85,0.04);
+  }
+
+  .modal-b .mb-foot {
+    padding: 14px 26px;
+    border-top: 1px solid var(--line);
+    background: var(--card);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .modal-b .mb-cancel {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line-2); border-radius: 999px;
+    padding: 7px 18px; font-size: 12.5px; font-weight: 500;
+  }
+  .modal-b .mb-save {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 999px;
+    padding: 7px 22px; font-size: 12.5px; font-weight: 600;
+  }
+
+
+  /* ════════════════════════════════════════════════════════════
+     C · 紧凑 form (Inline Form)
+     - 完全去掉账户嵌套卡片，用 fieldset + legend 风
+     - 标签和 input grid 严格对齐
+     - 视觉上像"系统设置"或 settings.json 编辑器
+  ════════════════════════════════════════════════════════════ */
+  .modal-c {
+    padding: 0;
+    display: flex; flex-direction: column;
+    max-height: 720px;
+  }
+  .modal-c .mc-head {
+    padding: 20px 24px 14px;
+  }
+  .modal-c .mc-head-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .modal-c .mc-title {
+    font-size: 16px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 8px;
+    letter-spacing: -0.01em;
+  }
+  .modal-c .mc-title::before {
+    content: '⚙';
+    font-size: 17px; color: var(--accent);
+  }
+  .modal-c .mc-subtitle {
+    font-size: 11.5px; color: var(--sub);
+    margin-top: 4px; line-height: 1.5;
+    max-width: 380px;
+  }
+  .modal-c .mc-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--sub); font-size: 20px; padding: 2px 6px;
+    border-radius: 6px; line-height: 1;
+  }
+
+  .modal-c .mc-body {
+    flex: 1; overflow-y: auto;
+    padding: 0 24px 12px;
+  }
+
+  /* 账户 fieldset */
+  .modal-c .mc-acct {
+    border: none;
+    border-top: 1px solid var(--line);
+    padding: 16px 0 12px;
+    margin: 0;
+    position: relative;
+  }
+  .modal-c .mc-acct:first-of-type { border-top: none; padding-top: 6px; }
+  .modal-c .mc-acct-legend {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-c .mc-acct-badge {
+    font-size: 9.5px; font-weight: 700;
+    background: var(--text); color: var(--card);
+    padding: 2px 7px; border-radius: 4px;
+    letter-spacing: 0.06em;
+    font-family: "SF Mono", monospace;
+  }
+  .modal-c .mc-acct-name {
+    flex: 1;
+    background: transparent; border: none;
+    color: var(--text); font-size: 14.5px;
+    font-weight: 600; padding: 0;
+    outline: none;
+  }
+  .modal-c .mc-acct-name::placeholder { color: var(--dim); font-weight: 500; }
+  .modal-c .mc-acct-del {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 15px;
+    width: 22px; height: 22px; line-height: 1;
+    cursor: pointer;
+  }
+  .modal-c .mc-acct-del:hover { color: var(--red); }
+
+  .modal-c .mc-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 10px 14px;
+    align-items: center;
+  }
+  .modal-c .mc-grid.start { align-items: start; }
+  .modal-c .mc-glabel {
+    font-size: 11.5px; color: var(--sub);
+    font-family: "SF Mono", monospace;
+  }
+  .modal-c .mc-broker {
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 6px;
+    padding: 6px 8px; font-size: 12px;
+    font-family: inherit;
+    width: 100%;
+  }
+  .modal-c .mc-seg { display: flex; gap: 0; }
+  .modal-c .mc-seg-btn {
+    flex: 1; text-align: center;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--sub);
+    padding: 7px 4px;
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer;
+    height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    line-height: 1.15;
+    border-radius: 0;
+    border-right: none;
+  }
+  .modal-c .mc-seg-btn:first-child { border-radius: 6px 0 0 6px; }
+  .modal-c .mc-seg-btn:last-child { border-radius: 0 6px 6px 0; border-right: 1px solid var(--line); }
+  .modal-c .mc-seg-btn:hover { color: var(--text); }
+  .modal-c .mc-seg-btn.active {
+    background: var(--accent-tint-strong);
+    color: var(--accent-2);
+    border-color: var(--accent);
+    z-index: 1;
+    font-weight: 600;
+  }
+  .modal-c .mc-input-wrap {
+    display: flex; align-items: center;
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden;
+    height: 32px;
+    width: 100%;
+  }
+  .modal-c .mc-input-wrap:focus-within { border-color: var(--accent); }
+  .modal-c .mc-currency {
+    padding: 0 8px; color: var(--sub); font-size: 12px;
+    align-self: stretch; display: flex; align-items: center;
+    border-right: 1px solid var(--line);
+    font-family: "SF Mono", monospace;
+  }
+  .modal-c .mc-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); padding: 0 8px; font-size: 12.5px;
+    font-family: "SF Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .modal-c .mc-stocks { display: flex; flex-direction: column; gap: 5px; }
+  .modal-c .mc-stock-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 22px;
+    gap: 5px; align-items: center;
+  }
+  .modal-c .mc-stock-row input {
+    height: 28px;
+    background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 5px;
+    padding: 0 8px; font-size: 12px;
+    font-family: "SF Mono", monospace;
+    outline: none;
+  }
+  .modal-c .mc-stock-row input:focus { border-color: var(--accent); }
+  .modal-c .mc-stock-row .rm-btn {
+    background: transparent; border: none;
+    color: var(--dim); font-size: 13px;
+    width: 22px; height: 28px;
+    line-height: 1; border-radius: 5px;
+    cursor: pointer;
+  }
+  .modal-c .mc-stock-row .rm-btn:hover { background: rgba(248,113,113,0.10); color: var(--red); }
+  .modal-c .mc-add-stock {
+    background: transparent;
+    color: var(--accent); font-size: 11.5px;
+    border: none; padding: 2px 0;
+    cursor: pointer; font-family: inherit;
+    font-weight: 500;
+    align-self: flex-start;
+  }
+
+  .modal-c .mc-add-account {
+    margin-top: 14px;
+    width: 100%;
+    background: transparent;
+    border: 1px dashed var(--line-2);
+    color: var(--sub); border-radius: 8px;
+    padding: 8px 14px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit;
+  }
+  .modal-c .mc-add-account:hover {
+    border-color: var(--accent); color: var(--accent); border-style: solid;
+  }
+
+  .modal-c .mc-foot {
+    padding: 14px 24px;
+    border-top: 1px solid var(--line);
+    background: var(--card);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .modal-c .mc-cancel {
+    background: transparent; color: var(--sub);
+    border: 1px solid var(--line-2); border-radius: 8px;
+    padding: 7px 16px; font-size: 12px; font-weight: 500;
+  }
+  .modal-c .mc-save {
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+
+
+  /* Footer */
+  .foot {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--sub);
+    text-align: center;
+  }
+  .foot a { color: var(--accent); text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="page-head">
+  <div>
+    <h1>账户设置 modal · 重设计预览</h1>
+  </div>
+  <div class="controls">
+    <button id="theme-light" class="active" onclick="setTheme('light')">浅色</button>
+    <button id="theme-dark" onclick="setTheme('dark')">深色</button>
+  </div>
+</div>
+<p class="sub-head">
+  现在的 modal：两层卡片视觉拥挤、标题不够 hero、字段标签层级模糊、第三个 type button 被「Margin L3+」撑高。
+  3 个新方向，每个都展示同样 2 个账户的状态。
+</p>
+
+
+<div class="grid">
+
+  <!-- 当前 -->
+  <div>
+    <div class="demo-head">
+      <span class="demo-tag">CURRENT</span>
+      <span class="demo-title">当前版</span>
+      <span class="demo-desc">米色账户卡 nested 在白底 modal 上 + 顶部说明灰底 box + 14px 标题。视觉上"两层 card"</span>
+    </div>
+    <div class="modal modal-cur">
+      <div class="mc-head">
+        <span class="mc-title">⚙️ 账户设置</span>
+        <button class="mc-close">×</button>
+      </div>
+      <div class="mc-hint">支持多账户管理。每个账户独立：券商 + 类型 + 保证金 + 正股。推荐时按所有账户合并算。</div>
+
+      <div class="acct-card">
+        <div class="acard-head">
+          <input class="acard-name" placeholder="账户名（可选）">
+          <select class="acard-broker"><option>其他</option></select>
+          <button class="acard-del">×</button>
+        </div>
+        <div class="acard-row">
+          <span class="mini-label">类型</span>
+          <div class="seg">
+            <button class="seg-btn">💵 现金 / IRA</button>
+            <button class="seg-btn">📈 Margin L2</button>
+            <button class="seg-btn active">📈 Margin L3+</button>
+          </div>
+        </div>
+        <div class="acard-row">
+          <span class="mini-label">保证金</span>
+          <div class="input-wrap">
+            <span class="currency">$</span>
+            <input class="input" value="48000">
+          </div>
+        </div>
+        <div class="acard-row stack">
+          <span class="mini-label">正股</span>
+          <div class="stock-row"><input value="TSLA"><input value="3300"><button class="rm-btn">×</button></div>
+          <div class="stock-row"><input value="META"><input value="700"><button class="rm-btn">×</button></div>
+          <button class="add-stock">+ 加正股</button>
+        </div>
+      </div>
+
+      <button class="add-account">+ 添加账户</button>
+
+      <div class="actions">
+        <button class="btn-cancel">取消</button>
+        <button class="btn-save">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- A · 留白克制 -->
+  <div>
+    <div class="demo-head">
+      <span class="demo-tag hero">OPTION A · 推荐</span>
+      <span class="demo-title">留白克制 / Spacious Minimal</span>
+      <span class="demo-desc">删账户卡米色背景，账户改用细线分隔。20px hero 标题 + 副标说明。账户名做大字 ticker。底部黑色胶囊主按钮 + sticky footer。</span>
+    </div>
+    <div class="modal modal-a">
+      <div class="ma-head">
+        <div class="ma-head-row">
+          <div>
+            <div class="ma-title">账户设置</div>
+            <div class="ma-subtitle">支持多账户。推荐时按所有账户合并算资金 + 正股</div>
+          </div>
+          <button class="ma-close">×</button>
+        </div>
+      </div>
+      <div class="ma-body">
+
+        <div class="ma-acct">
+          <div class="ma-acct-head">
+            <span class="ma-acct-num">账户 01</span>
+            <input class="ma-acct-name" placeholder="未命名账户" value="">
+            <select class="ma-acct-broker"><option>其他</option></select>
+            <button class="ma-acct-del">×</button>
+          </div>
+          <div class="ma-row">
+            <span class="ma-label">类型</span>
+            <div class="ma-seg">
+              <button class="ma-seg-btn">💵 现金 / IRA</button>
+              <button class="ma-seg-btn">📈 Margin L2</button>
+              <button class="ma-seg-btn active">📈 Margin L3+</button>
+            </div>
+          </div>
+          <div class="ma-row">
+            <span class="ma-label">保证金</span>
+            <div class="ma-input-wrap">
+              <span class="ma-currency">$</span>
+              <input class="ma-input" value="48000">
+            </div>
+          </div>
+          <div class="ma-row stack">
+            <span class="ma-label" style="margin-top:8px">正股</span>
+            <div>
+              <div class="ma-stocks">
+                <div class="ma-stock-row"><input value="TSLA"><input value="3300"><button class="rm-btn">×</button></div>
+                <div class="ma-stock-row"><input value="META"><input value="700"><button class="rm-btn">×</button></div>
+              </div>
+              <button class="ma-add-stock">+ 加正股</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ma-acct">
+          <div class="ma-acct-head">
+            <span class="ma-acct-num">账户 02</span>
+            <input class="ma-acct-name" placeholder="未命名账户" value="IRA 长期">
+            <select class="ma-acct-broker"><option>Schwab</option></select>
+            <button class="ma-acct-del">×</button>
+          </div>
+          <div class="ma-row">
+            <span class="ma-label">类型</span>
+            <div class="ma-seg">
+              <button class="ma-seg-btn active">💵 现金 / IRA</button>
+              <button class="ma-seg-btn">📈 Margin L2</button>
+              <button class="ma-seg-btn">📈 Margin L3+</button>
+            </div>
+          </div>
+          <div class="ma-row">
+            <span class="ma-label">保证金</span>
+            <div class="ma-input-wrap">
+              <span class="ma-currency">$</span>
+              <input class="ma-input" value="20000">
+            </div>
+          </div>
+        </div>
+
+        <button class="ma-add-account">+ 添加账户</button>
+      </div>
+      <div class="ma-foot">
+        <button class="ma-cancel">取消</button>
+        <button class="ma-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- B · Stacked Cards -->
+  <div>
+    <div class="demo-head">
+      <span class="demo-tag hero">OPTION B</span>
+      <span class="demo-title">浮起卡片 / Stacked Cards</span>
+      <span class="demo-desc">每个账户是 elevated white card（box-shadow 浮起），底色用 cream/灰区分。账户名 hero 大字 + broker 做 pill chip。type 按钮黑底白字 active。</span>
+    </div>
+    <div class="modal modal-b">
+      <div class="mb-head">
+        <div class="mb-head-row">
+          <div>
+            <div class="mb-title">⚙️ 账户设置</div>
+            <div class="mb-subtitle">多账户合并算资金 + 正股</div>
+          </div>
+          <button class="mb-close">×</button>
+        </div>
+      </div>
+      <div class="mb-body">
+
+        <div class="mb-acct">
+          <div class="mb-acct-head">
+            <input class="mb-acct-name" placeholder="未命名账户" value="主账户">
+            <span class="mb-acct-broker-chip"><select><option>其他</option></select></span>
+            <button class="mb-acct-del">×</button>
+          </div>
+          <div class="mb-acct-body">
+            <div class="mb-row">
+              <span class="mb-label">类型</span>
+              <div class="mb-seg">
+                <button class="mb-seg-btn">💵 现金/IRA</button>
+                <button class="mb-seg-btn">📈 Margin L2</button>
+                <button class="mb-seg-btn active">📈 Margin L3+</button>
+              </div>
+            </div>
+            <div class="mb-row">
+              <span class="mb-label">保证金</span>
+              <div class="mb-input-wrap">
+                <span class="mb-currency">$</span>
+                <input class="mb-input" value="48000">
+              </div>
+            </div>
+            <div class="mb-row stack">
+              <span class="mb-label" style="margin-top:6px">正股</span>
+              <div>
+                <div class="mb-stocks">
+                  <div class="mb-stock-row"><input value="TSLA"><input value="3300"><button class="rm-btn">×</button></div>
+                  <div class="mb-stock-row"><input value="META"><input value="700"><button class="rm-btn">×</button></div>
+                </div>
+                <button class="mb-add-stock">+ 加正股</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-acct">
+          <div class="mb-acct-head">
+            <input class="mb-acct-name" placeholder="未命名账户" value="IRA 长期">
+            <span class="mb-acct-broker-chip"><select><option>Schwab</option></select></span>
+            <button class="mb-acct-del">×</button>
+          </div>
+          <div class="mb-acct-body">
+            <div class="mb-row">
+              <span class="mb-label">类型</span>
+              <div class="mb-seg">
+                <button class="mb-seg-btn active">💵 现金/IRA</button>
+                <button class="mb-seg-btn">📈 Margin L2</button>
+                <button class="mb-seg-btn">📈 Margin L3+</button>
+              </div>
+            </div>
+            <div class="mb-row">
+              <span class="mb-label">保证金</span>
+              <div class="mb-input-wrap">
+                <span class="mb-currency">$</span>
+                <input class="mb-input" value="20000">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="mb-add-account">+ 添加账户</button>
+      </div>
+      <div class="mb-foot">
+        <button class="mb-cancel">取消</button>
+        <button class="mb-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- C · 紧凑 form -->
+  <div>
+    <div class="demo-head">
+      <span class="demo-tag hero">OPTION C</span>
+      <span class="demo-title">紧凑 form / Inline Form</span>
+      <span class="demo-desc">完全去 card 嵌套，账户用 fieldset + 大写徽章 #01 标号。所有字段 80px label 严格对齐。type 用 segmented control（无 gap，相邻拼接）。视觉上像系统设置 / DSL。</span>
+    </div>
+    <div class="modal modal-c">
+      <div class="mc-head">
+        <div class="mc-head-row">
+          <div>
+            <div class="mc-title">账户设置</div>
+            <div class="mc-subtitle">多账户合并算资金 + 正股</div>
+          </div>
+          <button class="mc-close">×</button>
+        </div>
+      </div>
+      <div class="mc-body">
+
+        <fieldset class="mc-acct">
+          <div class="mc-acct-legend">
+            <span class="mc-acct-badge">#01</span>
+            <input class="mc-acct-name" placeholder="未命名账户" value="">
+            <button class="mc-acct-del">×</button>
+          </div>
+          <div class="mc-grid start">
+            <span class="mc-glabel">broker</span>
+            <select class="mc-broker"><option>其他</option></select>
+
+            <span class="mc-glabel">type</span>
+            <div class="mc-seg">
+              <button class="mc-seg-btn">💵 现金/IRA</button>
+              <button class="mc-seg-btn">📈 L2</button>
+              <button class="mc-seg-btn active">📈 L3+</button>
+            </div>
+
+            <span class="mc-glabel">margin</span>
+            <div class="mc-input-wrap">
+              <span class="mc-currency">$</span>
+              <input class="mc-input" value="48000">
+            </div>
+
+            <span class="mc-glabel" style="margin-top:5px">stocks</span>
+            <div>
+              <div class="mc-stocks">
+                <div class="mc-stock-row"><input value="TSLA"><input value="3300"><button class="rm-btn">×</button></div>
+                <div class="mc-stock-row"><input value="META"><input value="700"><button class="rm-btn">×</button></div>
+              </div>
+              <button class="mc-add-stock">+ 加正股</button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="mc-acct">
+          <div class="mc-acct-legend">
+            <span class="mc-acct-badge">#02</span>
+            <input class="mc-acct-name" placeholder="未命名账户" value="IRA 长期">
+            <button class="mc-acct-del">×</button>
+          </div>
+          <div class="mc-grid">
+            <span class="mc-glabel">broker</span>
+            <select class="mc-broker"><option>Schwab</option></select>
+
+            <span class="mc-glabel">type</span>
+            <div class="mc-seg">
+              <button class="mc-seg-btn active">💵 现金/IRA</button>
+              <button class="mc-seg-btn">📈 L2</button>
+              <button class="mc-seg-btn">📈 L3+</button>
+            </div>
+
+            <span class="mc-glabel">margin</span>
+            <div class="mc-input-wrap">
+              <span class="mc-currency">$</span>
+              <input class="mc-input" value="20000">
+            </div>
+          </div>
+        </fieldset>
+
+        <button class="mc-add-account">+ 添加账户</button>
+      </div>
+      <div class="mc-foot">
+        <button class="mc-cancel">取消</button>
+        <button class="mc-save">💾 保存</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  A 主推（克制留白） / B 卡片浮起（视觉 modern） / C 系统设置风（紧凑 power user）
+  · 选定告诉我，落地到 <code>.account-modal</code>。
+</div>
+
+</div>
+
+<script>
+  function setTheme(t) {
+    if (t === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('theme-dark').classList.add('active');
+      document.getElementById('theme-light').classList.remove('active');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('theme-light').classList.add('active');
+      document.getElementById('theme-dark').classList.remove('active');
+    }
+    try { localStorage.setItem('preview-theme', t); } catch(e) {}
+  }
+  try {
+    const saved = localStorage.getItem('preview-theme');
+    if (saved === 'dark') setTheme('dark');
+  } catch(e) {}
+</script>
+
+</body>
+</html>

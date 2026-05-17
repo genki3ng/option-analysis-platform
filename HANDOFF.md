@@ -3,7 +3,28 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（深夜 — 表单双轨 A 落地 + 出场计划重写 + 多账户管理）
+最后更新：2026-05-17（深夜 — local intro/README audit · 云端 form A + Exit + 账户）
+
+### 🆕 local session（最末轮 · 2026-05-17 深夜）
+
+**主题：intro 重组 + README 重写 + 全 sections audit**
+
+- **README.md 全面重写**（commit `fac5e12`）：
+  - 算法版本 1.1 → 1.3，加 v1.2 财报衰减、v1.3 自适应、v1.B POP 校准
+  - 删「File System Access 文件夹同步」（早替换了），换 Supabase OAuth + RLS
+  - 加 8+ 新功能盘点（加仓预览/对比/Wheel hint/POP+Exit/早安管家/简洁双密度/数据源 pill）
+
+- **intro 重组 — 用户选 B+C 综合**（commit `f1cbdb7`）：
+  - 走 CLAUDE.md 第 9 节预览页流程：先建 `intro-preview.html` 给 3 方案
+    A 时间轴 / B Feature Grid / C 工作流 7 步 → 用户选 B+C 综合
+  - Hero 下立刻插「⭐ 能干啥 Feature Grid」（2×4，7 个 NEW tag）
+  - 「三步当上包租公」扩成「完整工作流 7 步」（最后一步 span-2）
+  - 「配套能力」从 8 项扩到 12 项
+  - 算法 section：1.1 → 1.3，DTE/Δ adaptive + 财报 5 档衰减 + 12 月回测
+  - 三语 i18n 三套补 ~50 个新 key
+  - 删 intro-preview.html + vercel.json 路由清理（接受 cloud 的简化 vercel.json）
+
+---
 
 ### 🆕 这一轮（form A landing 后续，深夜连续迭代）
 

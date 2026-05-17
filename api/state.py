@@ -1354,21 +1354,38 @@ def _prob_safe_bs(S: float, K: float, T: float, sigma: float, is_call: bool) -> 
     return (_ncdf(-d2) if is_call else _ncdf(d2)) * 100
 
 
-def _dte_sweet_factor(days: int) -> float:
+def _dte_sweet_factor(days: int, target_days: int = None) -> float:
     """
-    DTE 甜蜜区加成：14 天为峰值，<5 或 >35 衰减。
+    DTE 甜蜜区加成：以用户选择的 target_days 为中心，半宽随 target 自适应。
+    target_days=None 时回退到 14 天固定峰值（兼容旧调用）。
     Returns 0.5 ~ 1.2 multiplier.
     """
     if days <= 0:
         return 0.5
-    if days < 5:
-        return 0.65 + 0.07 * days       # 5→1.0
-    if days <= 21:
-        # 7-21 天为甜蜜区，14 天最甜
-        return 1.0 + 0.2 * max(0, 1 - abs(days - 14) / 7)
-    if days <= 35:
-        return 1.0 - (days - 21) / 28   # 21→1.0, 35→0.5
-    return 0.5
+
+    if not target_days or target_days <= 0:
+        # 兼容路径：旧固定甜蜜区
+        if days < 5:
+            return 0.65 + 0.07 * days
+        if days <= 21:
+            return 1.0 + 0.2 * max(0, 1 - abs(days - 14) / 7)
+        if days <= 35:
+            return 1.0 - (days - 21) / 28
+        return 0.5
+
+    # 半宽：短 timeframe 用绝对值（≥5），长 timeframe 用百分比
+    half_width = max(5.0, target_days * 0.35)
+    offset = abs(days - target_days)
+
+    if offset <= half_width:
+        # 区内：1.0 - 1.2，距 target 越近越甜
+        return round(1.0 + 0.20 * (1 - offset / half_width), 3)
+
+    # 区外：线性衰减到 0.5（超出 2× half_width 之外彻底压到 0.5）
+    excess = offset - half_width
+    if excess >= half_width:
+        return 0.5
+    return round(1.0 - 0.5 * (excess / half_width), 3)
 
 
 def _delta_sweet_factor(abs_delta: float) -> float:
@@ -1444,6 +1461,100 @@ def _wheel_friendly_factor(strike: float, underlying: float, is_csp: bool) -> tu
     return 1.0, None
 
 
+def _portfolio_context(ticker: str, underlying: float,
+                        option_positions: list, avail_margin: float) -> Optional[dict]:
+    """透明度面板：同 ticker 敞口 + -15% 情景。不影响 score，只展示数字。
+
+    用户的库存里所有期权都是"卖出"立场（包租公定位）。这里聚合 same-ticker：
+      - put 累计 collateral（被同时指派需要的现金）
+      - -15% 单日情景下：还有几张 OTM put 会进入 ITM，累计 intrinsic loss
+    """
+    same = [p for p in (option_positions or [])
+            if (p.get("ticker") or "").upper() == ticker.upper()
+            and not p.get("closed")]
+    if not same:
+        return None
+
+    puts = [p for p in same if p.get("type") == "put"]
+    calls = [p for p in same if p.get("type") == "call"]
+
+    put_collateral = sum(
+        float(p.get("strike", 0) or 0) * 100 * int(p.get("contracts", 0) or 0)
+        for p in puts
+    )
+    put_contracts = sum(int(p.get("contracts", 0) or 0) for p in puts)
+    call_contracts = sum(int(p.get("contracts", 0) or 0) for p in calls)
+
+    shock = 0.15
+    stressed_price = underlying * (1 - shock)
+    n_itm = sum(1 for p in puts if float(p.get("strike", 0) or 0) > stressed_price)
+
+    # 浮亏估算：-15% 后 puts 的 intrinsic value 总和（保守上限，未扣已收权利金、未计时间价值）
+    stress_loss = sum(
+        max(0.0, float(p.get("strike", 0) or 0) - stressed_price) * 100 * int(p.get("contracts", 0) or 0)
+        for p in puts
+    )
+
+    out = {
+        "shock_pct": int(shock * 100),
+        "stressed_price": round(stressed_price, 2),
+        "put_contracts": put_contracts,
+        "call_contracts": call_contracts,
+        "put_collateral": round(put_collateral, 0),
+        "puts_itm_at_shock": n_itm,
+        "stress_loss_estimate": round(stress_loss, 0),
+    }
+    if avail_margin > 0 and put_collateral > 0:
+        out["put_collateral_pct"] = round(put_collateral / avail_margin * 100, 1)
+    return out
+
+
+def _adjust_delta_band_by_iv(base_band: tuple, iv_rank_pct: Optional[float]) -> tuple:
+    """根据 IV rank 自适应调整 short premium 的 delta 区间。
+    高 IV (≥70): 向远 OTM 移（同等权利金下更安全）。
+    低 IV (≤30): 向 ATM 移（否则收不到像样的权利金）。
+    中段不动。温和位移：区间宽度 × 0.30。
+    """
+    if iv_rank_pct is None:
+        return base_band
+    lo, hi = base_band
+    width = hi - lo
+    if iv_rank_pct >= 70:
+        shift = width * 0.30
+        return (max(0.05, round(lo - shift * 0.5, 3)),
+                max(0.10, round(hi - shift, 3)))
+    if iv_rank_pct <= 30:
+        shift = width * 0.30
+        return (round(lo + shift * 0.5, 3),
+                min(0.55, round(hi + shift, 3)))
+    return base_band
+
+
+def _peek_atm_iv(ticker: str, exp_str: str, underlying: float) -> Optional[float]:
+    """快速取一个 ATM 期权的 IV（年化，0-1），用于 IV rank 预估。
+    chain 结构：{(strike, 'call'|'put'): {iv, ...}}。失败返回 None。"""
+    try:
+        chain = fetch_chain(ticker, exp_str)
+        if not chain:
+            return None
+        best = None
+        best_dist = float("inf")
+        for (strike, _opt_type), q in chain.items():
+            iv = q.get("iv", 0)
+            if not strike or strike <= 0 or iv <= 0:
+                continue
+            dist = abs(strike - underlying)
+            if dist < best_dist:
+                best_dist = dist
+                best = iv
+        if best is None:
+            return None
+        # iv 可能是百分数或小数，统一归一化到小数
+        return best / 100 if best > 3 else best
+    except Exception:
+        return None
+
+
 def _margin_bpr(strike: float, underlying: float, is_call: bool, mid: float) -> float:
     """
     Reg-T 保证金账户 BPR（Buying Power Reduction）估算，裸卖期权。
@@ -1504,7 +1615,8 @@ def _earnings_factor(days_to_earnings: int, risk: str, intent: str = "premium") 
 def _landlord_score(opt: dict, is_csp: bool, underlying: float,
                      iv_rank: Optional[dict], backtest: Optional[dict],
                      earnings_cross: bool, earnings_days_until: Optional[int],
-                     risk: str, intent: str = "premium") -> dict:
+                     risk: str, intent: str = "premium",
+                     target_days: int = None) -> dict:
     """
     包租公分（rent_score）— 综合"周租"质量评分。
     返回 {"score": float, "components": {...}}，components 用于解释。
@@ -1525,7 +1637,7 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     safety = prob_safe ** 1.5
 
     # 3. DTE 甜蜜区
-    dte_f = _dte_sweet_factor(days)
+    dte_f = _dte_sweet_factor(days, target_days=target_days)
 
     # 4. Delta 甜蜜区
     delta_f = _delta_sweet_factor(abs_delta)
@@ -1861,6 +1973,7 @@ def recommend(req: dict) -> dict:
         for p in (account.get("stock_positions") or [])
         if p.get("ticker")
     }
+    option_positions = account.get("option_positions") or []
 
     # 拿当前价
     prices = fetch_prices([ticker])
@@ -1888,6 +2001,16 @@ def recommend(req: dict) -> dict:
     target_exps = _find_expiries(ticker, timeframe, n=3,
                                   min_days=timeframe_min, max_days=timeframe_max)
     today = date.today()
+
+    # IV-adaptive delta band (仅对 short premium 策略生效；LEAPS 走自己的区间)
+    iv_rank_for_band = None
+    if is_short and target_exps and intent != "long_leaps":
+        peek_iv = _peek_atm_iv(ticker, target_exps[0], underlying)
+        if peek_iv is not None:
+            r = _compute_iv_rank(ticker, peek_iv)
+            if r and r.get("rank_pct") is not None:
+                iv_rank_for_band = r["rank_pct"]
+                delta_band = _adjust_delta_band_by_iv(delta_band, iv_rank_for_band)
 
     candidates = []
     chain_stats = {"empty_count": 0, "good_count": 0, "total": len(target_exps),
@@ -2084,7 +2207,8 @@ def recommend(req: dict) -> dict:
         earnings_days_until = (earnings_date - today).days if earnings_date else None
         if is_short:
             ls = _landlord_score(c, is_csp, underlying, iv_rank, backtest,
-                                  earnings_cross, earnings_days_until, risk, intent=intent)
+                                  earnings_cross, earnings_days_until, risk,
+                                  intent=intent, target_days=timeframe)
             c["rent_score"] = ls["score"]
             c["score_components"] = ls["components"]
             c["score"] = ls["score"]   # 排序统一用 rent_score
@@ -2123,6 +2247,9 @@ def recommend(req: dict) -> dict:
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
 
+    # Portfolio context — 同 ticker 敞口 + -15% 情景（不影响 score）
+    portfolio_context = _portfolio_context(ticker, underlying, option_positions, avail_margin)
+
     return {
         "ticker": ticker,
         "underlying": underlying,
@@ -2146,6 +2273,7 @@ def recommend(req: dict) -> dict:
         "candidates": candidates[:10],
         "total_examined": len(candidates),
         "data_source": _summarize_data_source(chain_stats),
+        "portfolio_context": portfolio_context,
     }
 
 

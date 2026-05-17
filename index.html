@@ -1476,6 +1476,18 @@
     border: 1px solid var(--line); border-radius: 10px;
     padding: 14px 16px; margin: 14px 0;
   }
+  /* Portfolio context — 透明度面板，不影响排序，仅展示同 ticker 敞口和压力情景 */
+  .pc-panel {
+    background: rgba(91, 124, 245, 0.05);
+    border: 1px solid rgba(91, 124, 245, 0.25);
+    border-radius: 10px;
+    padding: 11px 14px; margin: 10px 0 14px;
+    font-size: 12.5px; line-height: 1.55; color: var(--text);
+  }
+  .pc-panel .pc-title { font-weight: 600; color: var(--accent); margin-bottom: 5px; }
+  .pc-panel .pc-row { color: var(--sub); }
+  .pc-panel .pc-row strong { color: var(--text); }
+  .pc-panel .pc-row.pc-stress { margin-top: 4px; }
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
     display: flex; align-items: center; gap: 8px;
@@ -3377,6 +3389,18 @@ const I18N = {
     '登出': '登出',
     '账户设置': '帳戶設定',
     '账户类型': '帳戶類型',
+    '张 short put': '張 short put',
+    '张 short call': '張 short call',
+    '张 put 进入 ITM': '張 put 進入 ITM',
+    '现有持仓': '現有持倉',
+    '累计抵押金': '累計抵押金',
+    '账户占比': '帳戶佔比',
+    '情景': '情境',
+    '单日': '單日',
+    '跌到': '跌到',
+    '估算浮亏上限': '估算浮虧上限',
+    '你的': '你的',
+    '敞口（仅参考，不影响排序）': '敞口（僅參考，不影響排序）',
     '💵 现金 / IRA': '💵 現金 / IRA',
     '📈 保证金账户': '📈 保證金帳戶',
     '影响每张合约的实际资金占用（BPR）计算': '影響每張合約的實際資金佔用（BPR）計算',
@@ -3935,6 +3959,18 @@ const I18N = {
     '登出': 'Sign out',
     '账户设置': 'Account Settings',
     '账户类型': 'Account Type',
+    '张 short put': 'short put(s)',
+    '张 short call': 'short call(s)',
+    '张 put 进入 ITM': 'put(s) ITM',
+    '现有持仓': 'Existing exposure',
+    '累计抵押金': 'Total collateral',
+    '账户占比': 'of account',
+    '情景': 'Stress scenario',
+    '单日': '1-day',
+    '跌到': 'drops to',
+    '估算浮亏上限': 'est. max drawdown',
+    '你的': 'Your',
+    '敞口（仅参考，不影响排序）': 'exposure (for reference only — does not affect ranking)',
     '💵 现金 / IRA': '💵 Cash / IRA',
     '📈 保证金账户': '📈 Margin Account',
     '影响每张合约的实际资金占用（BPR）计算': 'Affects actual buying power reduction (BPR) per contract',
@@ -6381,8 +6417,16 @@ async function submitRec() {
     body.timeframe_max = tfRange[1];
   }
   const acct = _getAccountMeta();
-  if (acct.available_margin || (acct.stock_positions && acct.stock_positions.length)) {
-    body.account = { ...acct };
+  // 把用户当前的开仓期权打包传给后端，用于 portfolio context（同 ticker 敞口 / 压力测试）
+  const openOptionPositions = loadPositions()
+    .filter(p => !p.closed)
+    .map(p => ({
+      ticker: p.ticker, type: p.type,
+      strike: p.strike, expiry: p.expiry,
+      contracts: p.contracts,
+    }));
+  if (acct.available_margin || (acct.stock_positions && acct.stock_positions.length) || openOptionPositions.length) {
+    body.account = { ...acct, option_positions: openOptionPositions };
   }
   _savePref('rec_last_ticker', ticker);
   _savePref('rec_last_choice', JSON.stringify(_recSelection));
@@ -6489,10 +6533,51 @@ function renderRecResult(d) {
     `;
   }
 
+  // Portfolio Context panel — 同 ticker 敞口（透明度工具，不影响 score）
+  let pcPanel = '';
+  if (d.portfolio_context) {
+    const pc = d.portfolio_context;
+    const lines = [];
+    const parts = [];
+    if (pc.put_contracts > 0) parts.push(`${pc.put_contracts} ${t('张 short put')}`);
+    if (pc.call_contracts > 0) parts.push(`${pc.call_contracts} ${t('张 short call')}`);
+    if (parts.length) {
+      let row = `<div class="pc-row">${t('现有持仓')}: ${parts.join(' · ')}`;
+      if (pc.put_collateral > 0) {
+        row += ` · ${t('累计抵押金')} $${fmt(pc.put_collateral, 0)}`;
+        if (pc.put_collateral_pct != null) {
+          row += ` (${t('账户占比')} ${pc.put_collateral_pct}%)`;
+        }
+      }
+      row += `</div>`;
+      lines.push(row);
+    }
+    if (pc.put_contracts > 0) {
+      const itm = pc.puts_itm_at_shock;
+      lines.push(`
+        <div class="pc-row pc-stress">
+          ${t('情景')}: <strong>${d.ticker} ${t('单日')} -${pc.shock_pct}%</strong>
+          ${t('跌到')} $${fmt(pc.stressed_price, 2)}
+          → ${itm}/${pc.put_contracts} ${t('张 put 进入 ITM')},
+          ${t('估算浮亏上限')} <strong>~$${fmt(pc.stress_loss_estimate, 0)}</strong>
+        </div>
+      `);
+    }
+    if (lines.length) {
+      pcPanel = `
+        <div class="pc-panel">
+          <div class="pc-title">📊 ${t('你的')} ${d.ticker} ${t('敞口（仅参考，不影响排序）')}</div>
+          ${lines.join('')}
+        </div>
+      `;
+    }
+  }
+
   if (!d.candidates.length) {
     document.getElementById('rec-result').innerHTML = `
       <div class="summary">${summary}</div>
       ${ivBanner}
+      ${pcPanel}
       <div class="empty">${t('😶 没找到符合条件的合约（试试放宽风险偏好或换 ticker）')}</div>
     `;
     return;
@@ -6678,6 +6763,7 @@ function renderRecResult(d) {
     <div class="summary">${summary}</div>
     ${dsPill}
     ${ivBanner}
+    ${pcPanel}
     <div class="disclaimer">
       ${t('rec_disclaimer_html')}
     </div>

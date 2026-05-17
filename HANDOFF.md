@@ -3,7 +3,20 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17
+最后更新：2026-05-17（batch 4 子批 A 完成）
+
+### 📦 Batch 4 进行中（推荐引擎进阶 backlog）
+
+Batch 4 是用户 priority table 的最后一波，分 3 个子批做：
+- **子批 A ✅ 已上线**（`d09ab02`）：long_vol 下架 + Vol skew 信号 + Wheel 闭环提示
+- **子批 B 待做**：历史 POP 校准 + Exit plan 模板（~2 天）
+- **子批 C 待做**：表单双轨模式（目标 vs 策略，UX 大改，~1 天）
+
+子批 A 验证清单：
+- [ ] /app 推荐结果里出现 Vol skew pill（put_skew/call_skew，中间值不显示）
+- [ ] 持仓列表上方出现 Wheel 闭环提示（用户必须账户中设过 ≥100 股，或最近 30d 有 CSP expired_itm）
+- [ ] intent 下拉只剩 4 项：收权利金 / CSP / Covered Call / LEAPS（"做多波动率"已下架）
+- [ ] [推荐 Covered Call →] 按钮一键预填 rec form (covered_call/neutral/21d/balanced)
 
 ### ⚠️ 新 session 必看：CLAUDE.md 顶部 3 条铁律
 

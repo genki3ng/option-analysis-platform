@@ -4148,8 +4148,8 @@
   .goal-progress strong { color: var(--text); }
   .goal-progress .delta { color: var(--sub); margin-left: 4px; }
 
-  /* ── share view (只读快照模式) — 保留几乎所有 UI，任何点击 redirect 到 / ─── */
-  /* 只 hide 接收方上下文里完全无意义的：云同步浮标 / 新建表单 modal / 非 share modal */
+  /* ── share view (只读快照) — 保留所有 UI，只让推荐指数能点（跳首页） ─── */
+  /* hide 接收方上下文里完全无意义的元素 */
   body.share-view .cloud-sync-status,
   body.share-view #add-form,
   body.share-view .add-form,
@@ -4157,14 +4157,26 @@
   body.share-view .modal-backdrop:not(#share-modal) {
     display: none !important;
   }
-  /* 鼠标提示这是 readonly 截图 — 整页 cursor pointer 暗示点了就跳走 */
-  body.share-view {
-    cursor: pointer;
+  /* 默认整页所有元素都禁交互（无 hover 弹 / 无 click） */
+  body.share-view * {
+    pointer-events: none !important;
+    cursor: default !important;
   }
-  body.share-view input,
-  body.share-view textarea,
-  body.share-view select {
-    pointer-events: none;  /* 避免接收方误以为能改持仓数据 */
+  /* 例外：banner、share-modal、推荐指数大按钮 — 这些保留 pointer-events */
+  body.share-view #share-banner,
+  body.share-view #share-banner *,
+  body.share-view #share-modal,
+  body.share-view #share-modal *,
+  body.share-view .rec-btn-large,
+  body.share-view .rec-btn-large * {
+    pointer-events: auto !important;
+  }
+  body.share-view .rec-btn-large {
+    cursor: pointer !important;
+  }
+  /* 推荐指数加视觉暗示 — 描金边稍亮，提示"可点击" */
+  body.share-view .rec-btn-large {
+    box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(230,184,106,0.25);
   }
 
   /* ── share modal（点"生成只读链接"后弹的复制框）按钮 — 与项目主按钮规范一致 */
@@ -8468,15 +8480,15 @@ async function loadFromShare() {
     · <a href="${location.origin}/app" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>`;
   document.body.insertBefore(banner, document.body.firstChild);
 
-  // 全局 click capture：share view 下任何点击都跳到落地页（推荐自己用）
-  // 例外：banner / share-modal 自己的链接
+  // share view 下唯一能点的（除 banner / share-modal）就是推荐指数大按钮 → 跳首页
   document.addEventListener('click', (e) => {
-    if (e.target.closest('#share-banner')) return;     // banner "打开我自己的" 已是 anchor
-    if (e.target.closest('#share-modal')) return;      // share-modal 关闭/复制按钮
-    e.preventDefault();
-    e.stopPropagation();
-    location.href = location.origin + '/';
-  }, true);  // capture 阶段拦截，确保在元素自己的 onclick 前生效
+    const recBtn = e.target.closest('.rec-btn-large');
+    if (recBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      location.href = location.origin + '/';
+    }
+  }, true);
   return true;
 }
 

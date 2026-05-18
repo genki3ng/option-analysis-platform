@@ -365,28 +365,37 @@ _cache_intraday_ts: Dict[str, float] = {}
 
 
 def fetch_prices(tickers: List[str]) -> Dict[str, Dict]:
-    """实时价 + 前收盘"""
-    out = {}
+    """实时价 + 前收盘 — 并行 yfinance fast_info（per ticker ~500ms IO）"""
+    out: Dict[str, Dict] = {}
     try:
         import yfinance as yf
-        session = _get_yf_session()
-        for tk in set(tickers):
-            if tk in _cache_prices:
-                out[tk] = _cache_prices[tk]
-                continue
-            try:
-                ticker_obj = yf.Ticker(tk, session=session) if session else yf.Ticker(tk)
-                fi = ticker_obj.fast_info
-                out[tk] = {
-                    "price": float(fi.last_price),
-                    "prev": float(fi.previous_close),
-                }
-                _cache_prices[tk] = out[tk]
-            except Exception:
-                out[tk] = {"price": 0.0, "prev": 0.0}
     except ImportError:
-        for tk in set(tickers):
-            out[tk] = {"price": 0.0, "prev": 0.0}
+        return {tk: {"price": 0.0, "prev": 0.0} for tk in set(tickers)}
+
+    session = _get_yf_session()
+    todo: List[str] = []
+    for tk in set(tickers):
+        if tk in _cache_prices:
+            out[tk] = _cache_prices[tk]
+        else:
+            todo.append(tk)
+    if not todo:
+        return out
+
+    def _one(tk: str) -> Tuple[str, Dict]:
+        try:
+            ticker_obj = yf.Ticker(tk, session=session) if session else yf.Ticker(tk)
+            fi = ticker_obj.fast_info
+            return tk, {"price": float(fi.last_price), "prev": float(fi.previous_close)}
+        except Exception:
+            return tk, {"price": 0.0, "prev": 0.0}
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(8, len(todo))) as ex:
+        for tk, quote in ex.map(_one, todo):
+            out[tk] = quote
+            if quote["price"] > 0:
+                _cache_prices[tk] = quote
     return out
 
 
@@ -889,10 +898,16 @@ def portfolio_history(positions, state, prices, today):
         pos_iv[position_id(p)] = implied_vol(
             p["sell_price"], tu, p["strike"], T, RISK_FREE, p["type"] == "call")
 
-    # 所有交易日
+    # 所有交易日 — 并行 fetch_history (yfinance per ticker IO)
+    hist_tickers = list(set(p["ticker"] for p in positions))
     all_days = set()
-    for tk in set(p["ticker"] for p in positions):
-        all_days.update(fetch_history(tk, earliest - timedelta(days=5)).keys())
+    if hist_tickers:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(8, len(hist_tickers))) as ex:
+            results = ex.map(lambda tk: fetch_history(tk, earliest - timedelta(days=5)),
+                             hist_tickers)
+            for h in results:
+                all_days.update(h.keys())
     sorted_days = sorted(all_days)
 
     series = []
@@ -1235,10 +1250,31 @@ def compute(payload):
 
     positions = [parse_position(p) for p in positions_raw]
     tickers = sorted(set(p["ticker"] for p in positions))
-    prices = fetch_prices(tickers)
-    intraday = {tk: fetch_intraday(tk) for tk in tickers}
     today = date.today()
     earliest = min(p["trade_date"] for p in positions) - timedelta(days=5)
+
+    # 并行启动 prices + intraday — 两个都是 yfinance 串行 IO，独立无依赖
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=max(2, min(8, len(tickers)))) as ex:
+        prices_fut = ex.submit(fetch_prices, tickers)
+        intraday_futs = {tk: ex.submit(fetch_intraday, tk) for tk in tickers}
+        prices = prices_fut.result()
+        intraday = {tk: fut.result() for tk, fut in intraday_futs.items()}
+
+    # Prefetch option chains for all active positions in parallel — so the
+    # serial position_state loop below hits cache for every fetch_option_quote.
+    # Without this, N positions = N serial Schwab/yfinance chain calls.
+    active_chains = set()
+    for p in positions:
+        pid = position_id(p)
+        if state.get(pid, {}).get("closed"):
+            continue
+        if (p["expiry"] - today).days <= 0:
+            continue
+        active_chains.add((p["ticker"], p["expiry"].isoformat()))
+    if active_chains:
+        with ThreadPoolExecutor(max_workers=min(8, len(active_chains))) as ex:
+            list(ex.map(lambda args: fetch_chain(*args), active_chains))
 
     enriched = [position_state(p, today, state, prices, earliest) for p in positions]
     history = portfolio_history(positions, state, prices, today)
@@ -2644,18 +2680,34 @@ def _fetch_position_news(positions: List[dict],
         session = _get_yf_session()
         tickers = sorted(set(p["ticker"] for p in positions
                             if not p.get("closed") and p.get("days", 0) >= 0))
-        out: List[Dict] = []
-        for tk in tickers[:6]:  # 最多 6 个 ticker 避免 yfinance 慢
-            items = None
+        tickers = tickers[:6]  # 最多 6 个 ticker 避免 yfinance 慢
+
+        # 分两批：cache 命中 + 需要拉的
+        items_by_tk: Dict[str, list] = {}
+        todo: List[str] = []
+        for tk in tickers:
             if tk in _news_cache and (now - _news_cache[tk][1]) < cache_ttl:
-                items = _news_cache[tk][0]
+                items_by_tk[tk] = _news_cache[tk][0]
             else:
+                todo.append(tk)
+
+        # 并行拉缺失的（per ticker ~500ms IO，6 个串行就 3s）
+        if todo:
+            def _one(tk: str):
                 try:
                     t = yf.Ticker(tk, session=session) if session else yf.Ticker(tk)
-                    items = t.news or []
-                    _news_cache[tk] = (items, now)
+                    return tk, (t.news or [])
                 except Exception:
-                    items = []
+                    return tk, []
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(6, len(todo))) as ex:
+                for tk, items in ex.map(_one, todo):
+                    items_by_tk[tk] = items
+                    _news_cache[tk] = (items, now)
+
+        out: List[Dict] = []
+        for tk in tickers:
+            items = items_by_tk.get(tk, [])
             for n in (items or [])[:max_items_per_ticker]:
                 # yfinance 新 schema 嵌套在 n['content']
                 content = n.get("content") or n
@@ -3359,8 +3411,14 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     today_iso = today.isoformat()
     state = state if isinstance(state, dict) else {}
 
-    news = _fetch_position_news(positions)
-    market = {"indices": prices, "vix": _fetch_vix_quote(), "news": news}
+    # news 和 VIX 都是独立 IO（yfinance），并行启动省 ~500ms
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        news_fut = ex.submit(_fetch_position_news, positions)
+        vix_fut = ex.submit(_fetch_vix_quote)
+        news = news_fut.result()
+        vix = vix_fut.result()
+    market = {"indices": prices, "vix": vix, "news": news}
     concentration = _compute_concentration(positions)
     calendar = _compute_calendar_14d(positions, today)
     yesterday_snap = _load_brief_snapshot(state)

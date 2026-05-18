@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title data-i18n="包租公 · Landlord — 把你的股票租出去，每周收租">包租公 · Landlord — 把你的股票租出去，每周收租</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Vercel Web Analytics -->
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -4831,6 +4831,7 @@ const I18N = {
     // 品牌
     '包租公': '包租公',
     '把你的股票租出去 · 每周收租 · 实时监控': '把你的股票租出去 · 每週收租 · 即時監控',
+    '正在刷新最新数据…': '正在重新整理最新資料…',
     // 标题 & 信息卡
     '实时 P&L · 自动每 30 秒刷新': '即時 P&L · 自動每 30 秒刷新',
     'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>關於這個工具</b>（點 × 收起）',
@@ -5439,6 +5440,7 @@ const I18N = {
     // Brand
     '包租公': 'Landlord',
     '把你的股票租出去 · 每周收租 · 实时监控': 'Rent out your stocks · Collect premium weekly · Real-time',
+    '正在刷新最新数据…': 'Fetching latest data…',
     // Title & info
     '实时 P&L · 自动每 30 秒刷新': 'Real-time P&L · Auto refresh every 30 s',
     'ℹ️ <b>关于这个工具</b>（点 × 收起）': 'ℹ️ <b>About this tool</b> (click × to collapse)',
@@ -11262,33 +11264,72 @@ async function refresh() {
     }
 
     renderAll(d);
+
+    // 缓存完整响应供下次启动时 optimistic render（剥掉 history 控制体积）
+    try {
+      const slim = Object.assign({}, d, { history: [] });
+      localStorage.setItem('last_compute_response', JSON.stringify(slim));
+    } catch(e) { /* quota / private mode 都吞掉 */ }
   } catch (e) {
     document.getElementById('footer').textContent = '刷新失败: ' + e.message;
     console.error(e);
   }
 }
 
-// 启动前检查是否是 share view
-loadFromShare();
-
-// 初始化 Supabase（异步，不阻塞首次 refresh）
-// 注意：不要在 load 事件里清 URL 的 ?code=！
-// Supabase PKCE flow 需要异步用 code 换 token，提前清会导致 token 交换失败
-// （iOS Safari 比 Chrome 慢，此 race 更稳定触发 → "登完跳回还显示未登录" 的 bug）
-// Supabase SDK 自己会在成功后清 URL，不用我们多管。
-_initSupabase();
-
-// 调试入口：URL 加 ?debug=auth 强制弹诊断面板
-if (new URL(location.href).searchParams.get('debug') === 'auth') {
-  setTimeout(() => _showAuthDebug('manual'), 800);
+// Optimistic render：用上次 API 响应立即渲染，不等冷启动 ~10s
+function _optimisticBoot() {
+  try {
+    const cached = localStorage.getItem('last_compute_response');
+    if (!cached) return false;
+    const d = JSON.parse(cached);
+    if (!d || !Array.isArray(d.positions)) return false;
+    window._currentData = d;
+    if (selectedIds === null) {
+      const allIds = d.positions.map(p => p.id);
+      selectedIds = loadSelection(allIds);
+      for (const id of [...selectedIds]) {
+        if (!allIds.includes(id)) selectedIds.delete(id);
+      }
+    }
+    renderAll(d);
+    const footer = document.getElementById('footer');
+    if (footer) footer.textContent = t ? t('正在刷新最新数据…') : '正在刷新最新数据…';
+    return true;
+  } catch(e) { console.warn('optimistic render skipped:', e); return false; }
 }
 
-refresh();
-setInterval(refresh, 300000);
-if (typeof document !== 'undefined') {
+function _bootstrap() {
+  // 启动前检查是否是 share view
+  loadFromShare();
+
+  // 初始化 Supabase（异步，不阻塞首次 refresh）
+  // 注意：不要在 load 事件里清 URL 的 ?code=！
+  // Supabase PKCE flow 需要异步用 code 换 token，提前清会导致 token 交换失败
+  // （iOS Safari 比 Chrome 慢，此 race 更稳定触发 → "登完跳回还显示未登录" 的 bug）
+  // Supabase SDK 自己会在成功后清 URL，不用我们多管。
+  _initSupabase();
+
+  // 调试入口：URL 加 ?debug=auth 强制弹诊断面板
+  if (new URL(location.href).searchParams.get('debug') === 'auth') {
+    setTimeout(() => _showAuthDebug('manual'), 800);
+  }
+
+  // 先用 localStorage 缓存渲染（不阻塞），再异步拉新数据
+  _optimisticBoot();
+
+  refresh();
+  setInterval(refresh, 300000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refresh();
   });
+}
+
+// defer script (Chart.js / supabase-js) 在 DOMContentLoaded 之前执行完。
+// 把启动包到 DOMContentLoaded 内才动 renderChart 等依赖 Chart 的代码。
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _bootstrap);
+} else {
+  _bootstrap();
 }
 </script>
 </body>

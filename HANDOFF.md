@@ -3,9 +3,52 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 管家文案改 priority list · 方案 B 落地）
+最后更新：2026-05-18（cloud — fix app loading perf · 并行化 + optimistic render）
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3`）
+### 🆕 这一轮（2026-05-18 cloud · `claude/fix-app-loading-performance-Kdum4`）
+
+**主题**：用户报"app loading 要 5s+，看下 root cause"。
+
+**实测（prod）**：
+- HTML gzip 131KB（OK）/ Chart.js + Supabase JS head 同步加载阻塞渲染
+- `/api/state` POST 1 持仓 **11.3s 冷 / 8s 热** ⚠️ 主瓶颈
+
+**Root cause**：`compute()` 在 `api/state.py` 里串行调 6-8 个外部 API：
+fetch_prices (yfinance per ticker) → fetch_intraday (per ticker) → portfolio_history → fetch_history (per ticker) → position_state → fetch_option_quote → fetch_chain (Schwab) → _fetch_position_news (per ticker) → _fetch_vix_quote → _generate_concierge_llm (timeout=18s)。Vercel 冷启动时 module-level cache 全 miss，串行就是 8-12s。前端 `refresh()` 启动时 await 这 11s，用户看空白页。
+
+**落地（方案 A · 短期高 ROI）**：
+
+前端 `index.html`:
+1. Chart.js + Supabase JS 加 `defer` —— 不阻塞 HTML parse
+2. `_bootstrap()` 包到 `DOMContentLoaded`（保证 defer 后 Chart 已就绪）
+3. `_optimisticBoot()` —— 从 `localStorage.last_compute_response` 立即 renderAll，不等 API
+4. `refresh()` 成功后缓存 `d`（剥 `history` 控制体积）到 localStorage
+5. i18n 加 `正在刷新最新数据…`（zh_tw / en）
+
+后端 `api/state.py`:
+6. `fetch_prices` 内部 `ThreadPoolExecutor` 并行 per ticker（原 N×500ms 串行）
+7. `compute()` 顶层并行 prices + intraday
+8. `compute()` 顶层 prefetch **all active position chains** 并行（让后续 `position_state` 内 `fetch_option_quote` 全命中 cache）
+9. `_fetch_position_news` 内部并行 per ticker
+10. `_generate_morning_brief` 内部 news + vix 并行
+11. `portfolio_history` 内部 `fetch_history` 并行 per ticker
+
+**预期效果**：
+- 用户感官：首屏 5s+ → 立即（用 localStorage cache 渲染）
+- 真实 API 调用：11s → 估计 3-5s（LLM 仍是大头但只第一次/per-day 必走）
+- 后续 refresh 走 LLM cache → < 2s
+
+**未触碰**：方案 B（拆 `/api/state` + `/api/brief` endpoint）和方案 C（SSE streaming）。如果方案 A 部署后用户仍觉慢，下一步走 B 把 morning_brief 单独 endpoint。
+
+**待用户验证**：
+- [ ] Mac Chrome / iPhone Safari 刷 `/app` — 首屏应立即（如果有过一次成功拉取）
+- [ ] 加新仓 / 切语言后等 ~3-5s 看到 API 真实数据更新
+- [ ] Vercel logs 不爆错（`from concurrent.futures import ThreadPoolExecutor` Python 标准库，必有）
+- [ ] LLM 早安管家仍正常生成（并行化没动 LLM）
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3`）
 
 **主题**：用户报当前管家 LLM 输出是一大段密文（"管家的 ... 一堆**啥意思，你要不要美化一下？给我三个方案"），扫读体验差。
 

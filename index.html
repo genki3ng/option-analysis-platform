@@ -2979,36 +2979,36 @@
     border-top: 1px solid var(--line);
   }
 
-  /* mode-priority · 桌面宽屏：priority list 全宽 + calendar 右栏 */
+  /* mode-priority · 桌面宽屏：左栏 = priority content（headline+sub+list+footer+chips），右栏 = calendar */
   @media (min-width: 900px) {
     .morning-brief.mode-priority {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 260px;
       grid-template-areas:
-        "head head"
-        "list side"
-        "chips side";
+        "head    head"
+        "content side";
       column-gap: 24px;
       row-gap: 14px;
       padding: 20px 24px;
     }
-    .mode-priority .mb-greeting { grid-area: head; margin-bottom: 0; }
-    .mode-priority .mb-priority-headline,
-    .mode-priority .mb-priority-sub {
-      grid-column: 1 / -1;
-      margin-bottom: 0;
+    .mode-priority > .mb-greeting { grid-area: head; margin-bottom: 0; }
+    .mode-priority > .mb-priority-content {
+      grid-area: content; min-width: 0;
+      display: flex; flex-direction: column; gap: 12px;
     }
-    .mode-priority .mb-priority-list { grid-area: list; margin-bottom: 0; }
-    .mode-priority .mb-priority-footer { grid-column: 1 / -1; margin-top: 0; }
-    .mode-priority .mb-chips {
-      grid-area: chips;
-      margin-top: 0; padding-top: 0; border-top: none;
-      align-self: start;
-    }
-    .mode-priority .mb-calendar {
-      grid-area: side;
+    .mode-priority > .mb-calendar {
+      grid-area: side; align-self: start;
       margin: 0; padding: 0; border-top: none;
-      align-self: start;
+    }
+    /* content 内部按文档顺序流式排：headline → sub → list → footer → chips */
+    .mode-priority .mb-priority-headline,
+    .mode-priority .mb-priority-sub,
+    .mode-priority .mb-priority-list,
+    .mode-priority .mb-priority-footer,
+    .mode-priority .mb-priority-content .mb-chips {
+      margin: 0;
+      padding-top: 0;
+      border-top: none;
     }
   }
 
@@ -10184,8 +10184,10 @@ function renderMorningBrief(brief) {
     el.innerHTML = `
       <span class="mb-close" onclick="dismissMorningBrief()">×</span>
       <div class="mb-greeting">${t('包租公管家')} <span class="mb-time">· ${_mbFormatTime()}</span></div>
-      ${_mbRenderConciergeBrief(cb)}
-      ${chipsHtml}
+      <div class="mb-priority-content">
+        ${_mbRenderConciergeBrief(cb)}
+        ${chipsHtml}
+      </div>
       ${calHtml}
     `;
   } else {

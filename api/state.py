@@ -2596,7 +2596,9 @@ def _get_anthropic_client():
         return None
     try:
         import anthropic
-        _anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=8.0)
+        # 14s — JSON 输出比 prose 长 ~5x，需要更多生成时间。
+        # 用户 prod 一次 compute 总耗时 29s 说明 Vercel maxDuration ≥30s（Pro 计划）。
+        _anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=14.0)
         return _anthropic_client
     except Exception:
         return None
@@ -3173,59 +3175,54 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     lang_word = {"en": "English", "zh_tw": "繁體中文"}.get(lang, "简体中文")
 
     system_prompt = (
-        "你是\"包租公管家\"——给一个用美股期权赚租金的散户写早安顾问。\n"
-        "目标：让用户 30 秒内对今早的全景心里有底——知道重点看什么、为什么紧、具体怎么处理。\n"
-        f"风格：亲切像老友讲话，{lang_word}，有人情味、有判断。少术语、生活化比喻。\n"
-        "**输出格式**：严格返回 JSON（不要 markdown 代码块包裹，不要 ```json 前缀），形如：\n"
+        f"你是「包租公管家」——给用美股期权赚租金的散户写早安顾问，{lang_word}回复，亲切像老友。\n"
+        "**严格输出 JSON**（不要 markdown 代码块），schema:\n"
         "{\n"
-        "  \"headline\": \"一句话核心结论（≤80 字），点出今天最关键的事是啥，用「」或粗体感受词带出关键 ticker/数字\",\n"
-        "  \"sub\": \"（可选）一句话补充说明，比如'下面 N 件事按优先级排了'\",\n"
-        "  \"items\": [\n"
+        "  \"headline\": \"≤80 字核心结论，**用粗体**点关键 ticker+数字\",\n"
+        "  \"items\": [  // 3-5 个\n"
         "    {\n"
-        "      \"priority\": \"urgent | cashflow | root | watch\",\n"
-        "      \"ticker\": \"TSLA $415 Put（可选，没有就空字符串）\",\n"
-        "      \"title\": \"短标题，10-18 字（如：止损或接货二选一）\",\n"
-        "      \"body\": \"30-80 字解释，**必须带数字**（DTE、PnL、距行权、Θ 等），给具体判断不要空话\",\n"
-        "      \"action\": \"rec | position:<position_id> | null\",\n"
-        "      \"cta\": \"按钮文案（如：看止损方案 / 看持仓 / 分散建议），没 action 就 null\"\n"
+        "      \"priority\": \"urgent|cashflow|root|watch\",\n"
+        "      \"ticker\": \"ticker+strike+type 或空字符串\",\n"
+        "      \"title\": \"10-18 字标题\",\n"
+        "      \"body\": \"30-70 字解释，必带数字（DTE/PnL/距行权/Θ）\",\n"
+        "      \"action\": \"rec | position:<pid> | null\",\n"
+        "      \"cta\": \"按钮文案，没 action 就 null\"\n"
         "    }\n"
         "  ],\n"
-        "  \"footer\": \"（可选）一句话环境/心态注脚，如：VIX 18 平静（问题不在波动，在头寸结构本身）\"\n"
+        "  \"footer\": \"可选，一句话环境/心态\"\n"
         "}\n"
-        "\n**priority 含义**：\n"
-        "  - `urgent` 🚨：必须今天动手（距行权 <3%、≤7 天到期且亏损、财报 ≤2 天等）\n"
-        "  - `cashflow` 💰：守住 / 别动（持续 Theta 流入、≥70% 锁利机会、稳健 ITM 但有缓冲）\n"
-        "  - `root` 🩺：结构性问题需要中期审视（集中度爆表、长短期持仓互锤、方向判断错误）\n"
-        "  - `watch` 👀：放着观望即可（位置 OK 的新仓 / 平稳持仓）\n"
-        "\n**items 数量**：3-5 个。**至少 1 个 urgent**（如果没紧急事，就放最值得关注的）。"
-        "如果有显著盈利 / 持续 Theta 来源 → 必须有 1 个 cashflow item。"
-        "如果集中度 ≥40% 或长短期方向冲突 → 必须有 1 个 root item。"
-        "\n**action 字段映射**：\n"
-        "  - 需要用户去看具体持仓 → `position:<完整 position_id>`（position_id 在 All active positions 行里能算出来：`{ticker}_{type}_{strike}_{expiry}`，但你只看 label，**不要瞎编 id**——如果不确定就用 null）\n"
-        "  - 需要让用户去找新的卖出机会 / 调仓建议 → `rec`\n"
-        "  - 没有自然的下一步 → null\n"
-        "\n不要编造数字——只用我给的数据。不要重复罗列 All active positions——它是给你做全局判断用的。"
-        "如果列了 Recent position changes，找 1 条最值得讲的，自然地体现在 headline 或 items.body 里。"
+        "**priority 含义**：urgent=今天必动（距行权<3%、≤7d 到期且亏损、财报≤2d）；"
+        "cashflow=守住别动（Theta 流入、≥70% 锁利、稳健 ITM 有缓冲）；"
+        "root=结构性问题需中期审（集中度爆、长短期互锤、方向错）；"
+        "watch=平稳放着。\n"
+        "**必有 1 个 urgent**（没紧急就放最值得关注的）；有显著盈利 → 必有 1 cashflow；集中度 ≥40% → 必有 1 root。\n"
+        "**action**：看持仓用 `position:<完整 position_id>` (格式 `{ticker}_{type}_{strike}_{expiry}`，不确定就 null)；"
+        "找新机会/调仓用 `rec`；无下一步 → null。\n"
+        "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。"
+        "Recent changes 有就挑 1 条最值得讲的体现在 headline 或 body。"
     )
 
     user_prompt = "今早信号:\n" + "\n".join(signal_lines) + (
-        f"\n\n用 {lang_word} 输出，严格 JSON，items 3-5 个。"
+        f"\n\n严格 JSON 输出，items 3-5 个，{lang_word}。"
     )
 
     try:
+        t0 = time.time()
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=1500,
+            max_tokens=900,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
+        elapsed = time.time() - t0
+        print(f"[concierge] llm_done: lang={lang} elapsed={elapsed:.2f}s", flush=True)
         text = (resp.content[0].text if resp.content else "").strip()
         if not text:
             print(f"[concierge] llm_empty: lang={lang}", flush=True)
             return None, None
         prose, brief = _parse_concierge_json(text, lang)
         if not brief or not brief.get("items"):
-            print(f"[concierge] llm_parse_fail: lang={lang} text_head={text[:100]!r}", flush=True)
+            print(f"[concierge] llm_parse_fail: lang={lang} text_head={text[:120]!r}", flush=True)
             return None, None
         return prose, brief
     except Exception as e:

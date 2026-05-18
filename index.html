@@ -1248,6 +1248,11 @@
     width: 1px; height: 22px; background: var(--line);
     margin: 0 6px;
   }
+  /* 桌面默认：长文案 button 内 .lbl-full 显示，.lbl-short 隐藏；mobile @media 反转 */
+  .pos-toolbar .lbl-full { display: inline; }
+  .pos-toolbar .lbl-short { display: none; }
+  /* spacer：桌面把 sel-count 推到右边 */
+  .pos-toolbar .tb-spacer { flex: 1; }
   /* .small 旧覆盖已移除——所有 toolbar 按钮统一尺寸 */
   /* Dropdown 菜单 */
   .dropdown { position: relative; display: inline-block; }
@@ -2143,22 +2148,65 @@
   .exit-plan.expanded .ep-item.stop .ep-action   { color: var(--red); }
   .exit-plan.expanded .ep-item.assign .ep-action { color: var(--accent); }
   .exit-plan.expanded .ep-item.roll .body { color: var(--sub); font-size: 11.5px; }
-  /* compact（持仓卡用）：一行 */
+  /* compact（持仓卡用）：桌面单行，移动端 stacked + tag */
   .exit-plan.compact {
     display: flex; align-items: center; flex-wrap: wrap;
     gap: 6px;
     padding: 6px 10px;
     font-size: 11.5px;
   }
+  .exit-plan.compact .ep-prefix {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
   .exit-plan.compact .ep-icon { font-size: 13px; }
-  .exit-plan.compact .ep-label { color: var(--accent); font-weight: 600; margin-right: 2px; }
-  .exit-plan.compact .ep-divider { color: var(--sub); opacity: 0.45; }
-  .exit-plan.compact strong { color: var(--text); }
-  .exit-plan.compact .pf strong { color: var(--green); }
-  .exit-plan.compact .as strong { color: var(--accent); }
+  .exit-plan.compact .ep-label { color: var(--accent); font-weight: 600; }
+  .exit-plan.compact .ep-row {
+    display: inline-flex; align-items: baseline; gap: 4px;
+    min-width: 0;
+  }
+  .exit-plan.compact .ep-row + .ep-row::before {
+    content: '·'; color: var(--sub); opacity: 0.45;
+    margin: 0 2px 0 0;
+    align-self: baseline;
+  }
+  .exit-plan.compact .ep-tag { display: none; }  /* 桌面隐藏 tag（mobile 才显示） */
+  .exit-plan.compact .ep-body strong { color: var(--text); }
+  .exit-plan.compact .ep-body.pf strong { color: var(--green); }
+  .exit-plan.compact .ep-body.as strong { color: var(--accent); }
   @media (max-width: 600px) {
     .exit-plan { font-size: 11.5px; padding: 7px 9px; }
     .exit-plan.expanded .ep-item { padding-left: 12px; }
+    /* 移动端：stacked + tag */
+    .exit-plan.compact {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 5px;
+      padding: 8px 10px;
+    }
+    .exit-plan.compact .ep-prefix {
+      padding-bottom: 3px;
+      border-bottom: 1px dashed rgba(212,165,116,0.20);
+      margin-bottom: 1px;
+    }
+    .exit-plan.compact .ep-row + .ep-row::before { display: none; }
+    .exit-plan.compact .ep-row {
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .exit-plan.compact .ep-tag {
+      display: inline-block;
+      flex-shrink: 0;
+      font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 1px 6px; border-radius: 3px;
+      color: var(--accent); background: var(--accent-tint);
+      line-height: 1.5;
+    }
+    .exit-plan.compact .ep-tag.tag-assign {
+      color: var(--red); background: rgba(248,113,113,0.10);
+    }
+    .exit-plan.compact .ep-body {
+      flex: 1; min-width: 0; line-height: 1.45;
+    }
   }
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
@@ -3345,10 +3393,71 @@
       max-width: 100%;
     }
 
-    /* 工具栏按钮：至少 36px 高保证触控 */
+    /* 工具栏：移动端三行重排 — 行 1 [新建持仓 flex:1] + [数据]；行 2 4-grid toggles；行 3 排序 */
+    .pos-toolbar {
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: stretch;
+    }
     .pos-toolbar button, .pos-toolbar select {
       min-height: 36px;
     }
+    /* 隐藏分隔符 / spacer / sel-count（mobile 不需要） */
+    .pos-toolbar .tb-sep,
+    .pos-toolbar .tb-spacer,
+    .pos-toolbar #sel-count { display: none; }
+    /* 行 1：add-btn 撑满，数据 dropdown 跟在右边 */
+    .pos-toolbar .add-btn {
+      flex: 1; order: 1;
+    }
+    .pos-toolbar > .dropdown {
+      order: 2; flex-shrink: 0;
+    }
+    /* 行 2：4 个 toggle 用 grid 4 列 */
+    .pos-toolbar .tb-group-toggles {
+      order: 3;
+      flex-basis: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+    .pos-toolbar .tb-group-toggles button {
+      padding: 6px 4px;
+      font-size: 11px;
+      min-height: 34px;
+      justify-content: center;
+      width: 100%;
+      letter-spacing: -0.02em;
+    }
+    /* 行 3：排序 group 占满 */
+    .pos-toolbar .tb-group-sort {
+      order: 4;
+      flex-basis: 100%;
+      gap: 6px;
+    }
+    .pos-toolbar .tb-group-sort select {
+      flex: 1;
+      min-width: 0;
+      font-size: 11.5px;
+    }
+    /* lbl-full / lbl-short 切换：移动端用短版 */
+    .pos-toolbar .lbl-full { display: none; }
+    .pos-toolbar .lbl-short { display: inline; }
+    /* 持仓副标：mobile 减字号 + 折不下就 ellipsis（防极端长 ticker） */
+    .pos-meta {
+      font-size: 10.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* 持仓卡 Greeks 行：mobile 用 3 列 grid 让 5 项整齐对齐
+       (Δ/IV/θ 一行，Mark/$P 第二行；简洁模式只剩 3 项就是一行) */
+    .pos-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px 8px;
+    }
+    .pos-stats .stat { min-width: 0; }
 
     .summary { grid-template-columns: repeat(2, 1fr); padding: 16px 12px; gap: 12px; }
     .summary .item .val { font-size: 19px; }
@@ -4040,7 +4149,7 @@
 
           <span class="tb-sep"></span>
 
-          <div class="tb-group">
+          <div class="tb-group tb-group-toggles">
             <button class="muted small" onclick="selectAll(true)" data-i18n="☑ 全选">☑ 全选</button>
             <button class="muted small" onclick="selectAll(false)" data-i18n="☐ 全不选">☐ 全不选</button>
             <button class="muted small" id="hide-closed-btn" onclick="toggleHideClosed()"></button>
@@ -4049,7 +4158,7 @@
 
           <span class="tb-sep"></span>
 
-          <div class="tb-group">
+          <div class="tb-group tb-group-sort">
             <span class="label-tag" data-i18n="排序">排序</span>
             <select id="sort-select" onchange="setSortKey(this.value)">
               <option value="risk_first" data-i18n="⚡ 风险优先">⚡ 风险优先</option>
@@ -4083,7 +4192,7 @@
             </div>
           </div>
 
-          <span style="flex:1"></span>
+          <span class="tb-spacer"></span>
 
           <span id="sel-count" style="color:var(--sub);font-size:11px"></span>
         </div>
@@ -4450,7 +4559,15 @@ const I18N = {
     'pos_exit_profit':    '跌到 <strong>{px}</strong> 买回锁利 <strong>{amt}/张</strong>',
     'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 卖出 {ticker}',
+    'pos_meta_line':      'Exp {expiry} · {contracts} 张 · 卖价 ${sell_price}/股',
     '出场建议': '出场建议',
+    '锁利': '锁利',
+    '接货': '接货',
+    '卖出': '卖出',
+    '显示已平': '显示已平',
+    '隐藏已平': '隐藏已平',
+    '📐 简洁': '📐 简洁',
+    '📐 完整': '📐 完整',
     // ── 🎯 Goal banner + 账户预算 ─────────────────────
     'banner_acct_money':   '账户可用保证金 <strong>{margin}</strong>',
     'banner_acct_unset':   '未设置账户保证金（<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">点这里设置</a>，可看占比和上限）',
@@ -5043,6 +5160,14 @@ const I18N = {
     'exit_csp_full':      '<strong>不止損</strong>：到期跌穿 <strong>{strike}</strong> → 接貨 {ticker} 正股（佔資 {collateral} / 100 股）',
     'exit_cc_full':       '<strong>不止損</strong>：到期升破 <strong>{strike}</strong> → {ticker} 正股被叫走（賣出鎖利）',
     'pos_exit_profit':    '跌到 <strong>{px}</strong> 買回鎖利 <strong>{amt}/張</strong>',
+    'pos_meta_line':      'Exp {expiry} · {contracts} 張 · 賣價 ${sell_price}/股',
+    '锁利': '鎖利',
+    '接货': '接貨',
+    '卖出': '賣出',
+    '显示已平': '顯示已平',
+    '隐藏已平': '隱藏已平',
+    '📐 简洁': '📐 簡潔',
+    '📐 完整': '📐 完整',
     'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 賣出 {ticker}',
     '出场建议': '出場建議',
@@ -5732,7 +5857,15 @@ const I18N = {
     'pos_exit_profit':    'Buy back at <strong>{px}</strong> to lock <strong>{amt}/contract</strong>',
     'pos_exit_csp':       'Below <strong>{strike}</strong> → assigned {ticker}',
     'pos_exit_cc':        'Above <strong>{strike}</strong> → sell {ticker}',
+    'pos_meta_line':      'Exp {expiry} · {contracts}× contracts · sold ${sell_price}/share',
     '出场建议': 'Exit guide',
+    '锁利': 'Lock',
+    '接货': 'Assign',
+    '卖出': 'Called',
+    '显示已平': 'Closed',
+    '隐藏已平': 'Hide',
+    '📐 简洁': '📐 Simple',
+    '📐 完整': '📐 Full',
     // ── 🎯 Goal banner + account budget ───────────────
     'banner_acct_money':   'Account margin available: <strong>{margin}</strong>',
     'banner_acct_unset':   'No account margin set (<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">click to set</a> to see budget %)',
@@ -5919,7 +6052,9 @@ function toggleHideClosed() {
 function updateHideClosedBtn() {
   const btn = document.getElementById('hide-closed-btn');
   if (!btn) return;
-  btn.textContent = hideClosed ? t('显示已平仓') : t('隐藏已平仓');
+  const full = hideClosed ? t('显示已平仓') : t('隐藏已平仓');
+  const short = hideClosed ? t('显示已平') : t('隐藏已平');
+  btn.innerHTML = `<span class="lbl-full">${full}</span><span class="lbl-short">${short}</span>`;
   btn.style.borderColor = hideClosed ? 'var(--accent)' : '';
   btn.style.color = hideClosed ? 'var(--accent)' : '';
 }
@@ -5942,7 +6077,9 @@ function updateDensityBtn() {
   const btn = document.getElementById('density-btn');
   if (!btn) return;
   const isSimple = document.documentElement.dataset.density === 'simple';
-  btn.textContent = isSimple ? t('📐 完整模式') : t('📐 简洁模式');
+  const full = isSimple ? t('📐 完整模式') : t('📐 简洁模式');
+  const short = isSimple ? t('📐 完整') : t('📐 简洁');
+  btn.innerHTML = `<span class="lbl-full">${full}</span><span class="lbl-short">${short}</span>`;
   btn.style.borderColor = isSimple ? 'var(--accent)' : '';
   btn.style.color = isSimple ? 'var(--accent)' : '';
 }
@@ -6385,19 +6522,28 @@ function renderPositionExitPlan(p) {
   const fmtMoney = (n) => '$' + fmt(n, 0);
   const fmtMoney2 = (n) => '$' + fmt(n, 2);
 
-  const profitSeg = `<span class="pf">🎯 ${_fillTpl(t('pos_exit_profit'), {
+  const profitTxt = _fillTpl(t('pos_exit_profit'), {
     px: fmtMoney2(buybackPx), amt: fmtMoney(profitDollars),
-  })}</span>`;
-  const assignSeg = isPut
-    ? `<span class="as">🤝 ${_fillTpl(t('pos_exit_csp'), { strike: '$' + strike, ticker: p.ticker })}</span>`
-    : `<span class="as">📤 ${_fillTpl(t('pos_exit_cc'), { strike: '$' + strike, ticker: p.ticker })}</span>`;
+  });
+  const assignTxt = isPut
+    ? _fillTpl(t('pos_exit_csp'), { strike: '$' + strike, ticker: p.ticker })
+    : _fillTpl(t('pos_exit_cc'), { strike: '$' + strike, ticker: p.ticker });
+  const assignTagText = t(isPut ? '接货' : '卖出');
+  const assignIcon = isPut ? '🤝' : '📤';
   return `
     <div class="exit-plan compact">
-      <span class="ep-icon">📍</span>
-      <span class="ep-label">${t('出场建议')}</span>
-      ${profitSeg}
-      <span class="ep-divider">·</span>
-      ${assignSeg}
+      <span class="ep-prefix">
+        <span class="ep-icon">📍</span>
+        <span class="ep-label">${t('出场建议')}</span>
+      </span>
+      <div class="ep-row">
+        <span class="ep-tag tag-profit">${t('锁利')}</span>
+        <span class="ep-body pf">🎯 ${profitTxt}</span>
+      </div>
+      <div class="ep-row">
+        <span class="ep-tag tag-assign">${assignTagText}</span>
+        <span class="ep-body as">${assignIcon} ${assignTxt}</span>
+      </div>
     </div>
   `;
 }
@@ -6923,7 +7069,7 @@ function renderPosition(p) {
       </div>
 
       <div class="pos-meta">
-        Exp ${p.expiry} · ${p.contracts}× contracts · sold $${fmt(p.sell_price, 2)}/share
+        ${_fillTpl(t('pos_meta_line'), { expiry: p.expiry, contracts: p.contracts, sell_price: fmt(p.sell_price, 2) })}
       </div>
 
       <div class="pos-body">

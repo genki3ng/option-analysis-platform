@@ -3,9 +3,48 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（深夜 — local intro/README audit · 云端 form A + Exit + 账户）
+最后更新：2026-05-18（cloud — iPhone 文字折叠优化 C+B 综合落地）
 
-### 🆕 local session（最末轮 · 2026-05-17 深夜）
+### 🆕 这一轮（2026-05-18 cloud · `claude/fix-iphone-text-truncation-R1vGM`）
+
+**主题**：用户报"很多文字折叠了，在 iphone 上不够优雅" + "卡片里的实时价格也没对齐"。
+
+**预览页**：建 `/iphone-text` 3 方案（A 紧致字号 / B Icon 工具栏 / C 工具栏分行）× 桌面+392px iPhone 同屏对照。
+用户选 **C 框架 + B 出场 tag**（toolbar 三行分行；副标半中文化；出场建议改 锁利/接货 tag 化 stacked）。
+
+**落地改动**（`index.html` 单文件）：
+
+CSS（仅 `@media (max-width: 600px)` 加 mobile rules，桌面不变）：
+- `.pos-toolbar` 移动端 wrap + order：行 1 [add-btn flex:1] + [📥 数据]；行 2 toggles grid 4 列；行 3 排序 dropdown
+- 隐藏 `.tb-sep` / `.tb-spacer` / `#sel-count` 在 mobile
+- `.lbl-full` / `.lbl-short` 双 span 切换 — 桌面用长（"📐 简洁模式"），mobile 用短（"📐 简洁"）
+- `.pos-meta` mobile font-size 11 → 10.5 + ellipsis 防极端长 ticker 折行
+- `.pos-stats` mobile 从 flex-wrap 改 `grid 3 列`，5 项 (Δ/IV/θ + Mark/$P) 完美对齐
+- `.exit-plan.compact` 重构：HTML 用 ep-prefix + 2 ep-row（tag+body）。桌面横排（ep-row inline + ::before 分隔符 · / tag 隐藏）；mobile column stacked + tag 显示
+  - tag "锁利" 用 accent 色；tag "接货"/"卖出" 用 red 色
+
+HTML：
+- 给两个 `.tb-group` 加唯一 class：`tb-group-toggles` / `tb-group-sort`
+- `<span style="flex:1"></span>` → `<span class="tb-spacer"></span>`
+- `renderPosition` 里副标 hardcoded 英文模板改成 `_fillTpl(t('pos_meta_line'), {...})`
+- `renderPositionExitPlan` 重构成 ep-prefix + 2 ep-row 结构
+
+JS：
+- `updateHideClosedBtn` / `updateDensityBtn` 从 `textContent` 改 `innerHTML`，输出双 span (full + short)
+
+i18n（三语 dict 各补 8 个新 key）：
+- `pos_meta_line` 副标模板（zh "Exp {expiry} · {contracts} 张 · 卖价 ${sell_price}/股" / zh_tw 用繁体 / en 保留 contracts/share）
+- `锁利` / `接货` / `卖出` — exit plan tag 文案
+- `显示已平` / `隐藏已平` / `📐 简洁` / `📐 完整` — toggle button mobile 短版
+
+**遗留**：
+- [ ] 用户在 iPhone 实测 — 4 toggle 一行 grid / 副标不再折 / 出场建议 stacked tag 视觉是否符合
+- [ ] 用户实测 OK 后可删预览页 `iphone-text.html` + vercel.json 路由（暂保留对照用）
+- [ ] 三浏览器矩阵未测
+
+---
+
+### 🆕 local session（上一轮 · 2026-05-17 深夜）
 
 **主题：intro 重组 + README 重写 + 全 sections audit**
 

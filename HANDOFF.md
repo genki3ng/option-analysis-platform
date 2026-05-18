@@ -3,96 +3,81 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 只读分享链接重做 · 截图样 + Supabase 短链）
+最后更新：2026-05-18（cloud — 只读分享链接重做 · ✅ 用户验证通过）
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/fix-readonly-link-generation-RedjD`）
+### ✅ 这一轮（2026-05-18 cloud · `claude/fix-readonly-link-generation-RedjD`）
 
-**主题**：用户报"生成只读链接的功能有问题，修复下"。后续追加要求"产物像截图一样，对方只能看不能动"+"hash 一下产生短链"。
+**主题**：用户报"生成只读链接的功能有问题"。经过 4 轮迭代最终落地。
 
-**诊断（静态分析）**：原 `generateShareLink` / `loadFromShare`（`index.html:8179-8236`）有 5+ 个问题：
-1. **隐私**：`state._meta` 全 base64 进 URL（broker 名 / 可用 margin $ / 持股数 / 偏好 / 管家缓存全暴露）
-2. **按钮"没反应"**：30+ 张持仓 URL > 6000 触发 alert"持仓数据太多"，用户 perceive 为失败
-3. **URL 太长**：没有压缩 / 短链，绝大多数用户超 6KB
-4. **接收方还能交互**：share view 下没有禁用 toolbar / 推荐 form / 早安 / 笔记 / 平仓按钮等
-5. **share view 仍触发 supabase init**：UI 状态混乱
-6. **价格不冻结**：原实现接收方仍调 `/api/state` 拉实时价，跟"快照"语义不符
+**最终设计**：
+- 接收方看到**完整页面**（早安管家 / Summary / sparkline / 推荐指数 / 复盘 / 操作建议 / 期权指南 / P&L 图 / 持仓卡），价格全部冻结在分享时刻
+- 默认**所有元素都禁交互**（hover 无指针变化、点击无反应）
+- 唯一例外：**包租公推荐指数**按钮加金描边发光暗示可点 → 点了跳首页 `/`（intro）引导对方注册自用
+- 顶部金色 banner 提示是只读快照 + ts，banner 上"打开我自己的"链接可回主 app
+- URL 格式：登录 `/app#s=<8char>` 短链 / 未登录 fallback `/app#share=<base64>` 长 fragment
 
-**改动**（一个 commit ， `index.html`）：
+**核心改动**（`index.html`）：
 
-**核心逻辑**（`index.html:8235-8452`）：
-- 新 `_b64UrlEncode/_b64UrlDecode`（用 `TextEncoder/TextDecoder`，不再依赖 deprecated 的 `unescape/escape`）
+**前端 share 逻辑** (`index.html:8235-8452`)：
+- 新 `_b64UrlEncode/_b64UrlDecode`（用 `TextEncoder/TextDecoder`）
 - 新 `_trimPositionForShare(p)` 取富集字段：mark/pnl/Greeks/status/exit_plan/earnings 全冻结
 - 新 `_genShareKey()` 8-char base62（避开 0/O/1/l/I）
-- `generateShareLink` 改 async：
-  - 登录用户 → 走 Supabase `share_snapshots` 表 insert，URL 形式 `/app#s=<8char>` ← **真短链**
-  - 未登录 → fallback fragment 长 URL `/app#share=<base64>`
-  - clipboard 失败 → modal 显示带 textarea 让手动复制（不再用 prompt）
-  - 错误 try/catch 输出具体 message
-- `loadFromShare` 改 async 三格式：`#s=<key>`（短链 fetch 走 Supabase REST）/ `#share=<base64>` / `?share=<base64>`（向后兼容老链）
-- 剔除 `state._meta`（隐私），只保留 per-position state
+- `generateShareLink` async：登录 → Supabase 短链 / 未登录 → fragment fallback
+  - encode 时 `filter(p => !p.closed)` —— 只分享活跃持仓，Summary 数字才跟原始端一致
+  - encode 早安管家：分享者今天 x 掉了就 `morning_brief = null`
+  - encode tickers / intraday / suggestions / history 让接收方看到完整页面
+- `loadFromShare` async 三格式：`#s=<key>` / `#share=<base64>` / `?share=<base64>`（向后兼容）
+- 剔除 `state._meta`（隐私）：broker / margin $ / prefs / 管家缓存全不分享
 
-**Share view 短路**（`index.html:11400, 11500`）：
-- `refresh()` 入口：share view 下用 snapshot 数据直接 render，**不调后端**
-- 启动序列改 async IIFE：share view 下跳过 `_initSupabase` / `setInterval` / `visibilitychange`
+**Share view 行为** (`index.html:11400+`)：
+- `refresh()` 入口短路：share view 用 snapshot 直接 render，不调后端
+- `_bootstrap` async：share view 跳过 supabase init / setInterval / visibilitychange
+- `renderMorningBrief` 入口加 `_isShareView` 守门：不查接收方 localStorage dismissed flag
 
-**CSS "截图样"**（`index.html:4150-4185`）：
-- `body.share-view` 隐藏：`.pos-toolbar` / `#rec-form` / `#morning-brief` / `#wheel-hints` / `#chart-section` / `#footer` / `.side` / `#user-area` / `.login-btn` / `.cloud-sync-status` / `.add-form` / `.modal-backdrop:not(#share-modal)`
-- 卡内交互隐藏：`checkbox` / `.pos-more-wrap` / `.pos-extras`（笔记 + 损益曲线）/ `.pos-actions`（平仓/编辑/删除）
-- `.pos / .top-card / .pos-grid` 加 `pointer-events: none` 完全禁用点击
-- 选中态金色描边 `box-shadow: none` 取消
+**CSS** (`index.html:4150-4187`)：
+```css
+body.share-view * { pointer-events: none !important; cursor: default !important; }
+body.share-view #share-banner, body.share-view #share-banner *,
+body.share-view #share-modal, body.share-view #share-modal *,
+body.share-view .rec-btn-large, body.share-view .rec-btn-large * {
+  pointer-events: auto !important;
+}
+body.share-view .rec-btn-large {
+  cursor: pointer !important;
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(230,184,106,0.25);
+}
+```
++ hide `.cloud-sync-status / #add-form / .yf-warn / modal-backdrop:not(#share-modal)`
+
+**复制 modal**：
+- clipboard 失败 fallback modal 带 textarea + 项目主按钮规范的"复制 / 关闭"按钮
+- `#share-modal .share-btn` scoped CSS：金色 `var(--accent)` bg + 8px 圆角 + scale(1.04) hover
 
 **i18n**：zh_tw / en 各补 10 个 key（错误文案 + modal 按钮）
 
-**Chart card 加 id**：`<div class="card" id="chart-section">` 让 CSS 可定位 hide
-
-**⚠️ 用户要做的事（必须）**：
-
-去 Supabase Dashboard → SQL Editor 跑：
-
+**用户跑的 SQL**（已完成 ✅）：
 ```sql
--- 短链快照表（一次性建）
 create table if not exists public.share_snapshots (
-  id text primary key,
-  data jsonb not null,
+  id text primary key, data jsonb not null,
   user_id uuid references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
 );
 alter table public.share_snapshots enable row level security;
-
--- 任何人可读（这是分享的设计意图）
-create policy "anyone can read share snapshots"
-  on public.share_snapshots for select using (true);
-
--- 仅已登录用户可写自己的 row（RLS 兜底防滥用）
-create policy "users can insert own share snapshots"
-  on public.share_snapshots for insert with check (auth.uid() = user_id);
-
--- 可选：用户可以删自己的 share
-create policy "users can delete own share snapshots"
-  on public.share_snapshots for delete using (auth.uid() = user_id);
+create policy "anyone can read share snapshots" on public.share_snapshots for select using (true);
+create policy "users can insert own share snapshots" on public.share_snapshots for insert with check (auth.uid() = user_id);
+create policy "users can delete own share snapshots" on public.share_snapshots for delete using (auth.uid() = user_id);
 ```
 
-未跑 SQL 之前：登录用户点"生成只读链接"会 catch insert 失败弹 alert；未登录走 fragment 长 URL 仍可用；接收方打开 #share/?share 老链仍可读。
-
-**待用户验证**：
-- [ ] 跑完 SQL 后，登录态点"🔗 生成只读链接" → 拿到 `/app#s=<8char>` 短链
-- [ ] 打开短链，看到金色 banner + 持仓快照 + 价格冻结
-- [ ] 接收方页面：toolbar / 推荐 / 早安 / 笔记 / 操作按钮 / 图表全 hide，卡片不可点
-- [ ] 未登录点 → fragment 长链 fallback OK
-- [ ] clipboard 自动复制 / 失败 fallback modal 都 OK
-- [ ] zh_tw / en 切换错误提示翻译正确
-- [ ] 老 `?share=xxx` 老链仍能打开（向后兼容）
-- [ ] 自己分享后再打开自己的链接，UI 也变 share view（验证短路逻辑）
-
-**隐私保证**：
-- `state._meta` 全剔除（broker / margin $ / prefs / 管家缓存不会泄露）
-- 持仓字段保留必要的：ticker/strike/expiry/contracts/sell_price + 当时富集（mark/pnl/Greeks/status）
-- localStorage 'journal' key 本来就独立存储，从来不在分享数据里
+**迭代历程**（4 轮）：
+1. `633722e` 初版：「截图样」hide 大部分元素 + 卡片 pointer-events:none
+2. `7f2371b` 修数字不一致：encode 时 filter 掉 closed positions；modal 按钮加 scoped CSS 匹配项目规范
+3. `61acc93` 转向"完整页面 + 全局 click → /"：encode morning_brief/suggestions/history/intraday；CSS 放宽
+4. `71b5aa5` 最终：用户反馈"too noise"，改成默认全禁 + 仅推荐指数可点 → /
 
 **已知限制**：
-- 短链需要登录。未登录用户被引导到长 URL，但 alert "登录后可生成短链"
+- 短链需要登录。未登录用户走 fragment 长 URL
 - share 表无自动清理，未来要定期 GC：`delete from share_snapshots where created_at < now() - interval '90 days';`
-- 跨域 RLS 是公开 read — 任何拿到 key 的人能读到 snapshot data。这是 share link 的设计意图
+- 跨域 RLS 公开 read — 任何拿到 key 的人能读到 snapshot（这是分享的设计意图）
 
 ---
 

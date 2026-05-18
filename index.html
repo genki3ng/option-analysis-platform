@@ -4147,6 +4147,42 @@
   .goal-progress .ic { font-size: 14px; line-height: 1; }
   .goal-progress strong { color: var(--text); }
   .goal-progress .delta { color: var(--sub); margin-left: 4px; }
+
+  /* ── share view (只读快照模式) — 把页面变成"截图"，禁用所有交互 ─── */
+  body.share-view .pos-toolbar,
+  body.share-view #rec-form,
+  body.share-view #morning-brief,
+  body.share-view #wheel-hints,
+  body.share-view #chart-section,
+  body.share-view #footer,
+  body.share-view .side,
+  body.share-view #user-area,
+  body.share-view #login-area,
+  body.share-view .login-btn,
+  body.share-view .cloud-sync-status,
+  body.share-view #add-form,
+  body.share-view .add-form,
+  body.share-view .pos input[type=checkbox],
+  body.share-view .pos .pos-more-wrap,
+  body.share-view .pos .pos-extras,
+  body.share-view .pos .pos-actions,
+  body.share-view .pos .close-form,
+  body.share-view .pos .edit-form,
+  body.share-view .yf-warn,
+  body.share-view .modal-backdrop:not(#share-modal) {
+    display: none !important;
+  }
+  body.share-view .pos {
+    cursor: default !important;
+    pointer-events: none;  /* 完全 disable 卡片内一切点击 / hover 弹 / details */
+  }
+  body.share-view .pos:not(.unchecked) {
+    box-shadow: none !important;  /* 取消选中态金色描边，纯展示 */
+  }
+  body.share-view .top-card,
+  body.share-view .pos-grid {
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -4423,7 +4459,7 @@
         <div class="pos-grid" id="positions"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="chart-section">
         <h3><span data-i18n="每日 P&L 走势">每日 P&L 走势</span>
           <span class="h-hint" data-i18n="从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$">从最早交易日起，每天收盘时如果全部平仓的总盈亏。横轴=日期，纵轴=$</span>
         </h3>
@@ -4892,6 +4928,16 @@ const I18N = {
     '🔗 生成只读链接': '🔗 產生唯讀連結',
     '你正在查看一份只读分享快照': '你正在查看一份唯讀分享快照',
     '打开我自己的': '開啟我自己的',
+    '暂无持仓数据可分享': '暫無持倉資料可分享',
+    '持仓数据太多 URL 超长，登录后可生成短链': '持倉資料太多 URL 超長，登入後可產生短連結',
+    '✅ 只读链接已复制到剪贴板 任何人打开都能看到这份快照': '✅ 唯讀連結已複製到剪貼簿，任何人打開都能看到這份快照',
+    '❌ 自动复制失败 请手动复制下方链接': '❌ 自動複製失敗，請手動複製下方連結',
+    '请手动复制下方链接分享': '請手動複製下方連結分享',
+    '生成分享链接失败': '產生分享連結失敗',
+    '复制': '複製',
+    '关闭': '關閉',
+    '已复制': '已複製',
+    '复制失败': '複製失敗',
     // 顶部 4 张卡
     '收到权利金': '收到權利金',
     '当前买回成本': '當前買回成本',
@@ -5500,6 +5546,16 @@ const I18N = {
     '🔗 生成只读链接': '🔗 Generate read-only link',
     '你正在查看一份只读分享快照': "You're viewing a read-only shared snapshot",
     '打开我自己的': 'Open my own',
+    '暂无持仓数据可分享': 'No positions to share yet',
+    '持仓数据太多 URL 超长，登录后可生成短链': 'Too many positions for a long URL — sign in to get a short link',
+    '✅ 只读链接已复制到剪贴板 任何人打开都能看到这份快照': '✅ Read-only link copied. Anyone with the link can view this snapshot.',
+    '❌ 自动复制失败 请手动复制下方链接': '❌ Auto-copy failed. Please copy the link below manually.',
+    '请手动复制下方链接分享': 'Please copy the link below manually to share',
+    '生成分享链接失败': 'Failed to generate share link',
+    '复制': 'Copy',
+    '关闭': 'Close',
+    '已复制': 'Copied',
+    '复制失败': 'Copy failed',
     // Education topic titles (descriptions stay in zh for v1)
     'Delta · 价格敏感度': 'Delta · Price Sensitivity',
     'Theta · 时间衰减': 'Theta · Time Decay',
@@ -8178,63 +8234,223 @@ function _delJournalAndRefresh(pid, idx) {
   refresh();
 }
 
-// ── 🔗 公开分享（URL-encoded readonly view）───────────────────────
-function generateShareLink() {
-  const positions = loadPositions();
-  const state = loadStateMap();
-  // 隐去敏感字段（trade_date 保留，价格保留，username 用通用化的）
-  const snapshot = {
-    v: 1,
-    ts: new Date().toISOString().slice(0, 10),
-    positions: positions,
-    state: state,
-  };
-  const json = JSON.stringify(snapshot);
-  // Base64 URL-safe
-  const b64 = btoa(unescape(encodeURIComponent(json)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const url = `${location.origin}/app?share=${b64}`;
+// ── 🔗 公开分享（URL-fragment 只读快照，像截图一样）─────────────────
+// 设计：
+//   - encode 当前富集的持仓数据（含 mark/pnl/Greeks/status，对方看到的是冻结快照）
+//   - 用 URL fragment (#share=...) 不发到 server，长度上限宽 + 隐私好
+//   - 剔除 state._meta（账户/偏好/管家缓存），只保留 per-position 自定义状态
+//   - 接收方进入 share view：禁用所有交互（CSS pointer-events + JS 守门）
+function _b64UrlEncode(str) {
+  // UTF-8 string -> URL-safe base64 (no padding)
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function _b64UrlDecode(b64) {
+  const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
 
-  // 检查长度
-  if (url.length > 6000) {
-    alert('持仓数据太多，URL 超长。建议导出 JSON 备份手动分享。');
+// 提取一份 share view 渲染需要的精简持仓字段（剔除 server-side 大对象）
+function _trimPositionForShare(p) {
+  // 富集后的卡片渲染需要：基础 + 价格 + Greeks + 状态 + exit_plan(简化) + earnings
+  const out = {
+    id: p.id, ticker: p.ticker, type: p.type,
+    strike: p.strike, expiry: p.expiry,
+    contracts: p.contracts, sell_price: p.sell_price,
+    trade_date: p.trade_date,
+    underlying: p.underlying, mark: p.mark, mark_src: p.mark_src,
+    sold: p.sold, mktval: p.mktval, pnl: p.pnl, pnl_pct: p.pnl_pct,
+    daily_theta: p.daily_theta, delta: p.delta, trade_iv: p.trade_iv,
+    days: p.days, total_days: p.total_days,
+    closed: !!p.closed, close_price: p.close_price,
+    earnings_before_expiry: p.earnings_before_expiry,
+    earnings_date: p.earnings_date, earnings_days_until: p.earnings_days_until,
+    exit_plan: p.exit_plan || null,
+    status_label: p.status_label || null, status_cls: p.status_cls || null,
+  };
+  return out;
+}
+
+// 8-char base62 key（避开 0/O/1/l/I 易混字符）
+function _genShareKey() {
+  const ab = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let s = '';
+  for (let i = 0; i < 8; i++) s += ab[bytes[i] % ab.length];
+  return s;
+}
+
+async function generateShareLink() {
+  const d = window._currentData;
+  if (!d || !Array.isArray(d.positions) || !d.positions.length) {
+    alert(t('暂无持仓数据可分享'));
     return;
   }
 
-  // 复制到剪贴板
-  navigator.clipboard.writeText(url).then(() => {
-    alert('✅ 只读分享链接已复制到剪贴板！\n\n任何人打开这个链接可以看到你的持仓快照（含数字），但不能改。\n\n链接长度: ' + url.length + ' 字符');
-  }).catch(() => {
-    prompt('复制以下链接分享：', url);
-  });
+  try {
+    // 剔除 state._meta，保留 per-position 状态
+    const fullState = loadStateMap();
+    const positionState = {};
+    for (const k of Object.keys(fullState || {})) {
+      if (k === '_meta') continue;  // 不分享账户/偏好/管家缓存
+      positionState[k] = fullState[k];
+    }
+
+    const now = new Date();
+    const snapshot = {
+      v: 2,
+      ts: now.toISOString(),
+      ts_display: now.toLocaleString(),
+      positions: d.positions.map(_trimPositionForShare),
+      tickers: d.tickers || {},
+      position_state: positionState,
+    };
+
+    let url;
+    if (_currentUser && _sb) {
+      // 登录用户：上传到 Supabase 拿短 key
+      let key = null, lastErr = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const candidate = _genShareKey();
+        const { error } = await _sb.from('share_snapshots').insert({
+          id: candidate,
+          data: snapshot,
+          user_id: _currentUser.id,
+        });
+        if (!error) { key = candidate; break; }
+        lastErr = error;
+        if (error.code !== '23505') break;  // 非唯一冲突 → 不重试
+      }
+      if (!key) throw lastErr || new Error('share_insert_failed');
+      url = `${location.origin}/app#s=${key}`;
+    } else {
+      // 未登录：fallback 到 fragment 长 URL
+      const json = JSON.stringify(snapshot);
+      const b64 = _b64UrlEncode(json);
+      url = `${location.origin}/app#share=${b64}`;
+      if (url.length > 30000) {
+        _showShareModal(null, t('持仓数据太多 URL 超长，登录后可生成短链'));
+        return;
+      }
+    }
+
+    // 尝试 clipboard，失败则弹 modal 让用户手动复制
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        _showShareModal(url, t('✅ 只读链接已复制到剪贴板 任何人打开都能看到这份快照'));
+      } catch (e) {
+        _showShareModal(url, t('❌ 自动复制失败 请手动复制下方链接'));
+      }
+    } else {
+      _showShareModal(url, t('请手动复制下方链接分享'));
+    }
+  } catch (e) {
+    console.error('generateShareLink failed', e);
+    alert(t('生成分享链接失败') + '\n\n' + (e && e.message || e));
+  }
 }
 
-function loadFromShare() {
-  const params = new URLSearchParams(location.search);
-  const shareB64 = params.get('share');
-  if (!shareB64) return false;
+// 复制成功 / 失败统一用 modal 显示（带 textarea 可手动复制）
+function _showShareModal(url, msg) {
+  let modal = document.getElementById('share-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'share-modal';
+    modal.className = 'modal-backdrop';
+    modal.onclick = (e) => { if (e.target === modal) _hideShareModal(); };
+    document.body.appendChild(modal);
+  }
+  const safeMsg = msg || '';
+  const urlBlock = url ? `
+    <textarea readonly id="share-url-ta" style="width:100%;min-height:90px;font-size:12px;
+      padding:10px;border-radius:8px;border:1px solid var(--line);
+      background:var(--card2);color:var(--text);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      word-break:break-all;resize:vertical">${url.replace(/</g, '&lt;')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="primary" style="flex:1" onclick="_copyShareUrl(this)">${t('复制')}</button>
+      <button class="ghost" style="flex:1" onclick="_hideShareModal()">${t('关闭')}</button>
+    </div>` : `
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="ghost" onclick="_hideShareModal()">${t('关闭')}</button>
+    </div>`;
+  modal.innerHTML = `
+    <div class="modal" style="max-width:560px;margin:8vh auto;padding:20px 22px;
+      background:var(--card);border-radius:14px;border:1px solid var(--line)">
+      <h3 style="margin:0 0 10px;font-size:16px">${t('🔗 生成只读链接')}</h3>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:12px;line-height:1.6">${safeMsg}</div>
+      ${urlBlock}
+    </div>`;
+  modal.style.display = 'block';
+}
+function _hideShareModal() {
+  const m = document.getElementById('share-modal');
+  if (m) m.style.display = 'none';
+}
+function _copyShareUrl(btn) {
+  const ta = document.getElementById('share-url-ta');
+  if (!ta) return;
+  ta.select();
   try {
-    const json = decodeURIComponent(escape(atob(
-      shareB64.replace(/-/g, '+').replace(/_/g, '/'))));
-    const snapshot = JSON.parse(json);
-    if (!Array.isArray(snapshot.positions)) throw new Error('格式错误');
-    // 把分享数据载入但不写 localStorage
-    window._sharedSnapshot = snapshot;
-    window._isShareView = true;
-    // 在标题加 banner
-    document.body.classList.add('share-view');
-    document.body.insertAdjacentHTML('afterbegin', `
-      <div style="background:#E6B86A;color:#0A0A0B;
-                  padding:8px 16px;text-align:center;font-size:13px;font-weight:600;letter-spacing:-0.01em">
-        👀 ${t('你正在查看一份只读分享快照')} · ${snapshot.ts}
-        · <a href="${location.origin}/app" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>
-      </div>
-    `);
-    return true;
+    document.execCommand('copy');
+    btn.textContent = '✅ ' + t('已复制');
+    setTimeout(() => { btn.textContent = t('复制'); }, 1500);
   } catch (e) {
-    console.warn('share decode failed', e);
+    btn.textContent = '❌ ' + t('复制失败');
+  }
+}
+
+
+async function _fetchSharedSnapshot(key) {
+  // 直接走 Supabase REST，不依赖 SDK 加载顺序
+  const url = `${SUPABASE_URL}/rest/v1/share_snapshots?id=eq.${encodeURIComponent(key)}&select=data`;
+  const r = await fetch(url, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const rows = await r.json();
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error('not_found');
+  return rows[0].data;
+}
+
+async function loadFromShare() {
+  // 三种格式：#s=<key>（短链） / #share=<base64> / ?share=<base64>（老链）
+  let snapshot = null;
+  try {
+    if (location.hash.startsWith('#s=')) {
+      snapshot = await _fetchSharedSnapshot(location.hash.slice(3));
+    } else if (location.hash.startsWith('#share=')) {
+      snapshot = JSON.parse(_b64UrlDecode(location.hash.slice(7)));
+    } else {
+      const q = new URLSearchParams(location.search).get('share');
+      if (q) snapshot = JSON.parse(_b64UrlDecode(q));
+    }
+  } catch (e) {
+    console.warn('share decode/fetch failed', e);
     return false;
   }
+  if (!snapshot || !Array.isArray(snapshot.positions)) return false;
+
+  window._sharedSnapshot = snapshot;
+  window._isShareView = true;
+  document.body.classList.add('share-view');
+
+  const ts = snapshot.ts_display || snapshot.ts || '';
+  const banner = document.createElement('div');
+  banner.id = 'share-banner';
+  banner.style.cssText = 'background:#E6B86A;color:#0A0A0B;padding:8px 16px;' +
+    'text-align:center;font-size:13px;font-weight:600;letter-spacing:-0.01em;' +
+    'position:sticky;top:0;z-index:9999';
+  banner.innerHTML = `👀 ${t('你正在查看一份只读分享快照')} · ${ts}
+    · <a href="${location.origin}/app" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>`;
+  document.body.insertBefore(banner, document.body.firstChild);
+  return true;
 }
 
 // ── 复盘报告 ────────────────────────────────────────────────────────
@@ -11240,6 +11456,27 @@ function posIdOf(p) {
 
 async function refresh() {
   if (typeof document !== 'undefined' && document.hidden) return;
+
+  // share view：直接用 frozen snapshot 数据 render，不调后端 / 不刷新
+  if (window._isShareView && window._sharedSnapshot) {
+    const snap = window._sharedSnapshot;
+    window._currentData = {
+      positions: snap.positions || [],
+      tickers: snap.tickers || {},
+      intraday: {},
+      suggestions: [],
+      morning_brief: null,
+      history: [],
+      yfinance_available: true,
+      ts: snap.ts_display || snap.ts || '',
+    };
+    if (selectedIds === null) {
+      selectedIds = new Set(window._currentData.positions.map(p => p.id));
+    }
+    try { renderAll(window._currentData); } catch (e) { console.error('share render', e); }
+    return;
+  }
+
   try {
     const positions = loadPositions();
     const state = loadStateMap();
@@ -11279,6 +11516,8 @@ async function refresh() {
 // Optimistic render：用上次 API 响应立即渲染，不等冷启动 ~10s
 function _optimisticBoot() {
   try {
+    // share view 不走 optimistic（snapshot 已是冻结数据，refresh 短路会直接 render）
+    if (window._isShareView) return false;
     const cached = localStorage.getItem('last_compute_response');
     if (!cached) return false;
     const d = JSON.parse(cached);
@@ -11298,11 +11537,17 @@ function _optimisticBoot() {
   } catch(e) { console.warn('optimistic render skipped:', e); return false; }
 }
 
-function _bootstrap() {
-  // 启动前检查是否是 share view
-  loadFromShare();
+async function _bootstrap() {
+  // 启动前检查是否是 share view（async — 短链要 fetch supabase）
+  const isShare = await loadFromShare();
 
-  // 初始化 Supabase（异步，不阻塞首次 refresh）
+  if (isShare) {
+    // share view：跳过 supabase init / 定时刷新，refresh 走短路 render snapshot
+    refresh();
+    return;
+  }
+
+  // 正常模式
   // 注意：不要在 load 事件里清 URL 的 ?code=！
   // Supabase PKCE flow 需要异步用 code 换 token，提前清会导致 token 交换失败
   // （iOS Safari 比 Chrome 慢，此 race 更稳定触发 → "登完跳回还显示未登录" 的 bug）

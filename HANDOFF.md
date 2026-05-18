@@ -3,9 +3,100 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — fix app loading perf · 并行化 + optimistic render）
+最后更新：2026-05-18（cloud — 只读分享链接重做 · 截图样 + Supabase 短链）
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/fix-app-loading-performance-Kdum4`）
+### 🆕 这一轮（2026-05-18 cloud · `claude/fix-readonly-link-generation-RedjD`）
+
+**主题**：用户报"生成只读链接的功能有问题，修复下"。后续追加要求"产物像截图一样，对方只能看不能动"+"hash 一下产生短链"。
+
+**诊断（静态分析）**：原 `generateShareLink` / `loadFromShare`（`index.html:8179-8236`）有 5+ 个问题：
+1. **隐私**：`state._meta` 全 base64 进 URL（broker 名 / 可用 margin $ / 持股数 / 偏好 / 管家缓存全暴露）
+2. **按钮"没反应"**：30+ 张持仓 URL > 6000 触发 alert"持仓数据太多"，用户 perceive 为失败
+3. **URL 太长**：没有压缩 / 短链，绝大多数用户超 6KB
+4. **接收方还能交互**：share view 下没有禁用 toolbar / 推荐 form / 早安 / 笔记 / 平仓按钮等
+5. **share view 仍触发 supabase init**：UI 状态混乱
+6. **价格不冻结**：原实现接收方仍调 `/api/state` 拉实时价，跟"快照"语义不符
+
+**改动**（一个 commit ， `index.html`）：
+
+**核心逻辑**（`index.html:8235-8452`）：
+- 新 `_b64UrlEncode/_b64UrlDecode`（用 `TextEncoder/TextDecoder`，不再依赖 deprecated 的 `unescape/escape`）
+- 新 `_trimPositionForShare(p)` 取富集字段：mark/pnl/Greeks/status/exit_plan/earnings 全冻结
+- 新 `_genShareKey()` 8-char base62（避开 0/O/1/l/I）
+- `generateShareLink` 改 async：
+  - 登录用户 → 走 Supabase `share_snapshots` 表 insert，URL 形式 `/app#s=<8char>` ← **真短链**
+  - 未登录 → fallback fragment 长 URL `/app#share=<base64>`
+  - clipboard 失败 → modal 显示带 textarea 让手动复制（不再用 prompt）
+  - 错误 try/catch 输出具体 message
+- `loadFromShare` 改 async 三格式：`#s=<key>`（短链 fetch 走 Supabase REST）/ `#share=<base64>` / `?share=<base64>`（向后兼容老链）
+- 剔除 `state._meta`（隐私），只保留 per-position state
+
+**Share view 短路**（`index.html:11400, 11500`）：
+- `refresh()` 入口：share view 下用 snapshot 数据直接 render，**不调后端**
+- 启动序列改 async IIFE：share view 下跳过 `_initSupabase` / `setInterval` / `visibilitychange`
+
+**CSS "截图样"**（`index.html:4150-4185`）：
+- `body.share-view` 隐藏：`.pos-toolbar` / `#rec-form` / `#morning-brief` / `#wheel-hints` / `#chart-section` / `#footer` / `.side` / `#user-area` / `.login-btn` / `.cloud-sync-status` / `.add-form` / `.modal-backdrop:not(#share-modal)`
+- 卡内交互隐藏：`checkbox` / `.pos-more-wrap` / `.pos-extras`（笔记 + 损益曲线）/ `.pos-actions`（平仓/编辑/删除）
+- `.pos / .top-card / .pos-grid` 加 `pointer-events: none` 完全禁用点击
+- 选中态金色描边 `box-shadow: none` 取消
+
+**i18n**：zh_tw / en 各补 10 个 key（错误文案 + modal 按钮）
+
+**Chart card 加 id**：`<div class="card" id="chart-section">` 让 CSS 可定位 hide
+
+**⚠️ 用户要做的事（必须）**：
+
+去 Supabase Dashboard → SQL Editor 跑：
+
+```sql
+-- 短链快照表（一次性建）
+create table if not exists public.share_snapshots (
+  id text primary key,
+  data jsonb not null,
+  user_id uuid references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.share_snapshots enable row level security;
+
+-- 任何人可读（这是分享的设计意图）
+create policy "anyone can read share snapshots"
+  on public.share_snapshots for select using (true);
+
+-- 仅已登录用户可写自己的 row（RLS 兜底防滥用）
+create policy "users can insert own share snapshots"
+  on public.share_snapshots for insert with check (auth.uid() = user_id);
+
+-- 可选：用户可以删自己的 share
+create policy "users can delete own share snapshots"
+  on public.share_snapshots for delete using (auth.uid() = user_id);
+```
+
+未跑 SQL 之前：登录用户点"生成只读链接"会 catch insert 失败弹 alert；未登录走 fragment 长 URL 仍可用；接收方打开 #share/?share 老链仍可读。
+
+**待用户验证**：
+- [ ] 跑完 SQL 后，登录态点"🔗 生成只读链接" → 拿到 `/app#s=<8char>` 短链
+- [ ] 打开短链，看到金色 banner + 持仓快照 + 价格冻结
+- [ ] 接收方页面：toolbar / 推荐 / 早安 / 笔记 / 操作按钮 / 图表全 hide，卡片不可点
+- [ ] 未登录点 → fragment 长链 fallback OK
+- [ ] clipboard 自动复制 / 失败 fallback modal 都 OK
+- [ ] zh_tw / en 切换错误提示翻译正确
+- [ ] 老 `?share=xxx` 老链仍能打开（向后兼容）
+- [ ] 自己分享后再打开自己的链接，UI 也变 share view（验证短路逻辑）
+
+**隐私保证**：
+- `state._meta` 全剔除（broker / margin $ / prefs / 管家缓存不会泄露）
+- 持仓字段保留必要的：ticker/strike/expiry/contracts/sell_price + 当时富集（mark/pnl/Greeks/status）
+- localStorage 'journal' key 本来就独立存储，从来不在分享数据里
+
+**已知限制**：
+- 短链需要登录。未登录用户被引导到长 URL，但 alert "登录后可生成短链"
+- share 表无自动清理，未来要定期 GC：`delete from share_snapshots where created_at < now() - interval '90 days';`
+- 跨域 RLS 是公开 read — 任何拿到 key 的人能读到 snapshot data。这是 share link 的设计意图
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/fix-app-loading-performance-Kdum4` — app loading perf 并行化 + optimistic render）
 
 **主题**：用户报"app loading 要 5s+，看下 root cause"。
 
@@ -13,42 +104,30 @@
 - HTML gzip 131KB（OK）/ Chart.js + Supabase JS head 同步加载阻塞渲染
 - `/api/state` POST 1 持仓 **11.3s 冷 / 8s 热** ⚠️ 主瓶颈
 
-**Root cause**：`compute()` 在 `api/state.py` 里串行调 6-8 个外部 API：
-fetch_prices (yfinance per ticker) → fetch_intraday (per ticker) → portfolio_history → fetch_history (per ticker) → position_state → fetch_option_quote → fetch_chain (Schwab) → _fetch_position_news (per ticker) → _fetch_vix_quote → _generate_concierge_llm (timeout=18s)。Vercel 冷启动时 module-level cache 全 miss，串行就是 8-12s。前端 `refresh()` 启动时 await 这 11s，用户看空白页。
+**Root cause**：`compute()` 在 `api/state.py` 里串行调 6-8 个外部 API（详见 commit `f5b3631`）。前端 `refresh()` 启动时 await 这 11s，用户看空白页。
 
 **落地（方案 A · 短期高 ROI）**：
 
 前端 `index.html`:
 1. Chart.js + Supabase JS 加 `defer` —— 不阻塞 HTML parse
 2. `_bootstrap()` 包到 `DOMContentLoaded`（保证 defer 后 Chart 已就绪）
-3. `_optimisticBoot()` —— 从 `localStorage.last_compute_response` 立即 renderAll，不等 API
+3. `_optimisticBoot()` —— 从 `localStorage.last_compute_response` 立即 renderAll
 4. `refresh()` 成功后缓存 `d`（剥 `history` 控制体积）到 localStorage
 5. i18n 加 `正在刷新最新数据…`（zh_tw / en）
 
 后端 `api/state.py`:
-6. `fetch_prices` 内部 `ThreadPoolExecutor` 并行 per ticker（原 N×500ms 串行）
+6. `fetch_prices` 内部 `ThreadPoolExecutor` 并行 per ticker
 7. `compute()` 顶层并行 prices + intraday
-8. `compute()` 顶层 prefetch **all active position chains** 并行（让后续 `position_state` 内 `fetch_option_quote` 全命中 cache）
+8. `compute()` 顶层 prefetch all active position chains 并行
 9. `_fetch_position_news` 内部并行 per ticker
 10. `_generate_morning_brief` 内部 news + vix 并行
 11. `portfolio_history` 内部 `fetch_history` 并行 per ticker
 
-**预期效果**：
-- 用户感官：首屏 5s+ → 立即（用 localStorage cache 渲染）
-- 真实 API 调用：11s → 估计 3-5s（LLM 仍是大头但只第一次/per-day 必走）
-- 后续 refresh 走 LLM cache → < 2s
-
-**未触碰**：方案 B（拆 `/api/state` + `/api/brief` endpoint）和方案 C（SSE streaming）。如果方案 A 部署后用户仍觉慢，下一步走 B 把 morning_brief 单独 endpoint。
-
-**待用户验证**：
-- [ ] Mac Chrome / iPhone Safari 刷 `/app` — 首屏应立即（如果有过一次成功拉取）
-- [ ] 加新仓 / 切语言后等 ~3-5s 看到 API 真实数据更新
-- [ ] Vercel logs 不爆错（`from concurrent.futures import ThreadPoolExecutor` Python 标准库，必有）
-- [ ] LLM 早安管家仍正常生成（并行化没动 LLM）
+**预期效果**：用户感官 5s+ → 立即；真实 API 11s → 3-5s。
 
 ---
 
-### 上一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3`）
+### 更早一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3` — 管家文案改 priority list · 方案 B）
 
 **主题**：用户报当前管家 LLM 输出是一大段密文（"管家的 ... 一堆**啥意思，你要不要美化一下？给我三个方案"），扫读体验差。
 

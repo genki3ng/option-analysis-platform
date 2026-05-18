@@ -3026,7 +3026,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     """调 Claude Haiku 生成管家摘要。失败返回 None。"""
     client = _get_anthropic_client()
     if not client:
+        print(f"[concierge] llm_skip: no_client lang={lang}", flush=True)
         return None
+    print(f"[concierge] llm_call: lang={lang} top3={len(top_3)}", flush=True)
 
     signal_lines = []
     vix = market.get("vix") or {}
@@ -3127,6 +3129,13 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         if not concierge_text:
             concierge_text = _template_concierge(top_3, market, lang)
             by = "template"
+
+    snap_date = yesterday_snap.get("date")
+    snap_lang = yesterday_snap.get("concierge_lang")
+    snap_ver = yesterday_snap.get("concierge_version")
+    print(f"[concierge] brief: by={by} lang={lang} today={today_iso} "
+          f"snap_date={snap_date} snap_lang={snap_lang} snap_ver={snap_ver} "
+          f"want_ver={CONCIERGE_VERSION}", flush=True)
 
     next_snap = _make_brief_snapshot(positions, market, today)
     next_snap["concierge_text"] = concierge_text

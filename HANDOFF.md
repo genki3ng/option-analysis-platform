@@ -3,7 +3,86 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — iPhone 文字折叠优化 C+B 综合落地）
+最后更新：2026-05-18（云 · prompt caching 评估 + 修早安管家 API 频次爆量）
+
+### 🆕 本 session（2026-05-18 · 云 · `claude/enable-prompt-caching-WDhfs`）
+
+**触发**：用户看 Anthropic console 显示 296.2K tokens/week + $0.55/月 spend，问"管家 API 是不是很贵，要不要开 prompt caching"。
+
+**结论**：**不开 prompt caching**。原因：
+1. system prompt 仅 ~488 tokens，远低于 Haiku 4.5 的 **4096 tokens 最小 cacheable prefix**
+   —— 加 `cache_control` 不会报错，但 silent 不 cache（`cache_creation_input_tokens: 0`），一分钱省不到
+2. 整个 codebase 只有 1 个 LLM 调用（早安管家 `_generate_concierge_llm` @ `api/state.py:3075`）
+3. 设计上每用户每天只调 1 次（`brief_snapshot` 缓存在 `state._meta`），TTL 内基本无第二次命中
+4. spend 一个月 $0.55，年化 < $7，不值得折腾
+
+**但**：用户提到"我下午才加上这个功能 + 单用户开发"——296K tokens/week 完全不合理。怀疑 cache miss
+路径：CONCIERGE_VERSION bump 失效旧 snapshot / 切语言 / cloud 未 ready 时刷新 / 多 tab / 部署后狂刷调试。
+
+**做了什么**（commit 在 `claude/enable-prompt-caching-WDhfs` 分支）：
+
+加 instrumentation 让用户能看真实调用频次：
+- `api/state.py:_generate_concierge_llm` 入口 print `[concierge] llm_call: lang=...`
+  （client 没初始化时打 `llm_skip: no_client`）
+- `api/state.py:_generate_morning_brief` 决定路径后 print `[concierge] brief: by={llm|cached|template} ...
+  snap_date={...} snap_lang={...} snap_ver={...} want_ver={...}`
+  —— **关键字段对照能直接看出 cache miss 是哪个 key 不匹配**
+
+**待用户验证**：
+- [ ] push 后部署，刷 `/app` 几次，去 Vercel logs 搜 `[concierge]` 看真实调用模式
+  https://vercel.com/genki3ngs-projects/option-analysis-platform-web/logs
+- [ ] 如果 by=llm 比 by=cached 多很多 → 看 snap_* 字段对哪个不匹配 → 决定下一步
+- [ ] 如果都正常一天一次 → 296K tokens 可能是历史调试累积，不用动
+
+**下一个 session 如果用户反馈"还是很多调用"**：根据日志的 `snap_*` 字段判断是哪种 miss，针对性修：
+- snap_date 总不匹配 → date 比较 bug
+- snap_lang 不匹配 → 用户切语言，可以让 cache 跨语言（用同一份英文 LLM 输出动态翻译？或接受）
+- snap_ver 不匹配 → CONCIERGE_VERSION 在历史上被 bump 过，新部署后会自愈
+- 都匹配但仍 by=llm → 后端 state 没收到 brief_snapshot（cloud 同步问题）
+
+---
+
+### 🚨 静态分析诊断（同 session 后续 · 2026-05-18）
+
+加完日志后继续深入查代码，定位了**首要 bug**（不用看 logs 就能确认）：
+
+**`setInterval(refresh, 30000)` @ `index.html:10825`** — 每 30 秒 unconditional refresh：
+- 1 天 2880 次 × 7 天 = 20,160 次 `/api/state` 调用
+- 即使 LLM cache 大部分命中，每次后端都跑完整 `_generate_morning_brief`（拉 VIX、算 diff、计算 chips/calendar、拉 news）
+- **没有 `document.hidden` 检测** — 浏览器后台、电脑睡眠都还在跑
+- 30s 间隔对"包租公"这种"早晚看一眼"的定位太密集
+- 这本身也是 Schwab API 用量浪费
+
+**`_saveCloud()` 写云**确实带 state（`index.html:10504` `state: _cloudCache.state`），所以
+`state._meta.brief_snapshot` 是会持久化的 — 但 30s interval 创造大量 race 窗口（_saveCloud
+debounced 400ms）让 LLM 偶尔被击穿（多 tab 场景更明显）。
+
+**realtime handler 不是凶手**（虽然 explore agent 怀疑过）：
+- `index.html:10531` `_cloudCache = { positions, state: row.state }` 完全替换
+- 但 `_lastSavedSignature` dedupe（10530）让自己 save 的 echo 不会触发
+- 别人 push 的 row 也包含 state（含 brief_snapshot）所以不会真的丢
+
+### ✅ 已修（同 session 接着做）
+
+用户授权直接修，做了 3 处改动：
+
+1. **`index.html:10825`** `setInterval(refresh, 30000)` → `setInterval(refresh, 300000)`
+   一天 2880 次 → 288 次，砍 90%
+2. **`index.html` `refresh()` 入口**加 `if (document.hidden) return;`
+   tab 后台 / 浏览器睡眠时不拉数据，Schwab + LLM 双省
+3. **`index.html`** 加 `visibilitychange` listener
+   用户切回 tab 立即刷一次，保住"切回就更新"的体验感
+
+**预期效果**：
+- Schwab API 调用 → -90%（也帮 refresh_token 7d 续命有缓冲）
+- LLM 调用频次 → -90% + race 窗口大幅缩小，cache 几乎全命中
+- 如果你 spend 还是高 → 看日志 `[concierge]` 找 race / version bump
+
+**待验证**：用户 prod 刷一刷，看 `/app` 体验是否还流畅（切回 tab 即时更新 OK 吗？5min 不主动切走太"卡"吗？）
+
+如果体验不好，可以再调 interval 到 2-3 分钟（CLAUDE.md 第 8 节授权直接动）。
+
+---
 
 ### 🆕 这一轮（2026-05-18 cloud · `claude/fix-iphone-text-truncation-R1vGM`）
 

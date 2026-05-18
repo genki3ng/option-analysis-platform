@@ -10930,6 +10930,7 @@ function posIdOf(p) {
 }
 
 async function refresh() {
+  if (typeof document !== 'undefined' && document.hidden) return;
   try {
     const positions = loadPositions();
     const state = loadStateMap();
@@ -10976,7 +10977,12 @@ if (new URL(location.href).searchParams.get('debug') === 'auth') {
 }
 
 refresh();
-setInterval(refresh, 30000);
+setInterval(refresh, 300000);
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refresh();
+  });
+}
 </script>
 </body>
 </html>

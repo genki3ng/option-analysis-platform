@@ -10805,6 +10805,8 @@ async function _onSignedIn(isFresh) {
   // 关键：云数据加载完，把 selectedIds 设回 null，让下次 refresh() 用 cloud
   // 的 positions 重新初始化选择（之前会用初次 refresh 时空的 positions 把 selection 清空）
   selectedIds = null;
+  // 用 user-scoped cache 立即渲染（如果存在），不等 4-13s 的 API 调用
+  _optimisticBoot();
   if (typeof refresh === 'function') refresh();
 }
 
@@ -11528,10 +11530,10 @@ async function refresh() {
 
     renderAll(d);
 
-    // 缓存完整响应供下次启动时 optimistic render（剥掉 history 控制体积）
+    // 缓存完整响应供下次启动时 optimistic render（按用户分桶，避免登出/登录污染）
     try {
       const slim = Object.assign({}, d, { history: [] });
-      localStorage.setItem('last_compute_response', JSON.stringify(slim));
+      localStorage.setItem(_cacheKey(), JSON.stringify(slim));
     } catch(e) { /* quota / private mode 都吞掉 */ }
   } catch (e) {
     document.getElementById('footer').textContent = '刷新失败: ' + e.message;
@@ -11539,12 +11541,18 @@ async function refresh() {
   }
 }
 
+// Cache key 按用户分桶 — 退出再登录时不会被未登录的空 cache 污染
+function _cacheKey() {
+  const uid = (typeof _currentUser !== 'undefined' && _currentUser && _currentUser.id) || 'guest';
+  return 'last_compute_response::' + uid;
+}
+
 // Optimistic render：用上次 API 响应立即渲染，不等冷启动 ~10s
 function _optimisticBoot() {
   try {
     // share view 不走 optimistic（snapshot 已是冻结数据，refresh 短路会直接 render）
     if (window._isShareView) return false;
-    const cached = localStorage.getItem('last_compute_response');
+    const cached = localStorage.getItem(_cacheKey());
     if (!cached) return false;
     const d = JSON.parse(cached);
     if (!d || !Array.isArray(d.positions)) return false;

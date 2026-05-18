@@ -123,7 +123,26 @@ create policy "users can delete own share snapshots"
 10. `_generate_morning_brief` 内部 news + vix 并行
 11. `portfolio_history` 内部 `fetch_history` 并行 per ticker
 
-**预期效果**：用户感官 5s+ → 立即；真实 API 11s → 3-5s。
+**预期效果**：
+- 用户感官：首屏 5s+ → 立即（用 localStorage cache 渲染）
+- 真实 API 调用：11s → 估计 3-5s（LLM 仍是大头但只第一次/per-day 必走）
+- 后续 refresh 走 LLM cache → < 2s
+
+**追加改动（同 session · 用户报"新登录还是觉得慢"）**：
+- 发现登出 → refresh 拉空 positions 会污染 `last_compute_response`，再登录时
+  optimistic boot 拿到空 cache，仍要等 4-13s
+- Cache key 按用户分桶：`last_compute_response::<userId|guest>`，登出登入不互相覆盖
+- `_onSignedIn` 在 `_loadCloudData()` 后、`refresh()` 前再调一次 `_optimisticBoot()`
+  —— 用 user-scoped cache 立刻渲染上次登录的 UI（同设备第二次登录起立即可见）
+- 第一次登录的新用户 cache miss 时无 fallback（接受首次慢），但二次登录起 ≈ 立即
+
+**未触碰**：方案 B（拆 `/api/state` + `/api/brief` endpoint）和方案 C（SSE streaming）。如果方案 A 部署后用户仍觉慢，下一步走 B 把 morning_brief 单独 endpoint。
+
+**待用户验证**：
+- [ ] Mac Chrome / iPhone Safari 刷 `/app` — 首屏应立即（如果有过一次成功拉取）
+- [ ] 加新仓 / 切语言后等 ~3-5s 看到 API 真实数据更新
+- [ ] Vercel logs 不爆错（`from concurrent.futures import ThreadPoolExecutor` Python 标准库，必有）
+- [ ] LLM 早安管家仍正常生成（并行化没动 LLM）
 
 ---
 

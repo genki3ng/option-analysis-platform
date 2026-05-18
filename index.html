@@ -3450,14 +3450,22 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    /* 持仓卡 Greeks 行：mobile 用 3 列 grid 让 5 项整齐对齐
-       (Δ/IV/θ 一行，Mark/$P 第二行；简洁模式只剩 3 项就是一行) */
+    /* 持仓卡 Greeks 行：mobile 在窄的 pos-body-right 栏（~165px）里用
+       2 列 grid，5 项分 3 行 2 列对齐；简洁模式藏 Mark/$P 剩 3 项 = 2 行 */
     .pos-stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px 8px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px 8px;
+      font-size: 10px;
     }
     .pos-stats .stat { min-width: 0; }
+    .pos-stats .stat strong { gap: 2px; }
+    .pos-stats .src-dot { width: 4px; height: 4px; }
+    /* pos-extras：mobile 单列，每行 button 占满，文案完整不折 */
+    .pos-extras {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
 
     .summary { grid-template-columns: repeat(2, 1fr); padding: 16px 12px; gap: 12px; }
     .summary .item .val { font-size: 19px; }

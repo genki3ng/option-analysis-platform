@@ -3129,8 +3129,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         signal_lines.append(f"{concentration['top_ticker']} concentration: {concentration['top_pct']:.0f}%")
 
     # 全部活跃持仓 — 让 LLM 有全局视野，而不仅看 top 3
+    # 每行带 pid=...，让 LLM 在 action 字段用真实 position_id（避免 bs 出 TSLA_put_415_4d 这种瞎拼）
     if active:
-        signal_lines.append(f"\nAll active positions ({len(active)}):")
+        signal_lines.append(f"\nAll active positions ({len(active)}) — 引用持仓时 action 用对应 pid:")
         for p in active:
             label = p.get("label", "")
             days = p.get("days", 0)
@@ -3139,13 +3140,17 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
             delta = p.get("delta", 0)
             theta = p.get("daily_theta", 0)
             money = p.get("moneyness", 0)
+            # 构造真实 position_id
+            expiry = p.get("expiry")
+            if hasattr(expiry, "isoformat"): expiry = expiry.isoformat()
+            pid = f"{p.get('ticker','')}_{p.get('type','')}_{int(p.get('strike',0))}_{expiry}"
             money_tag = ""
             if (p.get("type") == "call" and money < 0) or (p.get("type") == "put" and money > 0):
                 money_tag = " [ITM]"
             elif abs(money) < 3:
                 money_tag = " [ATM]"
             signal_lines.append(
-                f"  - {label} · {days}d · ${pnl:+,.0f} ({pnl_pct:+.0f}%) · "
+                f"  - [pid={pid}] {label} · {days}d · ${pnl:+,.0f} ({pnl_pct:+.0f}%) · "
                 f"Δ{delta:+.2f} · θ${theta:+.1f}{money_tag}"
             )
 
@@ -3196,8 +3201,8 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "root=结构性问题需中期审（集中度爆、长短期互锤、方向错）；"
         "watch=平稳放着。\n"
         "**必有 1 个 urgent**（没紧急就放最值得关注的）；有显著盈利 → 必有 1 cashflow；集中度 ≥40% → 必有 1 root。\n"
-        "**action**：看持仓用 `position:<完整 position_id>` (格式 `{ticker}_{type}_{strike}_{expiry}`，不确定就 null)；"
-        "找新机会/调仓用 `rec`；无下一步 → null。\n"
+        "**action**：看持仓用 `position:<pid>`——**pid 必须从 `All active positions` 行里 `[pid=...]` 复制**，不要瞎拼或拼缩写；"
+        "找新机会/调仓用 `rec`；无明确下一步 → null。\n"
         "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。"
         "Recent changes 有就挑 1 条最值得讲的体现在 headline 或 body。"
     )

@@ -3,7 +3,29 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 管家看全部持仓 + 持仓变化触发重生成）
+最后更新：2026-05-18（cloud — 管家文案排版 3 方案预览页 /styles）
+
+### 🆕 这一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3`）
+
+**主题**：用户报当前管家 LLM 输出是一大段密文（"管家的 ... 一堆**啥意思，你要不要美化一下？给我三个方案"），扫读体验差。
+
+**做了**（一个 commit `80965f3` 推到 main 触发部署）：
+
+按 CLAUDE.md §9 流程建预览页 `styles.html` + `/styles` 路由，桌面 + 392px iPhone 同屏对照展示 3 个候选方案：
+
+- **A · 卡片三段分层**：Hero（avatar + 一句核心结论 + 红高亮关键风险）+ 3 ticker mini-card 横向（红/绿/灰状态色）+ 金色 action card 带 2 个 CTA + 底部 chip 行（VIX/集中度/到期数/新闻）
+- **B · 优先级清单**：一句话核心 + 4 行 todo-list item（每行 priority chip P1-P4 紧急/守住/隐患/观望 + 简述 + 右侧 CTA），最像"管家给我布置任务"
+- **C · 仪表盘式**：红色 banner（⚠️ icon + 标题 + "4 天到期"大字倒计时）+ 4 格指标网格（集中度 83% / 浮亏 / 距行权 / META Θ/d）+ 3 mini ticker 行 + 金色建议 callout
+
+预览地址：https://trade.congyangwang.com/styles
+
+**待用户做的**：选 A / B / C / 都不行 → 然后把选定方案落地到 `index.html` 的 `renderMorningBrief` + helpers（`_mbRenderConcierge` 等），同时三语 i18n 补 key（"今日核心结论" / "定时炸弹" / "现金牛" / "稳" / "紧急" / "守住" / etc）。
+
+**清理 TODO**（用户选完落地后）：删 `styles.html` + vercel.json 移 builds entry + route。
+
+---
+
+
 
 ### 🆕 这一轮 v2（2026-05-18 cloud · 同分支续）
 

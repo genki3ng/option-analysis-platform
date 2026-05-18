@@ -3,9 +3,50 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（云 · prompt caching 评估 + 修早安管家 API 频次爆量）
+最后更新：2026-05-18（cloud — 持仓卡整张点击切换选中）
 
-### 🆕 本 session（2026-05-18 · 云 · `claude/enable-prompt-caching-WDhfs`）
+### 🆕 这一轮（2026-05-18 cloud · `claude/clickable-position-cards-mgODq`）
+
+**主题**：用户想把持仓卡片整张做成"点击可选中"，更方便操作；同时不能破坏卡内已有交互。
+
+**改动前**：只有 checkbox + `.pos-name`（左上 ticker / strike / type badge 区）能点击切换选中；卡片其他大片区域（PnL 大字、进度条、出场计划、空白处）点了没反应。
+
+**改动**（`index.html` 单文件，无新 i18n）：
+
+CSS（`.pos` 规则块）：
+- `cursor: pointer` — 暗示整张可点
+- `transition` 加 `box-shadow` 让选中态切换有动画
+- `.pos:not(.unchecked) { box-shadow: 0 0 0 1px rgba(230,184,106,0.55) }` —
+  选中态金色 1px 描边（用 box-shadow 不和 `.danger-status`/`.warn-status` 的 border 冲突）
+- hover 时 box-shadow alpha 升到 0.72，更明显
+- `.pos input:not([type=checkbox]), .pos textarea, .pos select { cursor: auto }` 防御输入框继承 pointer
+
+HTML（`renderPosition` + `renderClosedPos` 两处）：
+- 整张 `.pos` 容器加 `onclick="togglePos('${p.id}')"`
+- `.pos-name` 删除原本的 onclick（多余，已被整卡接管）
+- checkbox 加 `onclick="event.stopPropagation()"`（保留 onchange，避免 click 冒泡 + onchange 双触发反转两次）
+- `<details class="pos-payoff">` 加 `onclick="event.stopPropagation()"`（点损益曲线展开不切换选中）
+- `pos-actions` 三按钮（平仓/编辑/删除）onclick 前加 `event.stopPropagation();`
+- `.close-form` / `.edit-form` 容器加 `onclick="event.stopPropagation()"`（一处兜底，内部 input/按钮都不再误触发）
+- closed 卡的「撤销平仓」按钮加 `event.stopPropagation()`
+
+**已确认未受影响**（grep audit 完）：
+- ⋯ 菜单（`.pos-more` + `.pos-more-menu`）原本就有 stopPropagation ✓
+- 笔记按钮（`.journal-btn`）原本就有 stopPropagation ✓
+- ⋯ 菜单内的 copy 按钮 — 在 `.pos-more-menu` 容器内，冒泡被截断 ✓
+
+**遗留 / 待用户验证**：
+- [ ] Mac Chrome / iPhone Safari 实测：整卡点击切换选中 OK
+- [ ] checkbox 点击只 toggle 一次（没双触发）
+- [ ] 点 PnL 大字 / 进度条 / 出场计划文字 → toggle ✓
+- [ ] 点平仓/编辑/删除 → 弹对应表单/对话，不切换选中
+- [ ] 点损益曲线 summary → 展开/收起，不切换选中
+- [ ] 选中态金色描边在亮/暗主题下视觉 OK
+- [ ] danger-status / warn-status 卡（红/黄边）+ 选中 (金色 box-shadow) 同时存在时不冲突
+
+---
+
+### 上一轮（2026-05-18 · 云 · `claude/enable-prompt-caching-WDhfs`）
 
 **触发**：用户看 Anthropic console 显示 296.2K tokens/week + $0.55/月 spend，问"管家 API 是不是很贵，要不要开 prompt caching"。
 
@@ -84,7 +125,7 @@ debounced 400ms）让 LLM 偶尔被击穿（多 tab 场景更明显）。
 
 ---
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/fix-iphone-text-truncation-R1vGM`）
+### 更早一轮（2026-05-18 cloud · `claude/fix-iphone-text-truncation-R1vGM`）
 
 **主题**：用户报"很多文字折叠了，在 iphone 上不够优雅" + "卡片里的实时价格也没对齐"。
 

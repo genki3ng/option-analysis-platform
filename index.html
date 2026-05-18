@@ -573,14 +573,28 @@
     border-radius: 12px; padding: 0;
     border: 1px solid var(--line);
     transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-                background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     /* overflow: visible — 让 ⋯ 下拉菜单能溢出 */
     overflow: visible;
+    cursor: pointer; /* 整张卡可点击切换选中 */
   }
   .pos:hover {
     border-color: var(--line-2);
     background: rgba(255,255,255,0.012);
   }
+  /* 选中态：accent 金色细描边（box-shadow 不和 status 边色冲突）*/
+  .pos:not(.unchecked) {
+    box-shadow: 0 0 0 1px rgba(230,184,106,0.55);
+  }
+  .pos:not(.unchecked):hover {
+    box-shadow: 0 0 0 1px rgba(230,184,106,0.72);
+  }
+  /* 子元素恢复合适 cursor（防止 input/textarea 继承 pointer）*/
+  .pos input:not([type="checkbox"]),
+  .pos textarea,
+  .pos select { cursor: auto; }
+  .pos button { cursor: pointer; }
   .pos.unchecked { opacity: 0.4; }
   /* 状态描边整体着色，取代左边粗条 */
   .pos.danger-status {
@@ -7051,10 +7065,10 @@ function renderPosition(p) {
   const prefillPrice = fmt(p.mark, 2);
 
   return `
-    <div class="pos ${typeCls} ${statusEdge} ${uncheckedCls}">
+    <div class="pos ${typeCls} ${statusEdge} ${uncheckedCls}" onclick="togglePos('${p.id}')">
       <div class="pos-row1">
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="togglePos('${p.id}')">
-        <div class="pos-name" onclick="togglePos('${p.id}')">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="togglePos('${p.id}')">
+        <div class="pos-name">
           <span class="ticker">${p.ticker}</span>
           <span class="strike">$${fmt(p.strike, 0)}</span>
           <span class="type-badge ${typeCls}">${p.type}</span>
@@ -7138,7 +7152,7 @@ function renderPosition(p) {
       ${renderPositionExitPlan(p)}
 
       <div class="pos-extras">
-        <details class="pos-payoff">
+        <details class="pos-payoff" onclick="event.stopPropagation()">
           <summary>📊 ${t('损益曲线')}</summary>
           <div class="payoff-body">${renderPayoffSvg(p)}</div>
         </details>
@@ -7148,12 +7162,12 @@ function renderPosition(p) {
       </div>
 
       <div class="pos-actions">
-        <button class="primary" onclick="showClose('${p.id}')">${t('平仓')}</button>
-        <button class="ghost edit-btn" onclick="showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
-        <button class="ghost del-btn" onclick="deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
+        <button class="primary" onclick="event.stopPropagation();showClose('${p.id}')">${t('平仓')}</button>
+        <button class="ghost edit-btn" onclick="event.stopPropagation();showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
+        <button class="ghost del-btn" onclick="event.stopPropagation();deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
       </div>
 
-      <div class="close-form" id="cf-${p.id}">
+      <div class="close-form" id="cf-${p.id}" onclick="event.stopPropagation()">
         <span style="font-size:11px;color:var(--sub)">${t('买回价 $/股')}</span>
         <input type="number" step="0.01" id="cp-${p.id}"
                placeholder="${prefillPrice}"
@@ -7165,7 +7179,7 @@ function renderPosition(p) {
         <button class="cancel" onclick="hideClose('${p.id}')">${t('取消')}</button>
       </div>
 
-      <div class="edit-form" id="ef-${p.id}">
+      <div class="edit-form" id="ef-${p.id}" onclick="event.stopPropagation()">
         <div class="ef-head">
           <span class="ef-title">✏️ ${t('编辑持仓')}</span>
           <span class="ef-hint">${t('改错了？这里可以修')}</span>
@@ -7381,9 +7395,9 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
     : `${reasonLabel} · ${t('平仓')} ${p.close_date}`;
 
   return `
-    <div class="pos closed ${uncheckedCls}">
+    <div class="pos closed ${uncheckedCls}" onclick="togglePos('${p.id}')">
       <div class="pos-row1">
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="togglePos('${p.id}')">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="togglePos('${p.id}')">
         <div class="pos-name">
           <span class="ticker">${p.ticker}</span>
           <span class="strike">$${fmt(p.strike, 0)}</span>
@@ -7435,7 +7449,7 @@ function renderClosedPos(p, checked, typeCls, uncheckedCls) {
         ` : ''}
 
         <div class="cr-actions">
-          <button class="cr-undo" onclick="reopenPos('${p.id}')">${t('撤销平仓')}</button>
+          <button class="cr-undo" onclick="event.stopPropagation();reopenPos('${p.id}')">${t('撤销平仓')}</button>
         </div>
       </div>
     </div>

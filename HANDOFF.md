@@ -123,6 +123,26 @@ debounced 400ms）让 LLM 偶尔被击穿（多 tab 场景更明显）。
 
 如果体验不好，可以再调 interval 到 2-3 分钟（CLAUDE.md 第 8 节授权直接动）。
 
+### 🔍 用户截图发现：当前 brief 是 template fallback，不是 LLM
+
+用户贴了 brief 截图，concierge_text 只显示"今日 3 件事要看。"—— 这是 `_template_concierge`
+的兜底输出（`api/state.py:3019`），**不是 LLM 生成**。说明 `_generate_concierge_llm` 这次失败了
+（throw exception 被吞）。
+
+但用户 token volume 296K/week 说明 LLM 历史上**调用成功过**——偶发失败，不是配置错。
+
+**做了**：把 `except Exception: return None` 改成 `except Exception as e: print(error); return None`
+打出具体异常类型 + 信息（之前吞了），下次失败能在 Vercel logs 看到原因。
+
+**Vercel function timeout**：vercel.json 没设 maxDuration → Hobby 默认 10s，Pro 60s。
+当前 Anthropic client `timeout=8.0`（`api/state.py:2592`），Hobby 下已是上限不能再延。
+
+**用户下一步**：刷一下 app → 去 Vercel logs 搜 `[concierge] llm_error` 看具体失败原因：
+- `APITimeoutError` → 升 Vercel Pro 或接受偶发兜底
+- `AuthenticationError` → ANTHROPIC_API_KEY 失效，rotate
+- `RateLimitError` → 限流（不太可能，单用户低频）
+- 其他 → 看错误信息
+
 ---
 
 ### 更早一轮（2026-05-18 cloud · `claude/fix-iphone-text-truncation-R1vGM`）

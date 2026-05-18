@@ -3082,7 +3082,8 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         )
         text = (resp.content[0].text if resp.content else "").strip()
         return text or None
-    except Exception:
+    except Exception as e:
+        print(f"[concierge] llm_error: {type(e).__name__}: {e}", flush=True)
         return None
 
 

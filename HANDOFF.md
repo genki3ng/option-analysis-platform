@@ -3,9 +3,36 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 修管家 AI 缓存中毒 bug）
+最后更新：2026-05-18（cloud — 管家看全部持仓 + 持仓变化触发重生成）
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/fix-butler-ai-features-E40Iq`）
+### 🆕 这一轮 v2（2026-05-18 cloud · 同分支续）
+
+**主题**：用户问"目前 ai 管家会用我的所有持仓作为输入的一部分吗" → 答否，只 top 3 + 聚合 + 新闻。用户要求"可以是全部持仓吗，然后如果有持仓变化把这个动作也记住并且触发一次重新生成"。
+
+**改动 4 处 `api/state.py`**：
+
+1. **`_make_brief_snapshot`** per-position dict 加 `ticker` + `label` —— 给"removed 持仓"描述用（pid 还在 snap 但持仓不在了，靠 label 描述）
+2. **新 `_compute_position_changes(yesterday_snap, positions)`** —— 返回 `{added: [{label}], removed: [{label}], has_changes: bool}`。基于 pid 集合 diff（pid 含 ticker/type/strike/expiry，编辑算 旧 pid 删 + 新 pid 加）
+3. **`_generate_concierge_llm`** 签名加 `positions`、`pos_changes`，prompt 加两个 section：
+   - `All active positions (N)`: 每张一行 `label · Nd · $pnl (pct%) · Δ · θ · [ITM/ATM tag]` —— LLM 有全局视野
+   - `Recent position changes`: `+ 新开: {label}` / `- 平仓/移除: {label}` —— 让管家主动提到刚发生的动作
+   - system prompt 加两条规则："列了 changes 自然承认（'你刚加的 NVDA Put...'）" + "active 是给全局判断用，不要逐张列"
+4. **`_generate_morning_brief`** 调用 `_compute_position_changes`，cache 命中条件加 `not pos_changes.has_changes`（持仓变了强制重生成）；`CONCIERGE_VERSION` 6→7；brief log 加 `changes=+N/-M`
+
+**预期效果**：
+- 管家 prompt 从"3 个聚焦 + 聚合数字"变成"全部持仓清单 + 聚合 + 3 个聚焦 + 变化日志"
+- 用户加仓 / 平仓 / 编辑持仓 → 下次 refresh 自动 cache miss → 新管家文本会自然提到这个动作
+- token 用量预计：~30 张持仓 ~1000 tokens 多，对 Haiku 4.5 单用户低频不算问题
+
+**待验证**：
+- [ ] 部署后管家文本看起来是不是真的"看到"了全部持仓（不再只盯 top 3）
+- [ ] 加一张新仓 → 5min 后 refresh，管家文本应自然提到这个新仓
+- [ ] 平一张仓 → 5min 后 refresh，管家应该 acknowledge 这个动作
+- [ ] Vercel logs 搜 `[concierge] llm_call: active=N changes=` 看 N 和 changes 是不是对的
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/fix-butler-ai-features-E40Iq` 起步）
 
 **主题**：用户报"管家的 ai 功能失效了" — 早安管家整天显示 `_template_concierge` 兜底文案（"今日 N 件事要看。"），不再调 LLM。
 

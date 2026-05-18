@@ -2789,6 +2789,8 @@ def _make_brief_snapshot(positions: List[dict], market: dict, today: date) -> di
             continue
         pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
         pos_snap[pid] = {
+            "ticker": p.get("ticker", ""),
+            "label": p.get("label", pid),
             "pnl_pct": p.get("pnl_pct", 0),
             "days": p.get("days", 0),
             "moneyness": p.get("moneyness", 0),
@@ -2798,6 +2800,32 @@ def _make_brief_snapshot(positions: List[dict], market: dict, today: date) -> di
         "date": today.isoformat(),
         "vix": (market.get("vix") or {}).get("price"),
         "positions": pos_snap,
+    }
+
+
+def _compute_position_changes(yesterday_snap: dict, positions: List[dict]) -> Dict:
+    """对比 snapshot，找新开 / 平仓的持仓。
+    返回 {added: [{label}], removed: [{label}], has_changes: bool}。
+    用 pid 集合 diff —— pid 含 ticker/type/strike/expiry 结构性字段，编辑也算 (旧 pid 删 + 新 pid 加)。"""
+    old_pos = (yesterday_snap or {}).get("positions") or {}
+    if not isinstance(old_pos, dict):
+        old_pos = {}
+    old_pids = set(old_pos.keys())
+    new_pids = set()
+    new_labels = {}
+    for p in positions:
+        if p.get("closed") or p.get("days", 0) < 0:
+            continue
+        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        new_pids.add(pid)
+        new_labels[pid] = p.get("label", pid)
+    added = [{"label": new_labels[pid]} for pid in (new_pids - old_pids)]
+    removed = [{"label": (old_pos.get(pid) or {}).get("label", pid)}
+               for pid in (old_pids - new_pids)]
+    return {
+        "added": added,
+        "removed": removed,
+        "has_changes": bool(added or removed),
     }
 
 
@@ -3022,13 +3050,20 @@ def _template_concierge(top_3, market, lang):
     return "，".join(parts) + "。"
 
 
-def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration, lang):
-    """调 Claude Haiku 生成管家摘要。失败返回 None。"""
+def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration,
+                              positions, pos_changes, lang):
+    """调 Claude Haiku 生成管家摘要。失败返回 None。
+    positions: 完整活跃持仓列表（compact 格式塞进 prompt 让管家有全局视野）
+    pos_changes: 自上次刷新的新开/平仓 diff，让管家能主动提到刚发生的动作。"""
     client = _get_anthropic_client()
     if not client:
         print(f"[concierge] llm_skip: no_client lang={lang}", flush=True)
         return None
-    print(f"[concierge] llm_call: lang={lang} top3={len(top_3)}", flush=True)
+    active = [p for p in (positions or [])
+              if not p.get("closed") and p.get("days", 0) >= 0]
+    print(f"[concierge] llm_call: lang={lang} top3={len(top_3)} "
+          f"active={len(active)} changes={len(pos_changes.get('added',[]))+len(pos_changes.get('removed',[]))}",
+          flush=True)
 
     signal_lines = []
     vix = market.get("vix") or {}
@@ -3038,11 +3073,44 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     signal_lines.append(f"Portfolio unrealized P&L: ${total_pnl:+,.0f}, today Theta: ${total_theta:+,.0f}")
     if concentration.get("top_pct", 0) >= 40:
         signal_lines.append(f"{concentration['top_ticker']} concentration: {concentration['top_pct']:.0f}%")
+
+    # 全部活跃持仓 — 让 LLM 有全局视野，而不仅看 top 3
+    if active:
+        signal_lines.append(f"\nAll active positions ({len(active)}):")
+        for p in active:
+            label = p.get("label", "")
+            days = p.get("days", 0)
+            pnl = p.get("pnl", 0)
+            pnl_pct = p.get("pnl_pct", 0)
+            delta = p.get("delta", 0)
+            theta = p.get("daily_theta", 0)
+            money = p.get("moneyness", 0)
+            money_tag = ""
+            if (p.get("type") == "call" and money < 0) or (p.get("type") == "put" and money > 0):
+                money_tag = " [ITM]"
+            elif abs(money) < 3:
+                money_tag = " [ATM]"
+            signal_lines.append(
+                f"  - {label} · {days}d · ${pnl:+,.0f} ({pnl_pct:+.0f}%) · "
+                f"Δ{delta:+.2f} · θ${theta:+.1f}{money_tag}"
+            )
+
+    # 持仓变化 — 让管家主动提到刚发生的动作
+    added = pos_changes.get("added") or []
+    removed = pos_changes.get("removed") or []
+    if added or removed:
+        signal_lines.append("\nRecent position changes (since last brief):")
+        for it in added:
+            signal_lines.append(f"  + 新开: {it.get('label','')}")
+        for it in removed:
+            signal_lines.append(f"  - 平仓/移除: {it.get('label','')}")
+
     if top_3:
+        signal_lines.append("\nToday's top 3 focus:")
         for idx, e in enumerate(top_3[:3], 1):
-            signal_lines.append(f"{idx}. {e['icon']} {e['headline']} - {e['detail']}")
+            signal_lines.append(f"  {idx}. {e['icon']} {e['headline']} - {e['detail']}")
     else:
-        signal_lines.append("(no urgent signals)")
+        signal_lines.append("\n(no urgent signals)")
 
     news = market.get("news") or []
     if news:
@@ -3068,7 +3136,10 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "不要以\"早安\"开头（前端已写）。不要列条目、项目符号、'首先/其次'。不要编造数字——只用我给的数据。\n"
         "如果所有信号都平静，就说一句让人放心的话即可，别硬挤建议。\n"
         "**如果列了 Recent news**：挑最相关的 1-2 条引用进语句里（如 'NVDA 昨晚被下调评级'）；"
-        "营销稿、不痛不痒的标题直接忽略。"
+        "营销稿、不痛不痒的标题直接忽略。\n"
+        "**如果列了 Recent position changes**：自然地承认这个动作（'你刚加的 NVDA Put 这个位置..'），"
+        "但不要每条都列——只挑值得讲的 1 条，配合判断（这个新位置在当前市场环境下合不合适、要留意啥）。\n"
+        "**All active positions 信号是给你做全局判断用**（哪些扎堆、哪些快到期、整体 Δ/θ 分布等），不要在文中逐张列。"
     )
 
     user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 3-5 句话总览。"
@@ -3107,11 +3178,14 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     top_3 = _rank_top_3_focus(diff_events, positions, lang)
     chips = _build_focus_chips(positions, market, total_pnl, total_realized, total_theta,
                                 concentration, lang)
+    # 持仓变化（新开 / 平仓 / 编辑）— 触发重新生成 + 喂给 LLM 让它能主动提到
+    pos_changes = _compute_position_changes(yesterday_snap, positions)
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
     # bump 6: 修缓存中毒 — 之前 template fallback 会被无条件缓存，导致整天不重试 LLM
-    CONCIERGE_VERSION = 6
+    # bump 7: 持仓变化触发重新生成 + prompt 加全部活跃持仓 + Recent changes section
+    CONCIERGE_VERSION = 7
     cached_text = None
     cached_by = None
     snap_by = yesterday_snap.get("generated_by")
@@ -3119,7 +3193,8 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
             and yesterday_snap.get("concierge_text")
             and yesterday_snap.get("concierge_lang") == lang
             and yesterday_snap.get("concierge_version") == CONCIERGE_VERSION
-            and snap_by != "template"):  # template 兜底不算有效 cache，下次刷新会重试 LLM
+            and snap_by != "template"  # template 兜底不算有效 cache，下次刷新会重试 LLM
+            and not pos_changes["has_changes"]):  # 持仓有增删 → 强制重新生成
         cached_text = yesterday_snap.get("concierge_text")
         cached_by = snap_by or "cached"
 
@@ -3128,7 +3203,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         by = cached_by
     else:
         concierge_text = _generate_concierge_llm(top_3, market, total_pnl, total_theta,
-                                                  concentration, lang)
+                                                  concentration, positions, pos_changes, lang)
         by = "llm"
         if not concierge_text:
             concierge_text = _template_concierge(top_3, market, lang)
@@ -3139,7 +3214,9 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     snap_ver = yesterday_snap.get("concierge_version")
     print(f"[concierge] brief: by={by} lang={lang} today={today_iso} "
           f"snap_date={snap_date} snap_lang={snap_lang} snap_ver={snap_ver} "
-          f"snap_by={snap_by} want_ver={CONCIERGE_VERSION}", flush=True)
+          f"snap_by={snap_by} want_ver={CONCIERGE_VERSION} "
+          f"changes={'+' + str(len(pos_changes['added'])) + '/-' + str(len(pos_changes['removed']))}",
+          flush=True)
 
     next_snap = _make_brief_snapshot(positions, market, today)
     # 只在 LLM 成功或复用 LLM cache 时才写 concierge_* 字段。

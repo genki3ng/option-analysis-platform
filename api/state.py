@@ -3206,8 +3206,10 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         f"\n\n严格 JSON 输出，items 3-5 个，{lang_word}。"
     )
 
+    # 把诊断信息暂存到 module-level dict，让响应能带回（不靠 Vercel logs）
+    global _last_llm_diag
+    t0 = time.time()
     try:
-        t0 = time.time()
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=900,
@@ -3216,18 +3218,30 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         )
         elapsed = time.time() - t0
         print(f"[concierge] llm_done: lang={lang} elapsed={elapsed:.2f}s", flush=True)
+        _last_llm_diag = {"phase": "done", "elapsed_s": round(elapsed, 2)}
         text = (resp.content[0].text if resp.content else "").strip()
         if not text:
-            print(f"[concierge] llm_empty: lang={lang}", flush=True)
+            _last_llm_diag = {"phase": "empty", "elapsed_s": round(elapsed, 2)}
             return None, None
         prose, brief = _parse_concierge_json(text, lang)
         if not brief or not brief.get("items"):
             print(f"[concierge] llm_parse_fail: lang={lang} text_head={text[:120]!r}", flush=True)
+            _last_llm_diag = {"phase": "parse_fail", "elapsed_s": round(elapsed, 2),
+                              "text_head": text[:200]}
             return None, None
+        _last_llm_diag = {"phase": "ok", "elapsed_s": round(elapsed, 2),
+                          "items": len(brief.get("items") or [])}
         return prose, brief
     except Exception as e:
-        print(f"[concierge] llm_error: {type(e).__name__}: {e}", flush=True)
+        elapsed = time.time() - t0
+        print(f"[concierge] llm_error: {type(e).__name__}: {e} elapsed={elapsed:.2f}s", flush=True)
+        _last_llm_diag = {"phase": "error", "error_type": type(e).__name__,
+                          "error_msg": str(e)[:200], "elapsed_s": round(elapsed, 2)}
         return None, None
+
+
+# 最后一次 LLM 调用的诊断信息（debug 用，回到响应里）
+_last_llm_diag = None
 
 
 def _parse_concierge_json(text, lang):
@@ -3376,6 +3390,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         "calendar_14d": calendar,
         "today_date": today.isoformat(),
         "next_snapshot": next_snap,
+        "_llm_diag": _last_llm_diag,  # 临时诊断字段：让用户能在响应里看 LLM 状态
     }
 
 

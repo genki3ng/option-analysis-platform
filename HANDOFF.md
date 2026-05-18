@@ -3,7 +3,45 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-17（深夜 — local intro/README audit · 云端 form A + Exit + 账户）
+最后更新：2026-05-18（云 · prompt caching 评估 + concierge 日志 instrumentation）
+
+### 🆕 本 session（2026-05-18 · 云 · `claude/enable-prompt-caching-WDhfs`）
+
+**触发**：用户看 Anthropic console 显示 296.2K tokens/week + $0.55/月 spend，问"管家 API 是不是很贵，要不要开 prompt caching"。
+
+**结论**：**不开 prompt caching**。原因：
+1. system prompt 仅 ~488 tokens，远低于 Haiku 4.5 的 **4096 tokens 最小 cacheable prefix**
+   —— 加 `cache_control` 不会报错，但 silent 不 cache（`cache_creation_input_tokens: 0`），一分钱省不到
+2. 整个 codebase 只有 1 个 LLM 调用（早安管家 `_generate_concierge_llm` @ `api/state.py:3075`）
+3. 设计上每用户每天只调 1 次（`brief_snapshot` 缓存在 `state._meta`），TTL 内基本无第二次命中
+4. spend 一个月 $0.55，年化 < $7，不值得折腾
+
+**但**：用户提到"我下午才加上这个功能 + 单用户开发"——296K tokens/week 完全不合理。怀疑 cache miss
+路径：CONCIERGE_VERSION bump 失效旧 snapshot / 切语言 / cloud 未 ready 时刷新 / 多 tab / 部署后狂刷调试。
+
+**做了什么**（commit 在 `claude/enable-prompt-caching-WDhfs` 分支）：
+
+加 instrumentation 让用户能看真实调用频次：
+- `api/state.py:_generate_concierge_llm` 入口 print `[concierge] llm_call: lang=...`
+  （client 没初始化时打 `llm_skip: no_client`）
+- `api/state.py:_generate_morning_brief` 决定路径后 print `[concierge] brief: by={llm|cached|template} ...
+  snap_date={...} snap_lang={...} snap_ver={...} want_ver={...}`
+  —— **关键字段对照能直接看出 cache miss 是哪个 key 不匹配**
+
+**待用户验证**：
+- [ ] push 后部署，刷 `/app` 几次，去 Vercel logs 搜 `[concierge]` 看真实调用模式
+  https://vercel.com/genki3ngs-projects/option-analysis-platform-web/logs
+- [ ] 如果 by=llm 比 by=cached 多很多 → 看 snap_* 字段对哪个不匹配 → 决定下一步
+- [ ] 如果都正常一天一次 → 296K tokens 可能是历史调试累积，不用动
+
+**下一个 session 如果用户反馈"还是很多调用"**：根据日志的 `snap_*` 字段判断是哪种 miss，针对性修：
+- snap_date 总不匹配 → date 比较 bug
+- snap_lang 不匹配 → 用户切语言，可以让 cache 跨语言（用同一份英文 LLM 输出动态翻译？或接受）
+- snap_ver 不匹配 → CONCIERGE_VERSION 在历史上被 bump 过，新部署后会自愈
+- 都匹配但仍 by=llm → 后端 state 没收到 brief_snapshot（cloud 同步问题）
+
+---
+
 
 ### 🆕 local session（最末轮 · 2026-05-17 深夜）
 

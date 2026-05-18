@@ -3,9 +3,27 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 只读分享链接重做 · ✅ 用户验证通过）
+最后更新：2026-05-18（cloud — 账户设置 modal 滚动修复）
 
-### ✅ 这一轮（2026-05-18 cloud · `claude/fix-readonly-link-generation-RedjD`）
+### ✅ 这一轮（2026-05-18 cloud · `claude/fix-window-scrolling-Ok62X`）
+
+**主题**：用户报"账户设置窗口不能上下滚动"。截图显示账户 03 被截断到屏幕底部、无法滚动到底。
+
+**Root cause**（`index.html:11085`）：
+`showAccountSettings()` 用 `modal.style.display = 'block'` 打开 modal，但 modal CSS 是 flex column layout：
+- `.am-header { flex-shrink: 0 }` / `.am-body { flex: 1; overflow-y: auto }` / `.am-actions { flex-shrink: 0 }`
+- 父容器 `.account-modal { max-height: min(720px, calc(100dvh - 40px)); overflow: hidden }`
+- `.account-modal.show { display: flex }` 本来应该激活 flex container
+
+但 **inline `display: block` 优先级高于 `.show` class** → 父不是 flex container → `.am-body` 的 `flex: 1` 不生效 → body 按内容自然撑高 → 超出 max-height 被 `overflow: hidden` 剪掉，看起来就不能滚。
+
+**修复**：把 `'block'` 改成 `'flex'`（最小一字之改）。
+
+---
+
+### 上一轮（2026-05-18 cloud — 只读分享链接重做 · ✅ 用户验证通过）
+
+### `claude/fix-readonly-link-generation-RedjD`
 
 **主题**：用户报"生成只读链接的功能有问题"。经过 4 轮迭代最终落地。
 

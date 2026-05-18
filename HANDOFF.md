@@ -60,6 +60,39 @@
 - LLM 可能偶尔返回非 JSON → `_parse_concierge_json` 返回 (None,None) → 走 template fallback。`[concierge] llm_parse_fail` 日志会打文本 head 帮 debug。
 - 历史 brief_snapshot 没 `concierge_brief` → version 7→8 bump 强制 miss → 下次刷新走完整路径填上。
 
+### 🐛 部署后 debug 4 轮（同 session）
+
+用户截图反馈"AI 没有 work" — 看到的是 template 兜底（`今日 N 件事要看。`）。诊断 + 修复链：
+
+**Round 1 (`93df263`)**：CSS bug — `mb-priority-headline` 没 grid-area 被 auto-placement 扔到隐式行底部。
+- 改 grid-template-areas 成 head/content/side 3 area，wrapper `.mb-priority-content` 承载 headline+sub+list+footer+chips，calendar 独占 side
+- 同时 bump client timeout 8s → 14s + max_tokens 1500 → 900 + 缩短 system prompt（猜测 LLM timeout）
+
+**Round 2 (`c764e5b`)**：加 `_llm_diag` debug 字段回响应（用户能看 Vercel logs 但我看不到，得自助诊断）
+- 字段含 `{phase, elapsed_s, error_type, error_msg, text_head, items}`
+
+**Round 3 (`4a4a318`)**：发现 root cause — `max_tokens=900` 截断了 JSON
+- diag 显示 `phase=parse_fail elapsed=13.42s text_head='```json\n{\n "headline": "..."\n  "items": [\n    ...截断'`
+- LLM 也加了 \`\`\`json 包装（虽然 prompt 说别加）
+- 修法 3 招：
+  - bump max_tokens 900 → 1600 + timeout → 18s
+  - assistant prefill `{` 强制 LLM 直接吐 JSON 起始（跳过 narrative / code fence）
+  - parser 加 truncated-JSON 修复：找最后一个 top-level `}` 截断 + 补 `]}` 闭合（pytest-like 单测过）
+
+**Round 4 (`e7dcfed`)**：LLM 用瞎拼 position_id (`TSLA_put_415_4d` 用天数替 expiry) → CTA 找不到 DOM
+- prompt 加 `[pid=TSLA_put_415_2026-05-22]` 前缀给每个 active position
+- system prompt 强调 "pid 必须从行里复制，不准瞎拼"
+
+**最终验证（生产）**：
+- `by=llm phase=ok elapsed=8.08s items=4`
+- headline: "**TSLA $415P 仅4天到期、距行权1.2%，必须今天决策**；META $540P 已锁利85%..."
+- 4 个 items: TSLA urgent / META cashflow / NVDA root / NVDA Call watch
+- 全部 position_id 正确 (`TSLA_put_415_2026-05-22` etc.)
+- CTA 多样："查看 TSLA Put" / "考虑平仓" / "讨论分散策略"
+- 自然 footer: "今日Theta+$154、大盘平稳，但TSLA Put已成定时炸弹..."
+
+**临时 debug 字段 `_llm_diag`** 还留在响应里（位于 `morning_brief._llm_diag`）。**稳定运行 1-2 天后可删**（删 3 处：global `_last_llm_diag` 定义 + `_generate_concierge_llm` 内 set 行 + `return` 字典里的 `_llm_diag` 字段）。
+
 ---
 
 

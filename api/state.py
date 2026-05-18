@@ -2596,9 +2596,9 @@ def _get_anthropic_client():
         return None
     try:
         import anthropic
-        # 14s — JSON 输出比 prose 长 ~5x，需要更多生成时间。
-        # 用户 prod 一次 compute 总耗时 29s 说明 Vercel maxDuration ≥30s（Pro 计划）。
-        _anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=14.0)
+        # 18s — JSON 输出比 prose 长，需要更多生成时间。
+        # 用户 prod 总耗时 27-29s 说明 Vercel maxDuration ≥30s（Pro 计划）。
+        _anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY, timeout=18.0)
         return _anthropic_client
     except Exception:
         return None
@@ -3212,14 +3212,20 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=900,
+            max_tokens=1600,
             system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
+            messages=[
+                {"role": "user", "content": user_prompt},
+                # 用 assistant prefill 强制 JSON 起始，禁止 LLM 加 ```json``` 或 narrative
+                {"role": "assistant", "content": "{"},
+            ],
         )
         elapsed = time.time() - t0
         print(f"[concierge] llm_done: lang={lang} elapsed={elapsed:.2f}s", flush=True)
         _last_llm_diag = {"phase": "done", "elapsed_s": round(elapsed, 2)}
-        text = (resp.content[0].text if resp.content else "").strip()
+        # prefill `{` 不会出现在 response.content 里，需要手动 prepend
+        raw = (resp.content[0].text if resp.content else "")
+        text = ("{" + raw).strip()
         if not text:
             _last_llm_diag = {"phase": "empty", "elapsed_s": round(elapsed, 2)}
             return None, None
@@ -3246,20 +3252,56 @@ _last_llm_diag = None
 
 def _parse_concierge_json(text, lang):
     """LLM 输出的 JSON 字符串 → (prose_text, structured_brief)。
-    宽容解析：剥 markdown 代码块、宽容字段缺失。失败返回 (None, None)。"""
+    宽容解析：剥 markdown 代码块、找 outer {}、修复 truncated JSON。失败返回 (None, None)。"""
     s = text.strip()
     # 剥 markdown code fence
     if s.startswith("```"):
         s = re.sub(r"^```(?:json)?\s*", "", s)
         s = re.sub(r"\s*```\s*$", "", s)
-    # 找第一个 { 到最后一个 }（防 LLM 加 narrative 文字）
-    i = s.find("{"); j = s.rfind("}")
-    if i < 0 or j < 0 or j <= i:
+    # 找第一个 {
+    i = s.find("{")
+    if i < 0:
         return None, None
-    s = s[i:j+1]
+    s = s[i:]
+    # 优先尝试完整 JSON
+    data = None
     try:
         data = json.loads(s)
     except Exception:
+        # 修复 truncated JSON：max_tokens 截断常见，items 数组可能在某条 item 中间断
+        # 策略：找最后一个完整 item（看 `},`），截到那里 + 补 `]}` 闭合
+        try:
+            # 找 "items": [ 的开始位置
+            m = re.search(r'"items"\s*:\s*\[', s)
+            if m:
+                arr_start = m.end()
+                # 从 arr_start 起，找出所有 top-level `}` 的位置（item 边界）
+                depth = 0
+                in_str = False
+                escape = False
+                last_close = -1
+                for idx in range(arr_start, len(s)):
+                    ch = s[idx]
+                    if escape:
+                        escape = False; continue
+                    if ch == "\\" and in_str:
+                        escape = True; continue
+                    if ch == '"':
+                        in_str = not in_str; continue
+                    if in_str:
+                        continue
+                    if ch == "{":
+                        depth += 1
+                    elif ch == "}":
+                        depth -= 1
+                        if depth == 0:
+                            last_close = idx
+                if last_close > 0:
+                    repaired = s[:last_close+1] + "]}"
+                    data = json.loads(repaired)
+        except Exception:
+            data = None
+    if data is None:
         return None, None
     if not isinstance(data, dict):
         return None, None

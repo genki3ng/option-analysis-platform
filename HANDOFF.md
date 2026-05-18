@@ -42,6 +42,45 @@
 
 ---
 
+### 🚨 静态分析诊断（同 session 后续 · 2026-05-18）
+
+加完日志后继续深入查代码，定位了**首要 bug**（不用看 logs 就能确认）：
+
+**`setInterval(refresh, 30000)` @ `index.html:10825`** — 每 30 秒 unconditional refresh：
+- 1 天 2880 次 × 7 天 = 20,160 次 `/api/state` 调用
+- 即使 LLM cache 大部分命中，每次后端都跑完整 `_generate_morning_brief`（拉 VIX、算 diff、计算 chips/calendar、拉 news）
+- **没有 `document.hidden` 检测** — 浏览器后台、电脑睡眠都还在跑
+- 30s 间隔对"包租公"这种"早晚看一眼"的定位太密集
+- 这本身也是 Schwab API 用量浪费
+
+**`_saveCloud()` 写云**确实带 state（`index.html:10504` `state: _cloudCache.state`），所以
+`state._meta.brief_snapshot` 是会持久化的 — 但 30s interval 创造大量 race 窗口（_saveCloud
+debounced 400ms）让 LLM 偶尔被击穿（多 tab 场景更明显）。
+
+**realtime handler 不是凶手**（虽然 explore agent 怀疑过）：
+- `index.html:10531` `_cloudCache = { positions, state: row.state }` 完全替换
+- 但 `_lastSavedSignature` dedupe（10530）让自己 save 的 echo 不会触发
+- 别人 push 的 row 也包含 state（含 brief_snapshot）所以不会真的丢
+
+### 🎯 明天看完日志后的行动建议（按可能性排序）
+
+**最可能的修法（90% 概率）**：
+1. `index.html:10825` `setInterval(refresh, 30000)` → `setInterval(refresh, 300000)` (5 分钟)
+2. `refresh()` 入口加 `if (document.hidden) return;`
+
+预期效果：Schwab API + LLM 调用频次都砍 90%+。
+
+**如果日志显示大量 `by=llm`（说明真的 cache miss 频繁）**：
+- 看 `snap_*` 哪个字段不匹配
+- 最可能 snap_lang 切换（用户多语言）→ 接受 / 或砍语言版本
+- 也可能 multi-tab race → setInterval 改长后自然解决
+
+**如果日志显示几乎全 `by=cached` 但 spend 仍高**：
+- 那 296K tokens 是历史调试累积（用户下午刚加 + 反复部署测试）
+- 不用动代码，跑两天观察就行
+
+---
+
 
 ### 🆕 local session（最末轮 · 2026-05-17 深夜）
 

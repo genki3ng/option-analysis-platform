@@ -3,9 +3,38 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 持仓卡整张点击切换选中）
+最后更新：2026-05-18（cloud — 修管家 AI 缓存中毒 bug）
 
-### 🆕 这一轮（2026-05-18 cloud · `claude/clickable-position-cards-mgODq`）
+### 🆕 这一轮（2026-05-18 cloud · `claude/fix-butler-ai-features-E40Iq`）
+
+**主题**：用户报"管家的 ai 功能失效了" — 早安管家整天显示 `_template_concierge` 兜底文案（"今日 N 件事要看。"），不再调 LLM。
+
+**诊断**（先 curl 后端确认）：
+- `debug_env` 显示 `has_anthropic_key: true / anthropic_client_ready: true` ✓
+- 直接 `compute` 调用返回 `generated_by: llm` 配 300+ 字 LLM 文本 — **后端 LLM 实际能调通**
+- 但 `api/state.py:3111-3145` `_generate_morning_brief` 有 cache poisoning bug：
+
+**Bug**：一旦某次 LLM 失败（冷启动 / 超时 / 网络抖动）→ fallback 到 `_template_concierge` → **结果被无条件写进 `state._meta.brief_snapshot`**（line 3142-3145，旧版）→ 下次同一天读，cache 命中模板文本 → 整天不再重试 LLM。第二天 `date` 不匹配才会重试。
+
+**修复**（3 处改 `_generate_morning_brief`）：
+1. cache 命中加 `snap_by != "template"` — template 不算有效 cache
+2. 只在 `by != "template"` 时把 concierge_* 字段写进 snapshot — template 失败只留 diff 用的 positions/vix snap
+3. `CONCIERGE_VERSION` 5 → 6，一次性失效现存 template-stuck 用户 cache
+4. brief log 加 `snap_by` 字段方便排查
+
+**预期效果**：
+- 部署后用户刷一次 → CONCIERGE_VERSION 6 vs 5 不匹配 → cache miss → 重试 LLM
+- LLM 成功 → 缓存 + 当天复用
+- LLM 失败 → template 兜底显示，但 5min 后下次 refresh 再次重试（直到成功）
+
+**待验证**：
+- [ ] 用户部署后刷 `/app`，看管家文本是否变回 LLM 风格（"今早不用急——VIX 微升..."）
+- [ ] Vercel logs 搜 `[concierge] brief: by=...` 应看到 by=llm 而非 by=template
+- [ ] 如果反复看到 `[concierge] llm_error: APITimeoutError` → 可能要看 Vercel 计划是否支持加 maxDuration
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/clickable-position-cards-mgODq`）
 
 **主题**：用户想把持仓卡片整张做成"点击可选中"，更方便操作；同时不能破坏卡内已有交互。
 

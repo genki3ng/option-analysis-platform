@@ -3110,15 +3110,18 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
-    CONCIERGE_VERSION = 5
+    # bump 6: 修缓存中毒 — 之前 template fallback 会被无条件缓存，导致整天不重试 LLM
+    CONCIERGE_VERSION = 6
     cached_text = None
     cached_by = None
+    snap_by = yesterday_snap.get("generated_by")
     if (yesterday_snap.get("date") == today_iso
             and yesterday_snap.get("concierge_text")
             and yesterday_snap.get("concierge_lang") == lang
-            and yesterday_snap.get("concierge_version") == CONCIERGE_VERSION):
+            and yesterday_snap.get("concierge_version") == CONCIERGE_VERSION
+            and snap_by != "template"):  # template 兜底不算有效 cache，下次刷新会重试 LLM
         cached_text = yesterday_snap.get("concierge_text")
-        cached_by = yesterday_snap.get("generated_by") or "cached"
+        cached_by = snap_by or "cached"
 
     if cached_text:
         concierge_text = cached_text
@@ -3136,13 +3139,17 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     snap_ver = yesterday_snap.get("concierge_version")
     print(f"[concierge] brief: by={by} lang={lang} today={today_iso} "
           f"snap_date={snap_date} snap_lang={snap_lang} snap_ver={snap_ver} "
-          f"want_ver={CONCIERGE_VERSION}", flush=True)
+          f"snap_by={snap_by} want_ver={CONCIERGE_VERSION}", flush=True)
 
     next_snap = _make_brief_snapshot(positions, market, today)
-    next_snap["concierge_text"] = concierge_text
-    next_snap["concierge_lang"] = lang
-    next_snap["concierge_version"] = CONCIERGE_VERSION
-    next_snap["generated_by"] = by
+    # 只在 LLM 成功或复用 LLM cache 时才写 concierge_* 字段。
+    # template 兜底不缓存，让下次 refresh（5min 后）重新尝试 LLM；
+    # diff 用的 positions/vix snap 仍写入，跨日 diff 不受影响。
+    if by != "template":
+        next_snap["concierge_text"] = concierge_text
+        next_snap["concierge_lang"] = lang
+        next_snap["concierge_version"] = CONCIERGE_VERSION
+        next_snap["generated_by"] = by
 
     return {
         "concierge_text": concierge_text,

@@ -7166,7 +7166,7 @@ function showCompare() {
   // 指标定义： { label, getter, betterHigher? }
   const metrics = isShort
     ? [
-        { l: '包租公分',    f: o => o.rent_score ?? o.score ?? 0, h: true, fmt: v => v.toFixed(0) },
+        { l: '包租公分',    f: o => o.rent_score ?? o.score ?? 0, h: true, fmt: v => v.toFixed(1) },
         { l: '⭐ Tier',     f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
         { l: '年化收益',    f: o => o.annualized_yield_pct ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
         { l: '权利金/张',   f: o => o.premium_per_contract ?? 0, h: true, fmt: v => '$' + Math.round(v) },
@@ -7206,8 +7206,10 @@ function showCompare() {
         if (m.h ? v > bestV : v < bestV) { bestV = v; bestIdx = i; }
         if (m.h ? v < worstV : v > worstV) { worstV = v; worstIdx = i; }
       });
-      // 全部相等时不高亮
-      if (bestV === worstV) { bestIdx = -1; worstIdx = -1; }
+      // 全部相等时不高亮（同时检查显示值 — 避免 raw 3.04 vs 3.06 都显示 "3.1" 仍上红绿）
+      if (bestV === worstV || m.fmt(bestV) === m.fmt(worstV)) {
+        bestIdx = -1; worstIdx = -1;
+      }
     }
     return { m, vals, bestIdx, worstIdx };
   });

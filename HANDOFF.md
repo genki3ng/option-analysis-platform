@@ -3,25 +3,62 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 管家文案排版 3 方案预览页 /styles）
+最后更新：2026-05-18（cloud — 管家文案改 priority list · 方案 B 落地）
 
 ### 🆕 这一轮（2026-05-18 cloud · `claude/tsla-put-analysis-ApkJ3`）
 
 **主题**：用户报当前管家 LLM 输出是一大段密文（"管家的 ... 一堆**啥意思，你要不要美化一下？给我三个方案"），扫读体验差。
 
-**做了**（一个 commit `80965f3` 推到 main 触发部署）：
+**流程**：
+1. 按 CLAUDE.md §9 建预览页 `/styles` 给 3 方案（A 卡片三段 / B 优先级清单 / C 仪表盘）×（桌面+392px iPhone 同屏）
+2. 用户选 **B · 优先级清单**
+3. 落地到 `renderMorningBrief` + 后端 LLM 改 JSON 输出
+4. 清理预览页 + 路由
 
-按 CLAUDE.md §9 流程建预览页 `styles.html` + `/styles` 路由，桌面 + 392px iPhone 同屏对照展示 3 个候选方案：
+**改动**（commit `3b31434` 推到 main 触发部署）：
 
-- **A · 卡片三段分层**：Hero（avatar + 一句核心结论 + 红高亮关键风险）+ 3 ticker mini-card 横向（红/绿/灰状态色）+ 金色 action card 带 2 个 CTA + 底部 chip 行（VIX/集中度/到期数/新闻）
-- **B · 优先级清单**：一句话核心 + 4 行 todo-list item（每行 priority chip P1-P4 紧急/守住/隐患/观望 + 简述 + 右侧 CTA），最像"管家给我布置任务"
-- **C · 仪表盘式**：红色 banner（⚠️ icon + 标题 + "4 天到期"大字倒计时）+ 4 格指标网格（集中度 83% / 浮亏 / 距行权 / META Θ/d）+ 3 mini ticker 行 + 金色建议 callout
+**后端 `api/state.py`**：
+- `_generate_concierge_llm` system prompt 改成严格 JSON: `{headline, sub?, items[], footer?}`
+- 每个 item: `{priority: urgent|cashflow|root|watch, ticker, title, body, action: rec|position:<pid>|news:<url>|null, cta}`
+- 新 `_parse_concierge_json` 宽容剥 markdown code fence + 前置 narrative + 字段缺失，验证 priority enum
+- `_template_concierge` 改返回 `(prose, structured_brief)` 元组——从 top_3_focus 派生 items（near_strike/vix_spike/earnings → urgent；profit_opportunity → cashflow；newly_itm/news_alert → root；其他 → watch）
+- `_generate_morning_brief` 缓存 `concierge_brief` 到 brief_snapshot，响应多字段 `concierge_brief`
+- `CONCIERGE_VERSION` 7 → **8**（强制旧 prose-only cache 失效）
+- 三语 i18n 加：`看持仓 / 看推荐 / 看原文`（无尾箭头版）
+- 加 `import re`
 
-预览地址：https://trade.congyangwang.com/styles
+**前端 `index.html`**：
+- 新 CSS `.mb-priority-*` 系列（urgent 红描边 + 4 chip 配色：urgent 红 / cashflow 绿 / root 金 / watch 灰）
+- 桌面 ≥900px: priority list 全宽 + calendar 右栏 260px grid
+- 手机 ≤600px: 单列堆叠，CTA 全宽
+- 新 helper：
+  - `_mbBoldify(s)` 安全 `**xx**` → `<strong>`（先 escape HTML 再 unescape markdown，无 XSS）
+  - `_mbPriorityIcon` / `_mbPriorityLabel` 优先级 → 🚨💰🩺👀 / 紧急/守住/隐患/观望
+  - `_mbRenderPriorityItem(item, idx)` action dispatch（rec/position/news → 对应按钮）
+  - `_mbRenderConciergeBrief(brief)` 组装整段 priority list HTML
+- `renderMorningBrief(brief)` 双分支：
+  - `concierge_brief.items.length > 0` → priority list 模式（`.mode-priority` class）
+  - 否则 → 旧 prose hero + focus list（backward compat / template w/o items）
+- 三语 i18n 补：紧急/守住/隐患/观望 + 环境
 
-**待用户做的**：选 A / B / C / 都不行 → 然后把选定方案落地到 `index.html` 的 `renderMorningBrief` + helpers（`_mbRenderConcierge` 等），同时三语 i18n 补 key（"今日核心结论" / "定时炸弹" / "现金牛" / "稳" / "紧急" / "守住" / etc）。
+**清理**：删 `styles.html` 预览页 + `vercel.json` 移 builds 和 route
 
-**清理 TODO**（用户选完落地后）：删 `styles.html` + vercel.json 移 builds entry + route。
+**Smoke test**（部署后 curl 验证）：
+- API `morning_brief.concierge_brief.items` 返回 3 条，priority 正确（root news / cashflow profit / urgent danger）
+- 前端 bundle 包含新 CSS class + JS helpers (35 处 mb-priority/mode-priority 引用)
+- 当次测试 `generated_by=template`（LLM 未走通 — 可能 ANTHROPIC_API_KEY env 不在 test compute 路径，或 LLM transient 失败）
+- 真实用户路径带 state，会走 LLM；template fallback 也保证有 ≥1 个 priority item
+
+**待用户验证**：
+- [ ] Mac Chrome 看 `/app` 早安管家：应该是 priority list（红/绿/金/灰 chip + CTA 按钮），不再是一大段 prose
+- [ ] iPhone Safari：单列堆叠 + CTA 全宽
+- [ ] Vercel logs 搜 `[concierge] brief: by=llm items=N` 确认 LLM 真有走通
+- [ ] LLM 失败时也能看到 priority list（不会变成旧 prose）
+- [ ] 切换 zh/zh_tw/en chip 标签正确翻译
+
+**已知 risk**：
+- LLM 可能偶尔返回非 JSON → `_parse_concierge_json` 返回 (None,None) → 走 template fallback。`[concierge] llm_parse_fail` 日志会打文本 head 帮 debug。
+- 历史 brief_snapshot 没 `concierge_brief` → version 7→8 bump 强制 miss → 下次刷新走完整路径填上。
 
 ---
 

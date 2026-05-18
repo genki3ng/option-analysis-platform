@@ -2620,7 +2620,27 @@
   }
   .compare-table .cmp-ticker-cell {
     font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
   }
+  .compare-table .cmp-ticker-chip {
+    display: inline-block;
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 5px;
+    letter-spacing: 0.3px;
+  }
+  .compare-table .cmp-ticker-name { font-weight: 700; }
+  .cmp-hint-banner {
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: rgba(230,184,106,0.08);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    line-height: 1.6;
+  }
+  .cmp-hint-banner > div + div { margin-top: 2px; }
   .compare-table .cmp-tag {
     display: inline-block;
     font-size: 9px; font-weight: 700;
@@ -4803,6 +4823,8 @@ const I18N = {
     '清空选择': '清空选择',
     '候选对比': '候选对比',
     '绿色 = 该指标最佳　红色 = 最弱': '🟢 该指标最佳　🔴 最弱',
+    'cross_ticker_abs_hint': '💡 跨 ticker 对比中，$ 类绝对值（Mid 价、权利金等）仅供参考，不做绿/红高亮',
+    'mixed_short_long_hint': '⚠️ 同时选了卖出 / 买入候选 — 只展示通用指标，包租公分等专属指标已隐藏',
     '清空对比': '清空对比',
     '关闭': '关闭',
     '包租公分': '包租公分',
@@ -5380,6 +5402,8 @@ const I18N = {
     '清空选择': '清空選擇',
     '候选对比': '候選對比',
     '绿色 = 该指标最佳　红色 = 最弱': '🟢 該指標最佳　🔴 最弱',
+    'cross_ticker_abs_hint': '💡 跨 ticker 對比中，$ 類絕對值（Mid 價、權利金等）僅供參考，不做綠/紅高亮',
+    'mixed_short_long_hint': '⚠️ 同時選了賣出 / 買入候選 — 只展示通用指標，包租公分等專屬指標已隱藏',
     '清空对比': '清空對比',
     '关闭': '關閉',
     '包租公分': '包租公分',
@@ -6091,6 +6115,8 @@ const I18N = {
     '清空选择': 'Clear',
     '候选对比': 'Candidate Comparison',
     '绿色 = 该指标最佳　红色 = 最弱': '🟢 Best on this metric　🔴 Weakest',
+    'cross_ticker_abs_hint': '💡 Cross-ticker comparison: $-denominated values (Mid, premium, etc.) are shown for reference only — no best/worst highlight',
+    'mixed_short_long_hint': '⚠️ Mixed sell/buy candidates selected — showing universal metrics only; landlord-score and similar are hidden',
     '清空对比': 'Clear all',
     '关闭': 'Close',
     '包租公分': 'Landlord Score',
@@ -7106,12 +7132,17 @@ function hidePreview() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ⚖️ 候选对比
+// ⚖️ 候选对比（跨 ticker）
+// _compareSelected: 只存 candId，控制 pill 计数 / checkbox 状态
+// _compareCandidates: candId → 候选数据快照（含 _isShort 标记）
+//   切换 ticker 后 _lastCandidates 会被覆盖，但 Map 仍保留之前 ticker 的候选数据
 // ═══════════════════════════════════════════════════════════════════
 window._compareSelected = window._compareSelected || new Set();
+window._compareCandidates = window._compareCandidates || new Map();
 
 function toggleCompareSelect(candId, checked) {
   if (!window._compareSelected) window._compareSelected = new Set();
+  if (!window._compareCandidates) window._compareCandidates = new Map();
   if (checked) {
     if (window._compareSelected.size >= 5) {
       alert(t('最多对比 5 个候选'));
@@ -7120,9 +7151,22 @@ function toggleCompareSelect(candId, checked) {
       if (cb) cb.checked = false;
       return;
     }
+    // 从当前 ticker 的候选列表里找到对应候选并快照存入 Map
+    // 这样切到别的 ticker 后这条数据依然能查到，实现跨 ticker 对比
+    const cand = (window._lastCandidates || []).find(o =>
+      `${o.ticker}_${o.type}_${o.strike}_${o.expiry}` === candId
+    );
+    if (cand) {
+      const meta = window._lastRecMeta || {};
+      window._compareCandidates.set(candId, {
+        ...cand,
+        _isShort: !!meta.is_short,
+      });
+    }
     window._compareSelected.add(candId);
   } else {
     window._compareSelected.delete(candId);
+    window._compareCandidates.delete(candId);
   }
   renderComparePill();
 }
@@ -7147,59 +7191,94 @@ function renderComparePill() {
 
 function clearCompareSelect() {
   window._compareSelected = new Set();
+  window._compareCandidates = new Map();
   // 取消所有 checkbox
   document.querySelectorAll('.rec-compare-check input').forEach(cb => cb.checked = false);
   renderComparePill();
 }
 
+// 简单 ticker → 色调 hash（跨 ticker 时表头一眼分辨不同股票）
+function _tickerHue(ticker) {
+  let h = 0;
+  for (let i = 0; i < ticker.length; i++) h = ((h << 5) - h + ticker.charCodeAt(i)) | 0;
+  return Math.abs(h) % 360;
+}
+
 function showCompare() {
   const set = window._compareSelected || new Set();
-  const list = (window._lastCandidates || []).filter(o =>
+  const map = window._compareCandidates || new Map();
+  // 跨 ticker 安全：从 Map 取数据，而不是 _lastCandidates（后者每次切 ticker 被覆盖）
+  const list = Array.from(map.values()).filter(o =>
     set.has(`${o.ticker}_${o.type}_${o.strike}_${o.expiry}`)
   );
   if (list.length < 2) return;
 
-  // 12 个核心指标 — 卖出 / 买入 两套口径
-  const meta = window._lastRecMeta || {};
-  const isShort = !!meta.is_short;
+  // 判定指标集
+  const shortN = list.filter(o => o._isShort).length;
+  const allShort = shortN === list.length;
+  const allLong = shortN === 0;
+  const mixedSL = !allShort && !allLong;
 
-  // 指标定义： { label, getter, betterHigher? }
-  const metrics = isShort
-    ? [
-        { l: '包租公分',    f: o => o.rent_score ?? o.score ?? 0, h: true, fmt: v => v.toFixed(1) },
-        { l: '⭐ Tier',     f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
-        { l: '年化收益',    f: o => o.annualized_yield_pct ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
-        { l: '权利金/张',   f: o => o.premium_per_contract ?? 0, h: true, fmt: v => '$' + Math.round(v) },
-        { l: 'Mid 价',     f: o => o.mid ?? 0, h: null, fmt: v => '$' + v.toFixed(2) },
-        { l: '距行权 %',    f: o => Math.abs(o.moneyness_pct ?? 0), h: true, fmt: v => v.toFixed(1) + '%' },
-        { l: 'Δ Delta',    f: o => Math.abs(o.delta ?? 0), h: false, fmt: v => v.toFixed(3) },
-        { l: 'IV',         f: o => o.iv ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
-        { l: 'DTE',        f: o => o.days ?? 0, h: null, fmt: v => v + 'd' },
-        { l: 'Spread %',   f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
-        { l: 'OI',         f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
-        { l: 'Theta/天',   f: o => o.theta_per_day ?? 0, h: true, fmt: v => '$' + v.toFixed(1) },
-      ]
-    : [
-        { l: '⭐ Tier',      f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
-        { l: 'Mid 价',      f: o => o.mid ?? 0, h: false, fmt: v => '$' + v.toFixed(2) },
-        { l: '杠杆倍数',     f: o => o.leverage_x ?? 0, h: true, fmt: v => v.toFixed(1) + 'x' },
-        { l: '距行权 %',     f: o => o.moneyness_pct ?? 0, h: null, fmt: v => (v > 0 ? '+' : '') + v.toFixed(1) + '%' },
-        { l: 'Δ Delta',     f: o => Math.abs(o.delta ?? 0), h: true, fmt: v => v.toFixed(3) },
-        { l: 'IV',          f: o => o.iv ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
-        { l: 'DTE',         f: o => o.days ?? 0, h: true, fmt: v => v + 'd' },
-        { l: 'Spread %',    f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
-        { l: 'OI',          f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
-        { l: 'Vega/1%',     f: o => o.vega_per_1pct ?? 0, h: true, fmt: v => '$' + v.toFixed(1) },
-        { l: '权利金/张',    f: o => o.premium_per_contract ?? 0, h: false, fmt: v => '$' + Math.round(v) },
-        { l: 'Bid/Ask',     f: o => o.bid + '/' + o.ask, h: null, fmt: v => v },
-      ];
+  // 跨 ticker 判定
+  const tickerSet = new Set(list.map(o => o.ticker));
+  const isCrossTicker = tickerSet.size > 1;
 
-  // 每个指标算出最佳/最差列（仅当 h !== null）
+  // 指标定义： { l, f, h(higher better), fmt, abs(绝对值类，跨 ticker 不高亮) }
+  let metrics;
+  if (mixedSL) {
+    // short + long 混合 — 用通用指标（不依赖 short-only 的 rent_score / 年化收益 或 long-only 的 leverage_x）
+    metrics = [
+      { l: '⭐ Tier',     f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
+      { l: 'Mid 价',     f: o => o.mid ?? 0, h: null, fmt: v => '$' + v.toFixed(2), abs: true },
+      { l: '距行权 %',    f: o => o.moneyness_pct ?? 0, h: null, fmt: v => (v > 0 ? '+' : '') + v.toFixed(1) + '%' },
+      { l: 'Δ Delta',    f: o => Math.abs(o.delta ?? 0), h: null, fmt: v => v.toFixed(3) },
+      { l: 'IV',         f: o => o.iv ?? 0, h: null, fmt: v => v.toFixed(1) + '%' },
+      { l: 'DTE',        f: o => o.days ?? 0, h: null, fmt: v => v + 'd' },
+      { l: 'Spread %',   f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+      { l: 'OI',         f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
+      { l: '权利金/张',   f: o => o.premium_per_contract ?? 0, h: null, fmt: v => '$' + Math.round(v), abs: true },
+      { l: 'Bid/Ask',    f: o => o.bid + '/' + o.ask, h: null, fmt: v => v },
+    ];
+  } else if (allShort) {
+    metrics = [
+      { l: '包租公分',    f: o => o.rent_score ?? o.score ?? 0, h: true, fmt: v => v.toFixed(1) },
+      { l: '⭐ Tier',     f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
+      { l: '年化收益',    f: o => o.annualized_yield_pct ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
+      { l: '权利金/张',   f: o => o.premium_per_contract ?? 0, h: true, fmt: v => '$' + Math.round(v), abs: true },
+      { l: 'Mid 价',     f: o => o.mid ?? 0, h: null, fmt: v => '$' + v.toFixed(2), abs: true },
+      { l: '距行权 %',    f: o => Math.abs(o.moneyness_pct ?? 0), h: true, fmt: v => v.toFixed(1) + '%' },
+      { l: 'Δ Delta',    f: o => Math.abs(o.delta ?? 0), h: false, fmt: v => v.toFixed(3) },
+      { l: 'IV',         f: o => o.iv ?? 0, h: true, fmt: v => v.toFixed(1) + '%' },
+      { l: 'DTE',        f: o => o.days ?? 0, h: null, fmt: v => v + 'd' },
+      { l: 'Spread %',   f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+      { l: 'OI',         f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
+      { l: 'Theta/天',   f: o => o.theta_per_day ?? 0, h: true, fmt: v => '$' + v.toFixed(1), abs: true },
+    ];
+  } else {
+    // allLong
+    metrics = [
+      { l: '⭐ Tier',      f: o => o.verdict?.tier ?? 0, h: true, fmt: v => '★'.repeat(v) || '–' },
+      { l: 'Mid 价',      f: o => o.mid ?? 0, h: false, fmt: v => '$' + v.toFixed(2), abs: true },
+      { l: '杠杆倍数',     f: o => o.leverage_x ?? 0, h: true, fmt: v => v.toFixed(1) + 'x' },
+      { l: '距行权 %',     f: o => o.moneyness_pct ?? 0, h: null, fmt: v => (v > 0 ? '+' : '') + v.toFixed(1) + '%' },
+      { l: 'Δ Delta',     f: o => Math.abs(o.delta ?? 0), h: true, fmt: v => v.toFixed(3) },
+      { l: 'IV',          f: o => o.iv ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+      { l: 'DTE',         f: o => o.days ?? 0, h: true, fmt: v => v + 'd' },
+      { l: 'Spread %',    f: o => o.spread_pct ?? 0, h: false, fmt: v => v.toFixed(1) + '%' },
+      { l: 'OI',          f: o => o.oi ?? 0, h: true, fmt: v => v.toLocaleString() },
+      { l: 'Vega/1%',     f: o => o.vega_per_1pct ?? 0, h: true, fmt: v => '$' + v.toFixed(1), abs: true },
+      { l: '权利金/张',    f: o => o.premium_per_contract ?? 0, h: false, fmt: v => '$' + Math.round(v), abs: true },
+      { l: 'Bid/Ask',     f: o => o.bid + '/' + o.ask, h: null, fmt: v => v },
+    ];
+  }
+
+  // 每个指标算出最佳/最差列（h===null 不高亮；跨 ticker 时 abs:true 也禁用高亮）
   const cells = metrics.map(m => {
     const vals = list.map(m.f);
     const numeric = vals.every(v => typeof v === 'number');
+    const highlightable = m.h !== null && !(isCrossTicker && m.abs);
     let bestIdx = -1, worstIdx = -1;
-    if (numeric && m.h !== null && list.length > 1) {
+    if (numeric && highlightable && list.length > 1) {
       let bestV = m.h ? -Infinity : Infinity;
       let worstV = m.h ? Infinity : -Infinity;
       vals.forEach((v, i) => {
@@ -7214,14 +7293,20 @@ function showCompare() {
     return { m, vals, bestIdx, worstIdx };
   });
 
-  const headers = list.map(o => `
-    <th>
-      <div class="cmp-ticker-cell">${o.ticker} $${o.strike}
-        <span class="cmp-tag ${o.type}">${o.type.toUpperCase()}</span>
-      </div>
-      <div style="font-size:10px;color:var(--sub);font-weight:400;margin-top:2px">exp ${o.expiry} · ${o.days}d</div>
-    </th>
-  `).join('');
+  const headers = list.map(o => {
+    // 跨 ticker 时给 ticker chip 上一个基于 hash 的色调，便于一眼区分
+    const tickerHtml = isCrossTicker
+      ? `<span class="cmp-ticker-chip" style="background:hsla(${_tickerHue(o.ticker)},60%,55%,0.18);color:hsl(${_tickerHue(o.ticker)},85%,72%);border:1px solid hsla(${_tickerHue(o.ticker)},60%,55%,0.4)">${o.ticker}</span>`
+      : `<span class="cmp-ticker-name">${o.ticker}</span>`;
+    return `
+      <th>
+        <div class="cmp-ticker-cell">${tickerHtml} $${o.strike}
+          <span class="cmp-tag ${o.type}">${o.type.toUpperCase()}</span>
+        </div>
+        <div style="font-size:10px;color:var(--sub);font-weight:400;margin-top:2px">exp ${o.expiry} · ${o.days}d</div>
+      </th>
+    `;
+  }).join('');
 
   const rows = cells.map(({ m, vals, bestIdx, worstIdx }) => {
     const tds = vals.map((v, i) => {
@@ -7232,11 +7317,21 @@ function showCompare() {
     return `<tr><td>${t(m.l)}</td>${tds}</tr>`;
   }).join('');
 
+  // 跨 ticker / 混合 short-long 时显示上下文提示
+  const hints = [];
+  if (isCrossTicker) hints.push(t('cross_ticker_abs_hint'));
+  if (mixedSL) hints.push(t('mixed_short_long_hint'));
+  const hintHtml = hints.length ? `
+    <div class="cmp-hint-banner">
+      ${hints.map(h => `<div>${h}</div>`).join('')}
+    </div>` : '';
+
   document.getElementById('compare-modal').innerHTML = `
     <h3>
       <span>⚖️ ${t('候选对比')} (${list.length})</span>
       <span class="x" onclick="hideCompare()">×</span>
     </h3>
+    ${hintHtml}
     <div style="font-size:11px;color:var(--sub);margin-bottom:12px">
       ${t('绿色 = 该指标最佳　红色 = 最弱')}
     </div>

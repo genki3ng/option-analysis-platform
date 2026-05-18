@@ -3,9 +3,58 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 账户设置 modal 滚动修复）
+最后更新：2026-05-18（cloud — 候选对比支持跨 ticker）
 
-### ✅ 这一轮（2026-05-18 cloud · `claude/fix-window-scrolling-Ok62X`）
+### ✅ 这一轮（2026-05-18 cloud · `claude/cross-ticker-comparison-Ha2I6`）
+
+**主题**：用户报"候选对比功能应该支持跨 ticker"。
+
+**Root cause**（`index.html:7155-7159` 旧逻辑）：
+`window._compareSelected: Set<candId>` 是 window 全局 — 跨 ticker **勾选状态保留**。
+但 `showCompare()` 用 `window._lastCandidates.filter(...)` 从**当前 ticker 推荐结果**里反查候选数据。
+`_lastCandidates` 每次切 ticker / 重跑推荐就被覆盖。所以：
+- pill 显示 5 个 → ✅ 计数正确
+- 点开 modal → ❌ 只看到当前 ticker 那 2 个
+
+**修复**：把候选数据**快照**存进新加的 `window._compareCandidates: Map<candId, snapshot>`，跟 Set 一起维护。`showCompare` 改成从 Map 取数据，跨 ticker 也能完整查到。
+
+**核心改动**（`index.html`）：
+
+1. **数据流** (`index.html:7140-7172`)：
+   - 新增 `window._compareCandidates = new Map()`，key=candId，value=候选完整快照（含 `_isShort` 标记，来自勾选时的 `_lastRecMeta.is_short`）
+   - `toggleCompareSelect(candId, true)` 时从 `_lastCandidates` 找到候选并 `{...cand, _isShort: meta.is_short}` 存 Map
+   - 取消勾选 / `clearCompareSelect()` 同时清 Map
+
+2. **showCompare 重写** (`index.html:7207-7357`)：
+   - 数据源换成 `Array.from(window._compareCandidates.values())`
+   - 智能选指标集（用每条候选自己的 `_isShort` 而不是 `_lastRecMeta`）：
+     - 全 short → short 集（12 指标，含包租公分 / 年化收益）
+     - 全 long → long 集（12 指标，含杠杆 / Vega）
+     - 混合 short/long → 通用集（10 指标，去掉 short-only/long-only 的字段）
+   - 跨 ticker 检测：`new Set(list.map(o=>o.ticker)).size > 1`
+   - 指标标 `abs: true` 的（Mid 价 / 权利金/张 / Theta/天 / Vega/1%）跨 ticker 时**关闭绿/红高亮** — 用户已确认这是首选行为
+   - 头部 banner 提示（`.cmp-hint-banner` 金色 left-border）：跨 ticker 提示 + 混合 short/long 提示，按需出现
+
+3. **UI 微调** (`index.html:2621-2645`)：
+   - 跨 ticker 时表头 ticker 渲染成色调 chip（基于 ticker 字符串 hash 的 hue），不同股票一眼能分辨
+   - 同 ticker 时仍是原来的纯文本（无视觉变化）
+
+4. **i18n 三语补 2 个 key**：
+   - `cross_ticker_abs_hint` — 跨 ticker 提示
+   - `mixed_short_long_hint` — 混合卖出/买入提示
+   - 三套都补：`index.html:4826-4827` (zh) / `5405-5406` (zh_tw) / `6118-6119` (en)
+
+**用户设计选择**（AskUserQuestion 已确认）：
+- 跨 ticker 绝对值高亮：**关闭 + 顶部小字提示**（避免 NVDA 100 vs AAPL 200 这种永远偏向高价股的误导）
+- 跨 ticker 切换：**保留前一个 ticker 的勾选**（这就是"跨 ticker 对比"的核心场景）
+
+**已知边缘情况**：
+- 用户重跑推荐导致同 candId 数据更新 → Map 仍存旧数据。低概率，先不处理。
+- 5 个候选上限保留（同 ticker 时也是这上限，没变）。
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/fix-window-scrolling-Ok62X`）— 账户设置 modal 滚动修复
 
 **主题**：用户报"账户设置窗口不能上下滚动"。截图显示账户 03 被截断到屏幕底部、无法滚动到底。
 
@@ -21,7 +70,7 @@
 
 ---
 
-### 上一轮（2026-05-18 cloud — 只读分享链接重做 · ✅ 用户验证通过）
+### 更早一轮（2026-05-18 cloud — 只读分享链接重做 · ✅ 用户验证通过）
 
 ### `claude/fix-readonly-link-generation-RedjD`
 

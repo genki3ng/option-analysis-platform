@@ -62,22 +62,25 @@ debounced 400ms）让 LLM 偶尔被击穿（多 tab 场景更明显）。
 - 但 `_lastSavedSignature` dedupe（10530）让自己 save 的 echo 不会触发
 - 别人 push 的 row 也包含 state（含 brief_snapshot）所以不会真的丢
 
-### 🎯 明天看完日志后的行动建议（按可能性排序）
+### ✅ 已修（同 session 接着做）
 
-**最可能的修法（90% 概率）**：
-1. `index.html:10825` `setInterval(refresh, 30000)` → `setInterval(refresh, 300000)` (5 分钟)
-2. `refresh()` 入口加 `if (document.hidden) return;`
+用户授权直接修，做了 3 处改动：
 
-预期效果：Schwab API + LLM 调用频次都砍 90%+。
+1. **`index.html:10825`** `setInterval(refresh, 30000)` → `setInterval(refresh, 300000)`
+   一天 2880 次 → 288 次，砍 90%
+2. **`index.html` `refresh()` 入口**加 `if (document.hidden) return;`
+   tab 后台 / 浏览器睡眠时不拉数据，Schwab + LLM 双省
+3. **`index.html`** 加 `visibilitychange` listener
+   用户切回 tab 立即刷一次，保住"切回就更新"的体验感
 
-**如果日志显示大量 `by=llm`（说明真的 cache miss 频繁）**：
-- 看 `snap_*` 哪个字段不匹配
-- 最可能 snap_lang 切换（用户多语言）→ 接受 / 或砍语言版本
-- 也可能 multi-tab race → setInterval 改长后自然解决
+**预期效果**：
+- Schwab API 调用 → -90%（也帮 refresh_token 7d 续命有缓冲）
+- LLM 调用频次 → -90% + race 窗口大幅缩小，cache 几乎全命中
+- 如果你 spend 还是高 → 看日志 `[concierge]` 找 race / version bump
 
-**如果日志显示几乎全 `by=cached` 但 spend 仍高**：
-- 那 296K tokens 是历史调试累积（用户下午刚加 + 反复部署测试）
-- 不用动代码，跑两天观察就行
+**待验证**：用户 prod 刷一刷，看 `/app` 体验是否还流畅（切回 tab 即时更新 OK 吗？5min 不主动切走太"卡"吗？）
+
+如果体验不好，可以再调 interval 到 2-3 分钟（CLAUDE.md 第 8 节授权直接动）。
 
 ---
 

@@ -4148,40 +4148,23 @@
   .goal-progress strong { color: var(--text); }
   .goal-progress .delta { color: var(--sub); margin-left: 4px; }
 
-  /* ── share view (只读快照模式) — 把页面变成"截图"，禁用所有交互 ─── */
-  body.share-view .pos-toolbar,
-  body.share-view #rec-form,
-  body.share-view #morning-brief,
-  body.share-view #wheel-hints,
-  body.share-view #chart-section,
-  body.share-view #footer,
-  body.share-view .side,
-  body.share-view #user-area,
-  body.share-view #login-area,
-  body.share-view .login-btn,
+  /* ── share view (只读快照模式) — 保留几乎所有 UI，任何点击 redirect 到 / ─── */
+  /* 只 hide 接收方上下文里完全无意义的：云同步浮标 / 新建表单 modal / 非 share modal */
   body.share-view .cloud-sync-status,
   body.share-view #add-form,
   body.share-view .add-form,
-  body.share-view .pos input[type=checkbox],
-  body.share-view .pos .pos-more-wrap,
-  body.share-view .pos .pos-extras,
-  body.share-view .pos .pos-actions,
-  body.share-view .pos .close-form,
-  body.share-view .pos .edit-form,
   body.share-view .yf-warn,
   body.share-view .modal-backdrop:not(#share-modal) {
     display: none !important;
   }
-  body.share-view .pos {
-    cursor: default !important;
-    pointer-events: none;  /* 完全 disable 卡片内一切点击 / hover 弹 / details */
+  /* 鼠标提示这是 readonly 截图 — 整页 cursor pointer 暗示点了就跳走 */
+  body.share-view {
+    cursor: pointer;
   }
-  body.share-view .pos:not(.unchecked) {
-    box-shadow: none !important;  /* 取消选中态金色描边，纯展示 */
-  }
-  body.share-view .top-card,
-  body.share-view .pos-grid {
-    pointer-events: none;
+  body.share-view input,
+  body.share-view textarea,
+  body.share-view select {
+    pointer-events: none;  /* 避免接收方误以为能改持仓数据 */
   }
 
   /* ── share modal（点"生成只读链接"后弹的复制框）按钮 — 与项目主按钮规范一致 */
@@ -8327,6 +8310,10 @@ async function generateShareLink() {
     }
 
     const now = new Date();
+    // 早安管家：如果分享者今天 x 掉了就不分享
+    const today = now.toISOString().slice(0, 10);
+    const briefDismissed = localStorage.getItem('mb_dismissed_date') === today;
+
     const snapshot = {
       v: 2,
       ts: now.toISOString(),
@@ -8334,6 +8321,10 @@ async function generateShareLink() {
       // 只分享活跃持仓（已平的不分享，避免分享端和原始端数字不一致 + 隐私简化）
       positions: d.positions.filter(p => !p.closed).map(_trimPositionForShare),
       tickers: d.tickers || {},
+      intraday: d.intraday || {},
+      suggestions: d.suggestions || [],
+      history: d.history || [],
+      morning_brief: briefDismissed ? null : (d.morning_brief || null),
       position_state: positionState,
     };
 
@@ -8476,6 +8467,16 @@ async function loadFromShare() {
   banner.innerHTML = `👀 ${t('你正在查看一份只读分享快照')} · ${ts}
     · <a href="${location.origin}/app" style="color:#0A0A0B;text-decoration:underline">${t('打开我自己的')}</a>`;
   document.body.insertBefore(banner, document.body.firstChild);
+
+  // 全局 click capture：share view 下任何点击都跳到落地页（推荐自己用）
+  // 例外：banner / share-modal 自己的链接
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#share-banner')) return;     // banner "打开我自己的" 已是 anchor
+    if (e.target.closest('#share-modal')) return;      // share-modal 关闭/复制按钮
+    e.preventDefault();
+    e.stopPropagation();
+    location.href = location.origin + '/';
+  }, true);  // capture 阶段拦截，确保在元素自己的 onclick 前生效
   return true;
 }
 
@@ -10401,12 +10402,14 @@ function _mbSaveSnapshot(snap) {
 function renderMorningBrief(brief) {
   const el = document.getElementById('morning-brief');
   if (!el) return;
-  // 用户今天已关闭过 → 不再显示
-  const today = new Date().toISOString().slice(0, 10);
-  if (localStorage.getItem('mb_dismissed_date') === today) {
-    el.style.display = 'none';
-    el.classList.remove('mode-priority');
-    return;
+  // share view 下不查接收方 localStorage — dismiss 状态由分享者 encode 决定（brief=null 时已 hide）
+  if (!window._isShareView) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem('mb_dismissed_date') === today) {
+      el.style.display = 'none';
+      el.classList.remove('mode-priority');
+      return;
+    }
   }
   // 防御：旧 list 格式 / 空数据 → 隐藏
   if (!brief || typeof brief !== 'object' || Array.isArray(brief) || !brief.concierge_text) {
@@ -11491,10 +11494,10 @@ async function refresh() {
     window._currentData = {
       positions: snap.positions || [],
       tickers: snap.tickers || {},
-      intraday: {},
-      suggestions: [],
-      morning_brief: null,
-      history: [],
+      intraday: snap.intraday || {},
+      suggestions: snap.suggestions || [],
+      morning_brief: snap.morning_brief || null,
+      history: snap.history || [],
       yfinance_available: true,
       ts: snap.ts_display || snap.ts || '',
     };

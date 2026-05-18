@@ -2842,6 +2842,205 @@
   .mb-cal-day .marker.both {
     background: linear-gradient(90deg, var(--red) 50%, var(--accent) 50%);
   }
+
+  /* ── 包租公管家 · 优先级清单（mode-priority） ──
+     当后端返回 concierge_brief 结构化数据时启用，替换 prose hero + focus list。 */
+  .morning-brief.mode-priority {
+    padding: 16px 20px;
+    display: block;
+  }
+  .mode-priority .mb-greeting {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .mode-priority .mb-greeting .mb-time {
+    color: var(--sub); font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .mb-priority-headline {
+    font-size: 15px; line-height: 1.65;
+    color: var(--text); margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .mb-priority-headline em {
+    font-style: normal;
+    color: var(--accent-light); font-weight: 700;
+  }
+  .mb-priority-headline strong {
+    color: var(--accent-light); font-weight: 700;
+  }
+  .mb-priority-sub {
+    font-size: 12px; color: var(--sub);
+    margin-bottom: 14px;
+  }
+  .mb-priority-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .mb-priority-item {
+    display: grid;
+    grid-template-columns: 86px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card2);
+    position: relative;
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+  .mb-priority-item.urgent {
+    border-color: rgba(229,72,77,0.30);
+    background: linear-gradient(180deg, rgba(229,72,77,0.10) 0%, var(--card2) 100%);
+  }
+  .mb-priority-item.cashflow {
+    border-color: rgba(76,175,130,0.30);
+  }
+  .mb-priority-tag {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .mb-priority-chip {
+    font-size: 10.5px; font-weight: 700;
+    padding: 3px 9px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .mb-priority-chip.urgent { background: #E5484D; color: white; }
+  .mb-priority-chip.cashflow { background: #4CAF82; color: white; }
+  .mb-priority-chip.root { background: var(--accent); color: #0A0A0B; }
+  .mb-priority-chip.watch {
+    background: var(--card3); color: var(--sub);
+    border: 1px solid var(--line-2);
+  }
+  .mb-priority-rank {
+    font-size: 10px; color: var(--sub);
+    font-weight: 600;
+    opacity: 0.7;
+  }
+  .mb-priority-body { min-width: 0; }
+  .mb-priority-head {
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 3px; color: var(--text);
+    line-height: 1.4;
+  }
+  .mb-priority-ticker { color: var(--accent-light); }
+  .mb-priority-desc {
+    font-size: 12px; line-height: 1.5;
+    color: var(--sub);
+  }
+  .mb-priority-desc strong { color: var(--text); font-weight: 600; }
+  .mb-priority-cta {
+    flex-shrink: 0;
+    font-size: 12px; padding: 6px 12px;
+    border-radius: 7px; cursor: pointer;
+    font-weight: 600; white-space: nowrap;
+    background: transparent; color: var(--accent);
+    border: 1.5px solid var(--accent-tint-strong);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: inherit;
+  }
+  .mb-priority-cta:hover {
+    border-color: var(--accent);
+    background: var(--accent-tint);
+  }
+  .mb-priority-item.urgent .mb-priority-cta {
+    background: #E5484D; color: white;
+    border-color: #E5484D;
+  }
+  .mb-priority-item.urgent .mb-priority-cta:hover {
+    transform: scale(1.03);
+    background: #E5484D; color: white;
+  }
+  .mb-priority-footer {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    background: var(--card2);
+    border-left: 2px solid var(--accent);
+    border-radius: 6px;
+    font-size: 11.5px; color: var(--sub);
+    line-height: 1.5;
+  }
+
+  /* mode-priority 下保留 chips 和 calendar，简洁堆叠 */
+  .mode-priority .mb-chips {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .mode-priority .mb-calendar {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* mode-priority · 桌面宽屏：priority list 全宽 + calendar 右栏 */
+  @media (min-width: 900px) {
+    .morning-brief.mode-priority {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      grid-template-areas:
+        "head head"
+        "list side"
+        "chips side";
+      column-gap: 24px;
+      row-gap: 14px;
+      padding: 20px 24px;
+    }
+    .mode-priority .mb-greeting { grid-area: head; margin-bottom: 0; }
+    .mode-priority .mb-priority-headline,
+    .mode-priority .mb-priority-sub {
+      grid-column: 1 / -1;
+      margin-bottom: 0;
+    }
+    .mode-priority .mb-priority-list { grid-area: list; margin-bottom: 0; }
+    .mode-priority .mb-priority-footer { grid-column: 1 / -1; margin-top: 0; }
+    .mode-priority .mb-chips {
+      grid-area: chips;
+      margin-top: 0; padding-top: 0; border-top: none;
+      align-self: start;
+    }
+    .mode-priority .mb-calendar {
+      grid-area: side;
+      margin: 0; padding: 0; border-top: none;
+      align-self: start;
+    }
+  }
+
+  /* mode-priority · 手机 */
+  @media (max-width: 600px) {
+    .morning-brief.mode-priority {
+      padding: 14px 16px;
+    }
+    .mb-priority-item {
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto auto;
+      gap: 6px 10px;
+      padding: 11px 12px;
+    }
+    .mb-priority-tag {
+      flex-direction: row; gap: 6px;
+      align-self: start;
+      grid-column: 1 / -1;
+    }
+    .mb-priority-body {
+      grid-column: 1 / -1;
+    }
+    .mb-priority-cta {
+      grid-column: 1 / -1;
+      width: 100%;
+      text-align: center;
+      padding: 8px 12px;
+    }
+    .mb-priority-head { font-size: 12.5px; }
+    .mb-priority-desc { font-size: 11.5px; }
+  }
+
   /* 桌面宽屏 — 双栏 layout, 日历改 7x2 网格让 cells 大、空间均匀 */
   @media (min-width: 900px) {
     .morning-brief {
@@ -4682,6 +4881,11 @@ const I18N = {
     '看持仓 →': '看持倉 →',
     '看推荐 →': '看推薦 →',
     '看原文 →': '看原文 →',
+    '紧急': '緊急',
+    '守住': '守住',
+    '隐患': '隱患',
+    '观望': '觀望',
+    '环境': '環境',
     '损益曲线': '損益曲線',
     '分享': '分享',
     '🔗 生成只读链接': '🔗 產生唯讀連結',
@@ -5284,6 +5488,11 @@ const I18N = {
     '看持仓 →': 'View →',
     '看推荐 →': 'Recommend →',
     '看原文 →': 'Article →',
+    '紧急': 'Urgent',
+    '守住': 'Hold',
+    '隐患': 'Risk',
+    '观望': 'Watch',
+    '环境': 'Market',
     '损益曲线': 'Payoff Diagram',
     '分享': 'Share',
     '🔗 生成只读链接': '🔗 Generate read-only link',
@@ -9792,6 +10001,71 @@ function _mbRenderFocusItem(item) {
 function _mbRenderChip(c) {
   return `<span class="mb-chip${_mbToneClass(c.tone)}">${_mbEscape(c.label)} <strong>${_mbEscape(c.value)}</strong></span>`;
 }
+function _mbBoldify(s) {
+  // 安全：先 escape HTML，再把 **xxx** 替换成 <strong>xxx</strong>
+  // 用户/LLM 注入 <script> 会被 escape 成 &lt;script&gt;，无 XSS 风险
+  return _mbEscape(s).replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+}
+function _mbPriorityIcon(pri) {
+  return ({ urgent: '🚨', cashflow: '💰', root: '🩺', watch: '👀' })[pri] || '•';
+}
+function _mbPriorityLabel(pri) {
+  return ({ urgent: t('紧急'), cashflow: t('守住'), root: t('隐患'), watch: t('观望') })[pri] || t('观望');
+}
+function _mbRenderPriorityItem(item, idx) {
+  const pri = ['urgent','cashflow','root','watch'].includes(item.priority) ? item.priority : 'watch';
+  const icon = _mbPriorityIcon(pri);
+  const label = _mbPriorityLabel(pri);
+  const rank = 'P' + (idx + 1);
+
+  // CTA dispatch — 防御性：未知 action 一律 drop CTA
+  let cta = '';
+  if (item.cta && item.action) {
+    const a = String(item.action);
+    if (a === 'rec') {
+      cta = `<button class="mb-priority-cta" onclick="_mbOpenRec()">${_mbEscape(item.cta)}</button>`;
+    } else if (a.startsWith('position:')) {
+      const pid = a.slice('position:'.length);
+      cta = `<button class="mb-priority-cta" onclick="_mbFocusPosition('${_mbEscape(pid)}')">${_mbEscape(item.cta)}</button>`;
+    } else if (a.startsWith('news:')) {
+      const link = a.slice('news:'.length);
+      cta = `<a class="mb-priority-cta" href="${_mbEscape(link)}" target="_blank" rel="noopener noreferrer">${_mbEscape(item.cta)}</a>`;
+    }
+  }
+
+  const ticker = item.ticker
+    ? `<span class="mb-priority-ticker">${_mbEscape(item.ticker)}</span>`
+    : '';
+  const sep = ticker && item.title ? ' · ' : '';
+  const head = `<div class="mb-priority-head">${ticker}${sep}${_mbEscape(item.title || '')}</div>`;
+  const desc = item.body ? `<div class="mb-priority-desc">${_mbBoldify(item.body)}</div>` : '';
+
+  return `<div class="mb-priority-item ${pri}">
+    <div class="mb-priority-tag">
+      <span class="mb-priority-chip ${pri}">${icon} ${_mbEscape(label)}</span>
+      <span class="mb-priority-rank">${_mbEscape(rank)}</span>
+    </div>
+    <div class="mb-priority-body">
+      ${head}
+      ${desc}
+    </div>
+    ${cta}
+  </div>`;
+}
+function _mbRenderConciergeBrief(brief) {
+  const items = Array.isArray(brief.items) ? brief.items : [];
+  const itemsHtml = items.map((it, i) => _mbRenderPriorityItem(it, i)).join('');
+  const subHtml = brief.sub
+    ? `<div class="mb-priority-sub">${_mbEscape(brief.sub)}</div>` : '';
+  const footerHtml = brief.footer
+    ? `<div class="mb-priority-footer">${_mbBoldify(brief.footer)}</div>` : '';
+  return `
+    <div class="mb-priority-headline">${_mbBoldify(brief.headline || '')}</div>
+    ${subHtml}
+    <div class="mb-priority-list">${itemsHtml}</div>
+    ${footerHtml}
+  `;
+}
 function _mbRenderCalendar(markers, todayISO) {
   if (!Array.isArray(markers)) markers = [];
   const today = todayISO ? new Date(todayISO + 'T00:00:00') : new Date();
@@ -9887,40 +10161,55 @@ function renderMorningBrief(brief) {
   const today = new Date().toISOString().slice(0, 10);
   if (localStorage.getItem('mb_dismissed_date') === today) {
     el.style.display = 'none';
+    el.classList.remove('mode-priority');
     return;
   }
   // 防御：旧 list 格式 / 空数据 → 隐藏
   if (!brief || typeof brief !== 'object' || Array.isArray(brief) || !brief.concierge_text) {
     el.style.display = 'none';
+    el.classList.remove('mode-priority');
     return;
   }
-  const top = Array.isArray(brief.top_3_focus) ? brief.top_3_focus : [];
   const chips = Array.isArray(brief.chips) ? brief.chips : [];
   const cal = Array.isArray(brief.calendar_14d) ? brief.calendar_14d : [];
-
-  const topHtml = top.length
-    ? `<div class="mb-focus-list">${top.map(_mbRenderFocusItem).join('')}</div>`
-    : '';
   const chipsHtml = chips.length
     ? `<div class="mb-chips">${chips.map(_mbRenderChip).join('')}</div>`
     : '';
   const calHtml = cal.length ? _mbRenderCalendar(cal, brief.today_date) : '';
 
-  el.innerHTML = `
-    <span class="mb-close" onclick="dismissMorningBrief()">×</span>
-    <div class="mb-concierge">
-      <div class="mb-avatar">☀️</div>
-      <div class="mb-bubble">
-        <div class="mb-greeting">${t('包租公管家')} · ${_mbFormatTime()}</div>
-        <div class="mb-text">${_mbEscape(brief.concierge_text)}</div>
+  // 新结构：concierge_brief 存在且有 items → priority list 模式
+  const cb = brief.concierge_brief;
+  if (cb && typeof cb === 'object' && Array.isArray(cb.items) && cb.items.length > 0) {
+    el.classList.add('mode-priority');
+    el.innerHTML = `
+      <span class="mb-close" onclick="dismissMorningBrief()">×</span>
+      <div class="mb-greeting">${t('包租公管家')} <span class="mb-time">· ${_mbFormatTime()}</span></div>
+      ${_mbRenderConciergeBrief(cb)}
+      ${chipsHtml}
+      ${calHtml}
+    `;
+  } else {
+    // 旧结构：prose hero + focus list（template fallback / 旧版后端）
+    el.classList.remove('mode-priority');
+    const top = Array.isArray(brief.top_3_focus) ? brief.top_3_focus : [];
+    const topHtml = top.length
+      ? `<div class="mb-focus-list">${top.map(_mbRenderFocusItem).join('')}</div>`
+      : '';
+    el.innerHTML = `
+      <span class="mb-close" onclick="dismissMorningBrief()">×</span>
+      <div class="mb-concierge">
+        <div class="mb-avatar">☀️</div>
+        <div class="mb-bubble">
+          <div class="mb-greeting">${t('包租公管家')} · ${_mbFormatTime()}</div>
+          <div class="mb-text">${_mbEscape(brief.concierge_text)}</div>
+        </div>
       </div>
-    </div>
-    ${topHtml}
-    ${chipsHtml}
-    ${calHtml}
-  `;
+      ${topHtml}
+      ${chipsHtml}
+      ${calHtml}
+    `;
+  }
   // 用空字符串清掉 inline display，让 @media (min-width: 900px) 的 display:grid 能生效
-  // (inline style 优先级 > CSS @media rule，直接写 'block' 会让 grid layout 失效)
   el.style.display = '';
 
   // 把今天的 snapshot 写回 state._meta.brief_snapshot（下次启动时用作 diff 基准）

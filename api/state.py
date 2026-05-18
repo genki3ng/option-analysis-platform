@@ -8,6 +8,7 @@ POST 接受 { positions: [...], state: {} } → 返回完整计算结果
 from http.server import BaseHTTPRequestHandler
 import json
 import math
+import re
 import time
 import traceback
 import urllib.request
@@ -138,6 +139,9 @@ TRANS_EN = {
     "{pub} · {h}h 前": "{pub} · {h}h ago",
     "看持仓 →": "View →",
     "看推荐 →": "Recommend →",
+    "看持仓": "View",
+    "看推荐": "Recommend",
+    "看原文": "Read",
     "📅 未来 14 天关键日": "📅 Next 14 days",
     "财报": "Earnings",
     "持仓到期": "Expiry",
@@ -254,6 +258,9 @@ TRANS_TW = {
     "{pub} · {h}h 前": "{pub} · {h}h 前",
     "看持仓 →": "看持倉 →",
     "看推荐 →": "看推薦 →",
+    "看持仓": "看持倉",
+    "看推荐": "看推薦",
+    "看原文": "看原文",
     "📅 未来 14 天关键日": "📅 未來 14 天關鍵日",
     "财报": "財報",
     "持仓到期": "持倉到期",
@@ -3032,7 +3039,8 @@ def _build_focus_chips(positions, market, total_pnl, total_realized, total_theta
 
 
 def _template_concierge(top_3, market, lang):
-    """模板版管家一句话（LLM 不可用时的兜底）。"""
+    """模板版管家（LLM 不可用时的兜底）— 返回 (prose, structured_brief)。
+    structured_brief: {headline, sub?, items[], footer?}，items 来自 top_3_focus。"""
     parts = []
     vix = market.get("vix") or {}
     if vix.get("prev", 0) > 0:
@@ -3046,19 +3054,63 @@ def _template_concierge(top_3, market, lang):
     if n > 0:
         parts.append(_T(lang, "今日 {n} 件事要看", n=n))
     if not parts:
-        return _T(lang, "持仓平稳，无紧急信号")
-    return "，".join(parts) + "。"
+        headline = _T(lang, "持仓平稳，无紧急信号")
+    else:
+        headline = "，".join(parts) + "。"
+
+    # 从 top_3_focus 派生 priority items（兜底也保证 priority list 有内容）
+    items = []
+    for e in (top_3 or [])[:4]:
+        kind = e.get("kind", "")
+        if kind in ("near_strike", "vix_spike", "earnings_imminent"):
+            pri = "urgent"
+        elif kind == "profit_opportunity":
+            pri = "cashflow"
+        elif kind in ("newly_itm", "news_alert"):
+            pri = "root"
+        else:
+            pri = "watch"
+        action = None
+        cta = None
+        if e.get("action") == "view_position" and e.get("position_id"):
+            action = f"position:{e['position_id']}"
+            cta = _T(lang, "看持仓")
+        elif e.get("action") == "open_news" and e.get("link"):
+            action = f"news:{e['link']}"
+            cta = _T(lang, "看原文")
+        elif e.get("action") == "view_recommend":
+            action = "rec"
+            cta = _T(lang, "看推荐")
+        items.append({
+            "priority": pri,
+            "ticker": e.get("label") or e.get("ticker") or "",
+            "title": e.get("headline") or "",
+            "body": e.get("detail") or "",
+            "action": action,
+            "cta": cta,
+        })
+
+    brief = {"headline": headline, "items": items}
+    # 拼 prose 用作 fallback / share view
+    prose_parts = [headline]
+    for it in items:
+        prose_parts.append(f"{it.get('ticker','')} {it.get('title','')}：{it.get('body','')}".strip("：· "))
+    prose = "\n\n".join([p for p in prose_parts if p])
+    return prose, brief
 
 
 def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration,
                               positions, pos_changes, lang):
-    """调 Claude Haiku 生成管家摘要。失败返回 None。
+    """调 Claude Haiku 生成结构化管家简报。失败返回 (None, None)。
+    返回 (prose_text, structured_brief)：
+      prose_text: 派生 prose（backward compat / share view）
+      structured_brief: {headline, sub?, items[], footer?}
     positions: 完整活跃持仓列表（compact 格式塞进 prompt 让管家有全局视野）
     pos_changes: 自上次刷新的新开/平仓 diff，让管家能主动提到刚发生的动作。"""
     client = _get_anthropic_client()
     if not client:
         print(f"[concierge] llm_skip: no_client lang={lang}", flush=True)
-        return None
+        return None, None
     active = [p for p in (positions or [])
               if not p.get("closed") and p.get("days", 0) >= 0]
     print(f"[concierge] llm_call: lang={lang} top3={len(top_3)} "
@@ -3122,40 +3174,123 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
 
     system_prompt = (
         "你是\"包租公管家\"——给一个用美股期权赚租金的散户写早安顾问。\n"
-        "目标：让用户读完 1 分钟内对今早的全景心里有底——知道重点看什么、为什么紧、具体怎么处理。\n"
-        f"风格：亲切像老友茶余饭后多说几句，{lang_word}，有人情味、有判断。少术语、生活化比喻。\n"
-        "**长度**：3-5 句话，350-500 字符。不要扯太远，但**信息密度要够**——\n"
-        "宁可一句话里多塞一点判断或上下文（'85% 集中度对你这种短期收租算偏高'），"
-        "也不要句句空话或老套劝告（'注意风险'这种不要写）。\n"
-        "**建议结构**：\n"
-        "  ① 今早最值得看的 1 件事，**带上数字佐证**（ticker、风险距离 X%、剩 Y 天）；\n"
-        "  ② 一个具体的 actionable 建议（平仓 / roll / 加保护 / 等反弹 / 维持）；\n"
-        "  ③ 简短解释为什么（基于 VIX 走势 / 集中度 / Theta / 新闻 / 历史模式）；\n"
-        "  ④ 可选：带一句对 1-2 个次要 ticker 的现状判断；\n"
-        "  ⑤ 可选：结尾一句心态安抚 or 边界提醒。\n"
-        "不要以\"早安\"开头（前端已写）。不要列条目、项目符号、'首先/其次'。不要编造数字——只用我给的数据。\n"
-        "如果所有信号都平静，就说一句让人放心的话即可，别硬挤建议。\n"
-        "**如果列了 Recent news**：挑最相关的 1-2 条引用进语句里（如 'NVDA 昨晚被下调评级'）；"
-        "营销稿、不痛不痒的标题直接忽略。\n"
-        "**如果列了 Recent position changes**：自然地承认这个动作（'你刚加的 NVDA Put 这个位置..'），"
-        "但不要每条都列——只挑值得讲的 1 条，配合判断（这个新位置在当前市场环境下合不合适、要留意啥）。\n"
-        "**All active positions 信号是给你做全局判断用**（哪些扎堆、哪些快到期、整体 Δ/θ 分布等），不要在文中逐张列。"
+        "目标：让用户 30 秒内对今早的全景心里有底——知道重点看什么、为什么紧、具体怎么处理。\n"
+        f"风格：亲切像老友讲话，{lang_word}，有人情味、有判断。少术语、生活化比喻。\n"
+        "**输出格式**：严格返回 JSON（不要 markdown 代码块包裹，不要 ```json 前缀），形如：\n"
+        "{\n"
+        "  \"headline\": \"一句话核心结论（≤80 字），点出今天最关键的事是啥，用「」或粗体感受词带出关键 ticker/数字\",\n"
+        "  \"sub\": \"（可选）一句话补充说明，比如'下面 N 件事按优先级排了'\",\n"
+        "  \"items\": [\n"
+        "    {\n"
+        "      \"priority\": \"urgent | cashflow | root | watch\",\n"
+        "      \"ticker\": \"TSLA $415 Put（可选，没有就空字符串）\",\n"
+        "      \"title\": \"短标题，10-18 字（如：止损或接货二选一）\",\n"
+        "      \"body\": \"30-80 字解释，**必须带数字**（DTE、PnL、距行权、Θ 等），给具体判断不要空话\",\n"
+        "      \"action\": \"rec | position:<position_id> | null\",\n"
+        "      \"cta\": \"按钮文案（如：看止损方案 / 看持仓 / 分散建议），没 action 就 null\"\n"
+        "    }\n"
+        "  ],\n"
+        "  \"footer\": \"（可选）一句话环境/心态注脚，如：VIX 18 平静（问题不在波动，在头寸结构本身）\"\n"
+        "}\n"
+        "\n**priority 含义**：\n"
+        "  - `urgent` 🚨：必须今天动手（距行权 <3%、≤7 天到期且亏损、财报 ≤2 天等）\n"
+        "  - `cashflow` 💰：守住 / 别动（持续 Theta 流入、≥70% 锁利机会、稳健 ITM 但有缓冲）\n"
+        "  - `root` 🩺：结构性问题需要中期审视（集中度爆表、长短期持仓互锤、方向判断错误）\n"
+        "  - `watch` 👀：放着观望即可（位置 OK 的新仓 / 平稳持仓）\n"
+        "\n**items 数量**：3-5 个。**至少 1 个 urgent**（如果没紧急事，就放最值得关注的）。"
+        "如果有显著盈利 / 持续 Theta 来源 → 必须有 1 个 cashflow item。"
+        "如果集中度 ≥40% 或长短期方向冲突 → 必须有 1 个 root item。"
+        "\n**action 字段映射**：\n"
+        "  - 需要用户去看具体持仓 → `position:<完整 position_id>`（position_id 在 All active positions 行里能算出来：`{ticker}_{type}_{strike}_{expiry}`，但你只看 label，**不要瞎编 id**——如果不确定就用 null）\n"
+        "  - 需要让用户去找新的卖出机会 / 调仓建议 → `rec`\n"
+        "  - 没有自然的下一步 → null\n"
+        "\n不要编造数字——只用我给的数据。不要重复罗列 All active positions——它是给你做全局判断用的。"
+        "如果列了 Recent position changes，找 1 条最值得讲的，自然地体现在 headline 或 items.body 里。"
     )
 
-    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + f"\n\n用 {lang_word} 写 3-5 句话总览。"
+    user_prompt = "今早信号:\n" + "\n".join(signal_lines) + (
+        f"\n\n用 {lang_word} 输出，严格 JSON，items 3-5 个。"
+    )
 
     try:
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=800,
+            max_tokens=1500,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
         text = (resp.content[0].text if resp.content else "").strip()
-        return text or None
+        if not text:
+            print(f"[concierge] llm_empty: lang={lang}", flush=True)
+            return None, None
+        prose, brief = _parse_concierge_json(text, lang)
+        if not brief or not brief.get("items"):
+            print(f"[concierge] llm_parse_fail: lang={lang} text_head={text[:100]!r}", flush=True)
+            return None, None
+        return prose, brief
     except Exception as e:
         print(f"[concierge] llm_error: {type(e).__name__}: {e}", flush=True)
-        return None
+        return None, None
+
+
+def _parse_concierge_json(text, lang):
+    """LLM 输出的 JSON 字符串 → (prose_text, structured_brief)。
+    宽容解析：剥 markdown 代码块、宽容字段缺失。失败返回 (None, None)。"""
+    s = text.strip()
+    # 剥 markdown code fence
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*", "", s)
+        s = re.sub(r"\s*```\s*$", "", s)
+    # 找第一个 { 到最后一个 }（防 LLM 加 narrative 文字）
+    i = s.find("{"); j = s.rfind("}")
+    if i < 0 or j < 0 or j <= i:
+        return None, None
+    s = s[i:j+1]
+    try:
+        data = json.loads(s)
+    except Exception:
+        return None, None
+    if not isinstance(data, dict):
+        return None, None
+    headline = (data.get("headline") or "").strip()
+    sub = (data.get("sub") or "").strip() or None
+    footer = (data.get("footer") or "").strip() or None
+    raw_items = data.get("items")
+    if not isinstance(raw_items, list):
+        return None, None
+    items = []
+    valid_pri = {"urgent", "cashflow", "root", "watch"}
+    for it in raw_items[:6]:
+        if not isinstance(it, dict):
+            continue
+        pri = (it.get("priority") or "watch").strip().lower()
+        if pri not in valid_pri:
+            pri = "watch"
+        items.append({
+            "priority": pri,
+            "ticker": (it.get("ticker") or "").strip(),
+            "title": (it.get("title") or "").strip(),
+            "body": (it.get("body") or "").strip(),
+            "action": (it.get("action") or None) or None,
+            "cta": (it.get("cta") or "").strip() or None,
+        })
+    if not items or not headline:
+        return None, None
+    brief = {"headline": headline, "items": items}
+    if sub: brief["sub"] = sub
+    if footer: brief["footer"] = footer
+    # 派生 prose
+    prose_parts = [headline]
+    if sub: prose_parts.append(sub)
+    for it in items:
+        seg = " ".join([s for s in [it.get("ticker"), it.get("title")] if s]).strip()
+        if it.get("body"):
+            prose_parts.append(f"{seg}：{it['body']}" if seg else it["body"])
+        elif seg:
+            prose_parts.append(seg)
+    if footer: prose_parts.append(footer)
+    prose = "\n\n".join(prose_parts)
+    return prose, brief
 
 
 def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta,
@@ -3183,10 +3318,12 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
-    # bump 6: 修缓存中毒 — 之前 template fallback 会被无条件缓存，导致整天不重试 LLM
+    # bump 6: 修缓存中毒 — template fallback 不再被无条件缓存
     # bump 7: 持仓变化触发重新生成 + prompt 加全部活跃持仓 + Recent changes section
-    CONCIERGE_VERSION = 7
+    # bump 8: LLM 输出结构化 JSON (concierge_brief)，前端渲染 priority list
+    CONCIERGE_VERSION = 8
     cached_text = None
+    cached_brief = None
     cached_by = None
     snap_by = yesterday_snap.get("generated_by")
     if (yesterday_snap.get("date") == today_iso
@@ -3196,25 +3333,29 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
             and snap_by != "template"  # template 兜底不算有效 cache，下次刷新会重试 LLM
             and not pos_changes["has_changes"]):  # 持仓有增删 → 强制重新生成
         cached_text = yesterday_snap.get("concierge_text")
+        cached_brief = yesterday_snap.get("concierge_brief")  # 可能 None（旧 cache）
         cached_by = snap_by or "cached"
 
-    if cached_text:
+    if cached_text and cached_brief:
         concierge_text = cached_text
+        concierge_brief = cached_brief
         by = cached_by
     else:
-        concierge_text = _generate_concierge_llm(top_3, market, total_pnl, total_theta,
-                                                  concentration, positions, pos_changes, lang)
+        concierge_text, concierge_brief = _generate_concierge_llm(
+            top_3, market, total_pnl, total_theta,
+            concentration, positions, pos_changes, lang)
         by = "llm"
-        if not concierge_text:
-            concierge_text = _template_concierge(top_3, market, lang)
+        if not concierge_text or not concierge_brief:
+            concierge_text, concierge_brief = _template_concierge(top_3, market, lang)
             by = "template"
 
     snap_date = yesterday_snap.get("date")
     snap_lang = yesterday_snap.get("concierge_lang")
     snap_ver = yesterday_snap.get("concierge_version")
+    n_items = len((concierge_brief or {}).get("items") or [])
     print(f"[concierge] brief: by={by} lang={lang} today={today_iso} "
           f"snap_date={snap_date} snap_lang={snap_lang} snap_ver={snap_ver} "
-          f"snap_by={snap_by} want_ver={CONCIERGE_VERSION} "
+          f"snap_by={snap_by} want_ver={CONCIERGE_VERSION} items={n_items} "
           f"changes={'+' + str(len(pos_changes['added'])) + '/-' + str(len(pos_changes['removed']))}",
           flush=True)
 
@@ -3224,12 +3365,14 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     # diff 用的 positions/vix snap 仍写入，跨日 diff 不受影响。
     if by != "template":
         next_snap["concierge_text"] = concierge_text
+        next_snap["concierge_brief"] = concierge_brief
         next_snap["concierge_lang"] = lang
         next_snap["concierge_version"] = CONCIERGE_VERSION
         next_snap["generated_by"] = by
 
     return {
         "concierge_text": concierge_text,
+        "concierge_brief": concierge_brief,
         "generated_by": by,
         "top_3_focus": top_3,
         "chips": chips,

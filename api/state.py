@@ -2536,11 +2536,11 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     # ── 2.0 新增信号：EV / VRP（仅 v2 base 时启用）
     if is_short and used_v2 and ev_pct is not None:
         if ev_pct < 0:
-            cons.append(f"⚠️ 年化边际收益 {ev_pct:.1f}% — IV 低于已实现 vol，正在亏卖"); weight -= 2
+            cons.append(f"⚠️ 年化超额收益 {ev_pct:.1f}% — IV 低于已实现 vol，正在亏卖"); weight -= 2
         elif ev_pct > 15 and vrp and vrp > 1.20:
-            pros.append(f"💰 年化边际收益 {ev_pct:.1f}% (VRP {vrp:.2f}，IV 比真实 vol 高 20%+)"); weight += 2
+            pros.append(f"💰 年化超额收益 {ev_pct:.1f}% (VRP {vrp:.2f}，IV 比真实 vol 高 20%+)"); weight += 2
         elif ev_pct > 5:
-            pros.append(f"📊 年化边际收益 {ev_pct:.1f}%"); weight += 1
+            pros.append(f"📊 年化超额收益 {ev_pct:.1f}%"); weight += 1
 
     # ── 2.0 新增信号：资金占用风险
     # 2.0.1：warning 不再进 verdict cons（避免噪音）—只保留 veto 这种真超额情况

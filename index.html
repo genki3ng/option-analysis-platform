@@ -5034,7 +5034,7 @@ const I18N = {
 
     // ── 包租公 2.0 信号 box（v2 candidate card surfaces）
     '📊 包租公 2.0 信号': '📊 包租公 2.0 信号',
-    '年化边际收益': '年化边际收益',
+    '年化超额收益': '年化超额收益',
     'VRP（波动率溢价）': 'VRP（波动率溢价）',
     '已实现波动率': '已实现波动率',
     '压测 -5%': '压测 -5%',
@@ -5050,7 +5050,7 @@ const I18N = {
     '🚫 超额': '🚫 超额',
     '⚠️ 偏高': '⚠️ 偏高',
     '✓ 安全': '✓ 安全',
-    'tip_ev': '年化边际收益 = 收到的 premium 减去用过去 30 天实际波动率算的 BS 公平价，然后年化。> 5% 算可以接，> 15% 是好时机，负数说明你在亏卖（IV 比真实波动还低）。',
+    'tip_ev': '年化超额收益 = 收到的 premium 减去用过去 30 天实际波动率算的 BS 公平价，然后年化。> 5% 算可以接，> 15% 是好时机，负数说明你在亏卖（IV 比真实波动还低）。',
     'tip_vrp': 'VRP = IV ÷ 已实现波动率。> 1.20 说明市场对未来波动过度担忧，卖期权时机好；< 1.0 说明 IV 低于实际波动，你在亏卖。',
     'tip_rv': '标的过去 30 个交易日实际的年化波动率（用收盘价对数收益率算 σ × √252）。IV 是市场预期未来，RV 是实际发生过——两者的比值就是 VRP。',
     'tip_stress': '假设明日标的朝不利方向跳动 5% / 10%（short put 看跌、short call 看涨），同时 IV 被波动事件拉起 +15% / +30%，用 BS 重新算这张期权的浮亏。考验你能不能扛得住中间波动而不是到期结果。',
@@ -5682,7 +5682,7 @@ const I18N = {
 
     // ── 包租公 2.0 信号 box
     '📊 包租公 2.0 信号': '📊 包租公 2.0 信號',
-    '年化边际收益': '年化邊際收益',
+    '年化超额收益': '年化超額收益',
     'VRP（波动率溢价）': 'VRP（波動率溢價）',
     '已实现波动率': '已實現波動率',
     '压测 -5%': '壓測 -5%',
@@ -5698,7 +5698,7 @@ const I18N = {
     '🚫 超额': '🚫 超額',
     '⚠️ 偏高': '⚠️ 偏高',
     '✓ 安全': '✓ 安全',
-    'tip_ev': '年化邊際收益 = 收到的 premium 減去用過去 30 天實際波動率算的 BS 公平價，然後年化。> 5% 算可以接，> 15% 是好時機，負數說明你在虧賣（IV 比真實波動還低）。',
+    'tip_ev': '年化超額收益 = 收到的 premium 減去用過去 30 天實際波動率算的 BS 公平價，然後年化。> 5% 算可以接，> 15% 是好時機，負數說明你在虧賣（IV 比真實波動還低）。',
     'tip_vrp': 'VRP = IV ÷ 已實現波動率。> 1.20 說明市場對未來波動過度擔憂，賣期權時機好；< 1.0 說明 IV 低於實際波動，你在虧賣。',
     'tip_rv': '標的過去 30 個交易日實際的年化波動率（用收盤價對數收益率算 σ × √252）。IV 是市場預期未來，RV 是實際發生過——兩者的比值就是 VRP。',
     'tip_stress': '假設明日標的朝不利方向跳動 5% / 10%（short put 看跌、short call 看漲），同時 IV 被波動事件拉起 +15% / +30%，用 BS 重新算這張期權的浮虧。考驗你能不能扛得住中間波動而不是到期結果。',
@@ -6422,7 +6422,7 @@ const I18N = {
 
     // ── Algorithm 2.0 signal box
     '📊 包租公 2.0 信号': '📊 Algorithm 2.0 signals',
-    '年化边际收益': 'Annualized edge',
+    '年化超额收益': 'Annualized excess',
     'VRP（波动率溢价）': 'VRP (vol risk premium)',
     '已实现波动率': 'Realized vol',
     '压测 -5%': 'Stress -5%',
@@ -6438,7 +6438,7 @@ const I18N = {
     '🚫 超额': '🚫 over limit',
     '⚠️ 偏高': '⚠️ high',
     '✓ 安全': '✓ safe',
-    'tip_ev': 'Annualized edge = premium received minus BS fair value computed with 30-day realized volatility, then annualized. > 5% acceptable, > 15% great timing, negative means you\'re underselling vol (IV below true vol).',
+    'tip_ev': 'Annualized excess = premium received minus BS fair value computed with 30-day realized volatility, then annualized. > 5% acceptable, > 15% great timing, negative means you\'re underselling vol (IV below true vol).',
     'tip_vrp': 'VRP = IV ÷ realized volatility. > 1.20 means market is overly anxious — good time to sell. < 1.0 means IV is below true vol, you\'re underselling.',
     'tip_rv': 'The underlying\'s actual annualized volatility over the past 30 trading days (log-return σ × √252). IV is market expectation; RV is what actually happened. Their ratio is VRP.',
     'tip_stress': 'Hypothetical: tomorrow underlying moves 5% / 10% in the adverse direction (short put = down, short call = up), with IV pumping +15% / +30% from the vol event. BS reprices the option to show MTM paper loss. Tests whether you can stomach the drawdown vs the expiry outcome.',
@@ -7170,7 +7170,7 @@ function renderV2Sigbox(opt, isShort) {
   const rows = [];
   const escAttr = (s) => String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
-  // 1. EV — 年化边际收益
+  // 1. EV — 年化超额收益
   if (ev != null) {
     const cls = ev > 5 ? 'good' : (ev < 0 ? 'bad' : '');
     const sign = ev > 0 ? '+' : '';
@@ -7178,7 +7178,7 @@ function renderV2Sigbox(opt, isShort) {
       ? t('强溢价')
       : (ev > 5 ? t('vs 已实现 vol') : (ev < 0 ? t('IV < RV 亏卖') : t('小幅溢价')));
     rows.push(`<div class="v2-sigrow" data-tip="${escAttr(t('tip_ev'))}" tabindex="0" onclick="this.classList.toggle('show-tip')">
-      <div class="v2-sigrow-l">${t('年化边际收益')} <span class="v2-help">?</span></div>
+      <div class="v2-sigrow-l">${t('年化超额收益')} <span class="v2-help">?</span></div>
       <div class="v2-sigrow-v ${cls}">${sign}${ev.toFixed(1)}%/yr</div>
       <div class="v2-sigrow-tag ${cls}">${tag}</div>
     </div>`);
@@ -8511,12 +8511,12 @@ const EDU_TOPICS = [
 
   // ── 📊 包租公 2.0 信号（高阶）
   { cat: '📊 包租公 2.0 信号（高阶）',
-    sym: 'EV', name: 'EV · 年化边际收益',
+    sym: 'EV', name: 'EV · 年化超额收益',
     desc: '这单卖期权"比按真实波动率定价多收的钱"，年化成百分比。EV = (mid − 用 RV 算的 BS 公平价) ÷ 抵押 × 365/天数。',
     ex: '你卖 TSLA 14d $390 put 收 $5.40，用 35% RV 算 BS 公平价 $4.85 → 多收 $0.55/股 → EV ≈ 3.7%/年。',
     care: '<strong>EV 是卖期权赚钱的本质度量</strong>。> 5% 可以接，> 15% 是好时机，<strong>负数说明你在亏卖</strong>（IV 比真实波动还低）。包租公算法 2.0 的评分基底。',
     en: {
-      name: 'EV · Annualized edge over realized vol',
+      name: 'EV · Annualized excess over realized vol',
       desc: 'How much extra premium this trade pays vs the "fair" price under actual realized volatility, annualized. EV = (mid − BS fair value using RV) ÷ collateral × 365/days.',
       ex: 'You sell TSLA 14d $390 put for $5.40; BS fair value with 35% RV is $4.85 → +$0.55/share edge → EV ≈ 3.7%/yr.',
       care: '<strong>EV is the fundamental measure of selling-options profit.</strong> > 5% acceptable, > 15% great timing, <strong>negative = you\'re underselling vol</strong> (IV below true vol). The base of algorithm 2.0 scoring.',

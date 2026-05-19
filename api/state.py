@@ -15,7 +15,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from datetime import date, datetime, timedelta
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Set
 
 RISK_FREE = 0.045
 
@@ -210,6 +210,23 @@ TRANS_EN = {
     "📅 未来 14 天关键日": "📅 Next 14 days",
     "财报": "Earnings",
     "持仓到期": "Expiry",
+    # news_ticker
+    "市场": "Market",
+    "现金": "Cash",
+    "日历": "Calendar",
+    "新闻": "News",
+    "VIX 跳涨 {p}% → **{v}** · 防御性建仓窗口": "VIX spikes {p}% → **{v}** · defensive entry window",
+    "VIX 回落 {p}% → **{v}** · 风险偏好回归": "VIX drops {p}% → **{v}** · risk-on returns",
+    "VIX 高位 **{v}** · 波动放大，谨慎建新仓": "VIX elevated **{v}** · volatility wide, enter cautiously",
+    "VIX 低位 **{v}** · IV 偏低有利卖方": "VIX low **{v}** · low IV favors sellers",
+    "VIX 平稳 **{v}** · 卖方友好窗口": "VIX steady **{v}** · seller-friendly window",
+    "今日 Theta **+${t}** · 时间在你这边": "Today's Theta **+${t}** · time is on your side",
+    "今日 Theta **-${t}** · 你在为时间付钱": "Today's Theta **-${t}** · you're paying for time",
+    "**{n}** 张合约到期": "**{n}** contracts expiring",
+    "**{t}** 财报": "**{t}** earnings",
+    "**{n}** 个财报": "**{n}** earnings",
+    "未来 7 天 · {p}": "Next 7 days · {p}",
+    "**{tk}**: {t}": "**{tk}**: {t}",
 }
 
 TRANS_TW = {
@@ -393,6 +410,23 @@ TRANS_TW = {
     "📅 未来 14 天关键日": "📅 未來 14 天關鍵日",
     "财报": "財報",
     "持仓到期": "持倉到期",
+    # news_ticker
+    "市场": "市場",
+    "现金": "現金",
+    "日历": "日曆",
+    "新闻": "新聞",
+    "VIX 跳涨 {p}% → **{v}** · 防御性建仓窗口": "VIX 跳漲 {p}% → **{v}** · 防禦性建倉窗口",
+    "VIX 回落 {p}% → **{v}** · 风险偏好回归": "VIX 回落 {p}% → **{v}** · 風險偏好回歸",
+    "VIX 高位 **{v}** · 波动放大，谨慎建新仓": "VIX 高位 **{v}** · 波動放大，謹慎建新倉",
+    "VIX 低位 **{v}** · IV 偏低有利卖方": "VIX 低位 **{v}** · IV 偏低有利賣方",
+    "VIX 平稳 **{v}** · 卖方友好窗口": "VIX 平穩 **{v}** · 賣方友好窗口",
+    "今日 Theta **+${t}** · 时间在你这边": "今日 Theta **+${t}** · 時間在你這邊",
+    "今日 Theta **-${t}** · 你在为时间付钱": "今日 Theta **-${t}** · 你在為時間付錢",
+    "**{n}** 张合约到期": "**{n}** 張合約到期",
+    "**{t}** 财报": "**{t}** 財報",
+    "**{n}** 个财报": "**{n}** 個財報",
+    "未来 7 天 · {p}": "未來 7 天 · {p}",
+    "**{tk}**: {t}": "**{tk}**: {t}",
 }
 
 def _T(lang: str, key: str, **vars) -> str:
@@ -4364,6 +4398,108 @@ def _detect_news_alerts(news: List[Dict], lang: str) -> List[Dict]:
     return alerts
 
 
+def _build_news_ticker(positions: List[dict],
+                        market: Dict,
+                        total_theta: float,
+                        calendar_14d: List[Dict],
+                        concierge_brief: Dict,
+                        lang: str = "zh") -> List[Dict]:
+    """管家"新闻条上下滚动" — 4-6 条混合信号 (市场/现金/日历/新闻 headline)。
+
+    去重逻辑：concierge_brief.items 已涉及的 ticker，新闻条不再针对同一 ticker
+    再讲"持仓事件"，但允许出现该 ticker 的新闻 headline（信息维度不同）。
+    """
+    items: List[Dict] = []
+    pri_tickers: Set[str] = set()
+    if isinstance(concierge_brief, dict):
+        for it in concierge_brief.get("items") or []:
+            tk = (it.get("ticker") or "").strip().upper()
+            if tk:
+                pri_tickers.add(tk)
+
+    # 1. 市场: VIX
+    vix = market.get("vix") or {}
+    v = vix.get("price")
+    chg = vix.get("change_pct") or 0
+    if isinstance(v, (int, float)) and v > 0:
+        if chg >= 8:
+            text = _T(lang, "VIX 跳涨 {p}% → **{v}** · 防御性建仓窗口",
+                       p=f"{chg:.0f}", v=f"{v:.1f}")
+        elif chg <= -8:
+            text = _T(lang, "VIX 回落 {p}% → **{v}** · 风险偏好回归",
+                       p=f"{abs(chg):.0f}", v=f"{v:.1f}")
+        elif v >= 25:
+            text = _T(lang, "VIX 高位 **{v}** · 波动放大，谨慎建新仓",
+                       v=f"{v:.1f}")
+        elif v <= 14:
+            text = _T(lang, "VIX 低位 **{v}** · IV 偏低有利卖方",
+                       v=f"{v:.1f}")
+        else:
+            text = _T(lang, "VIX 平稳 **{v}** · 卖方友好窗口",
+                       v=f"{v:.1f}")
+        items.append({"kind": "market", "icon": "📊",
+                       "tag": _T(lang, "市场"), "text": text})
+
+    # 2. 现金流: Theta 总和（每日 $）
+    if isinstance(total_theta, (int, float)) and total_theta != 0:
+        # 全仓 theta 一般是正的（卖方收时间价值）；负 theta 是买方
+        if total_theta > 0:
+            text = _T(lang, "今日 Theta **+${t}** · 时间在你这边",
+                       t=f"{total_theta:,.0f}")
+        else:
+            text = _T(lang, "今日 Theta **-${t}** · 你在为时间付钱",
+                       t=f"{abs(total_theta):,.0f}")
+        items.append({"kind": "cashflow", "icon": "💰",
+                       "tag": _T(lang, "现金"), "text": text})
+
+    # 3. 日历: 未来 7 天到期 + 财报合并
+    if calendar_14d:
+        exp_7d = [c for c in calendar_14d
+                  if c.get("offset", 99) <= 7 and c.get("type") == "expiry"]
+        earn_7d = [c for c in calendar_14d
+                   if c.get("offset", 99) <= 7 and c.get("type") == "earnings"]
+        if exp_7d or earn_7d:
+            parts = []
+            if exp_7d:
+                parts.append(_T(lang, "**{n}** 张合约到期", n=len(exp_7d)))
+            if earn_7d:
+                # 去重 ticker
+                earn_tks = sorted({c.get("ticker", "") for c in earn_7d if c.get("ticker")})
+                if len(earn_tks) <= 2:
+                    parts.append(_T(lang, "**{t}** 财报", t=", ".join(earn_tks)))
+                else:
+                    parts.append(_T(lang, "**{n}** 个财报", n=len(earn_tks)))
+            items.append({
+                "kind": "calendar", "icon": "📅",
+                "tag": _T(lang, "日历"),
+                "text": _T(lang, "未来 7 天 · {p}", p=" · ".join(parts)),
+            })
+
+    # 4-5. 新闻 headlines —— 持仓 ticker 最近 24h，最多 2 条
+    news_list = market.get("news") or []
+    used_titles: Set[str] = set()
+    news_added = 0
+    for n in news_list:
+        if news_added >= 2:
+            break
+        title = (n.get("title") or "").strip()
+        tk = (n.get("ticker") or "").strip().upper()
+        if not title or not tk or title in used_titles:
+            continue
+        used_titles.add(title)
+        # 短化 title，B ticker 单行宽度有限
+        short = title[:42] + ("…" if len(title) > 42 else "")
+        items.append({
+            "kind": "news", "icon": "📰",
+            "tag": _T(lang, "新闻"),
+            "text": _T(lang, "**{tk}**: {t}", tk=tk, t=short),
+            "link": n.get("link") or None,
+        })
+        news_added += 1
+
+    return items[:6]
+
+
 def _compute_concentration(positions: List[dict]) -> Dict:
     """最大单 ticker 占持仓暴露的百分比。"""
     active = [p for p in positions if not p.get("closed") and p.get("days", 0) >= 0]
@@ -5183,6 +5319,9 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         next_snap["concierge_version"] = CONCIERGE_VERSION
         next_snap["generated_by"] = by
 
+    news_ticker = _build_news_ticker(positions, market, total_theta,
+                                       calendar, concierge_brief, lang)
+
     return {
         "concierge_text": concierge_text,
         "concierge_brief": concierge_brief,
@@ -5190,6 +5329,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
         "top_3_focus": top_3,
         "chips": chips,
         "calendar_14d": calendar,
+        "news_ticker": news_ticker,
         "today_date": today.isoformat(),
         "next_snapshot": next_snap,
         "_llm_diag": _last_llm_diag,  # 临时诊断字段：让用户能在响应里看 LLM 状态

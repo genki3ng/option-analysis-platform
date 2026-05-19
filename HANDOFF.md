@@ -3,9 +3,59 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（admin — 加管家 Insight 付费刷新统计卡）
+最后更新：2026-05-19（concierge — 新闻条上下滚动 ticker · 替换老 footer）
 
-### ✅ 这一轮 (2026-05-19 cloud · admin 管家 Insight 付费刷新统计)
+### ✅ 这一轮 (2026-05-19 concierge · "新闻条上下滚动" 终端 ticker 替换老 footer)
+
+**用户场景**：截图里早安简报底部那条暖黄色单句 `footer`（"VIX 平稳 17.9... 关键是止血那两张 3DTE"）设计太老气，不 match 现在 app 的暗金卡片美学。同时单句信息密度低，希望换成"新闻上下滚动 3-4 条"。
+
+**预览流程**（遵循 CLAUDE.md §9）：建了 `/news` 预览页，4 个候选同屏桌面 + 手机：
+- A · 单卡片渐变切换（推荐）
+- B · 终端 ticker（3 行可见、Bloomberg 风）
+- C · 堆叠 peek（iOS 通知）
+- D · 极简文字 fade
+
+用户选 **B**，并指示"不要重复无用信息 + 加入持仓公司及时重要新闻"。预览页已 cleanup 删除。
+
+**改动总览**：
+
+`api/state.py`：
+1. 新增 `_build_news_ticker(positions, market, total_theta, calendar_14d, concierge_brief, lang)`（~line 4303）— 生成 4-6 条混合信号：
+   - 📊 **市场**：VIX 高低/跳变 5 级文案（跳涨 / 回落 / 高位 / 低位 / 平稳）
+   - 💰 **现金**：总 Theta 流入/流出 单日 $
+   - 📅 **日历**：未来 7 天到期合约数 + 财报 ticker（≤2 个 ticker 报名字，否则报数量）
+   - 📰 **新闻**：持仓 ticker 24h headline 最多 2 条，title 截断 42 字，带 link
+2. 去重逻辑：通过 `concierge_brief.items[].ticker` 收集 `pri_tickers` set；目前不在 ticker 维度做硬去重（信息维度不同可共存），但 LLM priority list 讲过的 ticker 在新闻 headline 里允许（不同信息维度）
+3. `_generate_morning_brief` return dict 加 `"news_ticker": news_ticker` 字段
+4. `TRANS_TW` + `TRANS_EN` 都补 15 条新 key
+5. `from typing` 加 `Set` 导入
+
+`index.html`：
+1. CSS：新增 `.mb-news-ticker / -head / -stage / -track / mb-news-row` 等 ~90 行；模仿 Bloomberg 终端，3 行同时可见（stage 96px = 3×32），active 行 `.now` 带高亮 + 标签 pill 彩色（market/cashflow→绿、calendar→金、news→红）
+2. JS：
+   - `_mbRenderNewsTicker(items)` — 渲染 N 真实行 + 末尾追加 3 行 clone（标 `data-clone="1"`）
+   - `_mbStartNewsTicker(rootEl)` — 每 4s `translateY(-physIdx×32px)`，滚到 `physIdx === count` 时延迟 600ms snap 回 0（clone 让 snap 无视觉跳动）
+   - `_mbRenderConciergeBrief(brief, opts)` 加 `opts.newsTicker`，优先渲染 ticker，缺失回退老 footer（向后兼容旧后端）
+3. i18n：zh / zh_tw / en 三套都加 `'实时动态'` 和 `'Live'`
+
+**没改的**：
+- 老 `footer` 字段后端仍生成（LLM prompt 里仍要求 footer），前端是 fallback
+- `CONCIERGE_VERSION` 没 bump — 新增字段，旧 cache 仍合法（缺 news_ticker 时前端用 footer 兜底）
+- ALGORITHM_VERSION 没动（不涉及推荐算法）
+
+**部署**：合到 main + push 触发 Vercel。
+
+**验证**：
+- 桌面 / 手机加载 https://trade.congyangwang.com/app
+- 管家区块底部应看到深底 ticker 卡片：头部"实时动态 · LIVE"绿色心跳，3 行交替高亮，每 4s 滚动一行
+- 点击 📰 行外链应该新开 tab
+- 切换 EN / 繁中 tag pill 文字应跟着翻译
+
+**预览页 cleanup**：`news.html` 已删除，`vercel.json` 路由已移除。
+
+---
+
+### 上一轮 (2026-05-19 cloud · admin 管家 Insight 付费刷新统计)
 
 **主题**：用户花 5🪙 手动刷新管家的 `brief_refresh` 事件现在只能在 admin 的"事件类型分布"里看到一个总数。补一张专用卡 drill-down，让 admin 看清这条付费链路在用户里的渗透。
 
@@ -36,7 +86,7 @@
 
 ---
 
-### 上一轮 (2026-05-19 closed-pos · realized 累加全部 + status chip 加 padding)
+### 上上轮 (2026-05-19 closed-pos · realized 累加全部 + status chip 加 padding)
 
 **用户场景**：截图 4 张已平仓 TSLA 卡（-$2,023 / +$1,468 / +$717 / +$552，合计 +$714），但顶部"已实现盈亏"显示 +$0.00。用户问"已平仓需要我勾选吗"，并指出"已平仓"徽章是"basic 框"。
 
@@ -61,7 +111,7 @@
 
 ---
 
-### 上上轮 (2026-05-19 concierge · Sonnet alias BadRequest 回滚 + 弹错保留 brief)
+### 上上上轮 (2026-05-19 concierge · Sonnet alias BadRequest 回滚 + 弹错保留 brief)
 
 **用户报错**：付费刷新管家弹窗显示 `[error · claude-sonnet-4-6 · BadRequestError · 0.12s]`，但 UI 仍出现"新 insight"。同时反馈"短暂跳回 placeholder"。
 

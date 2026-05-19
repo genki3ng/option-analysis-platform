@@ -3375,6 +3375,40 @@ def recommend(req: dict) -> dict:
                                   min_days=timeframe_min, max_days=timeframe_max)
     today = date.today()
 
+    # 🔄 Roll 上下文（v2.1 #5）：当 req.roll_for 存在时，对候选施加约束:
+    #   1) expiry 必须 ≥ 原 expiry + 14d（避免 roll 到太近的日期没意义）
+    #   2) 同 type（put/call）
+    #   3) 更 OTM 的 strike（short put → strike < 原；short call → strike > 原）
+    #   4) 每个候选输出 roll_net_credit = (new_mid - current_mid) × 100
+    roll_for = req.get("roll_for") or None
+    roll_orig_strike = None
+    roll_orig_type = None
+    roll_current_mid = None
+    if roll_for and isinstance(roll_for, dict):
+        try:
+            roll_orig_strike = float(roll_for.get("strike") or 0)
+            roll_orig_type = (roll_for.get("type") or "").lower()
+            roll_current_mid = float(roll_for.get("current_mid") or 0)
+            roll_orig_expiry = roll_for.get("expiry")
+            if roll_orig_expiry:
+                _orig_exp_date = date.fromisoformat(roll_orig_expiry)
+                _min_roll_exp = _orig_exp_date + timedelta(days=14)
+                target_exps = [e for e in target_exps
+                                if date.fromisoformat(e) >= _min_roll_exp]
+            # 如果约束后无 expiry，再放宽到原 expiry 之后任意（用户可能 timeframe 选太短）
+            if not target_exps and roll_orig_expiry:
+                _orig_exp_date = date.fromisoformat(roll_orig_expiry)
+                target_exps = _find_expiries(ticker, timeframe + 14, n=5,
+                                              min_days=(timeframe + 7),
+                                              max_days=(timeframe + 60))
+                target_exps = [e for e in target_exps
+                                if date.fromisoformat(e) > _orig_exp_date]
+        except (TypeError, ValueError):
+            roll_for = None
+            roll_orig_strike = None
+            roll_orig_type = None
+            roll_current_mid = None
+
     # IV-adaptive delta band (仅对 short premium 策略生效；LEAPS 走自己的区间)
     iv_rank_for_band = None
     if is_short and target_exps and intent != "long_leaps":
@@ -3418,6 +3452,13 @@ def recommend(req: dict) -> dict:
         for (strike, type_), q in chain.items():
             if (type_ == "call") != is_call:
                 continue
+
+            # 🔄 Roll 约束：strike 必须更 OTM（put: 更低 / call: 更高）
+            if roll_for and roll_orig_strike and roll_orig_type:
+                if roll_orig_type == "put" and strike >= roll_orig_strike:
+                    continue
+                if roll_orig_type == "call" and strike <= roll_orig_strike:
+                    continue
 
             days = (date.fromisoformat(exp_str) - today).days
             if days < 1:
@@ -3601,6 +3642,14 @@ def recommend(req: dict) -> dict:
             c["stress_components"] = _stress_test(c, underlying, c.get("iv", 0),
                                                     is_call, is_short)
 
+        # 🔄 Roll 输出：net_credit = new_premium - cost_to_close_current（per share × 100）
+        if roll_for and roll_current_mid:
+            new_premium = c.get("mid") or 0
+            net_credit = (new_premium - roll_current_mid) * 100
+            c["roll_net_credit"] = round(net_credit, 2)
+            c["roll_days_added"] = c["days"] - max(0, (date.fromisoformat(roll_for.get("expiry")) - today).days) if roll_for.get("expiry") else None
+            c["roll_strike_delta"] = round(c["strike"] - roll_orig_strike, 2)
+
         # 标记 candidate 上的 meta 给 verdict 用
         c["is_leveraged_etf"] = is_leveraged_etf
         c["is_willing_to_own"] = is_willing_to_own
@@ -3759,6 +3808,13 @@ def recommend(req: dict) -> dict:
         "is_willing_to_own": is_willing_to_own,
         "exit_style": exit_style,
         "ladder_proposal": ladder_proposal,
+        "roll_context": ({
+            "ticker": ticker,
+            "type": roll_orig_type,
+            "strike": roll_orig_strike,
+            "expiry": roll_for.get("expiry"),
+            "current_mid": roll_current_mid,
+        } if roll_for else None),
     }
 
 

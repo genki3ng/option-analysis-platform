@@ -2407,6 +2407,31 @@
     font-size: 12px; color: var(--accent);
   }
 
+  /* 🔄 Roll banner & net_credit chip */
+  .roll-banner {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; margin-bottom: 14px;
+    background: linear-gradient(135deg, rgba(230,184,106,0.10), rgba(184,146,85,0.04));
+    border: 1px solid var(--accent); border-radius: 10px;
+    font-size: 13px; line-height: 1.5;
+  }
+  .roll-banner-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+  .roll-banner-body { flex: 1; }
+  .roll-banner-body strong { color: var(--accent); }
+  .roll-banner-hint {
+    color: var(--sub); font-size: 11.5px; display: inline-block; margin-top: 2px;
+  }
+  .roll-credit {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px; border-radius: 4px; font-size: 11.5px;
+    font-weight: 700; margin-left: 6px;
+  }
+  .roll-credit.good { background: rgba(52,211,153,0.18); color: var(--green); }
+  .roll-credit.bad { background: rgba(248,113,113,0.18); color: var(--red); }
+  /* Roll 按钮（持仓卡）*/
+  .pos-actions .roll-btn { color: var(--accent); }
+  .pos-actions .roll-btn:hover { background: var(--accent-tint); border-color: var(--accent); }
+
   /* IV Rank 横幅 */
   .iv-banner {
     background: var(--card2);
@@ -5472,6 +5497,16 @@ const I18N = {
     '预算够': '预算够',
     '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
 
+    // ── 🔄 Roll 建议器 (v2.1 #5)
+    'Roll': 'Roll',
+    'roll_btn_tip': 'Roll 这张到更长 DTE / 更安全 strike — 自动构造 roll 候选',
+    'Roll 模式': 'Roll 模式',
+    '原持仓': '原持仓',
+    '当前 mid': '当前 mid',
+    '下方候选已过滤为更长 DTE + 更 OTM strike，每张显示 net credit（新 premium − 平当前的成本）': '下方候选已过滤为更长 DTE + 更 OTM strike，每张显示 net credit（新 premium − 平当前的成本）',
+    '净额': '净额',
+    'roll_net_credit_tip': 'Net credit = 新 premium − 平当前的成本。正数 = 拿到额外现金，负数 = 自掏腰包延期。',
+
     // ── 🪜 出场风格 (3 房东人设)
     '5. 出场风格': '5. 出场风格',
     '早收租派': '早收租派',
@@ -6191,6 +6226,16 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看漲 · CSP 階梯（自適應 2-4 檔）· {tf}d · 平衡',
     '预算够': '預算夠',
     '档（你想要 N 档需要更多预算）': '檔（你想要 N 檔需要更多預算）',
+
+    // ── 🔄 Roll 建議器
+    'Roll': 'Roll',
+    'roll_btn_tip': 'Roll 這張到更長 DTE / 更安全 strike — 自動構造 roll 候選',
+    'Roll 模式': 'Roll 模式',
+    '原持仓': '原持倉',
+    '当前 mid': '當前 mid',
+    '下方候选已过滤为更长 DTE + 更 OTM strike，每张显示 net credit（新 premium − 平当前的成本）': '下方候選已過濾為更長 DTE + 更 OTM strike，每張顯示 net credit（新 premium − 平當前的成本）',
+    '净额': '淨額',
+    'roll_net_credit_tip': 'Net credit = 新 premium − 平當前的成本。正數 = 拿到額外現金，負數 = 自掏腰包延期。',
 
     // ── 🪜 出場風格 (3 房東人設)
     '5. 出场风格': '5. 出場風格',
@@ -7003,6 +7048,16 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': 'Bullish · CSP ladder (auto-fit 2-4) · {tf}d · balanced',
     '预算够': 'Budget fits',
     '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
+
+    // ── 🔄 Roll suggester (v2.1)
+    'Roll': 'Roll',
+    'roll_btn_tip': 'Roll this to longer DTE / safer strike — auto-builds roll candidates',
+    'Roll 模式': 'Roll mode',
+    '原持仓': 'Original',
+    '当前 mid': 'Current mid',
+    '下方候选已过滤为更长 DTE + 更 OTM strike，每张显示 net credit（新 premium − 平当前的成本）': 'Candidates below are filtered to longer DTE + more OTM strikes; each shows net credit (new premium − cost to close current).',
+    '净额': 'net',
+    'roll_net_credit_tip': 'Net credit = new premium − cost to close current. Positive = extra cash, negative = cost to extend.',
 
     // ── 🪜 Exit style (3 landlord personas)
     '5. 出场风格': '5. Exit style',
@@ -7980,6 +8035,22 @@ function renderLadderProposal(d) {
   </div>`;
 }
 
+// 🔄 Roll context 横幅（v2.1 #5）— 提示用户当前是 Roll 模式 + 原持仓信息
+function renderRollContext(d) {
+  const rc = d && d.roll_context;
+  if (!rc) return '';
+  const typeUpper = (rc.type || '').toUpperCase();
+  const curPx = rc.current_mid != null ? `$${Number(rc.current_mid).toFixed(2)}` : '—';
+  return `<div class="roll-banner">
+    <span class="roll-banner-icon">🔄</span>
+    <span class="roll-banner-body">
+      <strong>${t('Roll 模式')}</strong> · ${t('原持仓')}: <strong>${rc.ticker} $${rc.strike} ${typeUpper}</strong>
+      · exp <strong>${rc.expiry}</strong> · ${t('当前 mid')} ${curPx}
+      <br><span class="roll-banner-hint">${t('下方候选已过滤为更长 DTE + 更 OTM strike，每张显示 net credit（新 premium − 平当前的成本）')}</span>
+    </span>
+  </div>`;
+}
+
 // 🪜 一键加入持仓 — 跳过逐张 prompt，直接按 mid 价批量录入
 function _ladderAddAll() {
   const d = window._currentData;
@@ -8633,6 +8704,7 @@ function renderPosition(p) {
 
       <div class="pos-actions">
         <button class="primary" onclick="event.stopPropagation();showClose('${p.id}')">${t('平仓')}</button>
+        <button class="ghost roll-btn" onclick="event.stopPropagation();showRecForRoll('${p.ticker}','${p.type}',${p.strike},'${p.expiry}',${p.mark})" title="${t('roll_btn_tip')}">🔄 ${t('Roll')}</button>
         <button class="ghost edit-btn" onclick="event.stopPropagation();showEdit('${p.id}')" title="${t('改张数或卖价（误操作时用）')}">✏️ ${t('编辑')}</button>
         <button class="ghost del-btn" onclick="event.stopPropagation();deletePos('${p.id}')" title="${t('彻底删除（误添加时使用）')}">🗑 ${t('删除')}</button>
       </div>
@@ -10365,6 +10437,8 @@ function hideRec() {
   document.getElementById('rec-form').classList.remove('open');
   document.getElementById('rec-backdrop').classList.remove('show');
   document.getElementById('rec-result').innerHTML = '';
+  // 关闭 modal 时清掉 roll context（避免下次普通推荐被污染）
+  window._recRollContext = null;
 }
 function _applyRecSelection() {
   document.querySelectorAll('.rec-form .opt-btn').forEach(btn => {
@@ -10444,6 +10518,10 @@ async function submitRec() {
   const _wo = _loadWillingOverrides();
   if (_wo && Object.keys(_wo).length > 0) {
     body.willing_overrides = _wo;
+  }
+  // 🔄 Roll 模式（v2.1 #5）：当前点的 🔄 Roll 按钮 → roll_for
+  if (window._recRollContext) {
+    body.roll_for = window._recRollContext;
   }
   // 用量埋点：把当前用户带上，后端在 do_POST 末尾 log_usage_event
   if (_currentUser) {
@@ -10813,6 +10891,7 @@ function renderRecResult(d) {
               <span class="strike">$${opt.strike}</span>
               <span class="type-tag ${opt.type}">${opt.type.toUpperCase()}</span>
               <span class="rec-exp">exp ${opt.expiry} · ${opt.days} ${t('天')}</span>
+              ${opt.roll_net_credit != null ? `<span class="roll-credit ${opt.roll_net_credit >= 0 ? 'good' : 'bad'}" title="${t('roll_net_credit_tip')}">${opt.roll_net_credit >= 0 ? '+' : ''}$${opt.roll_net_credit.toFixed(0)} ${t('净额')}</span>` : ''}
             </div>
             <div class="rec-verdict" style="color:${verdictColor}">
               ${v.stars || ''} <strong>${v.label ? t(v.label) : ''}</strong>
@@ -10908,6 +10987,7 @@ function renderRecResult(d) {
 
   document.getElementById('rec-result').innerHTML = `
     ${algoBadge}
+    ${renderRollContext(d)}
     <div class="summary">${summary}</div>
     ${dsPill}
     ${ivBanner}
@@ -11928,6 +12008,33 @@ function showRecForCoveredCall(ticker) {
   _recSelection.risk = 'balanced';
   localStorage.setItem('rec_last_ticker', ticker);
   localStorage.setItem('rec_last_choice', JSON.stringify(_recSelection));
+  showRec();
+  setTimeout(() => {
+    const t = document.getElementById('rec-ticker');
+    if (t) t.value = ticker;
+    document.querySelectorAll('.preset-btn.active').forEach(b => b.classList.remove('active'));
+  }, 30);
+}
+
+// 🔄 Roll 模式：预填表单 + 设置 _recRollContext，后端按 roll_for 过滤
+function showRecForRoll(ticker, posType, posStrike, posExpiry, currentMid) {
+  // posType=put → bullish CSP（看涨者卖 put roll）；posType=call → 中性/Covered Call
+  if (posType === 'put') {
+    _recSelection.direction = 'bullish';
+    _recSelection.intent = 'csp';
+  } else {
+    _recSelection.direction = 'neutral';
+    _recSelection.intent = 'covered_call';
+  }
+  _recSelection.timeframe = '21';
+  _recSelection.risk = 'balanced';
+  // Roll context — 全局，提交时塞进 body.roll_for
+  window._recRollContext = {
+    ticker, type: posType, strike: posStrike,
+    expiry: posExpiry, current_mid: currentMid,
+  };
+  localStorage.setItem('rec_last_ticker', ticker);
+  _savePref('rec_last_choice', JSON.stringify(_recSelection));
   showRec();
   setTimeout(() => {
     const t = document.getElementById('rec-ticker');

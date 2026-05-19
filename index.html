@@ -2013,14 +2013,21 @@
   .rec-form .submit-row {
     display: flex; gap: 8px; justify-content: flex-end;
     margin: 10px -24px 0;
-    padding: 12px 24px 20px;
-    border-top: 1px solid var(--line);
+    padding: 14px 24px 20px;
+    border-top: 1px solid var(--line-2);
     position: sticky; bottom: -24px; z-index: 10;
     background: var(--card);
-    box-shadow: 0 -8px 20px rgba(0,0,0,0.18);
+    /* 上方加 fade-out 渐变遮罩，避免 sticky 底栏跟上方候选卡内容硬切，
+       看起来像"内容穿透"。渐变区把上方 16px 内容渐变成 card 色，
+       视觉上"溶进"底栏。 */
+    box-shadow: 0 -1px 0 var(--line-2),
+                0 -14px 24px -8px var(--card),
+                0 -18px 32px rgba(0,0,0,0.28);
   }
   :root[data-theme="light"] .rec-form .submit-row {
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.07);
+    box-shadow: 0 -1px 0 var(--line-2),
+                0 -14px 24px -8px var(--card),
+                0 -18px 32px rgba(0,0,0,0.10);
   }
   .rec-form button.submit {
     background: var(--accent); color: #0A0A0B;
@@ -3758,8 +3765,38 @@
     padding: 24px; font-size: 12px;
   }
   .rec-form .loading {
-    text-align: center; padding: 20px;
-    color: var(--sub); font-size: 12px;
+    text-align: center; padding: 32px 20px;
+    color: var(--sub); font-size: 13px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 14px;
+  }
+  .rec-form .loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: rec-spin 0.9s linear infinite;
+  }
+  .rec-form .loading-text {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .rec-form .loading-dots::after {
+    content: '...';
+    display: inline-block; width: 18px; text-align: left;
+    animation: rec-dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes rec-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes rec-dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+  }
+  .rec-form .loading-stages {
+    font-size: 11px; color: var(--sub);
+    opacity: 0.7;
   }
 
   /* ── 新建持仓表单 ────────────────────────────────────────────────── */
@@ -5731,6 +5768,8 @@ const I18N = {
     '📚 期权小白指南': '📚 期權小白指南',
     '不懂某个指标？点开看大白话解释': '不懂某個指標？點開看大白話解釋',
     '今日早安': '今日早安',
+    '抓取期权链 + 评分中': '抓取期權鏈 + 評分中',
+    '通常 5-15 秒': '通常 5-15 秒',
     '包租公管家': '包租公管家',
     '展开管家': '展開管家',
     '展开包租公管家': '展開包租公管家',
@@ -6520,6 +6559,8 @@ const I18N = {
     '📚 期权小白指南': '📚 Options 101',
     '不懂某个指标？点开看大白话解释': "Don't know an indicator? Click to expand for plain-English explanation",
     '今日早安': 'Good Morning',
+    '抓取期权链 + 评分中': 'Fetching option chain + scoring',
+    '通常 5-15 秒': 'typically 5-15 seconds',
     '包租公管家': 'Landlord Concierge',
     '展开管家': 'Show concierge',
     '展开包租公管家': 'Show concierge',
@@ -10985,7 +11026,11 @@ async function submitRec() {
   }
 
   const out = document.getElementById('rec-result');
-  out.innerHTML = '<div class="loading">🔍 抓取期权链 + 评分中（5-15 秒）...</div>';
+  out.innerHTML = `<div class="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text"><span>🔍 ${t('抓取期权链 + 评分中')}</span><span class="loading-dots"></span></div>
+    <div class="loading-stages">${t('通常 5-15 秒')}</div>
+  </div>`;
   // 滚到 loading 让用户看到等待状态
   setTimeout(() => out.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 

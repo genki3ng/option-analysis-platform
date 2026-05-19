@@ -4924,7 +4924,10 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     # bump 6: 修缓存中毒 — template fallback 不再被无条件缓存
     # bump 7: 持仓变化触发重新生成 + prompt 加全部活跃持仓 + Recent changes section
     # bump 8: LLM 输出结构化 JSON (concierge_brief)，前端渲染 priority list
-    CONCIERGE_VERSION = 8
+    # bump 9: 缓存键从 UTC date 换成 America/New_York date — 旧 UTC snap 在
+    #         美东时间凌晨那段窗口被错误复用（同 UTC 日期 → 命中昨天的文）。
+    #         强制失效一次，确保用户今早登陆拿到真正"今天"的 brief。
+    CONCIERGE_VERSION = 9
     cached_text = None
     cached_brief = None
     cached_by = None

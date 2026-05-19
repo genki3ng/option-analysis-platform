@@ -3,9 +3,26 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — renderAll selectedIds null guard）
+最后更新：2026-05-19（cloud — app 加 admin 入口图标）
 
-### ✅ 这一轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
+### ✅ 这一轮 (2026-05-19 cloud · app 加 admin 入口图标)
+
+**主题**：admin 后端（`admin.html` + `/admin` 路由 + `api/state.py:_verify_admin_token`）早就有了，但主 app 没入口 — admin 用户每次得手敲 `/admin` URL。补一个仅 admin 邮箱可见的小盾牌图标按钮。
+
+**实现** (`index.html`)：
+1. CSS — `.admin-badge` 30×30 圆按钮，`position:absolute; left:220px` 跟 coin-badge 同位；默认 `display:none`。`body.is-admin` 时显示 + coin-badge 右推到 `left:258`。三档自适应：720px → 28px / left 124 → 158；480px → 26px / left 104 → 136。
+2. HTML (`index.html:5032`) — `<a class="admin-badge" href="/admin">` 含 inline SVG 盾牌+对勾，加在 user-badge 后、coin-badge 前。
+3. JS — `ADMIN_EMAILS = new Set(['hi@congyangwang.com', 'avatar.wang@gmail.com'])`（与 `admin.html` + `api/state.py:ADMIN_EMAIL_WHITELIST` 三处保持一致）；新函数 `_renderAdminBadge()` 比对当前 email 决定切 `body.is-admin` class；`_renderUserBadge` 末尾调用 → 三个 hook（getSession / _onSignedIn / _onSignedOut）自动覆盖。
+4. share view (`window._isShareView`) 强制隐藏 — 接收方不该看到分享者的 admin 入口。
+5. i18n — 三套字典补 `'管理后台'` / `'管理後台'` / `'Admin'` 用做 tooltip。
+
+**安全考虑**：前端只是 UI 入口；实际权限 `admin.html` 内部 + 后端 `_verify_admin_token` 已经做双重校验（Supabase access_token + email 白名单），即使普通用户手动访问 `/admin` 也只看到 gate。
+
+**没改的**：`admin.html` 不动；后端不动。改的全在 `index.html`（+41 行，零删除）。
+
+---
+
+### 上一轮（2026-05-19 cloud · renderAll selectedIds null 崩溃）
 
 **用户报错**：`刷新失败：Cannot read properties of null (reading 'has')`
 

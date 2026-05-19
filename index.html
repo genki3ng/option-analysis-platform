@@ -1674,10 +1674,8 @@
     max-height: 90vh; overflow-y: auto;
     z-index: 1001;
     margin: 0;
-    /* sticky 底栏 (.submit-row, padding 12+~36+20 ≈ 68px) 会浮在内容上；
-       给 form 加足够 padding-bottom 让最后一行表单内容能滚到底栏上方，
-       避免移动端"MONTHLY TARGET input 被 Cancel/Find Best 遮住"的情况 */
-    padding-bottom: 84px;
+    /* v2.0.2: submit-row 不再 sticky，已在 form 流末端 + 负 margin 贴底。
+       去掉之前的 padding-bottom: 84px hack（之前为 sticky 底栏让位用的） */
     background: var(--card);
     border: 1px solid var(--line-2);
     box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset,
@@ -2011,23 +2009,15 @@
   }
 
   .rec-form .submit-row {
+    /* v2.0.2: 不再 sticky 浮动 — 之前 position:sticky bottom: -24px 让按钮浮在内容上，
+       从用户视觉看像"穿透了"。改为 modal 内最底部的固定区，跟着内容滚动结束。
+       配合 rec-form.modal 的 padding-bottom 把按钮压到 modal 内部最底，不再悬浮。 */
     display: flex; gap: 8px; justify-content: flex-end;
-    margin: 10px -24px 0;
-    padding: 14px 24px 20px;
+    margin: 18px -24px -24px;
+    padding: 16px 24px;
     border-top: 1px solid var(--line-2);
-    position: sticky; bottom: -24px; z-index: 10;
-    background: var(--card);
-    /* 上方加 fade-out 渐变遮罩，避免 sticky 底栏跟上方候选卡内容硬切，
-       看起来像"内容穿透"。渐变区把上方 16px 内容渐变成 card 色，
-       视觉上"溶进"底栏。 */
-    box-shadow: 0 -1px 0 var(--line-2),
-                0 -14px 24px -8px var(--card),
-                0 -18px 32px rgba(0,0,0,0.28);
-  }
-  :root[data-theme="light"] .rec-form .submit-row {
-    box-shadow: 0 -1px 0 var(--line-2),
-                0 -14px 24px -8px var(--card),
-                0 -18px 32px rgba(0,0,0,0.10);
+    background: var(--card2);
+    border-radius: 0 0 12px 12px;
   }
   .rec-form button.submit {
     background: var(--accent); color: #0A0A0B;
@@ -2834,6 +2824,26 @@
     padding: 8px 12px; border-radius: 6px;
     font-size: 12px; line-height: 1.5;
     margin-bottom: 10px;
+  }
+  /* 💰 资金独立提示（v2.0.2）— 不影响 tier 打分，单独 chip 显示
+     色调用 amber/orange 但比 cons.red 柔和，传达"提醒"而非"否决"。 */
+  .cap-blocker-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg,
+      rgba(230,184,106,0.10), rgba(230,184,106,0.04));
+    border: 1px solid rgba(230,184,106,0.45);
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px; border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 12px; line-height: 1.45;
+  }
+  .cap-blocker-chip .cb-icon { font-size: 16px; flex-shrink: 0; }
+  .cap-blocker-chip .cb-text {
+    display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  }
+  .cap-blocker-chip .cb-text strong { color: var(--accent); }
+  .cap-blocker-chip .cb-sub {
+    font-size: 11px; color: var(--sub);
   }
   .rec-metrics {
     display: grid;
@@ -4327,8 +4337,14 @@
       top: auto !important; bottom: 0 !important;
       transform: none !important;
       max-height: 92vh !important;
-      padding: 16px 14px 80px !important;
+      padding: 16px 14px 0 !important;  /* submit-row 自带 padding 紧贴底 */
       margin: 0 !important;
+    }
+    /* 手机上 submit-row 负 margin 对齐 14px 内边距 */
+    .rec-form .submit-row {
+      margin: 18px -14px 0 !important;
+      padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+      border-radius: 0 !important;
     }
 
     /* review-modal / edit modal / journal modal 一同 bottom-sheet 化 */
@@ -5653,6 +5669,7 @@ const I18N = {
     'tip_rv': '标的过去 30 个交易日实际的年化波动率（用收盘价对数收益率算 σ × √252）。IV 是市场预期未来，RV 是实际发生过——两者的比值就是 VRP。',
     'tip_stress': '假设明日标的朝不利方向跳动 5% / 10%（short put 看跌、short call 看涨），同时 IV 被波动事件拉起 +15% / +30%，用 BS 重新算这张期权的浮亏。考验你能不能扛得住中间波动而不是到期结果。',
     'tip_capital': '若被指派需要的现金 ÷ 你账户的可用现金（broker dashboard 上的 Available to Trade）。> 100% 算法硬否决，> 80% 提示偏高。已有的 short put 不重复算（broker 的 Available 已经扣过）。',
+    'cap_blocker_tip': '若被指派需要的现金超过你的可用现金。标的评分不变 — 你可以减少张数或补资金。',
     '📊 包租公 2.0 信号（高阶）': '📊 包租公 2.0 信号（高阶）',
     '🚪 出场触发线（包租公式）': '🚪 出场触发线（包租公式）',
 
@@ -5775,6 +5792,10 @@ const I18N = {
     '今日早安': '今日早安',
     '抓取期权链 + 评分中': '抓取期權鏈 + 評分中',
     '通常 5-15 秒': '通常 5-15 秒',
+    '你的现金只够': '你的現金只夠',
+    '1 张需': '1 張需',
+    '可用': '可用',
+    'cap_blocker_tip': '若被指派需要的現金超過你的可用現金。標的評分不變 — 你可以減少張數或補資金。',
     '包租公管家': '包租公管家',
     '展开管家': '展開管家',
     '展开包租公管家': '展開包租公管家',
@@ -6570,6 +6591,10 @@ const I18N = {
     '今日早安': 'Good Morning',
     '抓取期权链 + 评分中': 'Fetching option chain + scoring',
     '通常 5-15 秒': 'typically 5-15 seconds',
+    '你的现金只够': 'Your cash covers only',
+    '1 张需': '1 contract needs',
+    '可用': 'available',
+    'cap_blocker_tip': "Assignment would need more cash than available. Doesn't affect the option's score — you can reduce contracts or add funds.",
     '包租公管家': 'Landlord Concierge',
     '展开管家': 'Show concierge',
     '展开包租公管家': 'Show concierge',
@@ -11357,6 +11382,18 @@ function renderRecResult(d) {
     // 出场计划 inline
     const exitBar = renderExitPlan(opt.exit_plan, opt);
 
+    // 💰 资金独立提示（v2.0.2）：不再让"现金不够"打低 tier 隐藏好标的，
+    // 改在卡片上以单独 chip 展示，建议用户能买的最大张数
+    const cb = v.capital_blocker;
+    const capChip = (cb && cb.needed_$ && cb.available_$) ? `
+      <div class="cap-blocker-chip" title="${t('cap_blocker_tip')}">
+        <span class="cb-icon">💰</span>
+        <span class="cb-text">
+          <strong>${t('你的现金只够')} ${cb.max_contracts} ${t('张')}</strong>
+          <span class="cb-sub">${t('1 张需')} $${Number(cb.needed_$ / (cb.suggested_contracts || 1)).toLocaleString(undefined, {maximumFractionDigits: 0})} · ${t('可用')} $${Number(cb.available_$).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+        </span>
+      </div>` : '';
+
     return `
       <div class="rec-card" data-cand-id="${candId}">
         <div class="rec-head">
@@ -11388,6 +11425,7 @@ function renderRecResult(d) {
         <div class="rec-oneline" style="border-left-color:${verdictColor}">
           ${v.one_line || ''}
         </div>
+        ${capChip}
 
         <div class="rec-metrics">
           ${metricsHtml}

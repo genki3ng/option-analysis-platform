@@ -2841,7 +2841,6 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     vrp = sc.get("vrp_ratio")
     capital_risk = opt.get("capital_risk", "n/a")
     capital_pct = opt.get("capital_pct")
-    capital_veto = False
 
     # ── 包租公专属信号 #1：Wheel 友好（CSP strike 是否好接货价）
     if is_csp and underlying > 0:
@@ -3031,17 +3030,25 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
             pros.append(f"📊 年化超额收益 {ev_pct:.1f}%"); weight += 1
 
     # ── 2.0 新增信号：资金占用风险
-    # 2.0.1：warning 不再进 verdict cons（避免噪音）—只保留 veto 这种真超额情况
+    # 2.0.2：资金不够不再影响评分 / 不进 cons / 不顶 tier — 前端独立 banner 提示。
+    # 设计意图：标的本身的"房源质量"和"你的钱够不够"是两码事，混在一起会让 5 星好标的
+    # 因为用户保证金少而被打 2 星 + tier filter 一过滤就全部消失。
+    # 资金信号改为独立 `capital_blocker` 字段（this/avail/max_contracts），前端渲染
+    # "💰 你的现金只够 N 张" 单独 chip，不影响 verdict tier。
+    capital_blocker = None
     if capital_risk == "veto":
         cc = opt.get("capital_commitments") or {}
         this_v = cc.get("this_$")
         avail_v = cc.get("available_$")
-        if this_v and avail_v:
-            cons.append(f"🚫 接货需 ${int(this_v):,}，超过可用现金 ${int(avail_v):,}")
-        else:
-            cons.append(f"🚫 接货抵押超可用现金 {capital_pct:.0f}%")
-        weight -= 5
-        capital_veto = True
+        sug = cc.get("suggested_contracts") or 1
+        strike_v = opt.get("strike") or 0
+        max_contracts = int(avail_v // (strike_v * 100)) if strike_v and avail_v else 0
+        capital_blocker = {
+            "needed_$": this_v,
+            "available_$": avail_v,
+            "suggested_contracts": sug,
+            "max_contracts": max_contracts,
+        }
 
     # ── 2.0 新增信号：杠杆 ETF 警告
     if is_leveraged_etf and is_short:
@@ -3053,13 +3060,8 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         weight -= 1
 
     # 综合评级（基于加权得分，越大越好）
-    if capital_veto:
-        # 资金硬否决：tier 顶到 2 星
-        tier, stars, label, color = (
-            (2, "⭐⭐", "可用现金不够接货", "orange")
-            if weight >= -4 else (1, "⭐", "可用现金不够接货", "red")
-        )
-    elif earnings_veto:
+    # 注：capital_blocker（资金不够）不参与 tier — 见 capital_risk 段落注释
+    if earnings_veto:
         # 财报硬否决：不会超过 2 星
         tier, stars, label, color = (
             (2, "⭐⭐", "谨慎 — 财报跨期", "orange")
@@ -3110,6 +3112,7 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         "pros": pros,
         "cons": cons,
         "earnings_veto": earnings_veto,
+        "capital_blocker": capital_blocker,
     }
 
 
@@ -4007,10 +4010,10 @@ def recommend(req: dict) -> dict:
                 elif pct >= 20: new_tier = 2
                 else: new_tier = 1
                 v = c["verdict"]
-                # 保留 veto 硬封顶：earnings_veto / capital_risk == veto
+                # 保留 veto 硬封顶：earnings_veto。
+                # 注：capital_risk == "veto" 不再封顶 tier — 资金不够是用户层面信号，
+                # 不该让标的本身被打低星而被 tier filter 隐藏。
                 if v.get("earnings_veto"):
-                    new_tier = min(new_tier, 2)
-                if c.get("capital_risk") == "veto":
                     new_tier = min(new_tier, 2)
                 # 用 rent_score 绝对值兜底：极差的不该 5 星
                 if s < 0.5:
@@ -4031,8 +4034,6 @@ def recommend(req: dict) -> dict:
                 elif new_tier == 2:
                     if v.get("earnings_veto"):
                         v["label"] = "谨慎 — 财报跨期"
-                    elif c.get("capital_risk") == "veto":
-                        v["label"] = "可用现金不够接货"
                     else:
                         v["label"] = "谨慎出租"
                     v["color"] = "orange"

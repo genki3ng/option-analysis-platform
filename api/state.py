@@ -313,6 +313,8 @@ def _npdf(x): return math.exp(-0.5 * x * x) / math.sqrt(2 * math.pi)
 
 
 def bs_call(S, K, T, r, sigma):
+    if S <= 0 or K <= 0:
+        return 0.0, 0.0, 0.0, 0.0
     if T <= 1e-8 or sigma <= 0:
         return max(S - K, 0.0), float(S > K), 0.0, 0.0
     d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
@@ -326,6 +328,8 @@ def bs_call(S, K, T, r, sigma):
 
 
 def bs_put(S, K, T, r, sigma):
+    if S <= 0 or K <= 0:
+        return max(K - max(S, 0.0), 0.0), 0.0, 0.0, 0.0
     if T <= 1e-8 or sigma <= 0:
         return max(K - S, 0.0), -float(S < K), 0.0, 0.0
     d1 = (math.log(S / K) + (r + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
@@ -1045,8 +1049,14 @@ def parse_position(d):
     }
 
 
+def _fmt_strike(s):
+    # 整数 strike 输出 "100"，小数 strike 输出 "100.5"；前后端必须产出同一字符串
+    f = float(s)
+    return str(int(f)) if f == int(f) else str(f)
+
+
 def position_id(p):
-    return f"{p['ticker']}_{p['type']}_{int(p['strike'])}_{p['expiry'].isoformat()}"
+    return f"{p['ticker']}_{p['type']}_{_fmt_strike(p['strike'])}_{p['expiry'].isoformat()}"
 
 
 def position_state(p, today, state, prices, earliest):
@@ -3586,7 +3596,7 @@ def _make_brief_snapshot(positions: List[dict], market: dict, today: date) -> di
     for p in positions:
         if p.get("closed") or p.get("days", 0) < 0:
             continue
-        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
         pos_snap[pid] = {
             "ticker": p.get("ticker", ""),
             "label": p.get("label", pid),
@@ -3615,7 +3625,7 @@ def _compute_position_changes(yesterday_snap: dict, positions: List[dict]) -> Di
     for p in positions:
         if p.get("closed") or p.get("days", 0) < 0:
             continue
-        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
         new_pids.add(pid)
         new_labels[pid] = p.get("label", pid)
     added = [{"label": new_labels[pid]} for pid in (new_pids - old_pids)]
@@ -3635,7 +3645,7 @@ def _compute_diff_events(yesterday_snap, positions, market, lang):
     for p in positions:
         if p.get("closed") or p.get("days", 0) < 0:
             continue
-        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
         today_pos[pid] = p
     y_pos = yesterday_snap.get("positions", {}) if isinstance(yesterday_snap, dict) else {}
 
@@ -3685,7 +3695,7 @@ def _compute_diff_events(yesterday_snap, positions, market, lang):
             continue
         earn_days = p.get("earnings_days_until")
         if earn_days is not None and 0 < earn_days <= 5 and p.get("earnings_before_expiry"):
-            pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+            pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
             events.append({
                 "kind": "earnings_imminent", "priority": 100,
                 "position_id": pid, "ticker": p["ticker"], "label": p.get("label", ""),
@@ -3757,7 +3767,7 @@ def _rank_top_3_focus(events, positions, lang):
                   and p.get("pnl_pct", 0) >= 70]
     actionable.sort(key=lambda p: -p.get("pnl_pct", 0))
     for p in actionable:
-        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
         label = p.get("label", "")
         days = p.get("days", 0)
         pnl = p.get("pnl", 0)
@@ -3782,7 +3792,7 @@ def _rank_top_3_focus(events, positions, lang):
     # 按距到期升序（最紧迫的在前）
     danger.sort(key=lambda p: p.get("days", 999))
     for p in danger:
-        pid = f"{p['ticker']}_{p['type']}_{int(p.get('strike',0))}_{p.get('expiry','')}"
+        pid = f"{p['ticker']}_{p['type']}_{_fmt_strike(p.get('strike',0))}_{p.get('expiry','')}"
         label = p.get("label", "")
         _try_add({
             "kind": "near_strike", "priority": 40,
@@ -3933,7 +3943,7 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
             # 构造真实 position_id
             expiry = p.get("expiry")
             if hasattr(expiry, "isoformat"): expiry = expiry.isoformat()
-            pid = f"{p.get('ticker','')}_{p.get('type','')}_{int(p.get('strike',0))}_{expiry}"
+            pid = f"{p.get('ticker','')}_{p.get('type','')}_{_fmt_strike(p.get('strike',0))}_{expiry}"
             money_tag = ""
             if (p.get("type") == "call" and money < 0) or (p.get("type") == "put" and money > 0):
                 money_tag = " [ITM]"

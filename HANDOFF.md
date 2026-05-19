@@ -3,9 +3,34 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 候选卡片 surface 2.0 信号 box · 方案 B + hover tooltip + 小白指南扩容）
+最后更新：2026-05-19（cloud — QA 第一轮 P0 修复 · BS 边界 guard + position_id 小数 strike）
 
-### ✅ 这一轮（2026-05-19 cloud · v2 #1 surface v2 fields）
+### ✅ 这一轮（2026-05-19 cloud · QA P0 round 1）
+
+**主题**：用户让 QA 资深视角系统扫一遍 bug 池。并行起 4 个 audit agent（前端 JS / 后端 Python / i18n / 数据一致性），归类成 P0/P1/P2 表。用户选"全修"分阶段做，P0 自主推。
+
+**P0 #1 — BS 定价边界**（`api/state.py` `bs_call` / `bs_put`）：
+- 原代码已 guard `T<=1e-8 or sigma<=0`，但 `S<=0` 或 `K<=0` 仍会让 `math.log(S/K)` 抛 `ValueError`
+- 触发：Schwab + Yahoo + yfinance 三级 fallback 全挂 → underlying=0 → 整个推荐 endpoint 500
+- 修：前置 `if S<=0 or K<=0: return 0/0 价格` 安全返回
+
+**P0 #2 — `position_id` decimal strike 坍缩**（`api/state.py` 8 处 + `index.html` 3 处）：
+- 原：后端 `int(p['strike'])`、前端 `parseInt(p.strike)` 把 100.5 截断成 100
+- 触发：SPX / 部分 ETF / 小价位股有 0.5 strike → 两个不同的 100 put 和 100.5 put 共用同一 pid → state.closed 永远绑错；候选 id（`${o.strike}`）保留 ".5" 跟 pid 不匹配，UI "已加仓"判断错
+- 修：新建 `_fmt_strike(s)` helper（前后端各一份），整数 → "100"，小数 → "100.5"。两端字符串严格相同。已对 0/100/100.0/100.5/0.5/700000 单测过
+
+**关键自检**：
+- Python `_fmt_strike` 和 JS `fmtStrike` 对所有典型 strike 输出**字符串完全相同**
+- 整数 strike 的输出和老逻辑兼容（"100" → "100"），存量用户的 state map 不受影响
+- 小数 strike 的输出从"截断成整数"变成"保留小数"，是修 bug，不是 breaking change
+
+**没碰到的 P0 候选**：agent 报的"`_make_verdict` 在 v1.4 fallback 时 f-string 崩"经验证已有 `ev_pct is not None` guard，不是 P0，从池里删了。
+
+**下一阶段**：P1（9 条）+ P2（含 i18n 348 个缺 key）需要逐条过用户。等用户回来再起。
+
+---
+
+### 上一轮（2026-05-19 cloud · v2 #1 surface v2 fields）
 
 **主题**：v1 backend 已 ship 但前端没显示 EV / VRP / RV / 压测 / 资金占用 — 价值看不见。按 §9 建预览页 `v2-cards.html` 让用户选 A/B/C，**用户选 B（结构化信号 box）**，并要求"hover 时小白能看懂的解释" + "概念加到小白指南"。
 

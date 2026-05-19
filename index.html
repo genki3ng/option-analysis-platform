@@ -10283,7 +10283,7 @@ function addRecToPositions(ticker, type, strike, expiry, mid) {
   // 合并 / 新建
   const positions = loadPositions();
   const today = new Date().toISOString().slice(0, 10);
-  const newId = `${ticker}_${type}_${parseInt(strike)}_${expiry}`;
+  const newId = `${ticker}_${type}_${fmtStrike(strike)}_${expiry}`;
   let merged = false;
   for (const p of positions) {
     if (p.ticker === ticker && p.type === type &&
@@ -10766,7 +10766,7 @@ async function submitAdd() {
   if (!merged) positions.push(f);
   savePositions(positions);
 
-  const newId = `${f.ticker}_${f.type}_${parseInt(f.strike)}_${f.expiry}`;
+  const newId = `${f.ticker}_${f.type}_${fmtStrike(f.strike)}_${f.expiry}`;
   selectedIds.add(newId);
   saveSelection();
   hideAdd();
@@ -12370,8 +12370,13 @@ function saveStateMap(obj) {
 }
 
 // 持仓 id（必须和后端 position_id 函数一致）
+// 整数 strike → "100"；小数 strike → "100.5"。JS String(Number) 不会保留 .0 尾零，
+// 后端 _fmt_strike 也走同样规则，保证前后端字符串完全相同。
+function fmtStrike(s) {
+  return String(parseFloat(s));
+}
 function posIdOf(p) {
-  return `${p.ticker}_${p.type}_${parseInt(p.strike)}_${p.expiry}`;
+  return `${p.ticker}_${p.type}_${fmtStrike(p.strike)}_${p.expiry}`;
 }
 
 async function refresh() {

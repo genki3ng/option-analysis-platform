@@ -1672,11 +1672,11 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
                        is_short_put: bool = True,
                        exit_style: str = "early_close") -> Optional[dict]:
     """
-    历史回测（POP 校准版 v2.1，跟 exit_plan 路径触发同步）：
+    历史回测（POP 校准版 v2.0，跟 exit_plan 路径触发同步）：
 
     - 拉过去 12 个月日线（不够 6 月），每 3 天采样
     - 用 BS 反推 strike（|Δ(K)| ≈ delta_target），BS 算 premium
-    - **v2.1：按 exit_style 路径模拟**
+    - **v2.0：按 exit_style 路径模拟**
       - early_close / wheel_assign：日内重新定价，**当 premium 衰减到 50%
         就早平**；DTE 剩余 ≤ cutoff（30%/20% of orig DTE）也强制平
       - hold_to_expiry：照旧持到到期
@@ -1851,7 +1851,7 @@ def _strike_for_delta(S: float, T: float, sigma: float, delta_target: float,
 #   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
 # ─────────────────────────────────────────────────────────────────────
 ALGORITHM_NAME = "包租公算法"
-ALGORITHM_VERSION = "2.1"
+ALGORITHM_VERSION = "2.0"
 ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
 # v1.1 changes: 流动性因子从单一 spread% 升级为 spread × OI × volume 复合分
 
@@ -1879,7 +1879,7 @@ def _dte_sweet_factor(days: int, target_days: int = None,
     DTE 甜蜜区加成：以 target_days 为中心，半宽随 target 自适应。
     target_days=None 时回退到 14 天固定峰值（兼容旧调用）。
 
-    v2.1 新增 iv_rank_pct：IV 高时甜蜜区向短 DTE 滑（捕 IV crush 更快），
+    v2.0 新增 iv_rank_pct：IV 高时甜蜜区向短 DTE 滑（捕 IV crush 更快），
     IV 低时向长 DTE 滑（拉长 theta 收割期）。
       iv_rank ≥ 70：target 实际中心 × 0.70（往短走 30%）
       iv_rank ≤ 30：target 实际中心 × 1.30（往长走 30%）
@@ -2581,7 +2581,7 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     safety = 1.0 if used_v2_base else (prob_safe ** 1.5)
 
     # 3. DTE 甜蜜区
-    # v2.1：IV rank 高 → 甜蜜区滑向短 DTE（捕 IV crush），低 → 滑向长 DTE
+    # v2.0：IV rank 高 → 甜蜜区滑向短 DTE（捕 IV crush），低 → 滑向长 DTE
     _iv_rank_for_dte = (iv_rank or {}).get("iv_rank")
     dte_f = _dte_sweet_factor(days, target_days=target_days,
                                 iv_rank_pct=_iv_rank_for_dte)
@@ -2824,7 +2824,7 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
             else:
                 pros.append(f"📊 {ed['date']} 财报前（剩 {ed['days']} 天），IV 偏高，权利金充裕")
                 weight += 1
-                # v2.1 #6 财报 IV crush 红利估算（仅当 capture > 0）
+                # v2.0 #6 财报 IV crush 红利估算（仅当 capture > 0）
                 crush = opt.get("earnings_crush_capture_$")
                 if crush and crush > 0:
                     crush_pct = opt.get("earnings_crush_capture_pct", 0)
@@ -3295,7 +3295,7 @@ def _find_expiries(ticker: str, target_days: int, n: int = 3,
 
 
 def scan_multi(req: dict) -> dict:
-    """v2.1 #7 多 ticker 单次扫描 — 对 tickers 数组逐一调 recommend 后合并 + 排序。
+    """v2.0 #7 多 ticker 单次扫描 — 对 tickers 数组逐一调 recommend 后合并 + 排序。
 
     入参：
       req.tickers: ["TSLA", "NVDA", "GOOG"]  最多 5 个
@@ -3463,7 +3463,7 @@ def recommend(req: dict) -> dict:
                                   min_days=timeframe_min, max_days=timeframe_max)
     today = date.today()
 
-    # 🔄 Roll 上下文（v2.1 #5）：当 req.roll_for 存在时，对候选施加约束:
+    # 🔄 Roll 上下文（v2.0 #5）：当 req.roll_for 存在时，对候选施加约束:
     #   1) expiry 必须 ≥ 原 expiry + 14d（避免 roll 到太近的日期没意义）
     #   2) 同 type（put/call）
     #   3) 更 OTM 的 strike（short put → strike < 原；short call → strike > 原）
@@ -3672,7 +3672,7 @@ def recommend(req: dict) -> dict:
         iv_rank = _compute_iv_rank(ticker, sample_iv)
 
     # 2. 回测（per ticker，一次就够）— 估个该方向短卖策略的胜率
-    #    v2.1：回测跟 exit_style 路径触发同步（50% 早平 + DTE cutoff）
+    #    v2.0：回测跟 exit_style 路径触发同步（50% 早平 + DTE cutoff）
     backtest = _backtest_strategy(
         ticker, sample_dte=min(max(timeframe, 5), 30),
         delta_target=sum(delta_band) / 2,
@@ -3699,7 +3699,7 @@ def recommend(req: dict) -> dict:
         if earnings_cross:
             c["earnings_warning"] = earnings_warning
 
-            # ── v2.1 #6 财报 IV crush 红利估算（仅短卖 CSP/CC）
+            # ── v2.0 #6 财报 IV crush 红利估算（仅短卖 CSP/CC）
             # 经验：财报后 ATM IV 跌约 40%（liquid name）。假设 crush 后剩 60%。
             # 用 BS 重新算 crush 后期权值，差额 = 你能赚到的"crush 红利"
             if is_short:
@@ -3816,7 +3816,7 @@ def recommend(req: dict) -> dict:
                                       underlying=underlying,
                                       is_leveraged_etf=is_leveraged_etf)
 
-    # 5. Score-verdict 统一（v2.1）：tier 由 rent_score 百分位驱动
+    # 5. Score-verdict 统一（v2.0）：tier 由 rent_score 百分位驱动
     #    保留 _make_verdict 的 weight 用来生成 cons/pros 文案，但 tier/stars/label
     #    改成基于 candidate set 内 rent_score 排名。Veto 仍然硬封顶 2 星。
     if is_short:
@@ -4867,7 +4867,7 @@ class handler(BaseHTTPRequestHandler):
                     "anthropic_client_ready": _get_anthropic_client() is not None,
                 }
             elif action == "scan_multi":
-                # v2.1 #7 多 ticker 单次扫描 — 跨标的找最佳候选
+                # v2.0 #7 多 ticker 单次扫描 — 跨标的找最佳候选
                 result = scan_multi(payload)
                 self._send_json(200, result)
                 try:

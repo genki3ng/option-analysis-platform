@@ -259,6 +259,11 @@ curl -s "https://trade.congyangwang.com/app?_=$(date +%s)" | grep -c "<你的新
   做完仍然要合到 main 触发部署 — 用户已明确授权这个工作流压过 task 的 "branch only" 指令。
   仍然适用的守则：commit message 写清楚；改完同步 HANDOFF.md；
   涉及破坏性操作（force push / 删分支 / 删表）还是要单独问。
+- **`ALGORITHM_VERSION` 改动前必须征求用户许可**（用户 2026-05-19 明确：
+  "以后如果版本号要更新，要询问我"）。包括语义版本号 bump / minor 增 / patch 增。
+  不许擅自把 1.x → 2.0、或 2.0 → 2.1 之类。其他常量改动不受此限。
+  Vercel 边缘缓存延迟时排查思路：先 curl `/api/state` 验后端真实 version 是不是
+  期望值；如果不是、且 git 上确实有提交，发个 empty commit 强制 Vercel 重建。
 
 ---
 

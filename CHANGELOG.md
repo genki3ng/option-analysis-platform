@@ -4,9 +4,9 @@
 
 ---
 
-## v2.1 (2026-05-19) — 出场策略 / Roll / 多 ticker / 财报红利
+## v2.0 (2026-05-19) — 出场策略 / Roll / 多 ticker / 财报红利
 
-**主题**：让"卖一张期权"的整个生命周期可控。从入场（v2.0 EV/VRP 评分）扩到 **出场（3 人设）、续命（Roll 建议）、规模化（多 ticker 扫描）、财报红利（IV crush 估算）**。
+**主题**：让"卖一张期权"的整个生命周期可控。从入场（v1.9 EV/VRP 评分）扩到 **出场（3 人设）、续命（Roll 建议）、规模化（多 ticker 扫描）、财报红利（IV crush 估算）**。
 
 ### Core changes
 
@@ -47,11 +47,11 @@
 - IV rank ≤30 → 中心 × 1.30（滑向长 DTE，拉长 theta 收割）
 - 30-70 不变
 
-### Algorithm version: 2.0 → 2.1
+### Algorithm version: 1.9 → 2.0
 
 ---
 
-## v2.0 (2026-05-19) — EV/VRP base + 资金硬上限 + 杠杆 ETF + 压测 + willing-to-own
+## v1.9 (2026-05-19) — EV/VRP base + 资金硬上限 + 杠杆 ETF + 压测 + willing-to-own
 
 **主题**：从"收多少租"升级到"真正赚多少 edge"。score base 从 `period_roc × prob_safe^1.5 × iv_f` 换成 **年化超额收益（EV vs 实际波动率）**。
 
@@ -91,7 +91,10 @@
 - 5 个词条：EV / VRP / RV / 压测 / 资金占用
 - 每个含 desc + 实例 + care + 三语
 
-### Algorithm version: 1.4 → 2.0
+### Algorithm version: 1.4 → 1.9
+
+> 历史脚注：1.9 最早内部叫"2.0"，但回头看更像是一个大幅升级而非完整 major bump。
+> 真正的 v2.0 是这之后把出场/Roll/多 ticker/财报红利一起加进来才完整（见上）。
 
 ---
 

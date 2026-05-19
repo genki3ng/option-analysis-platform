@@ -5601,13 +5601,13 @@ const I18N = {
     '预算够': '预算够',
     '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
 
-    // ── 🔍 Multi-ticker scan (v2.1 #7)
+    // ── 🔍 Multi-ticker scan (v2.0 #7)
     '多 ticker 扫描': '多 ticker 扫描',
     '候选合计': '候选合计',
     '请提供 tickers 数组': '请提供 tickers 数组',
     'tickers 无效': 'tickers 无效',
 
-    // ── 🔄 Roll 建议器 (v2.1 #5)
+    // ── 🔄 Roll 建议器 (v2.0 #5)
     'Roll': 'Roll',
     'roll_btn_tip': 'Roll 这张到更长 DTE / 更安全 strike — 自动构造 roll 候选',
     'Roll 模式': 'Roll 模式',
@@ -7243,13 +7243,13 @@ const I18N = {
     '预算够': 'Budget fits',
     '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
 
-    // ── 🔍 Multi-ticker scan (v2.1)
+    // ── 🔍 Multi-ticker scan (v2.0)
     '多 ticker 扫描': 'Multi-ticker scan',
     '候选合计': 'Total candidates',
     '请提供 tickers 数组': 'Please provide a tickers array',
     'tickers 无效': 'Invalid tickers',
 
-    // ── 🔄 Roll suggester (v2.1)
+    // ── 🔄 Roll suggester (v2.0)
     'Roll': 'Roll',
     'roll_btn_tip': 'Roll this to longer DTE / safer strike — auto-builds roll candidates',
     'Roll 模式': 'Roll mode',
@@ -8269,7 +8269,7 @@ function renderLadderProposal(d) {
   </div>`;
 }
 
-// 🔄 Roll context 横幅（v2.1 #5）— 提示用户当前是 Roll 模式 + 原持仓信息
+// 🔄 Roll context 横幅（v2.0 #5）— 提示用户当前是 Roll 模式 + 原持仓信息
 function renderRollContext(d) {
   const rc = d && d.roll_context;
   if (!rc) return '';
@@ -10739,7 +10739,7 @@ function _updateRiskLabels() {
 async function submitRec() {
   const rawTicker = document.getElementById('rec-ticker').value.trim().toUpperCase();
   if (!rawTicker) { alert('请输入 ticker'); return; }
-  // v2.1 #7 多 ticker 扫描：检测逗号/空格/分号分隔，> 1 个 → scan_multi action
+  // v2.0 #7 多 ticker 扫描：检测逗号/空格/分号分隔，> 1 个 → scan_multi action
   const tickers = rawTicker.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
   const isMultiScan = tickers.length > 1;
   const body = isMultiScan ? {
@@ -10764,7 +10764,7 @@ async function submitRec() {
   if (_wo && Object.keys(_wo).length > 0) {
     body.willing_overrides = _wo;
   }
-  // 🔄 Roll 模式（v2.1 #5）：当前点的 🔄 Roll 按钮 → roll_for
+  // 🔄 Roll 模式（v2.0 #5）：当前点的 🔄 Roll 按钮 → roll_for
   if (window._recRollContext) {
     body.roll_for = window._recRollContext;
   }
@@ -10877,7 +10877,7 @@ function setTierFilter(val) {
 function renderRecResult(d) {
   _lastRecData = d;
   const c = d.criteria;
-  // v2.1 #7 多 ticker 扫描：is_short / is_call 没有，按 intent 推断
+  // v2.0 #7 多 ticker 扫描：is_short / is_call 没有，按 intent 推断
   const _intent = c && c.intent;
   const _isMulti = d.scan_mode === 'multi';
   const _isShort = c && (c.is_short !== undefined ? c.is_short : (_intent === 'csp' || _intent === 'covered_call' || _intent === 'premium'));

@@ -3,9 +3,9 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公算法 v2.1 publish · 3 wave 收尾）
+最后更新：2026-05-19（cloud — 包租公算法 v2.0 publish · 3 wave 收尾）
 
-### ✅ v2.1 全面完成（2026-05-19 cloud · 3 波收尾）
+### ✅ v2.0 全面完成（2026-05-19 cloud · 3 波收尾）
 
 **7 件套**（参见 `CHANGELOG.md` 完整版）：
 1. **Score-verdict 统一** — tier 改 rent_score 百分位驱动（≥80% 5星/...），weight 仅作 cons/pros narrative。veto 仍硬封顶。
@@ -16,9 +16,9 @@
 6. **🔍 多 ticker 扫描** — 逗号分隔输入 `TSLA,NVDA,GOOG` 自动 scan_multi action + 跨 ticker 排序
 7. **💎 财报 IV crush 红利** — 跨财报候选额外算"crush 后红利"显示在 verdict pro
 
-**ALGORITHM_VERSION**: 2.0 → 2.1
+**ALGORITHM_VERSION**: 1.9 → 2.0
 **intro.html** 算法 hero + section 头部更新（formula/factors 矩阵未动，design-heavy 留下次）
-**CHANGELOG.md** 创建（v2.1 + v2.0 + v1.x 历史 + 设计哲学）
+**CHANGELOG.md** 创建（v2.0 + v2.0 + v1.x 历史 + 设计哲学）
 
 ---
 
@@ -33,7 +33,7 @@
 **Phase 2（预览页 `/landlord-exit`）**：3 渲染方案 A 时间线 / B 2×2 网格 / C 折叠摘要 让用户对比。
 **Phase 3（本轮）**：用户选 B + 要求"推荐动作不能放进去吗" → 每 cell 加底部 act 行。
 
-并行 session 同时 ship 了 v2.1 Wave 1（`4a811c9`）已经做了 picker 扩 3 选 / 默认 early_close /
+并行 session 同时 ship 了 v2.0 Wave 1（`4a811c9`）已经做了 picker 扩 3 选 / 默认 early_close /
 旧值迁移 / picker 三语 i18n / Score-verdict 统一 / DTE-IV 自适应；Wave 2.1（`b1932b2`）做了
 backtest 路径模拟跟 exit_plan 同步。本轮在他们基础上补上独有的渲染层：
 
@@ -436,7 +436,7 @@ const openOptionPositions = loadPositions()
 - **拆分 verdict 到 loop 外**：因为 verdict 现在依赖 `capital_risk`，而 `capital_risk` 依赖第一轮算好的 `suggested_contracts`。两轮：第一轮算 score + stress + exit_plan + suggested_contracts；然后 `_capital_risk_check` 全表过一遍；再第二轮算 verdict
 - 响应顶层多吐：`realized_vol_30d_pct` / `is_leveraged_etf` / `is_willing_to_own` / `exit_style` 透明字段
 
-**`ALGORITHM_VERSION`**：1.2 → **2.0**
+**`ALGORITHM_VERSION`**：1.2 → **1.9**
 
 **自检**（pure-python unit tests，无 network）：
 - `_is_leveraged_etf`：TQQQ/NVDL=T，TSLA/AAPL=F ✓

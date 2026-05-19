@@ -1821,16 +1821,32 @@ def _prob_safe_bs(S: float, K: float, T: float, sigma: float, is_call: bool) -> 
     return (_ncdf(-d2) if is_call else _ncdf(d2)) * 100
 
 
-def _dte_sweet_factor(days: int, target_days: int = None) -> float:
+def _dte_sweet_factor(days: int, target_days: int = None,
+                       iv_rank_pct: Optional[float] = None) -> float:
     """
-    DTE 甜蜜区加成：以用户选择的 target_days 为中心，半宽随 target 自适应。
+    DTE 甜蜜区加成：以 target_days 为中心，半宽随 target 自适应。
     target_days=None 时回退到 14 天固定峰值（兼容旧调用）。
+
+    v2.1 新增 iv_rank_pct：IV 高时甜蜜区向短 DTE 滑（捕 IV crush 更快），
+    IV 低时向长 DTE 滑（拉长 theta 收割期）。
+      iv_rank ≥ 70：target 实际中心 × 0.70（往短走 30%）
+      iv_rank ≤ 30：target 实际中心 × 1.30（往长走 30%）
+      30-70：不动
+
     Returns 0.5 ~ 1.2 multiplier.
     """
     if days <= 0:
         return 0.5
 
-    if not target_days or target_days <= 0:
+    # IV-adaptive shift
+    effective_target = target_days
+    if effective_target and iv_rank_pct is not None:
+        if iv_rank_pct >= 70:
+            effective_target = max(5, int(round(effective_target * 0.70)))
+        elif iv_rank_pct <= 30:
+            effective_target = int(round(effective_target * 1.30))
+
+    if not effective_target or effective_target <= 0:
         # 兼容路径：旧固定甜蜜区
         if days < 5:
             return 0.65 + 0.07 * days
@@ -1841,8 +1857,8 @@ def _dte_sweet_factor(days: int, target_days: int = None) -> float:
         return 0.5
 
     # 半宽：短 timeframe 用绝对值（≥5），长 timeframe 用百分比
-    half_width = max(5.0, target_days * 0.35)
-    offset = abs(days - target_days)
+    half_width = max(5.0, effective_target * 0.35)
+    offset = abs(days - effective_target)
 
     if offset <= half_width:
         # 区内：1.0 - 1.2，距 target 越近越甜
@@ -2513,7 +2529,10 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     safety = 1.0 if used_v2_base else (prob_safe ** 1.5)
 
     # 3. DTE 甜蜜区
-    dte_f = _dte_sweet_factor(days, target_days=target_days)
+    # v2.1：IV rank 高 → 甜蜜区滑向短 DTE（捕 IV crush），低 → 滑向长 DTE
+    _iv_rank_for_dte = (iv_rank or {}).get("iv_rank")
+    dte_f = _dte_sweet_factor(days, target_days=target_days,
+                                iv_rank_pct=_iv_rank_for_dte)
 
     # 4. Delta 甜蜜区
     delta_f = _delta_sweet_factor(abs_delta)
@@ -3584,7 +3603,57 @@ def recommend(req: dict) -> dict:
                                       underlying=underlying,
                                       is_leveraged_etf=is_leveraged_etf)
 
-    # 5. 排序后保留 top 15
+    # 5. Score-verdict 统一（v2.1）：tier 由 rent_score 百分位驱动
+    #    保留 _make_verdict 的 weight 用来生成 cons/pros 文案，但 tier/stars/label
+    #    改成基于 candidate set 内 rent_score 排名。Veto 仍然硬封顶 2 星。
+    if is_short:
+        scored = [c for c in candidates if c.get("rent_score") is not None]
+        if len(scored) >= 5:
+            sorted_scores = sorted(c["rent_score"] for c in scored)
+            n = len(sorted_scores)
+            for c in scored:
+                s = c["rent_score"]
+                rank_below = sum(1 for x in sorted_scores if x < s)
+                pct = (rank_below / n) * 100.0
+                if pct >= 80: new_tier = 5
+                elif pct >= 60: new_tier = 4
+                elif pct >= 40: new_tier = 3
+                elif pct >= 20: new_tier = 2
+                else: new_tier = 1
+                v = c["verdict"]
+                # 保留 veto 硬封顶：earnings_veto / capital_risk == veto
+                if v.get("earnings_veto"):
+                    new_tier = min(new_tier, 2)
+                if c.get("capital_risk") == "veto":
+                    new_tier = min(new_tier, 2)
+                # 用 rent_score 绝对值兜底：极差的不该 5 星
+                if s < 0.5:
+                    new_tier = min(new_tier, 1)
+                elif s < 2.0:
+                    new_tier = min(new_tier, 3)
+                # Apply
+                v["tier"] = new_tier
+                v["stars"] = "⭐" * new_tier
+                v["score_percentile"] = round(pct, 1)
+                # label / color 同步
+                if new_tier == 5:
+                    v["label"], v["color"] = "五星房源", "green"
+                elif new_tier == 4:
+                    v["label"], v["color"] = "推荐出租", "green"
+                elif new_tier == 3:
+                    v["label"], v["color"] = "一般房源", "yellow"
+                elif new_tier == 2:
+                    if v.get("earnings_veto"):
+                        v["label"] = "谨慎 — 财报跨期"
+                    elif c.get("capital_risk") == "veto":
+                        v["label"] = "可用现金不够接货"
+                    else:
+                        v["label"] = "谨慎出租"
+                    v["color"] = "orange"
+                else:
+                    v["label"], v["color"] = "别租", "red"
+
+    # 5b. 排序后保留 top 15
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
 

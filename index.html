@@ -1796,7 +1796,7 @@
     gap: 8px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="exit_style"] {
-    display: grid; grid-template-columns: repeat(2, 1fr);
+    display: grid; grid-template-columns: repeat(3, 1fr);
     gap: 8px; margin-bottom: 14px; align-items: stretch;
   }
   .rec-form .row[data-section="risk"] .label,
@@ -5220,17 +5220,22 @@
   <!-- exit_style 行：strategy / goal mode 都适用，放在两 mode 之外 -->
   <div class="row" data-section="exit_style">
     <span class="label" data-i18n="5. 出场风格">5. 出场风格</span>
-    <button class="opt-btn" data-group="exit_style" data-value="auto">
-      <span class="opt-icon" aria-hidden="true">⚙️</span>
-      <span class="opt-title" data-i18n="自动锁利">自动锁利</span>
-      <span class="opt-sub" data-i18n="50% 锁利 / 200% 止损">50% 锁利 / 200% 止损</span>
+    <button class="opt-btn" data-group="exit_style" data-value="early_close">
+      <span class="opt-icon" aria-hidden="true">🏠</span>
+      <span class="opt-title" data-i18n="早收租派">早收租派</span>
+      <span class="opt-sub" data-i18n="50% 早平 · 不想接货">50% 早平 · 不想接货</span>
     </button>
-    <button class="opt-btn" data-group="exit_style" data-value="wheel_purist">
-      <span class="opt-icon" aria-hidden="true">🪜</span>
-      <span class="opt-title" data-i18n="持到到期">持到到期</span>
-      <span class="opt-sub" data-i18n="Wheel 派 · 接货为乐">Wheel 派 · 接货为乐</span>
+    <button class="opt-btn" data-group="exit_style" data-value="wheel_assign">
+      <span class="opt-icon" aria-hidden="true">🏘️</span>
+      <span class="opt-title" data-i18n="接货 Wheel 派">接货 Wheel 派</span>
+      <span class="opt-sub" data-i18n="愿接货转 CC · 暴跌/财报才止损">愿接货转 CC · 暴跌/财报才止损</span>
     </button>
-    <span class="risk-hint" data-i18n="持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。">持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。</span>
+    <button class="opt-btn" data-group="exit_style" data-value="hold_to_expiry">
+      <span class="opt-icon" aria-hidden="true">💰</span>
+      <span class="opt-title" data-i18n="死磕到期派">死磕到期派</span>
+      <span class="opt-sub" data-i18n="持到 expire · 吃满租金">持到 expire · 吃满租金</span>
+    </button>
+    <span class="risk-hint" data-i18n-html="exit_style_hint_html">3 个房东人设：<strong>🏠 早收租派</strong>不想接货；<strong>🏘️ Wheel 派</strong>愿被指派转 CC；<strong>💰 死磕派</strong>持到到期吃满。仅短卖适用。</span>
   </div>
 
   <div class="rec-result" id="rec-result"></div>
@@ -5467,13 +5472,15 @@ const I18N = {
     '预算够': '预算够',
     '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
 
-    // ── 🪜 出场风格 (v2 #3 wheel_purist UI)
+    // ── 🪜 出场风格 (3 房东人设)
     '5. 出场风格': '5. 出场风格',
-    '自动锁利': '自动锁利',
-    '50% 锁利 / 200% 止损': '50% 锁利 / 200% 止损',
-    '持到到期': '持到到期',
-    'Wheel 派 · 接货为乐': 'Wheel 派 · 接货为乐',
-    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。',
+    '早收租派': '早收租派',
+    '50% 早平 · 不想接货': '50% 早平 · 不想接货',
+    '接货 Wheel 派': '接货 Wheel 派',
+    '愿接货转 CC · 暴跌/财报才止损': '愿接货转 CC · 暴跌/财报才止损',
+    '死磕到期派': '死磕到期派',
+    '持到 expire · 吃满租金': '持到 expire · 吃满租金',
+    'exit_style_hint_html': '3 个房东人设：<strong>🏠 早收租派</strong>不想接货；<strong>🏘️ Wheel 派</strong>愿被指派转 CC；<strong>💰 死磕派</strong>持到到期吃满。仅短卖适用。',
 
     // ── 🎯 愿意接货清单 (v2 #4)
     '🎯 愿意接货清单': '🎯 愿意接货清单',
@@ -6185,13 +6192,15 @@ const I18N = {
     '预算够': '預算夠',
     '档（你想要 N 档需要更多预算）': '檔（你想要 N 檔需要更多預算）',
 
-    // ── 🪜 出场风格
+    // ── 🪜 出場風格 (3 房東人設)
     '5. 出场风格': '5. 出場風格',
-    '自动锁利': '自動鎖利',
-    '50% 锁利 / 200% 止损': '50% 鎖利 / 200% 止損',
-    '持到到期': '持到到期',
-    'Wheel 派 · 接货为乐': 'Wheel 派 · 接貨為樂',
-    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不鎖利不止損，只在被指派後處理（接貨換正股 / 賣 CC）。僅短賣適用。',
+    '早收租派': '早收租派',
+    '50% 早平 · 不想接货': '50% 早平 · 不想接貨',
+    '接货 Wheel 派': '接貨 Wheel 派',
+    '愿接货转 CC · 暴跌/财报才止损': '願接貨轉 CC · 暴跌/財報才止損',
+    '死磕到期派': '死磕到期派',
+    '持到 expire · 吃满租金': '持到 expire · 吃滿租金',
+    'exit_style_hint_html': '3 個房東人設：<strong>🏠 早收租派</strong>不想接貨；<strong>🏘️ Wheel 派</strong>願被指派轉 CC；<strong>💰 死磕派</strong>持到到期吃滿。僅短賣適用。',
 
     // ── 🎯 願意接貨清單
     '🎯 愿意接货清单': '🎯 願意接貨清單',
@@ -6995,13 +7004,15 @@ const I18N = {
     '预算够': 'Budget fits',
     '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
 
-    // ── 🪜 Exit style (wheel_purist UI)
+    // ── 🪜 Exit style (3 landlord personas)
     '5. 出场风格': '5. Exit style',
-    '自动锁利': 'Auto lock-in',
-    '50% 锁利 / 200% 止损': '50% profit / 200% stop',
-    '持到到期': 'Hold to expiry',
-    'Wheel 派 · 接货为乐': 'Wheel-style · happy to be assigned',
-    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': 'Hold to expiry = no profit-lock, no stop-loss; only act when assigned (take stock / sell CC). Short positions only.',
+    '早收租派': 'Early-close landlord',
+    '50% 早平 · 不想接货': '50% close · no assignment',
+    '接货 Wheel 派': 'Wheel & assign',
+    '愿接货转 CC · 暴跌/财报才止损': 'Accept assign → CC · stop only on crash/earnings',
+    '死磕到期派': 'Hold-to-expiry',
+    '持到 expire · 吃满租金': 'Hold to expire · max rent',
+    'exit_style_hint_html': '3 landlord personas: <strong>🏠 Early-close</strong> no assign; <strong>🏘️ Wheel</strong> accepts assignment → CC; <strong>💰 Hold-to-expiry</strong> sits tight for full premium. Short positions only.',
 
     // ── 🎯 Willing-to-own list (v2 #4)
     '🎯 愿意接货清单': '🎯 Willing-to-own list',
@@ -9874,14 +9885,21 @@ const _recDefaults = {
   intent: 'premium',
   timeframe: '7',
   risk: 'balanced',
-  exit_style: 'auto',
+  exit_style: 'early_close',
 };
+// 旧值迁移：localStorage 里残留的 auto/wheel_purist 自动映射到新值
+const _EXIT_STYLE_MIGRATE = { 'auto': 'early_close', 'wheel_purist': 'hold_to_expiry' };
 const _recSelection = (() => {
   // 模块级初始化 — 任何 throw 都会让整个 app 启动失败。localStorage 损坏
   // （扩展插入垃圾 / 跨域写入 / 早期版本残留）时静默回退到 defaults。
   try {
     const raw = localStorage.getItem('rec_last_choice');
-    return raw ? { ..._recDefaults, ...JSON.parse(raw) } : { ..._recDefaults };
+    const sel = raw ? { ..._recDefaults, ...JSON.parse(raw) } : { ..._recDefaults };
+    // 旧值迁移：auto → early_close, wheel_purist → hold_to_expiry
+    if (_EXIT_STYLE_MIGRATE[sel.exit_style]) {
+      sel.exit_style = _EXIT_STYLE_MIGRATE[sel.exit_style];
+    }
+    return sel;
   } catch (e) {
     return { ..._recDefaults };
   }

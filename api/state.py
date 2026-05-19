@@ -2825,23 +2825,86 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     }
 
 
+def _adjust_profit_target_by_vrp(base_pct: float, vrp: Optional[float]) -> tuple:
+    """VRP（IV/RV ratio）决定早平阈值：
+      VRP 高 → IV crush 来得快，早平 30%
+      VRP 低 → 卖在低 IV 期，等 vol expansion，target 拉高
+    返回 (adjusted_pct, reason_key)
+    """
+    if vrp is None or vrp <= 0:
+        return base_pct, "vrp_neutral"
+    if vrp >= 1.30:
+        return max(25, base_pct - 20), "vrp_high"   # 50 → 30
+    if vrp >= 1.15:
+        return max(35, base_pct - 10), "vrp_above"  # 50 → 40
+    if vrp <= 1.00:
+        return min(80, base_pct + 20), "vrp_low"    # 50 → 70
+    if vrp <= 1.05:
+        return min(70, base_pct + 10), "vrp_below"  # 50 → 60
+    return base_pct, "vrp_neutral"
+
+
+def _dte_cutoff_threshold(days: int, exit_style: str) -> int:
+    """Tasty 经验：21 DTE 之前死磕 50% 才有意义；剩 ≤ 21 天 theta 已吃完 80%。
+    包租公译法：'剩多少天强制换租客'。
+    early_close: max(orig_dte * 0.3, 7)
+    wheel_assign: max(orig_dte * 0.2, 5)  仅在盈利时触发
+    hold_to_expiry: 0  仅到期日处理
+    """
+    if exit_style == "hold_to_expiry":
+        return 0
+    if exit_style == "wheel_assign":
+        return max(5, int(days * 0.2))
+    return max(7, int(days * 0.3))   # early_close
+
+
+def _delta_breach_threshold(exit_style: str, kind: str) -> Optional[float]:
+    """Delta 突破触发线（绝对值）：
+    short premium 风险真正的来源是 ITM 接货 / 被叫走，不是 premium 涨多少。
+    early_close: 0.30   一升就 roll
+    wheel_assign: 0.45  愿意接货，宽容一点
+    hold_to_expiry: None  不基于 delta 触发
+    """
+    if kind not in ("short_premium", "csp", "covered_call"):
+        return None
+    if exit_style == "early_close":
+        return 0.30
+    if exit_style == "wheel_assign":
+        return 0.45
+    return None  # hold_to_expiry
+
+
 def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
                is_covered: bool = False, is_short: bool = True,
-               exit_style: str = "auto") -> dict:
+               exit_style: str = "early_close") -> dict:
     """
-    出场计划：按 risk × strategy 矩阵生成。
-    返回:
+    包租公式出场计划 — 4 条事件触发线（不是 trader 的 take profit/stop loss 双阈值）。
+
+    输出:
       kind: short_premium / csp / covered_call / leaps / long_other
-      profit_target_pct: 锁利目标（按权利金的百分比）
-      stop_loss_pct: 止损（None=不止损）
-      exit_at_price: 平仓建议价（per share）
-      stop_at_price: 止损价（None=不止损）
-      roll_trigger: roll 触发条件（短卖才有）
-      summary_key: 给前端用的 i18n key
-      summary_vars: 模板变量
-      exit_style: auto / wheel_purist（持到到期接货派）
+      exit_style: early_close / wheel_assign / hold_to_expiry
+      triggers: [{id, icon, kind, label_key, condition_key, condition_vars,
+                  action_key, reason_key, reason_vars, active}]
+      legacy 字段（保留兼容前端 renderExitPlan）:
+        profit_target_pct / stop_loss_pct / stop_loss_disabled
+        exit_at_price / stop_at_price / roll_trigger
+        summary_key / summary_vars
     """
     mid = float(opt.get("mid") or 0)
+    days = int(opt.get("days") or 0)
+    strike = float(opt.get("strike") or 0)
+    delta = float(opt.get("delta") or 0)
+    underlying_px = float(opt.get("underlying") or 0)
+    ticker = opt.get("ticker") or ""
+
+    # v2 信号（可能没有）
+    sc = opt.get("score_components") or {}
+    vrp = sc.get("vrp_ratio")
+    stress = opt.get("stress_components") or {}
+    earnings_warn = opt.get("earnings_warning")
+    capital_pct = opt.get("capital_pct")
+    capital_risk = opt.get("capital_risk")
+
     # 推断策略类型
     if intent == "long_leaps":
         kind = "leaps"
@@ -2854,88 +2917,236 @@ def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
     else:
         kind = "long_other"
 
-    # ── 矩阵：risk × kind → (profit %, stop %)
-    # stop = None 表示「不止损」（持股 / 接货）
-    matrix = {
-        "short_premium": {
-            "conservative": (30, 100),
-            "balanced":     (50, 200),
-            "aggressive":   (75, 300),
-        },
-        "csp": {
-            "conservative": (30, None),  # 不止损 = 接货
-            "balanced":     (50, None),
-            "aggressive":   (75, None),
-        },
-        "covered_call": {
-            "conservative": (30, None),  # 不止损 = 被叫走
-            "balanced":     (50, None),
-            "aggressive":   (75, None),
-        },
-        "leaps": {
-            "conservative": (50,  50),   # 翻倍前先锁一半，避免归零
-            "balanced":     (100, 50),
-            "aggressive":   (200, 50),
-        },
-        "long_other": {
-            "conservative": (50,  50),
-            "balanced":     (100, 50),
-            "aggressive":   (150, 50),
-        },
-    }
-    profit_pct, stop_pct = matrix[kind].get(risk, matrix[kind]["balanced"])
+    # ── LEAPS / long_other 保留原矩阵（非租房场景，沿用 trader 双阈值）
+    if kind in ("leaps", "long_other"):
+        matrix = {
+            "leaps": {
+                "conservative": (50,  50),
+                "balanced":     (100, 50),
+                "aggressive":   (200, 50),
+            },
+            "long_other": {
+                "conservative": (50,  50),
+                "balanced":     (100, 50),
+                "aggressive":   (150, 50),
+            },
+        }
+        profit_pct, stop_pct = matrix[kind].get(risk, matrix[kind]["balanced"])
+        exit_at_price = round(mid * (1 + profit_pct / 100.0), 2) if mid > 0 else None
+        stop_at_price = round(mid * (1 - stop_pct / 100.0), 2) if mid > 0 else None
+        return {
+            "kind": kind,
+            "exit_style": exit_style,
+            "profit_target_pct": profit_pct,
+            "stop_loss_pct": stop_pct,
+            "stop_loss_disabled": False,
+            "exit_at_price": exit_at_price,
+            "stop_at_price": stop_at_price,
+            "roll_trigger": None,
+            "summary_key": f"exit_summary_{kind}",
+            "summary_vars": {
+                "profit_pct": profit_pct, "stop_pct": stop_pct,
+                "exit_price": exit_at_price or 0, "stop_price": stop_at_price or 0,
+            },
+            "triggers": [
+                {
+                    "id": "leaps_profit", "icon": "📈", "kind": "profit",
+                    "label_key": "exit_trig_leaps_profit",
+                    "condition_key": "exit_cond_price_up",
+                    "condition_vars": {
+                        "target_px": exit_at_price or 0,
+                        "profit_pct": profit_pct,
+                        "entry_px": mid,
+                    },
+                    "action_key": "exit_act_lock_profit",
+                    "reason_key": "leaps_target_base", "reason_vars": {},
+                    "active": True,
+                },
+                {
+                    "id": "leaps_stop", "icon": "🛑", "kind": "stop",
+                    "label_key": "exit_trig_leaps_stop",
+                    "condition_key": "exit_cond_price_down",
+                    "condition_vars": {
+                        "target_px": stop_at_price or 0,
+                        "loss_pct": stop_pct,
+                        "entry_px": mid,
+                    },
+                    "action_key": "exit_act_stop_loss",
+                    "reason_key": "leaps_stop_base", "reason_vars": {},
+                    "active": True,
+                },
+            ],
+        }
 
-    # ── 2.0 新增：wheel_purist 风格覆盖短卖出场（持到到期接货派 — 不锁利不止损）
-    if exit_style == "wheel_purist" and kind in ("short_premium", "csp", "covered_call"):
-        profit_pct = 100   # 持到到期（premium 衰减到 ~0 = expire OTM）
-        stop_pct = None
+    # ── 短卖三态（short_premium / csp / covered_call）：4 触发线
 
-    # ── 价格换算
-    exit_at_price = None
-    stop_at_price = None
-    if kind == "leaps" or kind == "long_other":
-        # 买入场景：profit = 涨多少，stop = 跌多少
-        if mid > 0:
-            exit_at_price = round(mid * (1 + profit_pct / 100.0), 2)
-            stop_at_price = round(mid * (1 - stop_pct / 100.0), 2) if stop_pct else None
+    # 1️⃣ 早收租 (profit target)：50% base，按 VRP 微调
+    base_profit_by_risk = {"conservative": 35, "balanced": 50, "aggressive": 65}
+    base_profit = base_profit_by_risk.get(risk, 50)
+    if exit_style == "hold_to_expiry":
+        # 死磕到期派 = 不主动早平
+        profit_pct = 90
+        profit_reason_key = "hold_expire"
     else:
-        # 短卖场景：profit = premium 衰减到 (1 - p%)，stop = premium 涨到 (1 + s%)
-        if mid > 0:
-            exit_at_price = round(mid * (1 - profit_pct / 100.0), 2)
-            stop_at_price = round(mid * (1 + stop_pct / 100.0), 2) if stop_pct else None
+        profit_pct, profit_reason_key = _adjust_profit_target_by_vrp(base_profit, vrp)
+    profit_target_px = round(mid * (1 - profit_pct / 100.0), 2) if mid > 0 else 0
+    profit_dollars = round((mid - profit_target_px) * 100, 0) if mid > 0 else 0
 
-    # ── Roll 触发（仅短卖）
-    roll_trigger = None
-    if kind in ("short_premium", "csp", "covered_call"):
-        # wheel_purist：除非被指派否则不动
-        if exit_style == "wheel_purist":
-            roll_trigger = "assigned_only"
+    # 2️⃣ DTE 换租截止
+    dte_cutoff = _dte_cutoff_threshold(days, exit_style)
+
+    # 3️⃣ 房客违约 (delta + 标的反向触发价)
+    delta_thr = _delta_breach_threshold(exit_style, kind)
+    # 触发标的价：用 stress -5% 的 stressed_underlying（不利方向参考）
+    breach_px = None
+    if stress.get("adverse_5pct"):
+        breach_px = stress["adverse_5pct"].get("stressed_underlying")
+    if breach_px is None and underlying_px > 0:
+        # fallback：strike 旁边 2% 缓冲
+        if kind == "covered_call":
+            breach_px = round(strike * 0.98, 2)   # short call → 涨破
         else:
-            # DTE 是当前候选的到期天数，不是 trigger 本身；trigger 是「当 DTE 缩到 ≤7 时」
-            # 这里给出文案模板，前端按 i18n key 渲染
-            roll_trigger = "dte7_delta50_loss"  # i18n key
+            breach_px = round(strike * 1.02, 2)   # short put → 跌破
 
-    summary_key = f"exit_summary_{kind}"
-    if exit_style == "wheel_purist" and kind in ("short_premium", "csp", "covered_call"):
-        summary_key = f"exit_summary_{kind}_wheel_purist"
-    summary_vars = {
-        "profit_pct": profit_pct,
-        "stop_pct": stop_pct if stop_pct is not None else 0,
-        "exit_price": exit_at_price if exit_at_price is not None else 0,
-        "stop_price": stop_at_price if stop_at_price is not None else 0,
-    }
+    # 4️⃣ 红线（必出场）
+    red_line_triggers = []
+    if earnings_warn:
+        red_line_triggers.append({
+            "trigger": "earnings_cross",
+            "vars": {"date": earnings_warn.get("date"), "days": earnings_warn.get("days")},
+        })
+    # 接货占现金 threshold：early_close 25% / wheel_assign 35% / hold 50%
+    capital_thr = {"early_close": 25, "wheel_assign": 35, "hold_to_expiry": 50}.get(exit_style, 25)
+    if capital_pct is not None and capital_pct > capital_thr:
+        red_line_triggers.append({
+            "trigger": "capital_exceeded",
+            "vars": {"capital_pct": capital_pct, "threshold": capital_thr},
+        })
+    if capital_risk == "red":
+        red_line_triggers.append({"trigger": "capital_red", "vars": {}})
+
+    # ── 组装 triggers 数组
+    triggers = []
+
+    # 1. 早收租
+    triggers.append({
+        "id": "early_close_profit",
+        "icon": "📬",
+        "kind": "profit",
+        "label_key": "exit_trig_early_rent",
+        "condition_key": "exit_cond_premium_decay",
+        "condition_vars": {
+            "target_px": profit_target_px,
+            "profit_pct": profit_pct,
+            "profit_amt": profit_dollars,
+            "entry_px": round(mid, 2),
+        },
+        "action_key": "exit_act_close_redeploy" if exit_style != "hold_to_expiry" else "exit_act_hold_to_zero",
+        "reason_key": profit_reason_key,
+        "reason_vars": {"vrp": vrp} if vrp is not None else {},
+        "active": exit_style != "hold_to_expiry",
+    })
+
+    # 2. DTE 换租截止
+    triggers.append({
+        "id": "dte_cutoff",
+        "icon": "⏱️",
+        "kind": "dte_cutoff",
+        "label_key": "exit_trig_dte_cutoff",
+        "condition_key": "exit_cond_dte_left",
+        "condition_vars": {
+            "dte_threshold": dte_cutoff,
+            "dte_original": days,
+        },
+        "action_key": "exit_act_force_close" if exit_style == "early_close" else "exit_act_close_if_profit",
+        "reason_key": "tasty_21d_rule",
+        "reason_vars": {},
+        "active": exit_style != "hold_to_expiry" and dte_cutoff > 0,
+    })
+
+    # 3. 房客违约（Delta / 标的反向破位）
+    breach_action = {
+        "early_close": "exit_act_roll_or_stop",     # 不接货 → roll 到下月或止损
+        "wheel_assign": "exit_act_roll_or_accept",  # 愿意接货 → roll 或准备接货
+        "hold_to_expiry": "exit_act_hold_assign",   # 持有到期接货
+    }.get(exit_style, "exit_act_roll_or_stop")
+    triggers.append({
+        "id": "tenant_breach",
+        "icon": "⚠️",
+        "kind": "breach",
+        "label_key": "exit_trig_tenant_breach" if exit_style != "wheel_assign" else "exit_trig_prepare_assign",
+        "condition_key": "exit_cond_delta_or_underlying",
+        "condition_vars": {
+            "delta_threshold": delta_thr,
+            "underlying_breach_px": breach_px,
+            "ticker": ticker,
+            "side": "below" if kind != "covered_call" else "above",
+        },
+        "action_key": breach_action,
+        "reason_key": "delta_real_risk",
+        "reason_vars": {},
+        "active": delta_thr is not None,
+    })
+
+    # 4. 红线
+    triggers.append({
+        "id": "red_line",
+        "icon": "🚨",
+        "kind": "red_line",
+        "label_key": "exit_trig_red_line",
+        "condition_key": "exit_cond_red_line",
+        "condition_vars": {
+            "events": red_line_triggers,
+            "capital_threshold": capital_thr,
+        },
+        "action_key": "exit_act_immediate_close",
+        "reason_key": "red_line_no_assign",
+        "reason_vars": {},
+        "active": True,  # 红线始终活跃
+        "armed": len(red_line_triggers) > 0,  # 是否已经被触发
+    })
+
+    # ── 兼容字段（前端 renderExitPlan 暂时还在用）
+    if exit_style == "hold_to_expiry":
+        legacy_stop_pct = None
+        legacy_stop_px = None
+        legacy_summary = f"exit_summary_{kind}_hold_to_expiry"
+        legacy_roll_trigger = "assigned_only"
+    else:
+        # 止损价用 breach_px 反推：标的跌到 breach_px 时 short put 大概的 premium
+        # 简化：stress 给的 new_mid 已经是近似
+        if stress.get("adverse_5pct") and stress["adverse_5pct"].get("new_mid"):
+            legacy_stop_px = stress["adverse_5pct"]["new_mid"]
+        elif mid > 0:
+            legacy_stop_px = round(mid * 2.0, 2)
+        else:
+            legacy_stop_px = None
+        # legacy stop_pct = 权利金涨多少
+        legacy_stop_pct = round((legacy_stop_px / mid - 1) * 100, 0) if (legacy_stop_px and mid > 0) else 100
+        legacy_summary = f"exit_summary_{kind}"
+        legacy_roll_trigger = "delta_breach"
 
     return {
         "kind": kind,
         "exit_style": exit_style,
         "profit_target_pct": profit_pct,
-        "stop_loss_pct": stop_pct,
-        "stop_loss_disabled": stop_pct is None,
-        "exit_at_price": exit_at_price,
-        "stop_at_price": stop_at_price,
-        "roll_trigger": roll_trigger,
-        "summary_key": summary_key,
-        "summary_vars": summary_vars,
+        "stop_loss_pct": legacy_stop_pct,
+        "stop_loss_disabled": legacy_stop_pct is None,
+        "exit_at_price": profit_target_px,
+        "stop_at_price": legacy_stop_px,
+        "roll_trigger": legacy_roll_trigger,
+        "summary_key": legacy_summary,
+        "summary_vars": {
+            "profit_pct": profit_pct,
+            "stop_pct": legacy_stop_pct if legacy_stop_pct is not None else 0,
+            "exit_price": profit_target_px,
+            "stop_price": legacy_stop_px if legacy_stop_px is not None else 0,
+        },
+        "triggers": triggers,
+        "dte_cutoff": dte_cutoff,
+        "delta_breach_threshold": delta_thr,
+        "underlying_breach_px": breach_px,
+        "red_line_armed": [r["trigger"] for r in red_line_triggers],
     }
 
 
@@ -3012,10 +3223,18 @@ def recommend(req: dict) -> dict:
     )
     is_willing_to_own = bool(held_shares >= 100 or has_existing_short_put)
 
-    # exit_style：默认 auto；用户可传 wheel_purist 改成持到到期接货派
-    exit_style = req.get("exit_style", "auto")
-    if exit_style not in ("auto", "wheel_purist"):
-        exit_style = "auto"
+    # exit_style：包租公 3 个房东人设。兼容旧值 auto / wheel_purist
+    #   early_close     早收租派：50% 早平 + delta 0.30 触发 roll + 不接货
+    #   wheel_assign    Wheel 接货派：50% 早平 + delta 0.45 才止损 + 愿意接货转 CC
+    #   hold_to_expiry  死磕到期派：持到 expire OTM，吃满租金（≈ 旧 wheel_purist）
+    exit_style = req.get("exit_style", "early_close")
+    _exit_style_aliases = {
+        "auto": "early_close",
+        "wheel_purist": "hold_to_expiry",
+    }
+    exit_style = _exit_style_aliases.get(exit_style, exit_style)
+    if exit_style not in ("early_close", "wheel_assign", "hold_to_expiry"):
+        exit_style = "early_close"
 
     is_call, is_short = _decide_strategy(direction, intent)
     # LEAPS / 股票替代：扫描深度 ITM 区间（Delta 0.55-0.85）
@@ -3294,18 +3513,22 @@ def recommend(req: dict) -> dict:
             c["covered_contracts"] = shares_held // 100
             c["shares_held"] = shares_held
 
-        # 出场计划（短卖 + LEAPS 都生成；其他做多场景生成基础版）
-        c["exit_plan"] = _exit_plan(c, intent, is_csp, risk,
-                                     is_covered=is_covered_call,
-                                     is_short=is_short,
-                                     exit_style=exit_style)
-
     # 2.0 新增：资金占用检查（依赖 suggested_contracts 已在第一轮算好）
     if is_short and not is_call:
         _capital_risk_check(candidates, option_positions, avail_margin)
     else:
         for c in candidates:
             c["capital_risk"] = "n/a"
+
+    # 出场计划必须在 capital_risk_check 之后（红线触发要读 capital_pct / capital_risk）
+    for c in candidates:
+        # 不是每个 candidate 都标记 is_covered；用 ticker 持股推断
+        ticker_held = stock_map.get((c.get("ticker") or "").upper(), 0)
+        is_covered_for_c = bool(is_short and c.get("type") == "call" and ticker_held >= 100)
+        c["exit_plan"] = _exit_plan(c, intent, is_csp, risk,
+                                     is_covered=is_covered_for_c,
+                                     is_short=is_short,
+                                     exit_style=exit_style)
 
     # 2.0：verdict 在 capital_risk_check 之后算（这样能读到 capital_risk）
     for c in candidates:

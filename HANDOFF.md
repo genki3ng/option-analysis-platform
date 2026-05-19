@@ -3,9 +3,40 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 管家算法集中度中性化）
+最后更新：2026-05-19（cloud — 包租公管家付费刷新：5🪙/次 + 后端 LLM force_refresh + brief_refresh usage event）
 
-### ✅ 这一轮（2026-05-19 cloud · 集中度从"紧急"降级到中性提示）
+### ✅ 这一轮（2026-05-19 cloud · 包租公管家付费刷新功能）
+
+**主题**：用户要求"管家每天早上才更新一次，但市场一天可能在变幻"——给管家加 refresh 按钮，一次 5 金币。
+
+**后端实现**（`api/state.py`）：
+1. `_generate_morning_brief(..., force_refresh=False)` — 新参数，True 时跳过 cache 命中条件强行调 LLM
+2. `compute(payload)` — 读 `payload.brief_refresh` 透传给上面；response 加 `brief_refresh_charged: bool`（仅在用户请求 + 真走了 LLM 时才 True，template fallback 不算）
+3. `do_POST` handler — `compute` 分支后，`brief_refresh_charged=True` 时写一条 `brief_refresh` usage_event（metadata: cost=5, by=llm, lang）
+4. `get_coin_balance` 重写 — 抽出 `_count_usage_event` helper，分别 count `recommend`（×1）和 `brief_refresh`（×5），相加 = used，1000 - used = remaining
+
+**前端实现**（`index.html`）：
+1. `.morning-brief .mb-refresh` 新样式 — pill 按钮，position absolute 在 close × 左侧（top:9px right:38px）；disabled 状态变灰；refreshing 时图标旋转
+2. 手机 `@media (max-width: 600px)` — 只显示图标 + cost label 隐藏，避免和标题挤
+3. `_deductCoin(n=1)` — 支持参数；扣完调 `_updateMbRefreshButton` 同步按钮 disabled 状态
+4. `_loadCoinBalance` 末尾同步调 `_updateMbRefreshButton`
+5. 新 `_mbRenderRefreshBtn` / `_updateMbRefreshButton` / `refreshMorningBrief` 三函数；后者：confirm → POST with `brief_refresh: true` + user_id/email → 检查 `d.brief_refresh_charged` → 真扣才 `_deductCoin(5)` + 重 reconcile；LLM 失败 alert "管家暂时打盹，本次未扣金币"
+6. 注入到 `renderMorningBrief` 两个模式（mode-priority 和老 prose）
+7. i18n — zh_tw / en 各加 7 个 key（刷新管家、需要 5🪙、花 5🪙 让管家重新查…、刷新中、生成失败、刷新失败 prefix）
+
+**安全考虑**：
+- share view 不渲染按钮（接收方不该花分享者的钱）
+- 未登录用户按钮 hide（无账户无 coin 概念）
+- 余额不足按钮 disabled，tooltip 提示"需要 5🪙"（用户选项 B）
+- 后端 brief_refresh_charged 只在 by="llm" 时为真 — template fallback 不扣费，用户重试不亏
+
+**没改的**：
+- 现有自动 5 分钟 refresh 流程不变（仍走 cache 路径）
+- recommend 1 coin 流程不变
+
+---
+
+### 上一轮（2026-05-19 cloud · 集中度从"紧急"降级到中性提示）
 
 **主题**：用户质疑"管家算法把集中度给到紧急"不对 — 集中度本质是策略选择（Wheel 蓝筹 / 长期看好单票的用户本来就偏集中），因人而异、偏中性，不该当 alert 报警。
 

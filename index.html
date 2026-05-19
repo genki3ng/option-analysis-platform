@@ -3226,6 +3226,42 @@
     cursor: pointer; color: var(--sub);
     font-size: 16px; line-height: 1;
   }
+  /* 付费刷新按钮 — 放在 close × 左侧 */
+  .morning-brief .mb-refresh {
+    position: absolute; top: 9px; right: 38px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--sub);
+    font-size: 11px; font-weight: 600;
+    font-family: inherit; line-height: 1;
+    cursor: pointer;
+    transition: color 150ms, border-color 150ms, background 150ms, opacity 150ms;
+  }
+  .morning-brief .mb-refresh:not(:disabled):hover {
+    color: var(--accent);
+    border-color: var(--accent-tint-strong);
+    background: rgba(230,184,106,0.06);
+  }
+  .morning-brief .mb-refresh:disabled {
+    opacity: 0.45; cursor: not-allowed;
+  }
+  .morning-brief .mb-refresh .mb-refresh-cost {
+    color: var(--accent); font-weight: 700;
+  }
+  .morning-brief .mb-refresh:disabled .mb-refresh-cost {
+    color: var(--sub);
+  }
+  .morning-brief .mb-refresh.refreshing { pointer-events: none; opacity: 0.7; }
+  .morning-brief .mb-refresh.refreshing .mb-refresh-icon {
+    display: inline-block;
+    animation: mb-refresh-spin 0.9s linear infinite;
+  }
+  @keyframes mb-refresh-spin {
+    to { transform: rotate(360deg); }
+  }
   .morning-brief.collapsed { display: none; }
   /* 关闭后的"重新展开"小药丸 */
   .mb-reopen {
@@ -3652,6 +3688,12 @@
     .mb-focus-text { font-size: 12px; }
     .mb-focus-action { padding: 5px 9px; font-size: 10px; }
     .mb-cal-day { height: 18px; font-size: 8px; }
+    /* refresh 按钮：手机只显示图标 + cost，省空间避免和标题挤 */
+    .morning-brief .mb-refresh {
+      right: 36px; top: 9px;
+      padding: 4px 8px; gap: 4px;
+    }
+    .morning-brief .mb-refresh .mb-refresh-label { display: none; }
   }
 
   /* 📝 Trade Journal — extras 内 dashed button */
@@ -5814,6 +5856,13 @@ const I18N = {
     '包租公管家': '包租公管家',
     '展开管家': '展開管家',
     '展开包租公管家': '展開包租公管家',
+    '刷新管家': '刷新管家',
+    '需要 {n}🪙 才能刷新': '需要 {n}🪙 才能刷新',
+    '花 {n}🪙 重新生成管家简报': '花 {n}🪙 重新生成管家簡報',
+    '花 {n}🪙 让管家重新查一遍今天的市场？': '花 {n}🪙 讓管家重新查一遍今天的市場？',
+    '刷新中…': '刷新中…',
+    '管家暂时打盹（生成失败），本次未扣金币。稍后再试。': '管家暫時打盹（生成失敗），本次未扣金幣。稍後再試。',
+    '刷新失败：': '刷新失敗：',
     '包租公金币 — 每次推荐消耗 1 枚': '包租公金幣 — 每次推薦消耗 1 枚',
     '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': '包租公金幣 — 每次推薦消耗 1 枚。當前餘額：{n}',
     '欢迎入坑包租公': '歡迎入坑包租公',
@@ -6614,6 +6663,13 @@ const I18N = {
     '包租公管家': 'Landlord Concierge',
     '展开管家': 'Show concierge',
     '展开包租公管家': 'Show concierge',
+    '刷新管家': 'Refresh',
+    '需要 {n}🪙 才能刷新': 'Need {n}🪙 to refresh',
+    '花 {n}🪙 重新生成管家简报': 'Spend {n}🪙 to regenerate the concierge brief',
+    '花 {n}🪙 让管家重新查一遍今天的市场？': 'Spend {n}🪙 and let the concierge re-read today\'s market?',
+    '刷新中…': 'Refreshing…',
+    '管家暂时打盹（生成失败），本次未扣金币。稍后再试。': 'Concierge dozed off (generation failed). No coins charged. Please retry.',
+    '刷新失败：': 'Refresh failed: ',
     '包租公金币 — 每次推荐消耗 1 枚': 'Landlord coins — each recommendation costs 1',
     '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': 'Landlord coins — each recommendation costs 1. Current balance: {n}',
     '欢迎入坑包租公': 'Welcome to Landlord',
@@ -12342,6 +12398,85 @@ function _mbSaveSnapshot(snap) {
   } catch (e) {}
 }
 
+// 付费刷新管家相关 ───────────────────────────────────────────────
+const MB_REFRESH_COST = 5;
+let _mbRefreshing = false;
+
+function _mbRenderRefreshBtn() {
+  // 渲染时 enabled/disabled 状态在 _updateMbRefreshButton 里同步
+  return `<button class="mb-refresh" id="mb-refresh-btn" onclick="refreshMorningBrief()">
+    <span class="mb-refresh-icon">🔄</span>
+    <span class="mb-refresh-label">${t('刷新管家')}</span>
+    <span class="mb-refresh-cost">${MB_REFRESH_COST}🪙</span>
+  </button>`;
+}
+
+function _updateMbRefreshButton() {
+  const btn = document.getElementById('mb-refresh-btn');
+  if (!btn) return;
+  // 未登录 / share view → 不显示
+  if (!_currentUser || window._isShareView) {
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = '';
+  const haveEnough = (_coinBalance == null) || (_coinBalance >= MB_REFRESH_COST);
+  const tipNeed = t('需要 {n}🪙 才能刷新').replace('{n}', MB_REFRESH_COST);
+  const tipReady = t('花 {n}🪙 重新生成管家简报').replace('{n}', MB_REFRESH_COST);
+  btn.disabled = !haveEnough || _mbRefreshing;
+  btn.title = !haveEnough ? tipNeed : (_mbRefreshing ? t('刷新中…') : tipReady);
+  if (_mbRefreshing) btn.classList.add('refreshing');
+  else btn.classList.remove('refreshing');
+}
+
+async function refreshMorningBrief() {
+  if (_mbRefreshing) return;
+  if (!_currentUser) return;
+  if (_coinBalance != null && _coinBalance < MB_REFRESH_COST) return;
+  // 确认花钱
+  const confirmMsg = t('花 {n}🪙 让管家重新查一遍今天的市场？').replace('{n}', MB_REFRESH_COST);
+  if (!window.confirm(confirmMsg)) return;
+  _mbRefreshing = true;
+  _updateMbRefreshButton();
+  try {
+    const positions = (typeof loadPositions === 'function') ? loadPositions() : [];
+    const state = (typeof loadStateMap === 'function') ? loadStateMap() : {};
+    const r = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        positions, state, lang: _lang || 'zh',
+        exit_style: (_recSelection && _recSelection.exit_style) || 'early_close',
+        brief_refresh: true,
+        user_id: _currentUser.id,
+        user_email: _currentUser.email || null,
+      }),
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error('HTTP ' + r.status + ': ' + txt.slice(0, 160));
+    }
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    window._currentData = d;
+    renderAll(d);
+    // 仅当后端真的走了 LLM（生成新 brief）才扣 5 金币
+    if (d.brief_refresh_charged) {
+      _deductCoin(MB_REFRESH_COST);
+      // 后台 reconcile 真实余额（双保险，避免乐观扣的偏差）
+      setTimeout(() => _loadCoinBalance({ silent: true }), 2000);
+    } else {
+      // LLM 没成功 → 没扣费，告诉用户重试
+      alert(t('管家暂时打盹（生成失败），本次未扣金币。稍后再试。'));
+    }
+  } catch (e) {
+    alert(t('刷新失败：') + (e && e.message ? e.message : e));
+  } finally {
+    _mbRefreshing = false;
+    _updateMbRefreshButton();
+  }
+}
+
 function renderMorningBrief(brief) {
   const el = document.getElementById('morning-brief');
   if (!el) return;
@@ -12386,11 +12521,15 @@ function renderMorningBrief(brief) {
     : '';
   const calHtml = cal.length ? _mbRenderCalendar(cal, brief.today_date) : '';
 
+  // 付费刷新按钮 HTML — share view 不显示（接收方不该能花分享者的钱）
+  const refreshBtnHtml = window._isShareView ? '' : _mbRenderRefreshBtn();
+
   // 新结构：concierge_brief 存在且有 items → priority list 模式
   const cb = brief.concierge_brief;
   if (cb && typeof cb === 'object' && Array.isArray(cb.items) && cb.items.length > 0) {
     el.classList.add('mode-priority');
     el.innerHTML = `
+      ${refreshBtnHtml}
       <span class="mb-close" onclick="dismissMorningBrief()">×</span>
       <div class="mb-greeting">${t('包租公管家')} <span class="mb-time">· ${_mbFormatTime()}</span></div>
       <div class="mb-priority-content">
@@ -12407,6 +12546,7 @@ function renderMorningBrief(brief) {
       ? `<div class="mb-focus-list">${top.map(_mbRenderFocusItem).join('')}</div>`
       : '';
     el.innerHTML = `
+      ${refreshBtnHtml}
       <span class="mb-close" onclick="dismissMorningBrief()">×</span>
       <div class="mb-concierge">
         <div class="mb-avatar">☀️</div>
@@ -12420,6 +12560,7 @@ function renderMorningBrief(brief) {
       ${calHtml}
     `;
   }
+  _updateMbRefreshButton();
   // 用空字符串清掉 inline display，让 @media (min-width: 900px) 的 display:grid 能生效
   el.style.display = '';
 
@@ -12683,7 +12824,11 @@ function _renderCoinBadge(remaining) {
 }
 
 async function _loadCoinBalance(opts) {
-  if (!_currentUser) { _coinBalance = null; _renderCoinBadge(null); return; }
+  if (!_currentUser) {
+    _coinBalance = null; _renderCoinBadge(null);
+    if (typeof _updateMbRefreshButton === 'function') _updateMbRefreshButton();
+    return;
+  }
   try {
     const r = await fetch('/api/state', {
       method: 'POST',
@@ -12705,11 +12850,13 @@ async function _loadCoinBalance(opts) {
       _renderCoinBadge(_coinBalance);
     }
   }
+  if (typeof _updateMbRefreshButton === 'function') _updateMbRefreshButton();
 }
 
-function _deductCoin() {
+function _deductCoin(n) {
   if (_coinBalance === null) return;
-  _coinBalance = Math.max(0, _coinBalance - 1);
+  const amount = (typeof n === 'number' && n > 0) ? n : 1;
+  _coinBalance = Math.max(0, _coinBalance - amount);
   _renderCoinBadge(_coinBalance);
   const el = document.getElementById('coin-badge');
   if (el) {
@@ -12717,6 +12864,8 @@ function _deductCoin() {
     void el.offsetWidth;  // restart animation
     el.classList.add('deducting');
   }
+  // 余额变化时同步刷新管家面板上的 refresh 按钮 disabled 状态
+  if (typeof _updateMbRefreshButton === 'function') _updateMbRefreshButton();
 }
 
 function showCoinInfo() {

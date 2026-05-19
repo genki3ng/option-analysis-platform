@@ -879,23 +879,13 @@ def admin_stats(payload):
     }
 
 
-def get_coin_balance(payload):
-    """返回某用户当前 coin 余额。用 Supabase count head 一次性算 used。
-    不做 JWT 验证（低风险只读，最多被人探测某用户用了多少次）。"""
-    user_id = (payload.get("user_id") or "").strip()
-    if not user_id:
-        return {"error": "missing user_id"}
-    if not SUPABASE_SERVICE_ROLE_KEY:
-        # 没配 service role 就退化为"满额"，不阻塞前端
-        return {"ok": True, "total": COIN_INITIAL_GRANT, "used": 0,
-                "remaining": COIN_INITIAL_GRANT, "note": "service_role missing"}
-    # Supabase count 模式：HEAD + Prefer: count=exact，返回值在 Content-Range
-    key = SUPABASE_SERVICE_ROLE_KEY
+def _count_usage_event(user_id: str, event: str, key: str) -> int:
+    """Supabase HEAD count 单事件次数。失败返回 0。"""
     url = (SUPABASE_URL.rstrip("/") + "/rest/v1/usage_events"
            + "?" + urllib.parse.urlencode({
                 "select": "id",
                 "user_id": f"eq.{user_id}",
-                "event": "eq.recommend",
+                "event": f"eq.{event}",
            }))
     headers = {
         "apikey": key,
@@ -905,22 +895,40 @@ def get_coin_balance(payload):
         "Range": "0-0",
     }
     req = urllib.request.Request(url, headers=headers, method="GET")
+    with urllib.request.urlopen(req, timeout=6) as resp:
+        cr = resp.headers.get("Content-Range") or ""
+        if "/" in cr:
+            tail = cr.split("/", 1)[1].strip()
+            if tail.isdigit():
+                return int(tail)
+    return 0
+
+
+def get_coin_balance(payload):
+    """返回某用户当前 coin 余额。用 Supabase count head 算 used。
+    扣费规则：recommend × 1 + brief_refresh × 5。
+    不做 JWT 验证（低风险只读，最多被人探测某用户用了多少次）。"""
+    user_id = (payload.get("user_id") or "").strip()
+    if not user_id:
+        return {"error": "missing user_id"}
+    if not SUPABASE_SERVICE_ROLE_KEY:
+        # 没配 service role 就退化为"满额"，不阻塞前端
+        return {"ok": True, "total": COIN_INITIAL_GRANT, "used": 0,
+                "remaining": COIN_INITIAL_GRANT, "note": "service_role missing"}
+    key = SUPABASE_SERVICE_ROLE_KEY
     try:
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            cr = resp.headers.get("Content-Range") or ""
-            # 形如 "0-0/42" 或 "*/42"
-            used = 0
-            if "/" in cr:
-                tail = cr.split("/", 1)[1].strip()
-                if tail.isdigit():
-                    used = int(tail)
+        recommend_count = _count_usage_event(user_id, "recommend", key)
+        brief_count = _count_usage_event(user_id, "brief_refresh", key)
     except Exception as e:
         return {"error": f"{type(e).__name__}: {e}"}
+    used = recommend_count + 5 * brief_count
     remaining = max(0, COIN_INITIAL_GRANT - used)
     return {
         "ok": True,
         "total": COIN_INITIAL_GRANT,
         "used": used,
+        "used_recommend": recommend_count,
+        "used_brief_refresh": brief_count,
         "remaining": remaining,
     }
 
@@ -1719,6 +1727,7 @@ def compute(payload):
     state = payload.get("state", {})
     lang = payload.get("lang", "zh")
     exit_style = payload.get("exit_style") or "early_close"
+    brief_refresh = bool(payload.get("brief_refresh"))
     # alias 旧值（兼容老 localStorage）
     exit_style = {"auto": "early_close", "wheel_purist": "hold_to_expiry"}.get(exit_style, exit_style)
     if exit_style not in ("early_close", "wheel_assign", "hold_to_expiry"):
@@ -1781,7 +1790,13 @@ def compute(payload):
     morning_brief = _generate_morning_brief(
         enriched, prices,
         total_pnl - total_realized, total_realized, total_theta,
-        state=state, lang=lang,
+        state=state, lang=lang, force_refresh=brief_refresh,
+    )
+
+    # brief_refresh_charged: 仅当用户请求 brief_refresh 且本次真的走了 LLM（不是 cache / template
+    # 兜底）才扣 5 金币。前端用这个判断 deduct，后端 handler 用它写 brief_refresh usage event。
+    brief_refresh_charged = bool(
+        brief_refresh and morning_brief and morning_brief.get("generated_by") == "llm"
     )
 
     return {
@@ -1800,6 +1815,7 @@ def compute(payload):
         "suggestions": suggestions,
         "history": history,
         "morning_brief": morning_brief,
+        "brief_refresh_charged": brief_refresh_charged,
     }
 
 
@@ -4914,11 +4930,12 @@ def _parse_concierge_json(text, lang):
 
 
 def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta,
-                              state=None, lang="zh"):
+                              state=None, lang="zh", force_refresh=False):
     """结构化早安简报 — 返回 dict（管家文 + top 3 + chips + 14 天日历 + snapshot）。
     Concierge 文本一天一次，缓存到 brief_snapshot；其它信号（top 3 / chips / 日历）每次重算。
     "今天" 用美东市场时区 — 服务器 UTC 早上 4 点已经是新一天，但盘前 4amET 用户还视为"昨晚"，
-    用 UTC 会导致美东时间凌晨那段窗口看到的是真正昨天生成的 brief 但不刷新。"""
+    用 UTC 会导致美东时间凌晨那段窗口看到的是真正昨天生成的 brief 但不刷新。
+    force_refresh=True 时跳过 cache 强行重新调 LLM（用户花 5 金币手动刷新管家走这条路径）。"""
     try:
         from zoneinfo import ZoneInfo
         today = datetime.now(ZoneInfo("America/New_York")).date()
@@ -4961,7 +4978,8 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     cached_brief = None
     cached_by = None
     snap_by = yesterday_snap.get("generated_by")
-    if (yesterday_snap.get("date") == today_iso
+    if (not force_refresh  # 用户付费手动刷新 → 强制重新调 LLM
+            and yesterday_snap.get("date") == today_iso
             and yesterday_snap.get("concierge_text")
             and yesterday_snap.get("concierge_lang") == lang
             and yesterday_snap.get("concierge_version") == CONCIERGE_VERSION
@@ -5148,6 +5166,19 @@ class handler(BaseHTTPRequestHandler):
                 result = get_coin_balance(payload)
             else:
                 result = compute(payload)
+                # brief_refresh 用户付费手动刷新管家：仅当真的走了 LLM 才记录扣费
+                if result.get("brief_refresh_charged"):
+                    try:
+                        log_usage_event(
+                            payload.get("user_id"),
+                            payload.get("user_email"),
+                            "brief_refresh",
+                            {"cost": 5, "by": (result.get("morning_brief") or {}).get("generated_by"),
+                             "lang": payload.get("lang") or "zh"},
+                        )
+                    except Exception as _e:
+                        try: print(f"[usage] brief_refresh log skip: {_e}", flush=True)
+                        except Exception: pass
             self._send_json(200, result)
         except Exception as e:
             self._send_json(500, {

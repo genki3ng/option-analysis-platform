@@ -3,7 +3,38 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — QA 第三轮 P2 收尾 · i18n 繁中瑕疵 + goal 数值校验）
+最后更新：2026-05-19（cloud — v2 路线全 4 项完成：surface UI / ladder / wheel_purist / willing-to-own toggle）
+
+### ✅ 这一轮（v2 #3 + #4 收尾）
+
+**v2 #3 wheel_purist 出场风格 UI**：rec form 加新 row "5. 出场风格"（在风险偏好之后），两个选项：
+- ⚙️ 自动锁利（默认，50% 锁利 / 200% 止损）
+- 🪜 持到到期（Wheel 派 · 接货为乐 · 不锁利不止损）
+CSS 复用 risk row 模式（2 列 grid）。`_recDefaults.exit_style = 'auto'`。`submitRec` 传 body.exit_style。Backend 早已就绪。
+
+**v2 #4 per-ticker willing_to_own 手动 toggle**：账户设置 modal 加新 section "🎯 愿意接货清单"：
+- 列表每行：ticker + 🟢想接/🔴不接 toggle + × 移除
+- 添加：input + 两按钮（🟢/🔴）
+- 数据：`state._meta.willing_overrides = {TSLA: 'on', AMD: 'off'}` (CLAUDE.md §4.2 reserved namespace)
+- 即时持久化（添加/切换/删除即写云端）
+- submitRec 请求带 body.willing_overrides
+- Backend `recommend()` 改：override 优先于自动推导
+- UX 解决两类盲区：(a) 想买但还没建仓 (e.g. GOOG)，(b) 历史持股不想加 (e.g. AMD 套住)
+- 不在列表里的 ticker → 跟以前一样自动推导
+
+**v2 路线全部 4 项完成**：
+- #1 ✅ Surface v2 字段到候选卡片 (sigbox + hover tooltips + EDU)
+- #2 ✅ Ladder builder mode (按预算自适应 2-4 档)
+- #3 ✅ wheel_purist exit style UI
+- #4 ✅ Per-ticker willing_to_own 手动 toggle
+
+**待用户验证**：
+- [ ] 推荐表单看到"5. 出场风格"row + 选"持到到期"验证 exit_plan 改变
+- [ ] 账户设置滚到底有"🎯 愿意接货清单"section，添加 TSLA→🟢 / AMD→🔴 后跑 TSLA CSP 推荐验证 wto_f 起效
+
+---
+
+### 上一轮（2026-05-19 cloud · QA P2 round 3）— i18n 繁中瑕疵 + goal 数值校验
 
 ### ✅ 这一轮（2026-05-19 cloud · QA P2 round 3）
 

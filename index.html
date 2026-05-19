@@ -2578,6 +2578,10 @@
   }
   .exit-plan.compact .ep-icon { font-size: 13px; }
   .exit-plan.compact .ep-label { color: var(--accent); font-weight: 600; }
+  .exit-plan.compact .ep-style-mini {
+    font-size: 12px; opacity: 0.65; margin-left: 2px;
+    line-height: 1; cursor: help;
+  }
   .exit-plan.compact .ep-row {
     display: inline-flex; align-items: baseline; gap: 4px;
     min-width: 0;
@@ -5520,6 +5524,19 @@ const I18N = {
     'red_evt_earnings_cross':   '财报夹期',
     'red_evt_capital_exceeded': '占金超阈',
     'red_evt_capital_red':      '资金红线',
+    // ── 持仓卡 compact 出场建议（renderPositionExitPlan）
+    'exit_red_earnings_cross_pos': '财报跨期 — 立即买回（不接货）',
+    'exit_breach_hit_pos':         '|Δ| {d} 触发违约线 {th} → Roll 或止损',
+    'exit_profit_hit_pos':         '已达 {pct}% 锁利 ≥ 目标 {th}% → 买回锁利',
+    'exit_dte_near_pos':           '剩 {n} 天接近 {th} 天换租线（盈利则关）',
+    'exit_hold_expire_pos':        '死磕到期 · 剩 {n} 天 · 持到 expire',
+    'exit_profit_gap_pos':         '已赚 {cur}%，离 50% 锁利还差 {gap}%',
+    'exit_delta_status_pos':       '|Δ| {d}（违约线 {th}）',
+    '违约': '违约',
+    'DTE': 'DTE',
+    '死磕': '死磕',
+    '当前出场风格': '当前出场风格',
+    '红线': '红线',
     '锁利': '锁利',
     '接货': '接货',
     '卖出': '卖出',
@@ -5592,6 +5609,7 @@ const I18N = {
     'tip_stress': '假设明日标的朝不利方向跳动 5% / 10%（short put 看跌、short call 看涨），同时 IV 被波动事件拉起 +15% / +30%，用 BS 重新算这张期权的浮亏。考验你能不能扛得住中间波动而不是到期结果。',
     'tip_capital': '若被指派需要的现金 ÷ 你账户的可用现金（broker dashboard 上的 Available to Trade）。> 100% 算法硬否决，> 80% 提示偏高。已有的 short put 不重复算（broker 的 Available 已经扣过）。',
     '📊 包租公 2.0 信号（高阶）': '📊 包租公 2.0 信号（高阶）',
+    '🚪 出场触发线（包租公式）': '🚪 出场触发线（包租公式）',
 
     // ── 🪜 Ladder 阶梯方案（v2 #2）
     '搭阶梯组合': '搭阶梯组合',
@@ -6302,6 +6320,18 @@ const I18N = {
     'red_evt_earnings_cross':   '財報夾期',
     'red_evt_capital_exceeded': '佔金超閾',
     'red_evt_capital_red':      '資金紅線',
+    'exit_red_earnings_cross_pos': '財報跨期 — 立即買回（不接貨）',
+    'exit_breach_hit_pos':         '|Δ| {d} 觸發違約線 {th} → Roll 或止損',
+    'exit_profit_hit_pos':         '已達 {pct}% 鎖利 ≥ 目標 {th}% → 買回鎖利',
+    'exit_dte_near_pos':           '剩 {n} 天接近 {th} 天換租線（盈利則關）',
+    'exit_hold_expire_pos':        '死磕到期 · 剩 {n} 天 · 持到 expire',
+    'exit_profit_gap_pos':         '已賺 {cur}%，離 50% 鎖利還差 {gap}%',
+    'exit_delta_status_pos':       '|Δ| {d}（違約線 {th}）',
+    '违约': '違約',
+    'DTE': 'DTE',
+    '死磕': '死磕',
+    '当前出场风格': '當前出場風格',
+    '红线': '紅線',
     // ── 🎯 Goal banner + 帳戶預算 ─────────────────────
     'banner_acct_money':   '帳戶可用保證金 <strong>{margin}</strong>',
     'banner_acct_unset':   '未設定帳戶保證金（<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">點這裡設定</a>，可看佔比和上限）',
@@ -6367,6 +6397,7 @@ const I18N = {
     'tip_stress': '假設明日標的朝不利方向跳動 5% / 10%（short put 看跌、short call 看漲），同時 IV 被波動事件拉起 +15% / +30%，用 BS 重新算這張期權的浮虧。考驗你能不能扛得住中間波動而不是到期結果。',
     'tip_capital': '若被指派需要的現金 ÷ 你帳戶的可用現金（broker dashboard 上的 Available to Trade）。> 100% 算法硬否決，> 80% 提示偏高。已有的 short put 不重複算（broker 的 Available 已經扣過）。',
     '📊 包租公 2.0 信号（高阶）': '📊 包租公 2.0 訊號（進階）',
+    '🚪 出场触发线（包租公式）': '🚪 出場觸發線（包租公式）',
 
     // ── 🪜 Ladder 阶梯方案
     '搭阶梯组合': '搭階梯組合',
@@ -7169,6 +7200,18 @@ const I18N = {
     'red_evt_earnings_cross':   'Earnings cross',
     'red_evt_capital_exceeded': 'Capital exceeded',
     'red_evt_capital_red':      'Capital red zone',
+    'exit_red_earnings_cross_pos': 'Earnings cross — buy back now (no assign)',
+    'exit_breach_hit_pos':         '|Δ| {d} hit breach line {th} → roll or stop',
+    'exit_profit_hit_pos':         '{pct}% profit ≥ target {th}% → buy back to lock',
+    'exit_dte_near_pos':           '{n}d left, near {th}-DTE cutoff (close if green)',
+    'exit_hold_expire_pos':        'Hold to expiry · {n}d left · ride it out',
+    'exit_profit_gap_pos':         'Up {cur}%, {gap}% to 50% lock target',
+    'exit_delta_status_pos':       '|Δ| {d} (breach line {th})',
+    '违约': 'Breach',
+    'DTE': 'DTE',
+    '死磕': 'Hold',
+    '当前出场风格': 'Current exit style',
+    '红线': 'Red',
     // ── 🎯 Goal banner + account budget ───────────────
     'banner_acct_money':   'Account margin available: <strong>{margin}</strong>',
     'banner_acct_unset':   'No account margin set (<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">click to set</a> to see budget %)',
@@ -7234,6 +7277,7 @@ const I18N = {
     'tip_stress': 'Hypothetical: tomorrow underlying moves 5% / 10% in the adverse direction (short put = down, short call = up), with IV pumping +15% / +30% from the vol event. BS reprices the option to show MTM paper loss. Tests whether you can stomach the drawdown vs the expiry outcome.',
     'tip_capital': 'Cash required if assigned ÷ your account\'s available cash (broker dashboard\'s Available to Trade). > 100% hard-vetoed by algorithm, > 80% flagged high. Existing short puts not double-counted (broker\'s Available already nets them out).',
     '📊 包租公 2.0 信号（高阶）': '📊 Algorithm 2.0 signals (advanced)',
+    '🚪 出场触发线（包租公式）': '🚪 Exit triggers (landlord style)',
 
     // ── 🪜 Ladder Builder
     '搭阶梯组合': 'Build a strike ladder',
@@ -7946,42 +7990,78 @@ function renderExitPlan(plan, opt) {
   `;
 }
 
-// 持仓卡 compact 一行出场建议（默认 balanced 风险 = 锁利 50%）
+// 持仓卡 compact 一行出场建议 — 按用户 exit_style 显示"离哪条触发线最近"
 function renderPositionExitPlan(p) {
   if (!p || p.closed) return '';
   const entry = Number(p.sell_price || 0);
-  if (!entry) return '';   // 只对 short premium 显示（sell_price 是收到的权利金）
+  if (!entry) return '';   // 只对 short premium 显示
   const isPut = p.type === 'put';
-  const profitPct = 50;
-  const buybackPx = entry * (1 - profitPct / 100);
-  const profitDollars = (entry - buybackPx) * 100;
+  const style = _recSelection.exit_style || 'early_close';
+  const mark = Number(p.mark || 0);
+  const profitPct = entry > 0 ? Math.max(0, (entry - mark) / entry * 100) : 0;
+  const absDelta = Math.abs(Number(p.delta || 0));
+  const days = Number(p.days || 0);
+  const earningsCross = Boolean(p.earnings_before_expiry);
   const strike = Number(p.strike || 0);
-
-  const fmtMoney = (n) => '$' + fmt(n, 0);
   const fmtMoney2 = (n) => '$' + fmt(n, 2);
 
-  const profitTxt = _fillTpl(t('pos_exit_profit'), {
-    px: fmtMoney2(buybackPx), amt: fmtMoney(profitDollars),
-  });
-  const assignTxt = isPut
-    ? _fillTpl(t('pos_exit_csp'), { strike: '$' + strike, ticker: p.ticker })
-    : _fillTpl(t('pos_exit_cc'), { strike: '$' + strike, ticker: p.ticker });
-  const assignTagText = t(isPut ? '接货' : '卖出');
-  const assignIcon = isPut ? '🤝' : '📤';
+  // 风格阈值（跟 backend _exit_plan 保持一致的轮廓 — 静态版）
+  const deltaTh = style === 'wheel_assign' ? 0.45
+                : style === 'hold_to_expiry' ? null
+                : 0.30;
+  const profitTh = style === 'hold_to_expiry' ? null : 50;
+  const dteTh = style === 'hold_to_expiry' ? null : 21;
+
+  // 选最紧迫的触发线（红线 > delta > DTE > 锁利距离）
+  let primary;
+  if (earningsCross) {
+    primary = { icon: '🚨', cls: 'red', text: t('exit_red_earnings_cross_pos') };
+  } else if (deltaTh && absDelta >= deltaTh) {
+    primary = { icon: '⚠️', cls: 'red',
+      text: _fillTpl(t('exit_breach_hit_pos'), { d: fmt(absDelta, 2), th: fmt(deltaTh, 2) }) };
+  } else if (profitTh && profitPct >= profitTh) {
+    primary = { icon: '📬', cls: 'pf',
+      text: _fillTpl(t('exit_profit_hit_pos'), { pct: fmt(profitPct, 0), th: profitTh }) };
+  } else if (dteTh && days <= dteTh && profitPct > 0) {
+    primary = { icon: '⏱️', cls: 'pf',
+      text: _fillTpl(t('exit_dte_near_pos'), { n: days, th: dteTh }) };
+  } else if (style === 'hold_to_expiry') {
+    primary = { icon: '💰', cls: 'pf',
+      text: _fillTpl(t('exit_hold_expire_pos'), { n: days }) };
+  } else {
+    // 默认：离 50% 锁利还差多少
+    const gap = profitTh ? Math.max(0, profitTh - profitPct) : 0;
+    primary = { icon: '📬', cls: 'pf',
+      text: _fillTpl(t('exit_profit_gap_pos'), { cur: fmt(profitPct, 0), gap: fmt(gap, 0) }) };
+  }
+
+  // 副信息：delta 当前 vs 阈值（仅当未触发红线 / delta 时显示）
+  let secondary = '';
+  if (deltaTh && primary.icon !== '⚠️' && primary.icon !== '🚨') {
+    secondary = `<div class="ep-row"><span class="ep-tag tag-assign">${t('Δ')}</span><span class="ep-body as">${_fillTpl(t('exit_delta_status_pos'), { d: fmt(absDelta, 2), th: fmt(deltaTh, 2) })}</span></div>`;
+  } else if (style === 'hold_to_expiry' && primary.icon !== '🚨') {
+    const ticker = p.ticker;
+    const assignTxt = isPut
+      ? _fillTpl(t('pos_exit_csp'), { strike: '$' + strike, ticker })
+      : _fillTpl(t('pos_exit_cc'), { strike: '$' + strike, ticker });
+    secondary = `<div class="ep-row"><span class="ep-tag tag-assign">${t(isPut ? '接货' : '卖出')}</span><span class="ep-body as">${isPut ? '🤝' : '📤'} ${assignTxt}</span></div>`;
+  }
+
+  const styleEmoji = style === 'wheel_assign' ? '🏘️'
+                   : style === 'hold_to_expiry' ? '💰' : '🏠';
+
   return `
     <div class="exit-plan compact">
       <span class="ep-prefix">
         <span class="ep-icon">📍</span>
         <span class="ep-label">${t('出场建议')}</span>
+        <span class="ep-style-mini" title="${t('当前出场风格')}">${styleEmoji}</span>
       </span>
       <div class="ep-row">
-        <span class="ep-tag tag-profit">${t('锁利')}</span>
-        <span class="ep-body pf">🎯 ${profitTxt}</span>
+        <span class="ep-tag tag-profit">${t(primary.icon === '🚨' ? '红线' : primary.icon === '⚠️' ? '违约' : primary.icon === '⏱️' ? 'DTE' : primary.icon === '💰' ? '死磕' : '锁利')}</span>
+        <span class="ep-body ${primary.cls}">${primary.icon} ${primary.text}</span>
       </div>
-      <div class="ep-row">
-        <span class="ep-tag tag-assign">${assignTagText}</span>
-        <span class="ep-body as">${assignIcon} ${assignTxt}</span>
-      </div>
+      ${secondary}
     </div>
   `;
 }
@@ -9650,6 +9730,68 @@ const EDU_TOPICS = [
       desc: 'If this short put is assigned (ITM at expiry), cash required = strike × 100 × contracts. This is what % of your account\'s available cash that consumes.',
       ex: 'You have $300k available; selling 1 TSLA $390 put → $39,000 needed → 13% — safe.',
       care: '<strong>> 100% = not enough cash to take assignment</strong> (algorithm hard-vetoes, caps tier at 2). > 80% = this one trade eats most of your cash, no room for other plays. <strong>Existing short puts not double-counted</strong> (broker\'s Available to Trade already excludes them).',
+    },
+  },
+
+  // ── 🚪 出场触发线（包租公式）── 这一组讲新的 4 触发线 + 3 房东人设
+  { cat: '🚪 出场触发线（包租公式）',
+    sym: '🏠', name: '房东人设 · 3 选 1 · early_close / wheel_assign / hold_to_expiry',
+    desc: '"出场风格"决定 4 条触发线的阈值松紧。<br><strong>🏠 早收租派</strong>：50% 早平 + delta 一升到 0.30 就 roll，绝不接货。<br><strong>🏘️ 接货 Wheel</strong>：50% 早平 + delta 0.45 才 roll，被指派后愿意转 CC。<br><strong>💰 死磕到期</strong>：不主动平，持到 expire 吃满租金（OTM 归零最爽）。',
+    ex: '同一张 TSLA $390 put：早收租派"$2.10 锁利"，Wheel 派也"$2.10 锁利但接货门槛松"，死磕派"不主动平"。',
+    care: '<strong>选错人设比算法错更亏</strong>。怕接货就选早收租派；用 Wheel 思路本来就想接 → 选 Wheel；纯 theta 收租派愿意吃到期 → 死磕。仅对 short premium（卖期权）适用，买期权不看出场触发线。',
+    en: {
+      name: 'Landlord persona · pick 1 of 3 · early_close / wheel_assign / hold_to_expiry',
+      desc: '"Exit style" tightens or loosens the 4 trigger lines.<br><strong>🏠 Early-close</strong>: 50% close + roll the moment delta hits 0.30, never assign.<br><strong>🏘️ Wheel</strong>: 50% close + roll at delta 0.45, accept assignment to roll into CC.<br><strong>💰 Hold-to-expiry</strong>: no active close, ride to expire for full premium (OTM expiring worthless = best case).',
+      ex: 'Same TSLA $390 put: early-close "lock at $2.10", Wheel "lock at $2.10 but looser assign threshold", hold-to-expiry "no active close".',
+      care: '<strong>Picking the wrong persona costs more than algorithm errors</strong>. Afraid of assignment → early-close. Already running a Wheel → Wheel. Pure theta collector willing to ride out → hold-to-expiry. Short premium only; long options don\'t use exit triggers.',
+    },
+  },
+  { cat: '🚪 出场触发线（包租公式）',
+    sym: '📬', name: '早收租 · Early-close profit target',
+    desc: '在 expire 前主动买回锁利。<strong>默认 50% 锁利</strong>，按 VRP（IV/RV）动态调整：<br>VRP > 1.30 高估 → 30% 就关（IV crush 快）；<br>VRP < 1.05 偏低 → 65% 才关（让 theta 多跑）；<br>VRP 中性 → 50%。',
+    ex: '$2.10 卖出的 TSLA put，VRP=1.45 → 30% 锁利 = 跌到 $1.47 买回，落袋 $63/张。同样张数若 VRP=1.02 → 65% = 跌到 $0.74 才关。',
+    care: '<strong>不是迷信 50%</strong>：VRP 是 IV 比 RV 的溢价 — 溢价大 IV 容易 crush，早平更优。VRP 低则反过来。"<strong>死磕到期</strong>"人设会停用早收租，持到 expire。',
+    en: {
+      name: 'Early-close · profit target',
+      desc: 'Buy back before expiry to lock profit. <strong>Default 50%</strong>, dynamic by VRP (IV/RV):<br>VRP > 1.30 (high) → 30% (IV crush fast);<br>VRP < 1.05 (low) → 65% (let theta run longer);<br>VRP neutral → 50%.',
+      ex: 'TSLA put sold at $2.10, VRP=1.45 → 30% target = buy back at $1.47, locking $63/contract. Same setup at VRP=1.02 → 65% = wait until $0.74.',
+      care: '<strong>50% isn\'t sacred</strong>: VRP is the premium of IV over RV — high premium = IV crushes fast, lock earlier. Low premium = let theta work. The <strong>hold-to-expiry</strong> persona disables this and rides to expire.',
+    },
+  },
+  { cat: '🚪 出场触发线（包租公式）',
+    sym: '⏱️', name: '21 天换租 · DTE cutoff',
+    desc: '剩 N 天时强制平仓换合约。<strong>Tasty Trade 21-DTE 经验</strong>：剩余 theta 已经赚不到、但 gamma 一暴击就要赔本。<br>阈值 = max(开仓时 DTE × 30%, 7 天)。',
+    ex: '开仓时 35 DTE → 21 天前关（35 × 0.3 ≈ 10.5，但底线 7 天，最终取 max → 21 ≈ 默认 21 天）。开仓 14 DTE → 4-7 天前关。',
+    care: '"<strong>接货 Wheel</strong>"人设这条改成"盈利时关，亏损接货"（接货是 feature 不是 bug）。"<strong>死磕到期</strong>"则停用本条。',
+    en: {
+      name: '21-DTE cutoff',
+      desc: 'Force-close when N days remain. <strong>Tasty Trade\'s 21-DTE rule</strong>: remaining theta isn\'t worth the gamma risk.<br>Threshold = max(opening DTE × 30%, 7 days).',
+      ex: 'Opened at 35 DTE → close ~21d remaining. Opened at 14 DTE → close 4-7d remaining.',
+      care: '<strong>Wheel</strong> persona changes this to "close if profitable, take assignment if loss". <strong>Hold-to-expiry</strong> disables it.',
+    },
+  },
+  { cat: '🚪 出场触发线（包租公式）',
+    sym: '⚠️', name: '房客违约 · Tenant breach (delta threshold)',
+    desc: '|Δ| 超过阈值时 roll / 止损 — Δ 才是接货的真风险（不是 premium ×2）。<br>早收租派 = 0.30；Wheel 派 = 0.45；死磕派 dim（不触发）。<br>同时算出"标的不利触发价"：跌/涨破这个价格就触发。',
+    ex: 'TSLA $390 short put 开仓 Δ=0.18，早收租派看到 Δ 升到 0.30 → 触发，对应 TSLA ≈ $399（不利方向）。',
+    care: '<strong>这条比固定 200% stop-loss 准</strong>。premium 涨 200% 可能只是 IV pop，标的没动；但 Δ 升表示接货概率真的变大了。Roll 到下月或止损，不接货 → 早收租派；接货转 CC → Wheel 派。',
+    en: {
+      name: 'Tenant breach · delta threshold',
+      desc: 'Roll / stop when |Δ| exceeds threshold — Δ is the real assignment risk (not premium ×2).<br>Early-close = 0.30; Wheel = 0.45; hold-to-expiry dim (disabled).<br>Also computes the "adverse underlying price" that triggers this.',
+      ex: 'TSLA $390 short put opened at Δ=0.18; early-close persona triggers when Δ hits 0.30, ≈ TSLA $399 (adverse direction).',
+      care: '<strong>More accurate than fixed 200% stop-loss</strong>: premium up 200% can just mean IV pop with no spot move; Δ rising means assignment probability actually increased. Roll/stop without assign → early-close; accept assignment → Wheel.',
+    },
+  },
+  { cat: '🚪 出场触发线（包租公式）',
+    sym: '🚨', name: '红线 · Red line (must-exit events)',
+    desc: '触发就立即买回 · 不接货 · 三档：<br>① 财报跨期（期权跨越下次 earnings 日）<br>② 接货占现金 > 阈值（默认 80%）<br>③ 标的跌破支撑（未来扩展）',
+    ex: 'TSLA short put 持仓中，TSLA 下周财报 → 红线"财报夹期"亮起，立即买回不接货（避免财报 gap 把你 ITM 卖在最差位置）。',
+    care: '<strong>红线不打折扣</strong>：即使早收租触发线还没到、即使你是死磕派 — 都强制平仓。这是"避免账户被一次黑天鹅打穿"的保命条款。',
+    en: {
+      name: 'Red line · must-exit events',
+      desc: 'Buy back immediately, no assignment, on three triggers:<br>① Earnings cross (option spans next earnings date)<br>② Capital usage > threshold (default 80%)<br>③ Underlying breaks support (future)',
+      ex: 'TSLA short put open, earnings next week → "earnings cross" red line lights up, buy back immediately to avoid earnings gap leaving you ITM at the worst price.',
+      care: '<strong>Red line is non-negotiable</strong>: even if early-close hasn\'t hit, even if you\'re hold-to-expiry — force close. This is the "don\'t let one black swan wipe the account" safety clause.',
     },
   },
 ];
@@ -13500,7 +13642,10 @@ async function refresh() {
     const r = await fetch('/api/state', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ positions, state, lang: _lang || 'zh' }),
+      body: JSON.stringify({
+        positions, state, lang: _lang || 'zh',
+        exit_style: (_recSelection && _recSelection.exit_style) || 'early_close',
+      }),
     });
     if (!r.ok) {
       const txt = await r.text();

@@ -3,26 +3,61 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公算法 v2.0 publish · 3 wave 收尾）
+最后更新：2026-05-19（cloud — 包租公式 exit_plan 全链路收尾 · position_advice + 持仓卡 + 小白指南）
 
-### ✅ v2.0 全面完成（2026-05-19 cloud · 3 波收尾）
+### ✅ 这一轮（包租公式 exit_plan 全链路收尾）
 
-**7 件套**（参见 `CHANGELOG.md` 完整版）：
-1. **Score-verdict 统一** — tier 改 rent_score 百分位驱动（≥80% 5星/...），weight 仅作 cons/pros narrative。veto 仍硬封顶。
-2. **回测同步 exit_plan** — `_backtest_strategy` 路径模拟 50% 早平 + DTE cutoff；hold_to_expiry 走旧逻辑。新增 `early_close_rate`。
-3. **DTE IV 自适应** — IV ≥70 甜蜜区 × 0.70 滑短 / ≤30 × 1.30 滑长，30-70 不动。
-4. **3 出场人设 UI** — 🏠 早收租派 / 🏘️ 接货 Wheel / 💰 死磕到期（替代旧 auto / wheel_purist 双选；backend 已 alias）
-5. **🔄 Roll 建议器** — 持仓卡按钮触发，约束更长 DTE + 更 OTM strike，每张显示 net credit
-6. **🔍 多 ticker 扫描** — 逗号分隔输入 `TSLA,NVDA,GOOG` 自动 scan_multi action + 跨 ticker 排序
-7. **💎 财报 IV crush 红利** — 跨财报候选额外算"crush 后红利"显示在 verdict pro
+接住候选卡片 2×2 网格 ship 后，把"未做"清单 3 项都做完：
 
-**ALGORITHM_VERSION**: 1.9 → 2.0
-**intro.html** 算法 hero + section 头部更新（formula/factors 矩阵未动，design-heavy 留下次）
-**CHANGELOG.md** 创建（v2.0 + v2.0 + v1.x 历史 + 设计哲学）
+**① 小白指南扩 5 词条** — 新分类 `🚪 出场触发线（包租公式）`：
+- 🏠 房东人设（3 选 1）· 早收租 / 接货 Wheel / 死磕到期 全讲清
+- 📬 早收租 · profit target + VRP 动态阈值
+- ⏱️ 21 天换租 · DTE cutoff (Tasty 21d)
+- ⚠️ 房客违约 · delta threshold（Δ 才是接货真风险）
+- 🚨 红线 · earnings cross / capital usage
+每条 4 字段（desc/ex/care/name）× zh + en（zh_tw fallback 到 zh，旧惯例）。分类名补 3 语 i18n。
+
+**② renderPositionExitPlan 重写** — 持仓卡 1 行 hint：
+- 读 `_recSelection.exit_style`（用户的当前人设）
+- 选**最紧迫**触发线作 primary（红线 > delta > DTE > profit gap）
+- 显示当前 vs 阈值（例："已达 35% 锁利 (差 15%)" / "Δ 0.22 (限 0.30)" / "财报跨期 — 立即买回"）
+- Header 加迷你 emoji 显示当前风格（🏠/🏘️/💰）
+- hold_to_expiry 显示"死磕到期 · 剩 N 天"+ 接货 fallback
+- 三语 i18n 7 个新 key
+
+**③ position_advice 重写**（侧栏"操作建议"，api/state.py）：
+- 函数签名加 `exit_style` 参数；compute() 从 payload 读取并向下透传到 get_suggestions
+- 整段重写：丢掉旧的 80/50/ITM/ATM/distance 阈值，改成 4 触发线评估
+- status 体现"哪条触发线在亮"+ 当前风格 emoji + 风格名
+- 触发优先级：红线 > 房客违约 > 21 天换租 > 早收租；都没触发就显示"离哪条最近"
+- 每条触发线按风格生成不同的 actions（早收租 vs Wheel 分歧明显）
+- 死磕风格：未触发时显示"等 N 天 expire / 持到 expire 吃满"
+- 三语后端字典各加 ~40 条新句子模板
+- 前端 fetch /api/state body 现在带 `exit_style: _recSelection.exit_style || 'early_close'`
+
+**未做**：无 — v2 exit 路线全链路完成（候选卡片 → 持仓卡片 → 侧栏 → 小白指南）。
+下一步可考虑：早安简报也用 4 触发线叙事？不在本轮 scope。
 
 ---
 
-### 上一轮 — 包租公式 exit_plan 4 触发线渲染 ship · 候选卡片 2×2 网格 + 动作行
+### 上一轮（并行 session · 包租公算法 v2.0 publish · 3 wave 收尾）
+
+**7 件套**（参见 `CHANGELOG.md`）：
+1. **Score-verdict 统一** — tier 改 rent_score 百分位驱动；weight 仅作 cons/pros narrative；veto 仍硬封顶
+2. **回测同步 exit_plan** — `_backtest_strategy` 路径模拟 50% 早平 + DTE cutoff；新增 `early_close_rate`
+3. **DTE IV 自适应** — IV ≥70 甜蜜区 × 0.70 滑短 / ≤30 × 1.30 滑长
+4. **3 出场人设 UI** — 🏠 / 🏘️ / 💰 替代旧 auto/wheel_purist 双选；backend 已 alias
+5. **🔄 Roll 建议器** — 持仓卡按钮触发，约束更长 DTE + 更 OTM strike，每张显示 net credit
+6. **🔍 多 ticker 扫描** — 逗号分隔输入 `TSLA,NVDA,GOOG` 自动 scan_multi action
+7. **💎 财报 IV crush 红利** — 跨财报候选额外算"crush 后红利"在 verdict pro
+
+**ALGORITHM_VERSION**: 1.9 → 2.0
+**intro.html** 算法 hero + section 头部更新
+**CHANGELOG.md** 创建（v2.0 + v1.x 历史 + 设计哲学）
+
+---
+
+### 候选卡片 2×2 网格 ship（前一轮）
 
 ### ✅ 这一轮（包租公式 exit plan UI ship — 2×2 网格 + 动作行）
 

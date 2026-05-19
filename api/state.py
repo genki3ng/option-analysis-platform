@@ -89,6 +89,59 @@ TRANS_EN = {
     "财报前 1-2 天考虑平仓，避免 IV crush": "Close 1-2 days before earnings to avoid IV crush",
     "继续持有让 Theta 累积收益": "Hold to let Theta accumulate",
     "继续持有等时间衰减": "Hold and wait for time decay",
+    # ── 包租公式 position_advice（4 触发线 × 3 房东人设）
+    "🟢 持仓健康 · {emoji} {style}": "🟢 Healthy · {emoji} {style}",
+    "早收租派": "Early-close",
+    "接货 Wheel": "Wheel",
+    "死磕到期": "Hold-to-expiry",
+    "剩余 {days} 天 · {n} 张 · 现在买回 ${bb} · 浮盈亏 {pct}%":
+      "{days}d left · {n} contracts · buy back ${bb} now · P&L {pct}%",
+    "|Δ| {d}（风格违约线 {th}）": "|Δ| {d} (style breach line {th})",
+    "停用": "disabled",
+    "立即买回 ${bb}（{verb} ${amt}）": "Buy back now ${bb} ({verb} ${amt})",
+    "🚨 红线触发 · 财报跨期": "🚨 Red line · earnings cross",
+    "🚨 {date} 财报（剩 {n} 天）在到期前 — 红线 · 立即买回，不接货":
+      "🚨 {date} earnings ({n}d away) before expiry — red line, buy back now, no assign",
+    "立即买回 ${bb}（避免财报 gap）": "Buy back now ${bb} (avoid earnings gap)",
+    "⚠️ 房客违约触发 · {emoji} {style}": "⚠️ Tenant breach · {emoji} {style}",
+    "⚠️ |Δ| {d} ≥ {th}（{style} 风格违约线）— Δ 是接货真风险，已亮起":
+      "⚠️ |Δ| {d} ≥ {th} ({style} breach line) — Δ is the real assignment risk, alarm lit",
+    "Roll 到下月（保持收租，不接货）": "Roll to next month (keep collecting, no assign)",
+    "止损平仓 ${bb}（亏 ${amt}）": "Stop out ${bb} (loss ${amt})",
+    "Roll 到下月 / 接货转 CC（Wheel 阶段二）":
+      "Roll to next month / accept assignment → CC (Wheel phase 2)",
+    "⏱️ 21 天换租线 · {emoji} {style}": "⏱️ 21-DTE cutoff · {emoji} {style}",
+    "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— Wheel 派：盈利则关，亏损接货":
+      "⏱️ {n}d left ≤ {th}d (Tasty 21-DTE rule) — Wheel: close if profitable, assign if loss",
+    "盈利状态 → 买回 ${bb} 锁 ${pnl}": "Profitable → buy back ${bb}, lock ${pnl}",
+    "亏损状态 → 持到 expire 接货（Wheel 阶段二）":
+      "Loss → hold to expiry for assignment (Wheel phase 2)",
+    "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— 强制平仓，不论盈亏":
+      "⏱️ {n}d left ≤ {th}d (Tasty 21-DTE rule) — force close regardless of P&L",
+    "强制买回 ${bb}（gamma 风险不值剩余 theta）":
+      "Force buy back ${bb} (gamma risk not worth remaining theta)",
+    "📬 早收租达成 · {emoji} {style}": "📬 Early collect hit · {emoji} {style}",
+    "📬 已达 {pct}% ≥ 锁利目标 {th}% — 早收租触发":
+      "📬 {pct}% ≥ profit target {th}% — early-collect triggered",
+    "💰 死磕到期 · 等 {n} 天 expire": "💰 Hold to expiry · {n}d to expire",
+    "持到 expire 吃满 ${sold}（OTM 归零最爽）":
+      "Hold to expire for full ${sold} (OTM → zero is the goal)",
+    "ITM 状态 — 准备接货 ${cash}（{n} 股）":
+      "ITM — prepare to take assignment ${cash} ({n} shares)",
+    "OTM 状态 — 等 expire 自动归零": "OTM — wait for expiry to zero out",
+    "📬 离 {th}% 锁利还差 {gap}%（当前 {cur}%）":
+      "📬 {gap}% away from {th}% lock target (currently {cur}%)",
+    "⚠️ 离 |Δ| {th} 违约线还差 {gap}（当前 {cur}）":
+      "⚠️ {gap} away from |Δ| {th} breach line (currently {cur})",
+    "⏱️ 离 21 天换租线还差 {gap} 天（当前 {cur} 天）":
+      "⏱️ {gap}d away from 21-DTE cutoff (currently {cur}d)",
+    "持续监控 · 让 theta 累积收益": "Monitor · let theta accumulate",
+    "持续监控 · 等时间衰减": "Monitor · wait for time decay",
+    "📉 浮亏 ${amt}（> 50% 权利金，关注 Δ 是否同步上升）":
+      "📉 Unrealized loss ${amt} (> 50% of premium — watch if Δ rises)",
+    "持续监控": "Monitor",
+    "Exp {exp} · {n} 张 · 剩 {d} 天 · {emoji} {style}":
+      "Exp {exp} · {n} contracts · {d}d left · {emoji} {style}",
     # Concentration card
     "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 Concentration too high · {tk} = {pct}%",
     "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ Concentration high · {tk} = {pct}%",
@@ -210,6 +263,57 @@ TRANS_TW = {
     "财报前 1-2 天考虑平仓，避免 IV crush": "財報前 1-2 天考慮平倉，避免 IV crush",
     "继续持有让 Theta 累积收益": "繼續持有讓 Theta 累積收益",
     "继续持有等时间衰减": "繼續持有等時間衰減",
+    # ── 包租公式 position_advice（4 觸發線 × 3 房東人設）
+    "🟢 持仓健康 · {emoji} {style}": "🟢 持倉健康 · {emoji} {style}",
+    "早收租派": "早收租派",
+    "接货 Wheel": "接貨 Wheel",
+    "死磕到期": "死磕到期",
+    "剩余 {days} 天 · {n} 张 · 现在买回 ${bb} · 浮盈亏 {pct}%":
+      "剩餘 {days} 天 · {n} 張 · 現在買回 ${bb} · 浮盈虧 {pct}%",
+    "|Δ| {d}（风格违约线 {th}）": "|Δ| {d}（風格違約線 {th}）",
+    "停用": "停用",
+    "立即买回 ${bb}（{verb} ${amt}）": "立即買回 ${bb}（{verb} ${amt}）",
+    "🚨 红线触发 · 财报跨期": "🚨 紅線觸發 · 財報跨期",
+    "🚨 {date} 财报（剩 {n} 天）在到期前 — 红线 · 立即买回，不接货":
+      "🚨 {date} 財報（剩 {n} 天）在到期前 — 紅線 · 立即買回，不接貨",
+    "立即买回 ${bb}（避免财报 gap）": "立即買回 ${bb}（避免財報 gap）",
+    "⚠️ 房客违约触发 · {emoji} {style}": "⚠️ 房客違約觸發 · {emoji} {style}",
+    "⚠️ |Δ| {d} ≥ {th}（{style} 风格违约线）— Δ 是接货真风险，已亮起":
+      "⚠️ |Δ| {d} ≥ {th}（{style} 風格違約線）— Δ 是接貨真風險，已亮起",
+    "Roll 到下月（保持收租，不接货）": "Roll 到下月（保持收租，不接貨）",
+    "止损平仓 ${bb}（亏 ${amt}）": "止損平倉 ${bb}（虧 ${amt}）",
+    "Roll 到下月 / 接货转 CC（Wheel 阶段二）": "Roll 到下月 / 接貨轉 CC（Wheel 階段二）",
+    "⏱️ 21 天换租线 · {emoji} {style}": "⏱️ 21 天換租線 · {emoji} {style}",
+    "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— Wheel 派：盈利则关，亏损接货":
+      "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 經驗）— Wheel 派：盈利則關，虧損接貨",
+    "盈利状态 → 买回 ${bb} 锁 ${pnl}": "盈利狀態 → 買回 ${bb} 鎖 ${pnl}",
+    "亏损状态 → 持到 expire 接货（Wheel 阶段二）":
+      "虧損狀態 → 持到 expire 接貨（Wheel 階段二）",
+    "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— 强制平仓，不论盈亏":
+      "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 經驗）— 強制平倉，不論盈虧",
+    "强制买回 ${bb}（gamma 风险不值剩余 theta）":
+      "強制買回 ${bb}（gamma 風險不值剩餘 theta）",
+    "📬 早收租达成 · {emoji} {style}": "📬 早收租達成 · {emoji} {style}",
+    "📬 已达 {pct}% ≥ 锁利目标 {th}% — 早收租触发":
+      "📬 已達 {pct}% ≥ 鎖利目標 {th}% — 早收租觸發",
+    "💰 死磕到期 · 等 {n} 天 expire": "💰 死磕到期 · 等 {n} 天 expire",
+    "持到 expire 吃满 ${sold}（OTM 归零最爽）":
+      "持到 expire 吃滿 ${sold}（OTM 歸零最爽）",
+    "ITM 状态 — 准备接货 ${cash}（{n} 股）": "ITM 狀態 — 準備接貨 ${cash}（{n} 股）",
+    "OTM 状态 — 等 expire 自动归零": "OTM 狀態 — 等 expire 自動歸零",
+    "📬 离 {th}% 锁利还差 {gap}%（当前 {cur}%）":
+      "📬 離 {th}% 鎖利還差 {gap}%（當前 {cur}%）",
+    "⚠️ 离 |Δ| {th} 违约线还差 {gap}（当前 {cur}）":
+      "⚠️ 離 |Δ| {th} 違約線還差 {gap}（當前 {cur}）",
+    "⏱️ 离 21 天换租线还差 {gap} 天（当前 {cur} 天）":
+      "⏱️ 離 21 天換租線還差 {gap} 天（當前 {cur} 天）",
+    "持续监控 · 让 theta 累积收益": "持續監控 · 讓 theta 累積收益",
+    "持续监控 · 等时间衰减": "持續監控 · 等時間衰減",
+    "📉 浮亏 ${amt}（> 50% 权利金，关注 Δ 是否同步上升）":
+      "📉 浮虧 ${amt}（> 50% 權利金，關注 Δ 是否同步上升）",
+    "持续监控": "持續監控",
+    "Exp {exp} · {n} 张 · 剩 {d} 天 · {emoji} {style}":
+      "Exp {exp} · {n} 張 · 剩 {d} 天 · {emoji} {style}",
     "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 集中度過高 · {tk} 佔 {pct}%",
     "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ 集中度偏高 · {tk} 佔 {pct}%",
     "💡 集中度提醒 · {tk} 占 {pct}%": "💡 集中度提醒 · {tk} 佔 {pct}%",
@@ -1304,7 +1408,16 @@ def _max_sev(a, b):
     return a if order.get(a, 0) >= order.get(b, 0) else b
 
 
-def position_advice(ps, lang: str = "zh"):
+def position_advice(ps, lang: str = "zh", exit_style: str = "early_close"):
+    """持仓侧栏"操作建议"卡片 — 按用户的 exit_style 用 4 触发线（包租公式）评估。
+
+    跟 _exit_plan 的 4 触发线一一对应：
+      1. 早收租 profit target — 50%（hold_to_expiry 停用）
+      2. DTE 换租 — 21 天阈值（hold_to_expiry 停用，wheel_assign 改"盈利时关"）
+      3. 房客违约 — |Δ| 阈值，早收租 0.30 / Wheel 0.45 / 死磕 dim
+      4. 红线 — 财报跨期 / 占金超阈
+    显示"你离哪条线最近"，最紧迫的状态决定 severity + status。
+    """
     days = ps["days"]
     if days < 0 or ps["closed"]:
         return None
@@ -1312,114 +1425,169 @@ def position_advice(ps, lang: str = "zh"):
     pnl, pnl_pct = ps["pnl"], ps["pnl_pct"]
     money = ps["moneyness"]
     underlying, strike, mark = ps["underlying"], ps["strike"], ps["mark"]
+    delta_abs = abs(float(ps.get("delta") or 0.0))
     shares = ps["contracts"] * 100
     buyback_total = mark * shares
-    severity = "good"
-    status = _T(lang, "🟢 持仓健康")
-    facts, actions = [], []
 
+    # 风格阈值
+    delta_th = {"early_close": 0.30, "wheel_assign": 0.45, "hold_to_expiry": None}[exit_style]
+    profit_th = None if exit_style == "hold_to_expiry" else 50
+    dte_th = None if exit_style == "hold_to_expiry" else 21
+    style_emoji = {"early_close": "🏠", "wheel_assign": "🏘️", "hold_to_expiry": "💰"}[exit_style]
+    style_name = _T(lang, {
+        "early_close": "早收租派", "wheel_assign": "接货 Wheel", "hold_to_expiry": "死磕到期"
+    }[exit_style])
+
+    facts, actions = [], []
+    severity = "good"
+    status = _T(lang, "🟢 持仓健康 · {emoji} {style}", emoji=style_emoji, style=style_name)
+
+    # 基础事实行
     is_otm = (is_call and money > 0) or ((not is_call) and money < 0)
     money_label = _T(lang, "OTM 安全区") if is_otm else _T(lang, "ITM 风险区")
     facts.append(_T(lang, "{tk} 现价 ${px}，行权价 ${k}（距 {money}%，{label}）",
                     tk=ps['ticker'], px=f"{underlying:.2f}", k=f"{strike:.0f}",
                     money=f"{money:+.1f}", label=money_label))
-    facts.append(_T(lang, "剩余 {days} 天到期，{n} 张合约", days=days, n=ps['contracts']))
-    facts.append(_T(lang, "现在买回需 ${bb}，浮盈亏 ${pnl} ({pct}%)",
-                    bb=f"{buyback_total:,.0f}", pnl=f"{pnl:+,.0f}", pct=f"{pnl_pct:+.1f}"))
+    facts.append(_T(lang, "剩余 {days} 天 · {n} 张 · 现在买回 ${bb} · 浮盈亏 {pct}%",
+                    days=days, n=ps['contracts'], bb=f"{buyback_total:,.0f}",
+                    pct=f"{pnl_pct:+.1f}"))
+    facts.append(_T(lang, "|Δ| {d}（风格违约线 {th}）",
+                    d=f"{delta_abs:.2f}",
+                    th=(f"{delta_th:.2f}" if delta_th is not None else _T(lang, "停用"))))
 
-    pnl_verb = _T(lang, "锁利") if pnl >= 0 else _T(lang, "止损")
     pnl_amt = abs(pnl)
-    buy_back_action = _T(lang, "立即买回（${bb}，{verb} ${amt}）",
-                          bb=f"{buyback_total:,.0f}", verb=pnl_verb, amt=f"{pnl_amt:,.0f}")
+    buy_back_action = _T(lang, "立即买回 ${bb}（{verb} ${amt}）",
+                          bb=f"{buyback_total:,.0f}",
+                          verb=_T(lang, "锁利") if pnl >= 0 else _T(lang, "止损"),
+                          amt=f"{pnl_amt:,.0f}")
 
-    if is_call:
-        if money < 0:
-            severity = _max_sev(severity, "danger")
-            status = _T(lang, "🚨 Call 已 ITM")
-            facts.append(_T(lang, "⚡ 标的 > 行权价，到期需交付 {n} 股", n=shares))
-            actions += [buy_back_action, "Roll up", "Buy protective Call" if lang == "en" else "买保护 Call"]
-        elif money < 5:
-            severity = _max_sev(severity, "danger")
-            status = _T(lang, "🚨 接近行权（ATM）")
-            actions += [buy_back_action, "Roll up"]
-        elif money < 15:
-            severity = _max_sev(severity, "warn")
-            status = _T(lang, "⚠️ 距行权较近")
-    else:
-        cash_need = strike * shares
-        if money > 0:
-            severity = _max_sev(severity, "danger")
-            status = _T(lang, "🚨 Put 已 ITM")
-            facts.append(_T(lang, "⚡ 到期被指派需 ${cash} 接 {n} 股",
-                            cash=f"{cash_need:,.0f}", n=shares))
-            actions += [buy_back_action,
-                        "Roll to next month" if lang == "en" else "Roll 到下月",
-                        "Accept assignment" if lang == "en" else "接受指派"]
-        elif money > -5:
-            severity = _max_sev(severity, "danger")
-            status = _T(lang, "🚨 接近行权（ATM）")
-            actions += [buy_back_action,
-                        "Roll to next month" if lang == "en" else "Roll 到下月"]
-        elif money > -15:
-            severity = _max_sev(severity, "warn")
-            status = _T(lang, "⚠️ 距行权较近")
+    # 触发线优先级：红线 > 房客违约 > 21天换租 > 早收租 > 死磕状态
+    triggered = []  # 用于记录已触发的触发线（影响 status）
 
-    if pnl_pct >= 80:
-        if severity == "good":
-            status = _T(lang, "🎯 强烈建议平仓")
-        facts.append(_T(lang, "💰 已实现 {pct}% 权利金（${pnl}）",
-                        pct=f"{pnl_pct:.0f}", pnl=f"{pnl:,.0f}"))
-        ac = _T(lang, "立即买回 ${px}/股 锁利 ${pnl}", px=f"{mark:.2f}", pnl=f"{pnl:,.0f}")
-        if ac not in actions: actions.insert(0, ac)
-    elif pnl_pct >= 50:
-        if severity == "good":
-            status = _T(lang, "✅ 可考虑平仓")
-            actions.insert(0, _T(lang, "买回 ${px}/股 锁利 ${pnl}",
-                                  px=f"{mark:.2f}", pnl=f"{pnl:,.0f}"))
-
-    if pnl_pct < -50:
-        severity = _max_sev(severity, "danger")
-        facts.append(_T(lang, "📉 浮亏 ${amt}（>50% 权利金）", amt=f"{-pnl:,.0f}"))
-    elif pnl_pct < -20:
-        severity = _max_sev(severity, "warn")
-        facts.append(_T(lang, "📉 浮亏 ${amt}", amt=f"{-pnl:,.0f}"))
-
-    if 0 < days <= 3:
-        facts.append(_T(lang, "⏱️ 仅 {days} 天到期，gamma 风险大", days=days))
-
-    # 财报警告
+    # ── 触发线 4：红线（财报跨期 / 必出）
     if ps.get("earnings_before_expiry"):
-        ed = ps["earnings_date"]
-        eud = ps["earnings_days_until"]
+        eud = ps.get("earnings_days_until")
         if eud is not None and eud >= 0:
-            severity = _max_sev(severity, "warn")
-            if ps["type"] == "put":
-                facts.append(_T(lang,
-                    "⚠️ {date} 财报（剩 {n} 天）在你到期前，财报前 IV 通常飙升、后 IV crush；卖 put 同时承担方向 + IV 风险",
-                    date=ed, n=eud))
-            else:
-                facts.append(_T(lang,
-                    "⚠️ {date} 财报（剩 {n} 天）在你到期前，注意 IV crush + gamma 风险",
-                    date=ed, n=eud))
-            earn_action = _T(lang, "财报前 1-2 天考虑平仓，避免 IV crush")
+            severity = _max_sev(severity, "danger")
+            status = _T(lang, "🚨 红线触发 · 财报跨期")
+            facts.append(_T(lang,
+                "🚨 {date} 财报（剩 {n} 天）在到期前 — 红线 · 立即买回，不接货",
+                date=ps["earnings_date"], n=eud))
+            earn_action = _T(lang, "立即买回 ${bb}（避免财报 gap）", bb=f"{buyback_total:,.0f}")
             if earn_action not in actions:
                 actions.insert(0, earn_action)
+            triggered.append("red")
+
+    # ── 触发线 3：房客违约（|Δ| 阈值）
+    if delta_th is not None and delta_abs >= delta_th:
+        severity = _max_sev(severity, "danger")
+        if "red" not in triggered:
+            status = _T(lang, "⚠️ 房客违约触发 · {emoji} {style}",
+                        emoji=style_emoji, style=style_name)
+        facts.append(_T(lang,
+            "⚠️ |Δ| {d} ≥ {th}（{style} 风格违约线）— Δ 是接货真风险，已亮起",
+            d=f"{delta_abs:.2f}", th=f"{delta_th:.2f}", style=style_name))
+        if exit_style == "early_close":
+            for ac in [_T(lang, "Roll 到下月（保持收租，不接货）"),
+                       _T(lang, "止损平仓 ${bb}（亏 ${amt}）",
+                          bb=f"{buyback_total:,.0f}", amt=f"{pnl_amt:,.0f}")]:
+                if ac not in actions: actions.append(ac)
+        else:  # wheel_assign
+            for ac in [_T(lang, "Roll 到下月 / 接货转 CC（Wheel 阶段二）"),
+                       buy_back_action]:
+                if ac not in actions: actions.append(ac)
+        triggered.append("breach")
+
+    # ── 触发线 2：21 天换租（DTE 强制关闭线）
+    if dte_th is not None and 0 < days <= dte_th and "red" not in triggered and "breach" not in triggered:
+        severity = _max_sev(severity, "warn")
+        status = _T(lang, "⏱️ 21 天换租线 · {emoji} {style}",
+                    emoji=style_emoji, style=style_name)
+        if exit_style == "wheel_assign":
+            facts.append(_T(lang,
+                "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— Wheel 派：盈利则关，亏损接货",
+                n=days, th=dte_th))
+            if pnl_pct >= 0:
+                actions.append(_T(lang, "盈利状态 → 买回 ${bb} 锁 ${pnl}",
+                                  bb=f"{buyback_total:,.0f}", pnl=f"{pnl:,.0f}"))
+            else:
+                actions.append(_T(lang, "亏损状态 → 持到 expire 接货（Wheel 阶段二）"))
+        else:  # early_close
+            facts.append(_T(lang,
+                "⏱️ 剩 {n} 天 ≤ {th} 天（Tasty 21d 经验）— 强制平仓，不论盈亏",
+                n=days, th=dte_th))
+            actions.append(_T(lang, "强制买回 ${bb}（gamma 风险不值剩余 theta）",
+                              bb=f"{buyback_total:,.0f}"))
+        triggered.append("dte")
+
+    # ── 触发线 1：早收租（profit target）
+    if profit_th is not None and pnl_pct >= profit_th and "red" not in triggered:
+        if not triggered:
+            status = _T(lang, "📬 早收租达成 · {emoji} {style}",
+                        emoji=style_emoji, style=style_name)
+            severity = _max_sev(severity, "good")
+        facts.append(_T(lang, "📬 已达 {pct}% ≥ 锁利目标 {th}% — 早收租触发",
+                        pct=f"{pnl_pct:.0f}", th=profit_th))
+        ac = _T(lang, "买回 ${px}/股 锁利 ${pnl}", px=f"{mark:.2f}", pnl=f"{pnl:,.0f}")
+        if ac not in actions: actions.insert(0, ac)
+        triggered.append("profit")
+
+    # ── 死磕状态（hold_to_expiry 且无触发）
+    if exit_style == "hold_to_expiry" and not triggered:
+        status = _T(lang, "💰 死磕到期 · 等 {n} 天 expire", n=days)
+        facts.append(_T(lang, "持到 expire 吃满 ${sold}（OTM 归零最爽）",
+                        sold=f"{ps.get('sold', 0):,.0f}"))
+        if not is_otm:
+            actions.append(_T(lang, "ITM 状态 — 准备接货 ${cash}（{n} 股）",
+                              cash=f"{strike * shares:,.0f}", n=shares))
+        else:
+            actions.append(_T(lang, "OTM 状态 — 等 expire 自动归零"))
+
+    # ── 离最近触发线还差多少（默认状态：未触发任何触发线）
+    if not triggered and exit_style != "hold_to_expiry":
+        gaps = []
+        if profit_th is not None and pnl_pct < profit_th:
+            gaps.append((profit_th - pnl_pct, _T(lang,
+                "📬 离 {th}% 锁利还差 {gap}%（当前 {cur}%）",
+                th=profit_th, gap=f"{max(0, profit_th - pnl_pct):.0f}",
+                cur=f"{pnl_pct:.0f}")))
+        if delta_th is not None and delta_abs < delta_th:
+            gaps.append(((delta_th - delta_abs) * 100, _T(lang,
+                "⚠️ 离 |Δ| {th} 违约线还差 {gap}（当前 {cur}）",
+                th=f"{delta_th:.2f}", gap=f"{delta_th - delta_abs:.2f}",
+                cur=f"{delta_abs:.2f}")))
+        if dte_th is not None and days > dte_th:
+            gaps.append((days - dte_th, _T(lang,
+                "⏱️ 离 21 天换租线还差 {gap} 天（当前 {cur} 天）",
+                gap=days - dte_th, cur=days)))
+        gaps.sort(key=lambda x: x[0])  # 越接近触发越靠前
+        if gaps:
+            facts.append(gaps[0][1])
+        actions.append(_T(lang, "持续监控 · 让 theta 累积收益") if pnl_pct >= 0
+                       else _T(lang, "持续监控 · 等时间衰减"))
+
+    # 严重亏损补提示
+    if pnl_pct < -50 and "breach" not in triggered:
+        severity = _max_sev(severity, "danger")
+        facts.append(_T(lang, "📉 浮亏 ${amt}（> 50% 权利金，关注 Δ 是否同步上升）",
+                        amt=f"{pnl_amt:,.0f}"))
 
     if not actions:
-        actions.append(_T(lang, "继续持有让 Theta 累积收益") if pnl_pct >= 0
-                       else _T(lang, "继续持有等时间衰减"))
+        actions.append(_T(lang, "持续监控"))
 
     return {
         "position_id": ps["id"], "label": ps["label"],
-        "subtitle": _T(lang, "Exp {exp} · {n} 张 · 剩 {d} 天",
-                       exp=ps['expiry'], n=ps['contracts'], d=days),
+        "subtitle": _T(lang, "Exp {exp} · {n} 张 · 剩 {d} 天 · {emoji} {style}",
+                       exp=ps['expiry'], n=ps['contracts'], d=days,
+                       emoji=style_emoji, style=style_name),
         "type": severity, "status": status,
         "pnl": pnl, "pnl_pct": pnl_pct,
         "facts": facts, "actions": actions,
+        "exit_style": exit_style,
     }
 
 
-def get_suggestions(positions, lang: str = "zh"):
+def get_suggestions(positions, lang: str = "zh", exit_style: str = "early_close"):
     cards = []
     active = [p for p in positions if not p["closed"] and p["days"] >= 0]
     total_pnl = sum(p["pnl"] for p in active)
@@ -1515,7 +1683,7 @@ def get_suggestions(positions, lang: str = "zh"):
         })
 
     for ps in positions:
-        adv = position_advice(ps, lang=lang)
+        adv = position_advice(ps, lang=lang, exit_style=exit_style)
         if adv: cards.append(adv)
     return cards
 
@@ -1525,6 +1693,11 @@ def compute(payload):
     positions_raw = payload.get("positions", [])
     state = payload.get("state", {})
     lang = payload.get("lang", "zh")
+    exit_style = payload.get("exit_style") or "early_close"
+    # alias 旧值（兼容老 localStorage）
+    exit_style = {"auto": "early_close", "wheel_purist": "hold_to_expiry"}.get(exit_style, exit_style)
+    if exit_style not in ("early_close", "wheel_assign", "hold_to_expiry"):
+        exit_style = "early_close"
 
     if not positions_raw:
         return {
@@ -1567,7 +1740,7 @@ def compute(payload):
 
     enriched = [position_state(p, today, state, prices, earliest) for p in positions]
     history = portfolio_history(positions, state, prices, today, enriched=enriched)
-    suggestions = get_suggestions(enriched, lang=lang)
+    suggestions = get_suggestions(enriched, lang=lang, exit_style=exit_style)
 
     total_sold = sum(x["sold"] for x in enriched)
     total_mktval = sum(x["mktval"] for x in enriched)

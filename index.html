@@ -9678,8 +9678,16 @@ const _recDefaults = {
   timeframe: '7',
   risk: 'balanced',
 };
-const _recSelection = { ...localStorage.getItem('rec_last_choice')
-  ? JSON.parse(localStorage.getItem('rec_last_choice')) : _recDefaults };
+const _recSelection = (() => {
+  // 模块级初始化 — 任何 throw 都会让整个 app 启动失败。localStorage 损坏
+  // （扩展插入垃圾 / 跨域写入 / 早期版本残留）时静默回退到 defaults。
+  try {
+    const raw = localStorage.getItem('rec_last_choice');
+    return raw ? { ..._recDefaults, ...JSON.parse(raw) } : { ..._recDefaults };
+  } catch (e) {
+    return { ..._recDefaults };
+  }
+})();
 
 // ── 大佬策略预设 ────────────────────────────────────────────────────
 const REC_PRESETS = {
@@ -10721,7 +10729,7 @@ function addRecToPositions(ticker, type, strike, expiry, mid) {
     });
   }
   savePositions(positions);
-  selectedIds.add(newId);
+  if (selectedIds) selectedIds.add(newId);  // 首次 refresh 前可能为 null
   saveSelection();
   alert((merged ? '✅ 已合并到现有持仓' : '✅ 已新建持仓') + ': ' + ticker + ' $' + strike + ' ' + type);
   refresh();
@@ -11187,7 +11195,7 @@ async function submitAdd() {
   savePositions(positions);
 
   const newId = `${f.ticker}_${f.type}_${fmtStrike(f.strike)}_${f.expiry}`;
-  selectedIds.add(newId);
+  if (selectedIds) selectedIds.add(newId);  // 首次 refresh 前可能为 null
   saveSelection();
   hideAdd();
   refresh();

@@ -583,7 +583,8 @@ def log_usage_event(user_id, user_email, event, metadata=None):
             "event": str(event),
             "metadata": metadata or {},
         }
-        _supabase_request("POST", "/rest/v1/usage_events", body=row, timeout=5)
+        # 2s timeout — usage 埋点不该把主请求拖久。Supabase 抖动时尽快放弃。
+        _supabase_request("POST", "/rest/v1/usage_events", body=row, timeout=2)
     except Exception as e:
         try:
             print(f"[usage] log fail: {type(e).__name__}: {e}", flush=True)
@@ -4569,7 +4570,12 @@ class handler(BaseHTTPRequestHandler):
                 }
             elif action == "recommend":
                 result = recommend(payload)
+                # 先把响应发给用户 — usage 埋点不该阻塞用户拿到结果。
+                # serverless flush 语义不保证立即发送，但配合 log timeout=2s 双保险。
+                self._send_json(200, result)
                 try:
+                    try: self.wfile.flush()
+                    except Exception: pass
                     user_id = payload.get("user_id")
                     user_email = payload.get("user_email")
                     if user_id or user_email:
@@ -4597,6 +4603,7 @@ class handler(BaseHTTPRequestHandler):
                 except Exception as _e:
                     try: print(f"[usage] recommend log skip: {_e}", flush=True)
                     except Exception: pass
+                return
             elif action == "log_event":
                 # 前端主动埋点：login / first_login / review 等
                 ev = payload.get("event") or ""

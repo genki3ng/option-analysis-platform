@@ -3,9 +3,44 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — v2 #2 阶梯方案 ladder builder 完整 ship）
+最后更新：2026-05-19（cloud — QA 第二轮 P1 修复 · _meta 计数 / usage log 阻塞 / null guards / 模块级 JSON.parse）
 
-### ✅ 这一轮（2026-05-19 cloud · v2 #2 ladder builder）
+### ✅ 这一轮（2026-05-19 cloud · QA P1 round 2）
+
+**主题**：接 P0 round 1 之后把 P1 池 9 条逐条验证 + 修。验证后 5 条是 agent 误报（详见末），4 条是真 bug，全修。
+
+**真 P1 #2 — state 计数未排除 `_meta`**（commit a8d65bb 已 ship）：
+- state._meta 用作偏好 namespace（selection / brief_snapshot / welcome_seen / account），用户登录后几乎立刻就有
+- 5 处 `Object.keys(state).length` 被污染。最危险是 `_migrateLocalToCloud` 的"云端非空"门 → 纯新用户被误判 → 本地持仓被静默跳过迁移
+- 修：新增 `_stateRealKeys(s)` helper 过滤 `_meta`，6 处统一调用
+
+**真 P1 #4 — `recommend` usage log 阻塞响应**（本 commit）：
+- 原流程：`result = recommend(payload)` → `log_usage_event(...)`（同步调 Supabase, timeout=5s）→ `_send_json`
+- Supabase 抖动 → 用户多等最多 5s 才看到推荐结果
+- 修：调换顺序 → 先 `_send_json` + `wfile.flush()` 把响应发出去，再做埋点，最后 `return` 跳过末尾的 send；`log_usage_event` 内部 timeout 从 5s 降到 2s 双保险
+
+**真 P1 #8 — `selectedIds.add` null deref**（本 commit）：
+- 初始 `let selectedIds = null`，首次 refresh 完才赋 `new Set()`
+- `addRecToPositions` / `submitAdd` 在 refresh 跑完前被触发 → `null.add(...)` NPE
+- 修：两处 `selectedIds.add(newId)` 前加 `if (selectedIds)` 守卫
+
+**真 P1 #9 — 模块级 `JSON.parse` 无 try/catch**（本 commit）：
+- Line 9275：`const _recSelection = { ...localStorage.getItem('rec_last_choice') ? JSON.parse(...) : _recDefaults }` 不在 try/catch 里
+- localStorage 损坏（扩展 / 早期版本残留 / 跨域写入）→ 模块加载阶段抛 → **整个 app 启动失败**
+- 修：包成 IIFE + try/catch，失败回退到 `_recDefaults`，spread 顺序保证用户已存的字段优先
+
+**agent 误报（5 条）**：
+- #1 `showRec` 事件重复绑定：`.onclick = fn` 是赋值不是 addEventListener，替换不堆叠 ✗
+- #3 三级 fallback 静默吞：实际有 `chain_stats` + `_summarize_data_source` + `schwab_last_err` 透出 ✗
+- #5 `is_willing_to_own` UI undefined：前端整个文件根本没 grep 到这个字段，agent 给的行号错了 ✗
+- #6 cache 跨日污染：30min TTL 已经覆盖所有合理边界（after-hours 不影响、跨日开市远超 30min）✗
+- #7 goal 切换数值残留：已在 b4bfb59 正确修过，"同 goal 保留用户输入"是 intentional ✗
+
+**下一阶段**：P2 杂项（重点是 i18n — zh_tw 缺 164 个 key、en 缺 184 个，wheel_hint_* / lesson_* / 账户管理类批量缺）。需要用户判断优先级。
+
+---
+
+### 上一轮（2026-05-19 cloud · v2 #2 ladder builder）
 
 **主题**：v2 路线第 2 项 — 用户给 ticker + 接货总预算，算法返回多档 strike 阶梯组合（灵感来自"他的国"实盘 NVDL 6 档 / TQQQ 4 档）。
 

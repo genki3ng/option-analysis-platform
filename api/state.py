@@ -4862,12 +4862,15 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
 
     # 模型选择：付费手动刷新（brief_refresh）→ Sonnet 4.6 推理更准；自动 5min 刷新 → Haiku 4.5 省成本
     model_id = "claude-sonnet-4-6" if use_premium_model else "claude-haiku-4-5-20251001"
+    # Sonnet 比 Haiku 慢（5-15s 常见，长 prompt 偶 18s+），per-call 抬高 timeout 防 SDK 超时
+    # 把 fallback 误判为 template。Haiku 保留默认 18s（client init 时设定）。
+    call_timeout = 45.0 if use_premium_model else 18.0
 
     # 把诊断信息暂存到 module-level dict，让响应能带回（不靠 Vercel logs）
     global _last_llm_diag
     t0 = time.time()
     try:
-        resp = client.messages.create(
+        resp = client.with_options(timeout=call_timeout).messages.create(
             model=model_id,
             max_tokens=1600,
             system=system_prompt,

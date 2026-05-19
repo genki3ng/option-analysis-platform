@@ -12468,7 +12468,12 @@ async function refreshMorningBrief() {
       setTimeout(() => _loadCoinBalance({ silent: true }), 2000);
     } else {
       // LLM 没成功 → 没扣费，告诉用户重试
-      alert(t('管家暂时打盹（生成失败），本次未扣金币。稍后再试。'));
+      // 把 _llm_diag 拼进提示，方便用户报错时直接复制
+      const diag = (d.morning_brief || {})._llm_diag || {};
+      const detail = diag.phase
+        ? `\n[${diag.phase}${diag.model ? ' · ' + diag.model : ''}${diag.error_type ? ' · ' + diag.error_type : ''}${diag.elapsed_s != null ? ' · ' + diag.elapsed_s + 's' : ''}]`
+        : '';
+      alert(t('管家暂时打盹（生成失败），本次未扣金币。稍后再试。') + detail);
     }
   } catch (e) {
     alert(t('刷新失败：') + (e && e.message ? e.message : e));

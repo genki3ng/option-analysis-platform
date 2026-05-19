@@ -5024,6 +5024,7 @@
           <div class="occ-row">
             <label data-i18n="粘贴 OCC 合约代码（自动解析）">粘贴 OCC 合约代码（自动解析）</label>
             <input id="occ-input" type="text" placeholder="例如: TSLA260515P00385000"
+                   data-i18n-placeholder="例如: TSLA260515P00385000"
                    oninput="parseOcc(this.value)">
             <div class="hint" data-i18n="从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike">从 Schwab / IBKR 等券商复制粘贴即可，格式：标的+YYMMDD+C/P+8位Strike</div>
           </div>
@@ -5216,7 +5217,8 @@
 
   <div class="row" data-section="ticker">
     <span class="label" data-i18n="标的 Ticker">标的 Ticker</span>
-    <input type="text" id="rec-ticker" placeholder="TSLA · 或多个 TSLA,NVDA,GOOG" maxlength="40">
+    <input type="text" id="rec-ticker" placeholder="TSLA · 或多个 TSLA,NVDA,GOOG"
+           data-i18n-placeholder="TSLA · 或多个 TSLA,NVDA,GOOG" maxlength="40">
     <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
   </div>
 
@@ -5620,6 +5622,9 @@ const I18N = {
     '更新于 {ts} · 自动每 30 秒刷新': '更新于 {ts} · 自动每 30 秒刷新',
     '卖期权：Δ 越低越安全，权利金越少': '卖期权：Δ 越低越安全，权利金越少',
     'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS：Δ 越高越接近正股，杠杆越低',
+    'TSLA · 或多个 TSLA,NVDA,GOOG': 'TSLA · 或多个 TSLA,NVDA,GOOG',
+    '例如: TSLA260515P00385000': '例如: TSLA260515P00385000',
+    '记下你的想法：为什么开仓？预期目标？止损线？复盘心得...': '记下你的想法：为什么开仓？预期目标？止损线？复盘心得...',
     '+ 加正股': '+ 加正股',
     '删除该账户': '删除该账户',
     '至少保留 1 个账户': '至少保留 1 个账户',
@@ -5916,6 +5921,7 @@ const I18N = {
     '安全': '安全',
     '行权': '行權',
     '时间进度': '時間進度',
+    '时间': '時間',
     '剩': '剩',
     '天': '天',
     '平仓': '平倉',
@@ -6412,6 +6418,9 @@ const I18N = {
     '更新于 {ts} · 自动每 30 秒刷新': '更新於 {ts} · 自動每 30 秒重新整理',
     '卖期权：Δ 越低越安全，权利金越少': '賣期權：Δ 越低越安全，權利金越少',
     'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS：Δ 越高越接近正股，槓桿越低',
+    'TSLA · 或多个 TSLA,NVDA,GOOG': 'TSLA · 或多檔 TSLA,NVDA,GOOG',
+    '例如: TSLA260515P00385000': '例如: TSLA260515P00385000',
+    '记下你的想法：为什么开仓？预期目标？止损线？复盘心得...': '記下你的想法：為什麼開倉？預期目標？止損線？覆盤心得...',
     '+ 加正股': '+ 新增正股',
     '删除该账户': '刪除該帳戶',
     '至少保留 1 个账户': '至少保留 1 個帳戶',
@@ -6800,6 +6809,7 @@ const I18N = {
     '安全': 'safe',
     '行权': 'Strike',
     '时间进度': 'Time progress',
+    '时间': 'Time',
     '剩': 'left',
     '天': 'days',
     '平仓': 'Close',
@@ -7296,6 +7306,9 @@ const I18N = {
     '更新于 {ts} · 自动每 30 秒刷新': 'Updated {ts} · auto-refresh every 30s',
     '卖期权：Δ 越低越安全，权利金越少': 'Short premium: lower Δ = safer, less premium',
     'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS: higher Δ = closer to stock, lower leverage',
+    'TSLA · 或多个 TSLA,NVDA,GOOG': 'TSLA · or multiple TSLA,NVDA,GOOG',
+    '例如: TSLA260515P00385000': 'e.g. TSLA260515P00385000',
+    '记下你的想法：为什么开仓？预期目标？止损线？复盘心得...': 'Notes: why opened? target? stop? lessons learned...',
     '+ 加正股': '+ Add stock',
     '删除该账户': 'Delete this account',
     '至少保留 1 个账户': 'At least 1 account required',
@@ -9952,6 +9965,7 @@ function showJournal(pid) {
       当前 ${signed(p.pnl_pct, 1)}%
     </div>
     <textarea id="journal-input" placeholder="记下你的想法：为什么开仓？预期目标？止损线？复盘心得..."
+              data-i18n-placeholder="记下你的想法：为什么开仓？预期目标？止损线？复盘心得..."
               style="width:100%;min-height:80px;padding:10px;font-family:inherit;
                      font-size:13px;border:1px solid var(--line);border-radius:6px;
                      background:var(--card2);color:var(--text);"></textarea>
@@ -11904,7 +11918,7 @@ function updateAddPreview() {
                  f.contracts > 0 && f.sell_price > 0;
 
   if (!filled) {
-    prev.innerHTML = '<span class="lab">填写完所有必填字段后这里会显示预览</span>';
+    prev.innerHTML = `<span class="lab">${t('填写完所有必填字段后这里会显示预览')}</span>`;
     submit.disabled = true;
     return;
   }
@@ -13119,7 +13133,7 @@ function _renderAccountCardHtml(acct, idx = 0) {
           <div class="am-acard-stocks">
             ${(acct.stock_positions || []).map(p => _renderStockRowHtml(p.ticker, p.shares)).join('')}
           </div>
-          <button class="add-stock-btn" type="button" onclick="addStockRowInCard(this)" data-i18n="+ 加正股">+ 加正股</button>
+          <button class="add-stock-btn" type="button" onclick="addStockRowInCard(this)" data-i18n="+ 加正股">${t('+ 加正股')}</button>
         </div>
       </div>
     </div>`;

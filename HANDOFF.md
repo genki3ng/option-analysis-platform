@@ -3,40 +3,54 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19 晚（cloud — 用户 QA 报 4 bugs 一轮修复）
+最后更新：2026-05-19（cloud — UI/UX QA 第三轮 · 6 处 placeholder / 动态渲染 i18n leak）
 
-### ✅ 这一轮（用户 QA bug 修复）
+> 注意：origin/main 并行 session ship 了一波"用户报 4 bugs"修复（submitRec ticker / brief 时区 / selection 同步 / lang-selector 高度），在本轮第二条 entry 下面，跟本轮独立。
 
-用户报 4 个 bug，本轮一次修完：
+### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 3）
 
-1. **🔍 找出最佳 推荐按钮点击没反应** — `submitRec()` 在 `_savePref('rec_last_ticker', ticker)` 处
-   抛 `ReferenceError: ticker is not defined`（v2.1 Wave 3.1+3.2 多 ticker 改动把 `ticker`
-   重命名成 `rawTicker` 但漏了这一处）。整个 async 函数 reject，前端无反应。
-   修：`index.html` `ticker` → `rawTicker`。
+**主题**：重写 Playwright 脚本修 modal backdrop intercept 问题（用 `hideRec()` JS 调用替 Escape，显式 backdrop 清理），扫 16 个 surface × 2 viewport = 30 张截图，发现 round 1/2 没看到的 6 处 i18n leak — 都在动态渲染或 placeholder 上。
 
-2. **管家信息今早登陆没更新** — `_generate_morning_brief` 缓存键用 `date.today()`（服务器 UTC 日期），
-   美东时间凌晨用户登陆时，UTC 已是今天，cache 早晨命中 → 复用昨晚 22-23 点（同 UTC 日期）
-   生成的 brief 文。修：改用 America/New_York 时区做"今天" — `api/state.py:_generate_morning_brief` 用 `zoneinfo.ZoneInfo`。
-   旧 UTC 时间戳 snap 自然失效（next refresh 重新生成）。
+**真 bug 修复（6 处 i18n leak）**：
 
-3. **持仓选择同步后下次登陆全部 unchecked** — `loadSelection` 把空数组 `[]` 当 truthy
-   返回 `new Set([])` 全部 unchecked；位置 id strike 格式漂移导致 cloud 存的 ids 全不匹配
-   当前 positions 时 `selectAll-cleanup` 把 Set 清空。修 `index.html:7494-7530`：
-   - cloud / localStorage 都需要 length > 0 才用；空数组 fallback 到默认全选
-   - filter 现有 ids，如果 0 match → fallback 到默认全选（而非 stuck 在 unchecked）
-   - `saveSelection` 加 null guard（之前 `[...null]` 会 throw 阻止 cloud 同步）
+1. **`rec-ticker` placeholder "TSLA · 或多个 TSLA,NVDA,GOOG"** (`index.html:5181`) — 推荐表单 ticker 输入框 placeholder 硬编码中文，EN 模式下灰字仍中文。加 `data-i18n-placeholder` + 3 套字典。
 
-4. **语言选择器 截图 → 高亮 简 框只有 14px 高，pill 容器 34px 高** — `.lang-selector { align-items: center }`
-   让按钮只占内容高度，gold 背景没填满 pill。修 `index.html:182-195`：parent 改 `align-items: stretch`，
-   button 加 `display: flex; align-items: center; justify-content: center` 内文继续居中。
+2. **`occ-input` placeholder "例如: TSLA260515P00385000"** (`index.html:4988`) — 加期权 modal 的 OCC paste 框 placeholder。同上修。
 
-**Deploy**：commit `9b45f0e` rebase 到 `origin/main`（上面有 `dbaeaa8` round 2 i18n + `1978728` exit_plan 全链路）后 fast-forward push 到 main 触发 Vercel auto-build。
+3. **`journal-input` placeholder "记下你的想法..."** (`index.html:9901`) — 持仓笔记 textarea placeholder。同上修。
+
+4. **`+ 加正股` button**（账户设置 stock 行） — 虽有 `data-i18n` 但模板字符串渲染时 inner text 还是中文，setLang 之前打开过 modal 就漏。修：button 内层改 `${t('+ 加正股')}` 即时翻译。
+
+5. **`updateAddPreview` 兜底 hint "填写完所有必填字段后这里会显示预览"** (`index.html:11848`) — 函数动态 `innerHTML` 写入硬编码中文 span，覆盖了原 `data-i18n`。修：包 `${t(...)}` 即时翻译。
+
+6. **`时间` 标签** (`index.html:8992`) — 持仓卡 `.pos-time` 显示 "时间 left X/Y days" 中英混搭，因为 `t('时间')` 调用但 zh_tw / en 字典都缺 key。**最显眼的 leak**（每张持仓卡都有）。补 zh_tw "時間" + en "Time"。
+
+**截图栈**：`/tmp/qa-shots-3/<vp>/{01..16}.png`（30 张完整）。比 round 2 多出：pos-card-expanded（脚本绕开 click intercept）、compact toggle、6/7/8-rec modal 三种 goal 模式、09 add modal with preview、10 review、11 morning brief（实际渲染了 pos cards，showMorningBrief 不存在）、12 account modal、13 edu（无 modal）、14 EN data、15 繁中 data、16 light theme data。
+
+**验证 round 1/2 已生效**：
+- 手机 "Sign in" 按钮不再截断（mobile 01）✓
+- 推荐 modal sticky padding 让最后一行 `EXIT STYLE` 完整可见（mobile 05）✓
+- brief 标题 "Tue 5/19 · 13:53" 英文显示（mobile 01）✓
+- 推荐表单 "Short premium: lower Δ = safer" 风险偏好 hint 英文 ✓
+- 账户 modal "⚙ Set account to show capital usage" 英文 ✓
+
+**未做 backlog**：
+- pos-card 展开（点击展开 Greeks 和 exit_plan 详情）— playwright 脚本仍没找到正确点击元素，需要进一步研究 `.pos` 卡片实际 onclick handler 委托
+- review modal、edu / options 101 modal — JS 函数名跟 playwright 脚本里的猜测不一样，需要 grep 真实函数名再加
+- agent 静态扫报的 ld-mrung-head / exit-plan.compact baseline 类 — 仍需要候选卡片渲染（需要真跑 recommend 返回有效候选）
 
 ---
 
-最后更新：2026-05-19（cloud — UI/UX QA 第二轮 · 注入假持仓后再扫，发现 brief 星期 + risk hint i18n leak）
+### 并行 session（2026-05-19 晚 · 用户报 4 bugs 一轮修复）
 
-### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 2）
+1. **🔍 找出最佳 按钮无反应** — `submitRec()` 在 `_savePref('rec_last_ticker', ticker)` 抛 `ReferenceError`（v2.1 多 ticker 改动把 `ticker` 重命名 `rawTicker` 漏一处）。整个 async 函数 reject，前端无反应。改回 `rawTicker`。
+2. **管家今早未更新** — `_generate_morning_brief` 缓存键用 `date.today()`（UTC），美东凌晨用户登录时 UTC 已新一日，cache 命中 → 复用昨晚 22-23 点的 brief。改用 `America/New_York` 时区做"今天"。
+3. **持仓选择同步后下次登录全部 unchecked** — `loadSelection` 把空 `[]` 当 truthy 返回 `Set([])`；strike 格式漂移导致 cloud ids 不匹配现持仓时 `selectAll-cleanup` 把 Set 清空。改：cloud / localStorage 都需要 length > 0；0 match fallback 默认全选；`saveSelection` 加 null guard。
+4. **lang-selector 高亮 pill 高度不足** — `align-items: center` 让按钮只占内容高度，gold 背景没填满 34px pill。parent 改 `align-items: stretch`，button 加 `display: flex; align-items: center; justify-content: center`。
+
+---
+
+### 上一轮（2026-05-19 cloud · UI/UX QA round 2）
 
 **主题**：Round 1 只在空状态扫，agent 报的"带数据组件 baseline 问题"看不到。这轮用 Playwright 在 navigate 前注入 4 个假持仓（TSLA / AAPL / NVDA / META），让 pos card / brief modal / chart / rec modal-with-data 都真渲染再截图。
 

@@ -3,9 +3,36 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — app 加 admin 入口图标）
+最后更新：2026-05-19（concierge — Sonnet 4.6 alias 失败回滚 + 保留旧 brief）
 
-### ✅ 这一轮 (2026-05-19 cloud · app 加 admin 入口图标)
+### ✅ 这一轮 (2026-05-19 concierge · Sonnet alias BadRequest 回滚 + 弹错保留 brief)
+
+**用户报错**：付费刷新管家弹窗显示 `[error · claude-sonnet-4-6 · BadRequestError · 0.12s]`，但 UI 仍出现"新 insight"。同时反馈"短暂跳回 placeholder"。
+
+**根因 #1（model）**：`claude-sonnet-4-6` alias 在 Anthropic 文档列出但**当前账号 / region 拒绝**（0.12s BadRequest，不是 timeout）。SDK 没毛病，是 model 在这个 deployment 不可用。
+
+**根因 #2（"placeholder"）**：LLM 失败 → template fallback（`_template_concierge`）用规则数据 render 出简陋的 items 替代了用户原本看到的 LLM brief。用户感觉"内容退化变成 placeholder"。
+
+**修复** (`api/state.py:4863-4866` + `index.html:12460-12483`)：
+1. **后端**：`model_id = "claude-sonnet-4-5-20250929"` (dated stable ID) 暂时替代 `claude-sonnet-4-6` alias。Sonnet 4.5 比 Haiku 4.5 推理仍强，是合理替代。等 4.6 alias 在账号可用再切回。
+2. **前端**：refreshMorningBrief 在 `brief_refresh_charged === false` 时，**把 d.morning_brief 改回旧的 oldBrief 再 renderAll**。这样：
+   - LLM 失败时 brief 保持原样（不跳回 template fallback 的 placeholder 样）
+   - 其他数据（持仓 P&L / chips / 日历）仍然正常更新
+   - alert 弹出告诉用户失败 + 诊断
+3. **alert 多带 error_msg**（截 120 char），下次失败用户能直接看到具体 API 报错。
+
+**还没改的 / TODO**：
+- Sonnet 4.6 alias 失败的真实原因没确认（可能是账号 tier 没开权限、或 region 限制）— 让用户检查 Anthropic console 看 4.6 是否在 available models 列表
+- 一旦 4.6 可用就切回去（推理强 + 跟 prompt 改动配合更好）
+
+**验证方式**：用户再点一次刷新管家，预期：
+- 弹窗里 model = `claude-sonnet-4-5-20250929`
+- phase = `ok`、brief 用 Sonnet 4.5 风格出（写「剩 3 天到期」、不再"已成定局"）
+- 不再 BadRequest
+
+---
+
+### 上一轮 (2026-05-19 cloud · app 加 admin 入口图标)
 
 **主题**：admin 后端（`admin.html` + `/admin` 路由 + `api/state.py:_verify_admin_token`）早就有了，但主 app 没入口 — admin 用户每次得手敲 `/admin` URL。补一个仅 admin 邮箱可见的小盾牌图标按钮。
 

@@ -1238,16 +1238,19 @@
   .pos.closed .pos-hero {
     background: var(--inset);
   }
-  /* 已平仓状态徽章：mono 风，不再红底白字 */
+  /* 已平仓状态徽章：mono chip 风（带 padding + 圆角，不再贴脸方框） */
   .pos.closed .pos-status {
     background: var(--card2);
     color: var(--sub);
     border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 2px 7px;
     font-family: "SF Mono", Menlo, monospace;
     font-weight: 500;
+    line-height: 1.4;
   }
-  .pos.closed .pos-status.good { color: var(--green); }
-  .pos.closed .pos-status.danger { color: var(--red); }
+  .pos.closed .pos-status.good { color: var(--green); border-color: rgba(74,222,128,0.30); }
+  .pos.closed .pos-status.danger { color: var(--red); border-color: rgba(248,113,113,0.30); }
 
   /* 复盘块 */
   .closed-review {
@@ -12785,7 +12788,9 @@ function renderAll(d) {
   const selPnl = selSold - selMktval;
   const selTheta = selPosList.reduce((s, p) => s + p.daily_theta, 0);
 
-  const selRealized = selPosList
+  // 已实现盈亏：累加全部已平仓持仓（不过 selectedIds — "已经落袋的钱"是固定历史，
+  // 与用户当下勾选监控哪些活跃仓无关）
+  const selRealized = d.positions
     .filter(p => p.closed && p.close_price !== null && p.close_price !== undefined)
     .reduce((s, p) => s + (p.sell_price - p.close_price) * p.contracts * 100, 0);
 

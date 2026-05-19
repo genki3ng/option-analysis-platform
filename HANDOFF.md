@@ -3,9 +3,34 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（concierge — Sonnet 4.6 alias 失败回滚 + 保留旧 brief）
+最后更新：2026-05-19（已平仓 — 顶部"已实现盈亏"独立累加 + 徽章"贴脸方框" 修圆角）
 
-### ✅ 这一轮 (2026-05-19 concierge · Sonnet alias BadRequest 回滚 + 弹错保留 brief)
+### ✅ 这一轮 (2026-05-19 closed-pos · realized 累加全部 + status chip 加 padding)
+
+**用户场景**：截图 4 张已平仓 TSLA 卡（-$2,023 / +$1,468 / +$717 / +$552，合计 +$714），但顶部"已实现盈亏"显示 +$0.00。用户问"已平仓需要我勾选吗"，并指出"已平仓"徽章是"basic 框"。
+
+**两个 bug 一起修**（`index.html`）：
+
+1. **顶部"已实现盈亏"无视 selectedIds**（line ~12748）
+   - 之前：`selPosList.filter(p => p.closed)...` — selPosList 是已勾选的 → 已平仓默认 unchecked 时累加为 0
+   - 现在：`d.positions.filter(p => p.closed)...` — "已经落袋的钱"是固定历史，与勾选无关
+   - 用户选的是"只修顶部统计"保守方案（保留 checkbox 不动）
+
+2. **`.pos.closed .pos-status` 是"贴脸方框"**（line ~1224-1233）
+   - 之前：有 `background: var(--card2)` + `border: 1px solid var(--line)` 但**没 padding 没 border-radius** → 文字+边框紧贴，像未样式化的原始 `<input>` 框
+   - 现在：加 `padding: 2px 7px`、`border-radius: 5px`、`line-height: 1.4`
+   - good/danger 也加细微 border 色（green/red 0.30 alpha）使 chip 更"有形"
+
+**没改的**（用户没选完整方案，保留以下）：
+- 已平仓卡仍带 checkbox（视觉上仍可能 unchecked 半透明）
+- "已选 X/N" 的 N 仍含已平仓
+- togglePos 对 closed 仍可切换
+
+**验证**：硬刷新 trade.congyangwang.com/app，看顶部"已实现盈亏"是否累加全部已平仓，已平仓徽章是否变成有圆角的 chip。
+
+---
+
+### 上一轮 (2026-05-19 concierge · Sonnet alias BadRequest 回滚 + 弹错保留 brief)
 
 **用户报错**：付费刷新管家弹窗显示 `[error · claude-sonnet-4-6 · BadRequestError · 0.12s]`，但 UI 仍出现"新 insight"。同时反馈"短暂跳回 placeholder"。
 
@@ -32,7 +57,7 @@
 
 ---
 
-### 上一轮 (2026-05-19 cloud · app 加 admin 入口图标)
+### 上上轮 (2026-05-19 cloud · app 加 admin 入口图标)
 
 **主题**：admin 后端（`admin.html` + `/admin` 路由 + `api/state.py:_verify_admin_token`）早就有了，但主 app 没入口 — admin 用户每次得手敲 `/admin` URL。补一个仅 admin 邮箱可见的小盾牌图标按钮。
 

@@ -3251,7 +3251,9 @@ def recommend(req: dict) -> dict:
     # 2.0 新增：已实现波动率（30d） / 杠杆 ETF flag / willing_to_own 推导
     realized_vol_30d = _realized_vol(ticker, window=30)
     is_leveraged_etf = _is_leveraged_etf(ticker)
-    # willing_to_own = 持有正股 或 已经在该 ticker 上有 short put（已用行动表态）
+    # willing_to_own：先看用户手动 override，再 fallback 到自动推导
+    #   自动推导：持有正股 或 已经在该 ticker 上有 short put（行动表态）
+    #   手动 override：state._meta.willing_overrides[TSLA] = "on" | "off"
     held_shares = stock_map.get(ticker, 0)
     has_existing_short_put = any(
         (p.get("ticker") or "").upper() == ticker
@@ -3259,7 +3261,14 @@ def recommend(req: dict) -> dict:
         and not p.get("closed")
         for p in (option_positions or [])
     )
-    is_willing_to_own = bool(held_shares >= 100 or has_existing_short_put)
+    _willing_overrides = req.get("willing_overrides") or {}
+    _override = _willing_overrides.get(ticker) or _willing_overrides.get(ticker.upper())
+    if _override == "on":
+        is_willing_to_own = True
+    elif _override == "off":
+        is_willing_to_own = False
+    else:
+        is_willing_to_own = bool(held_shares >= 100 or has_existing_short_put)
 
     # exit_style：包租公 3 个房东人设。兼容旧值 auto / wheel_purist
     #   early_close     早收租派：50% 早平 + delta 0.30 触发 roll + 不接货

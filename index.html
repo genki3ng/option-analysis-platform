@@ -4467,6 +4467,87 @@
     background: var(--accent-tint);
   }
 
+  /* 🎯 愿意接货清单 (v2 #4) */
+  .account-modal .am-willing-section {
+    margin-top: 24px; padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .account-modal .am-section-title {
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    margin: 0 0 4px;
+  }
+  .account-modal .am-section-hint {
+    font-size: 11.5px; color: var(--sub); margin-bottom: 12px; line-height: 1.5;
+  }
+  .account-modal #am-willing-list { margin-bottom: 10px; }
+  .account-modal .am-willing-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px; align-items: center;
+    padding: 8px 10px;
+    background: var(--card2);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .account-modal .am-willing-ticker {
+    font-weight: 700;
+    font-family: "SF Mono", Menlo, monospace;
+    letter-spacing: 0.3px;
+  }
+  .account-modal .am-willing-state {
+    padding: 3px 9px; border-radius: 4px; font-size: 11px;
+    cursor: pointer; border: 1px solid var(--line);
+    background: var(--card3); color: var(--sub);
+    font-weight: 600;
+    transition: all 0.12s;
+  }
+  .account-modal .am-willing-state.on {
+    background: rgba(52,211,153,0.15); color: var(--green); border-color: rgba(52,211,153,0.35);
+  }
+  .account-modal .am-willing-state.off {
+    background: rgba(248,113,113,0.14); color: var(--red); border-color: rgba(248,113,113,0.35);
+  }
+  .account-modal .am-willing-state:hover { filter: brightness(1.15); }
+  .account-modal .am-willing-remove {
+    color: var(--sub); cursor: pointer; padding: 4px 8px;
+    background: transparent; border: none; font-size: 14px;
+    line-height: 1;
+  }
+  .account-modal .am-willing-remove:hover { color: var(--red); }
+  .account-modal .am-willing-add {
+    display: grid; grid-template-columns: 1fr auto auto;
+    gap: 6px; margin-top: 8px;
+  }
+  .account-modal .am-willing-add input {
+    background: var(--card2);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 7px 10px; font-size: 13px; color: var(--text);
+    font-family: "SF Mono", Menlo, monospace;
+    text-transform: uppercase;
+  }
+  .account-modal .am-willing-add input:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .account-modal .am-willing-add button {
+    background: var(--card3); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 7px 12px; font-size: 12px; cursor: pointer;
+    font-weight: 600;
+  }
+  .account-modal .am-willing-add button.add-on {
+    background: rgba(52,211,153,0.10); color: var(--green); border-color: rgba(52,211,153,0.25);
+  }
+  .account-modal .am-willing-add button.add-off {
+    background: rgba(248,113,113,0.08); color: var(--red); border-color: rgba(248,113,113,0.25);
+  }
+  .account-modal .am-willing-add button:hover { filter: brightness(1.15); }
+  .account-modal .am-willing-empty {
+    color: var(--sub); font-size: 12px; padding: 14px 10px;
+    text-align: center; background: var(--card2); border-radius: 6px;
+    font-style: italic;
+  }
+
   @media (max-width: 500px) {
     .account-modal .am-header { padding: 20px 20px 14px; }
     .account-modal .am-body { padding: 16px 20px; }
@@ -4670,6 +4751,17 @@
   <div class="am-body">
     <div id="am-accounts-list"></div>
     <button class="am-add-account" onclick="addAccountCard()" data-i18n="+ 添加账户">+ 添加账户</button>
+
+    <div class="am-willing-section">
+      <h3 class="am-section-title" data-i18n="🎯 愿意接货清单">🎯 愿意接货清单</h3>
+      <div class="am-section-hint" data-i18n-html="willing_section_hint_html">标记你<strong>愿意 / 不愿意</strong>被指派的 ticker — 仅影响 CSP 推荐排序。<br>清单外的 ticker 默认按"持仓 / 历史"自动推导。</div>
+      <div id="am-willing-list"></div>
+      <div class="am-willing-add">
+        <input type="text" id="am-willing-input" placeholder="ticker, e.g. GOOG" maxlength="6">
+        <button class="add-on" onclick="addWillingTicker('on')" data-i18n="🟢 想接">🟢 想接</button>
+        <button class="add-off" onclick="addWillingTicker('off')" data-i18n="🔴 不接">🔴 不接</button>
+      </div>
+    </div>
   </div>
 
   <div class="am-actions">
@@ -5367,6 +5459,15 @@ const I18N = {
     '持到到期': '持到到期',
     'Wheel 派 · 接货为乐': 'Wheel 派 · 接货为乐',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。',
+
+    // ── 🎯 愿意接货清单 (v2 #4)
+    '🎯 愿意接货清单': '🎯 愿意接货清单',
+    'willing_section_hint_html': '标记你<strong>愿意 / 不愿意</strong>被指派的 ticker — 仅影响 CSP 推荐排序。<br>清单外的 ticker 默认按"持仓 / 历史"自动推导。',
+    '🟢 想接': '🟢 想接',
+    '🔴 不接': '🔴 不接',
+    '暂无 ticker — 加在下方输入框': '暂无 ticker — 加在下方输入框',
+    '移除': '移除',
+    'ticker 无效（最多 6 个字母）': 'ticker 无效（最多 6 个字母）',
     '总接货预算': '总接货预算',
     '请输入': '请输入',
     '从预算里给 4 档 strike 等量分配 contracts': '从预算里给 4 档 strike 等量分配 contracts',
@@ -6070,6 +6171,15 @@ const I18N = {
     '持到到期': '持到到期',
     'Wheel 派 · 接货为乐': 'Wheel 派 · 接貨為樂',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不鎖利不止損，只在被指派後處理（接貨換正股 / 賣 CC）。僅短賣適用。',
+
+    // ── 🎯 願意接貨清單
+    '🎯 愿意接货清单': '🎯 願意接貨清單',
+    'willing_section_hint_html': '標記你<strong>願意 / 不願意</strong>被指派的 ticker — 僅影響 CSP 推薦排序。<br>清單外的 ticker 預設按"持倉 / 歷史"自動推導。',
+    '🟢 想接': '🟢 想接',
+    '🔴 不接': '🔴 不接',
+    '暂无 ticker — 加在下方输入框': '暫無 ticker — 加在下方輸入框',
+    '移除': '移除',
+    'ticker 无效（最多 6 个字母）': 'ticker 無效（最多 6 個字母）',
     '总接货预算': '總接貨預算',
     '请输入': '請輸入',
     '从预算里给 4 档 strike 等量分配 contracts': '從預算裡給 4 檔 strike 等量分配 contracts',
@@ -6865,6 +6975,15 @@ const I18N = {
     '持到到期': 'Hold to expiry',
     'Wheel 派 · 接货为乐': 'Wheel-style · happy to be assigned',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': 'Hold to expiry = no profit-lock, no stop-loss; only act when assigned (take stock / sell CC). Short positions only.',
+
+    // ── 🎯 Willing-to-own list (v2 #4)
+    '🎯 愿意接货清单': '🎯 Willing-to-own list',
+    'willing_section_hint_html': 'Mark which tickers you <strong>want / don\'t want</strong> to be assigned on — affects CSP ranking only.<br>Tickers not in the list use auto-inference from your holdings.',
+    '🟢 想接': '🟢 Want',
+    '🔴 不接': '🔴 No',
+    '暂无 ticker — 加在下方输入框': 'No tickers yet — add via the input below',
+    '移除': 'Remove',
+    'ticker 无效（最多 6 个字母）': 'Invalid ticker (max 6 chars)',
     '总接货预算': 'Total assignment budget',
     '请输入': 'Please enter',
     '从预算里给 4 档 strike 等量分配 contracts': 'Equal contracts across 4 strikes within budget',
@@ -10276,6 +10395,11 @@ async function submitRec() {
     risk: _recSelection.risk,
     exit_style: _recSelection.exit_style || 'auto',
   };
+  // 🎯 willing_to_own 手动 override (v2 #4) — 在 state._meta.willing_overrides 里
+  const _wo = _loadWillingOverrides();
+  if (_wo && Object.keys(_wo).length > 0) {
+    body.willing_overrides = _wo;
+  }
   // 用量埋点：把当前用户带上，后端在 do_POST 末尾 log_usage_event
   if (_currentUser) {
     body.user_id = _currentUser.id;
@@ -12447,10 +12571,74 @@ function showAccountSettings() {
   } else {
     accounts.forEach(a => addAccountCard(a));
   }
+  renderWillingList();
   document.getElementById('account-backdrop').style.display = 'block';
   const modal = document.getElementById('account-modal');
   modal.style.display = 'flex';
   modal.classList.add('show');
+}
+
+// ── 🎯 愿意接货清单（v2 #4，state._meta.willing_overrides）─────────────────
+function _loadWillingOverrides() {
+  const m = loadStateMap();
+  return (m && m._meta && m._meta.willing_overrides) || {};
+}
+function _saveWillingOverrides(overrides) {
+  const m = loadStateMap();
+  m._meta = m._meta || {};
+  m._meta.willing_overrides = overrides;
+  saveStateMap(m);
+}
+function renderWillingList() {
+  const el = document.getElementById('am-willing-list');
+  if (!el) return;
+  const overrides = _loadWillingOverrides();
+  const entries = Object.entries(overrides);
+  if (entries.length === 0) {
+    el.innerHTML = `<div class="am-willing-empty">${t('暂无 ticker — 加在下方输入框')}</div>`;
+    return;
+  }
+  // 排序：on 在前，然后 off，每组内按 ticker 字母序
+  entries.sort((a, b) => {
+    if (a[1] !== b[1]) return a[1] === 'on' ? -1 : 1;
+    return a[0].localeCompare(b[0]);
+  });
+  el.innerHTML = entries.map(([ticker, state]) => `
+    <div class="am-willing-row">
+      <span class="am-willing-ticker">${ticker}</span>
+      <button class="am-willing-state ${state}" onclick="_toggleWillingState('${ticker}')">
+        ${state === 'on' ? t('🟢 想接') : t('🔴 不接')}
+      </button>
+      <button class="am-willing-remove" onclick="_removeWillingTicker('${ticker}')" title="${t('移除')}">×</button>
+    </div>
+  `).join('');
+}
+function addWillingTicker(state) {
+  const input = document.getElementById('am-willing-input');
+  if (!input) return;
+  const ticker = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9.]/g, '');
+  if (!ticker || ticker.length > 6) {
+    alert(t('ticker 无效（最多 6 个字母）'));
+    return;
+  }
+  if (state !== 'on' && state !== 'off') return;
+  const overrides = _loadWillingOverrides();
+  overrides[ticker] = state;
+  _saveWillingOverrides(overrides);
+  input.value = '';
+  renderWillingList();
+}
+function _toggleWillingState(ticker) {
+  const overrides = _loadWillingOverrides();
+  overrides[ticker] = overrides[ticker] === 'on' ? 'off' : 'on';
+  _saveWillingOverrides(overrides);
+  renderWillingList();
+}
+function _removeWillingTicker(ticker) {
+  const overrides = _loadWillingOverrides();
+  delete overrides[ticker];
+  _saveWillingOverrides(overrides);
+  renderWillingList();
 }
 
 function hideAccountSettings() {

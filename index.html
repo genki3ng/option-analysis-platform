@@ -2264,6 +2264,126 @@
     transform: translateY(0);
   }
 
+  /* ── 🪜 Ladder 阶梯方案卡片（v2 #2，A+ 表格+楼梯色阶） ──────────────── */
+  .ld-card {
+    background: linear-gradient(135deg, var(--card2), var(--card));
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin: 14px 0;
+    box-shadow: 0 8px 28px rgba(230,184,106,0.08);
+  }
+  @media (max-width: 600px) { .ld-card { padding: 13px 12px; } }
+  .ld-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .ld-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--accent);
+  }
+  .ld-sub { color: var(--sub); font-size: 12px; }
+  .ld-actions { margin-left: auto; display: flex; gap: 6px; }
+  .ld-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px;
+            border: 1px solid var(--line); background: var(--card2); color: var(--text); cursor: pointer; }
+  .ld-btn.primary { background: var(--accent); color: #1A1A1A; border-color: transparent; font-weight: 600; }
+  .ld-btn.primary:hover { background: var(--accent-light); }
+  .ld-summary {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 600px) { .ld-summary { grid-template-columns: repeat(2, 1fr); } }
+  .ld-stat { background: var(--card3); border-radius: 8px; padding: 8px 10px; }
+  .ld-stat-l { font-size: 11px; color: var(--sub); margin-bottom: 3px; }
+  .ld-stat-v { font-size: 16px; font-weight: 700; }
+  .ld-stat-v.good { color: var(--green); }
+  .ld-stat-v.accent { color: var(--accent); }
+  .ld-stat-v.bad { color: var(--red); }
+  .ld-stat-sub { font-size: 10px; color: var(--sub); margin-top: 2px; }
+  .ld-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+    background: var(--card3); border-radius: 8px; overflow: hidden;
+  }
+  .ld-table th, .ld-table td {
+    padding: 10px; border-bottom: 1px solid var(--line); text-align: right;
+    position: relative;
+  }
+  .ld-table th { background: var(--card2); color: var(--sub);
+                 font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+  .ld-table th:first-child, .ld-table td:first-child { text-align: left; }
+  .ld-table td.good { color: var(--green); }
+  .ld-table tr:last-child td { border-bottom: none; }
+  .ld-row { position: relative; }
+  .ld-row .strike-cell { position: relative; padding-left: 14px !important; }
+  .ld-bar {
+    position: absolute; left: 0; top: 6px; bottom: 6px;
+    width: 3px; border-radius: 0 3px 3px 0;
+  }
+  .ld-fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    pointer-events: none; z-index: 0;
+  }
+  .ld-row > td { position: relative; z-index: 1; }
+  .ld-strike { font-weight: 700; font-size: 14px; }
+  .ld-tag {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    margin-left: 6px; vertical-align: 1px;
+    background: var(--card2);
+  }
+  /* 4 rung 配色 + 宽度（最安全 35% → 最激进 100%） */
+  .ld-row[data-rung="r0"] .ld-bar { background: var(--green); }
+  .ld-row[data-rung="r0"] .ld-strike { color: var(--green); }
+  .ld-row[data-rung="r0"] .ld-fill { width: 35%; background: linear-gradient(90deg, rgba(52,211,153,0.12), transparent); }
+  .ld-row[data-rung="r0"] .ld-tag { color: var(--green); background: rgba(52,211,153,0.15); }
+  .ld-row[data-rung="r1"] .ld-bar { background: var(--accent-light); }
+  .ld-row[data-rung="r1"] .ld-strike { color: var(--accent-light); }
+  .ld-row[data-rung="r1"] .ld-fill { width: 55%; background: linear-gradient(90deg, rgba(240,199,120,0.13), transparent); }
+  .ld-row[data-rung="r2"] .ld-bar { background: var(--accent); }
+  .ld-row[data-rung="r2"] .ld-strike { color: var(--accent); }
+  .ld-row[data-rung="r2"] .ld-fill { width: 75%; background: linear-gradient(90deg, var(--accent-tint-strong), transparent); }
+  .ld-row[data-rung="r3"] .ld-bar { background: var(--red); }
+  .ld-row[data-rung="r3"] .ld-strike { color: var(--red); }
+  .ld-row[data-rung="r3"] .ld-fill { width: 100%; background: linear-gradient(90deg, rgba(248,113,113,0.14), transparent); }
+  .ld-row[data-rung="r3"] .ld-tag { color: var(--red); background: rgba(248,113,113,0.15); }
+  /* 移动端：表格变 mini 卡 */
+  .ld-mobile-cards { display: none; }
+  @media (max-width: 600px) {
+    .ld-table { display: none; }
+    .ld-mobile-cards { display: block; }
+  }
+  .ld-mrung {
+    position: relative; background: var(--card3); border-radius: 8px;
+    padding: 8px 10px 8px 14px; margin-bottom: 6px; overflow: hidden;
+  }
+  .ld-mrung .ld-mbar {
+    position: absolute; left: 0; top: 6px; bottom: 6px;
+    width: 3px; border-radius: 0 3px 3px 0;
+  }
+  .ld-mrung .ld-mfill {
+    position: absolute; left: 0; top: 0; bottom: 0; pointer-events: none;
+  }
+  .ld-mrung > * { position: relative; z-index: 1; }
+  .ld-mrung-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .ld-mrung-strike { font-weight: 700; font-size: 14px; }
+  .ld-mrung-prob { font-size: 12px; }
+  .ld-mrung-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 11px; color: var(--sub); }
+  .ld-mrung-body strong { color: var(--text); font-weight: 600; }
+  .ld-mrung[data-rung="r0"] .ld-mbar { background: var(--green); }
+  .ld-mrung[data-rung="r0"] .ld-mrung-strike { color: var(--green); }
+  .ld-mrung[data-rung="r0"] .ld-mfill { width: 35%; background: linear-gradient(90deg, rgba(52,211,153,0.12), transparent); }
+  .ld-mrung[data-rung="r1"] .ld-mbar { background: var(--accent-light); }
+  .ld-mrung[data-rung="r1"] .ld-mrung-strike { color: var(--accent-light); }
+  .ld-mrung[data-rung="r1"] .ld-mfill { width: 55%; background: linear-gradient(90deg, rgba(240,199,120,0.13), transparent); }
+  .ld-mrung[data-rung="r2"] .ld-mbar { background: var(--accent); }
+  .ld-mrung[data-rung="r2"] .ld-mrung-strike { color: var(--accent); }
+  .ld-mrung[data-rung="r2"] .ld-mfill { width: 75%; background: linear-gradient(90deg, var(--accent-tint-strong), transparent); }
+  .ld-mrung[data-rung="r3"] .ld-mbar { background: var(--red); }
+  .ld-mrung[data-rung="r3"] .ld-mrung-strike { color: var(--red); }
+  .ld-mrung[data-rung="r3"] .ld-mfill { width: 100%; background: linear-gradient(90deg, rgba(248,113,113,0.14), transparent); }
+  /* 不可负担警告 */
+  .ld-warn {
+    margin: 8px 0 0; padding: 8px 12px; border-radius: 6px;
+    background: rgba(248,113,113,0.10); border-left: 3px solid var(--red);
+    font-size: 12px; color: var(--red);
+  }
+
   /* IV Rank 横幅 */
   .iv-banner {
     background: var(--card2);
@@ -4885,6 +5005,13 @@
           <span class="gc-s" data-i18n="CSP 卖跌，被指派就买入正股">CSP 卖跌，被指派就买入正股</span>
         </span>
       </button>
+      <button class="goal-card" data-goal="build_ladder">
+        <span class="gc-ic" aria-hidden="true">🪜</span>
+        <span class="gc-body">
+          <span class="gc-t" data-i18n="搭阶梯组合">搭阶梯组合</span>
+          <span class="gc-s" data-i18n="一次卖 4 档 strike，按预算分配">一次卖 4 档 strike，按预算分配</span>
+        </span>
+      </button>
     </div>
 
     <div class="row" id="rec-goal-num-row" data-section="goal-num" hidden>
@@ -5194,6 +5321,36 @@ const I18N = {
     'tip_stress': '假设明日标的朝不利方向跳动 5% / 10%（short put 看跌、short call 看涨），同时 IV 被波动事件拉起 +15% / +30%，用 BS 重新算这张期权的浮亏。考验你能不能扛得住中间波动而不是到期结果。',
     'tip_capital': '若被指派需要的现金 ÷ 你账户的可用现金（broker dashboard 上的 Available to Trade）。> 100% 算法硬否决，> 80% 提示偏高。已有的 short put 不重复算（broker 的 Available 已经扣过）。',
     '📊 包租公 2.0 信号（高阶）': '📊 包租公 2.0 信号（高阶）',
+
+    // ── 🪜 Ladder 阶梯方案（v2 #2）
+    '搭阶梯组合': '搭阶梯组合',
+    '一次卖 4 档 strike，按预算分配': '一次卖 4 档 strike，按预算分配',
+    '总接货预算': '总接货预算',
+    '从预算里给 4 档 strike 等量分配 contracts': '从预算里给 4 档 strike 等量分配 contracts',
+    '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
+    '档阶梯方案': '档阶梯方案',
+    '总抵押': '总抵押',
+    '总 Premium': '总 Premium',
+    '加权 Prob_safe': '加权 Prob_safe',
+    '加权超额收益': '加权超额收益',
+    'vs RV 公平价': 'vs RV 公平价',
+    '预算': '预算',
+    '用': '用',
+    '范围': '范围',
+    '最安全': '最安全',
+    '激进': '激进',
+    '一键加仓': '一键加仓',
+    '暂无阶梯方案': '暂无阶梯方案',
+    '一键加入 N 档阶梯到持仓?': '一键加入 N 档阶梯到持仓?',
+    '总 premium': '总 premium',
+    '注意：sell_price 默认按当前 mid 价记录，实际成交后请编辑修正。': '注意：sell_price 默认按当前 mid 价记录，实际成交后请编辑修正。',
+    '已加入': '已加入',
+    '个新持仓': '个新持仓',
+    '合并到现有': '合并到现有',
+    '个': '个',
+    '预算不够：最少需要': '预算不够：最少需要',
+    '才能买齐这 N 档（每档 1 张）': '才能买齐这 N 档（每档 1 张）',
+    '总抵押超出预算': '总抵押超出预算',
   },
 
   zh_tw: {
@@ -5854,6 +6011,36 @@ const I18N = {
     'tip_stress': '假設明日標的朝不利方向跳動 5% / 10%（short put 看跌、short call 看漲），同時 IV 被波動事件拉起 +15% / +30%，用 BS 重新算這張期權的浮虧。考驗你能不能扛得住中間波動而不是到期結果。',
     'tip_capital': '若被指派需要的現金 ÷ 你帳戶的可用現金（broker dashboard 上的 Available to Trade）。> 100% 算法硬否決，> 80% 提示偏高。已有的 short put 不重複算（broker 的 Available 已經扣過）。',
     '📊 包租公 2.0 信号（高阶）': '📊 包租公 2.0 訊號（進階）',
+
+    // ── 🪜 Ladder 阶梯方案
+    '搭阶梯组合': '搭階梯組合',
+    '一次卖 4 档 strike，按预算分配': '一次賣 4 檔 strike，按預算分配',
+    '总接货预算': '總接貨預算',
+    '从预算里给 4 档 strike 等量分配 contracts': '從預算裡給 4 檔 strike 等量分配 contracts',
+    '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看漲 · CSP 4 檔階梯 · {tf}d · 平衡',
+    '档阶梯方案': '檔階梯方案',
+    '总抵押': '總抵押',
+    '总 Premium': '總 Premium',
+    '加权 Prob_safe': '加權 Prob_safe',
+    '加权超额收益': '加權超額收益',
+    'vs RV 公平价': 'vs RV 公平價',
+    '预算': '預算',
+    '用': '用',
+    '范围': '範圍',
+    '最安全': '最安全',
+    '激进': '激進',
+    '一键加仓': '一鍵加倉',
+    '暂无阶梯方案': '暫無階梯方案',
+    '一键加入 N 档阶梯到持仓?': '一鍵加入 N 檔階梯到持倉?',
+    '总 premium': '總 premium',
+    '注意：sell_price 默认按当前 mid 价记录，实际成交后请编辑修正。': '注意：sell_price 預設按當前 mid 價記錄，實際成交後請編輯修正。',
+    '已加入': '已加入',
+    '个新持仓': '個新持倉',
+    '合并到现有': '合併到現有',
+    '个': '個',
+    '预算不够：最少需要': '預算不夠：最少需要',
+    '才能买齐这 N 档（每档 1 张）': '才能買齊這 N 檔（每檔 1 張）',
+    '总抵押超出预算': '總抵押超出預算',
   },
 
   en: {
@@ -6606,6 +6793,36 @@ const I18N = {
     'tip_stress': 'Hypothetical: tomorrow underlying moves 5% / 10% in the adverse direction (short put = down, short call = up), with IV pumping +15% / +30% from the vol event. BS reprices the option to show MTM paper loss. Tests whether you can stomach the drawdown vs the expiry outcome.',
     'tip_capital': 'Cash required if assigned ÷ your account\'s available cash (broker dashboard\'s Available to Trade). > 100% hard-vetoed by algorithm, > 80% flagged high. Existing short puts not double-counted (broker\'s Available already nets them out).',
     '📊 包租公 2.0 信号（高阶）': '📊 Algorithm 2.0 signals (advanced)',
+
+    // ── 🪜 Ladder Builder
+    '搭阶梯组合': 'Build a strike ladder',
+    '一次卖 4 档 strike，按预算分配': 'Sell 4 strikes at once, sized by budget',
+    '总接货预算': 'Total assignment budget',
+    '从预算里给 4 档 strike 等量分配 contracts': 'Equal contracts across 4 strikes within budget',
+    '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': 'Bullish · CSP 4-rung ladder · {tf}d · balanced',
+    '档阶梯方案': '-rung ladder',
+    '总抵押': 'Total collateral',
+    '总 Premium': 'Total Premium',
+    '加权 Prob_safe': 'Wtd. Prob_safe',
+    '加权超额收益': 'Wtd. excess yield',
+    'vs RV 公平价': 'vs RV fair value',
+    '预算': 'Budget',
+    '用': 'used',
+    '范围': 'range',
+    '最安全': 'safest',
+    '激进': 'aggressive',
+    '一键加仓': 'Add all',
+    '暂无阶梯方案': 'No ladder available',
+    '一键加入 N 档阶梯到持仓?': 'Add N-rung ladder to positions?',
+    '总 premium': 'Total premium',
+    '注意：sell_price 默认按当前 mid 价记录，实际成交后请编辑修正。': 'Note: sell_price defaults to current mid; edit after fill if needed.',
+    '已加入': 'Added',
+    '个新持仓': 'new positions',
+    '合并到现有': 'merged into existing',
+    '个': '',
+    '预算不够：最少需要': 'Budget too small: minimum needed',
+    '才能买齐这 N 档（每档 1 张）': 'to fill N rungs (1 contract each)',
+    '总抵押超出预算': 'Total collateral exceeds budget by',
   },
 };
 
@@ -7413,6 +7630,171 @@ function renderV2Sigbox(opt, isShort) {
     ${rows.join('')}
   </div>`;
 }
+
+// ── 🪜 Ladder 阶梯方案卡片（v2 #2）──────────────────────────────────────
+function renderLadderProposal(d) {
+  const lad = d && d.ladder_proposal;
+  if (!lad || !lad.rungs || !lad.rungs.length) return '';
+  const ticker = d.ticker || '';
+  const size = lad.size || lad.rungs.length;
+  const ev = lad.weighted_ev_pct;
+  const ps = lad.weighted_prob_safe_pct;
+  const probs = lad.rungs.map(r => r.prob_safe_pct);
+  const psMin = Math.min(...probs), psMax = Math.max(...probs);
+  const isAffordable = lad.is_affordable !== false;
+  const overpct = (lad.budget_used_pct != null && lad.budget_used_pct > 100) ? lad.budget_used_pct : null;
+  const fmt0 = n => Number(n).toLocaleString(undefined, {maximumFractionDigits: 0});
+
+  // 表格行（桌面） — 每行 data-rung 控色阶
+  const tableRows = lad.rungs.map((r, i) => {
+    const rungKey = `r${i}`;
+    const tag = i === 0 ? `<span class="ld-tag">${t('最安全')}</span>` :
+                (i === lad.rungs.length - 1 ? `<span class="ld-tag">${t('激进')}</span>` : '');
+    const evShow = r.ev_annualized_pct != null ? `${r.ev_annualized_pct > 0 ? '+' : ''}${r.ev_annualized_pct.toFixed(1)}%` : '—';
+    const evGood = (r.ev_annualized_pct != null && r.ev_annualized_pct > 5) ? 'good' : '';
+    const psGood = r.prob_safe_pct >= 80 ? 'good' : '';
+    return `<tr class="ld-row" data-rung="${rungKey}">
+      <td class="strike-cell">
+        <span class="ld-bar"></span>
+        <span class="ld-fill"></span>
+        <span class="ld-strike">$${r.strike}</span>${tag}
+      </td>
+      <td>${Math.abs(r.delta || 0).toFixed(2)}</td>
+      <td>${r.contracts}</td>
+      <td>$${(r.mid || 0).toFixed(2)}</td>
+      <td>$${fmt0(r.premium_total)}</td>
+      <td class="${psGood}">${(r.prob_safe_pct || 0).toFixed(0)}%</td>
+      <td class="${evGood}">${evShow}</td>
+    </tr>`;
+  }).join('');
+
+  // 手机 mini 卡
+  const mobileCards = lad.rungs.map((r, i) => {
+    const rungKey = `r${i}`;
+    const probColor = r.prob_safe_pct >= 85 ? 'var(--green)' :
+                      (r.prob_safe_pct < 75 ? 'var(--red)' : 'var(--sub)');
+    const evShow = r.ev_annualized_pct != null ? `${r.ev_annualized_pct > 0 ? '+' : ''}${r.ev_annualized_pct.toFixed(1)}%` : '—';
+    return `<div class="ld-mrung" data-rung="${rungKey}">
+      <span class="ld-mbar"></span>
+      <span class="ld-mfill"></span>
+      <div class="ld-mrung-head">
+        <span class="ld-mrung-strike">$${r.strike} <span style="font-size:10px;color:var(--sub);font-weight:normal">· ${r.contracts}张</span></span>
+        <span class="ld-mrung-prob" style="color:${probColor}">prob ${(r.prob_safe_pct || 0).toFixed(0)}%</span>
+      </div>
+      <div class="ld-mrung-body">
+        <span>Δ <strong>${Math.abs(r.delta || 0).toFixed(2)}</strong></span>
+        <span>$<strong>${fmt0(r.premium_total)}</strong></span>
+        <span>EV <strong>${evShow}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 总抵押 / 预算占比
+  const budgetUsage = lad.budget && lad.budget > 0
+    ? `${t('预算')} $${fmt0(lad.budget)} · ${t('用')} ${(lad.budget_used_pct || 0).toFixed(0)}%`
+    : '';
+  // 总 premium → 组合年化
+  const portfolioAy = lad.portfolio_annualized_pct != null
+    ? `${t('年化')} ${lad.portfolio_annualized_pct.toFixed(1)}%`
+    : (lad.weighted_annualized_yield_pct != null
+        ? `${t('年化')} ${lad.weighted_annualized_yield_pct.toFixed(1)}%`
+        : '');
+
+  const warnHtml = !isAffordable
+    ? `<div class="ld-warn">⚠️ ${t('预算不够：最少需要')} $${fmt0(lad.min_budget_needed)} ${t('才能买齐这 N 档（每档 1 张）').replace('N', size)}</div>`
+    : (overpct ? `<div class="ld-warn">⚠️ ${t('总抵押超出预算')} ${overpct.toFixed(0)}%</div>` : '');
+
+  return `<div class="ld-card">
+    <div class="ld-title-row">
+      <div class="ld-title">🪜 ${ticker} ${size} ${t('档阶梯方案')}</div>
+      <div class="ld-sub">${lad.days || '?'}d · ${lad.expiry} · CSP</div>
+      <div class="ld-actions">
+        <button class="ld-btn primary" onclick="_ladderAddAll()">${t('一键加仓')} (${lad.total_contracts})</button>
+      </div>
+    </div>
+    <div class="ld-summary">
+      <div class="ld-stat">
+        <div class="ld-stat-l">${t('总抵押')}</div>
+        <div class="ld-stat-v accent">$${fmt0(lad.total_collateral)}</div>
+        <div class="ld-stat-sub">${budgetUsage}</div>
+      </div>
+      <div class="ld-stat">
+        <div class="ld-stat-l">${t('总 Premium')}</div>
+        <div class="ld-stat-v good">+$${fmt0(lad.total_premium)}</div>
+        <div class="ld-stat-sub">${portfolioAy}</div>
+      </div>
+      <div class="ld-stat">
+        <div class="ld-stat-l">${t('加权 Prob_safe')}</div>
+        <div class="ld-stat-v">${ps != null ? ps.toFixed(0) + '%' : '—'}</div>
+        <div class="ld-stat-sub">${t('范围')} ${psMin.toFixed(0)}-${psMax.toFixed(0)}%</div>
+      </div>
+      <div class="ld-stat">
+        <div class="ld-stat-l">${t('加权超额收益')}</div>
+        <div class="ld-stat-v ${ev != null && ev > 0 ? 'good' : (ev != null && ev < 0 ? 'bad' : '')}">
+          ${ev != null ? (ev > 0 ? '+' : '') + ev.toFixed(1) + '%/yr' : '—'}
+        </div>
+        <div class="ld-stat-sub">${t('vs RV 公平价')}</div>
+      </div>
+    </div>
+    <table class="ld-table">
+      <thead><tr>
+        <th>Strike</th><th>Δ</th><th>${t('张')}</th><th>Mid</th>
+        <th>Premium</th><th>Prob_safe</th><th>EV/yr</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    <div class="ld-mobile-cards">${mobileCards}</div>
+    ${warnHtml}
+  </div>`;
+}
+
+// 🪜 一键加入持仓 — 跳过逐张 prompt，直接按 mid 价批量录入
+function _ladderAddAll() {
+  const d = window._currentData;
+  const lad = d && d.ladder_proposal;
+  if (!lad || !lad.rungs || !lad.rungs.length) {
+    alert(t('暂无阶梯方案'));
+    return;
+  }
+  const ticker = d.ticker;
+  const lines = lad.rungs.map(r =>
+    `  • $${r.strike} ${r.type.toUpperCase()} × ${r.contracts}张 @ $${(r.mid || 0).toFixed(2)} = $${(r.premium_total || 0).toFixed(0)}`
+  ).join('\n');
+  const msg = `${t('一键加入 N 档阶梯到持仓?').replace('N', lad.size)}\n\n${ticker} · ${lad.expiry} · ${lad.days}d\n\n${lines}\n\n${t('总 premium')}: +$${lad.total_premium.toFixed(0)} · ${t('总抵押')}: $${lad.total_collateral.toLocaleString()}\n\n${t('注意：sell_price 默认按当前 mid 价记录，实际成交后请编辑修正。')}`;
+  if (!confirm(msg)) return;
+
+  const positions = loadPositions();
+  const today = new Date().toISOString().slice(0, 10);
+  let added = 0, merged = 0;
+  for (const r of lad.rungs) {
+    const newId = `${ticker}_${r.type}_${parseInt(r.strike)}_${r.expiry}`;
+    let wasMerged = false;
+    for (const p of positions) {
+      if (p.ticker === ticker && p.type === r.type &&
+          Math.abs(p.strike - r.strike) < 1e-6 && p.expiry === r.expiry) {
+        const total = p.contracts + r.contracts;
+        p.sell_price = Math.round((p.sell_price * p.contracts + (r.mid || 0) * r.contracts) / total * 10000) / 10000;
+        p.contracts = total;
+        wasMerged = true;
+        merged++;
+        break;
+      }
+    }
+    if (!wasMerged) {
+      positions.push({
+        ticker, type: r.type, strike: r.strike, expiry: r.expiry,
+        contracts: r.contracts, sell_price: r.mid || 0, trade_date: today,
+      });
+      added++;
+    }
+    selectedIds.add(newId);
+  }
+  savePositions(positions);
+  saveSelection();
+  alert(`✅ ${t('已加入')} ${added} ${t('个新持仓')}${merged ? ` · ${t('合并到现有')} ${merged} ${t('个')}` : ''}`);
+  refresh();
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // 📊 加仓预览：选中一个候选 → 预览加入持仓的组合影响
@@ -9371,6 +9753,15 @@ const REC_GOALS = {
     numHint: '估算用 · 系统按 Δ 0.20-0.35 找 strike，不会严格命中',
     descTpl: '看涨 · CSP 接货 · {tf}d · 平衡',
   },
+  build_ladder: {
+    fill: { direction: 'bullish', intent: 'csp', timeframe: '14', risk: 'balanced' },
+    numLabel: '总接货预算',
+    numPre: '$',
+    numPost: '',
+    numDefault: 100000,
+    numHint: '从预算里给 4 档 strike 等量分配 contracts',
+    descTpl: '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
+  },
 };
 
 let _recGoalKey = null;
@@ -9837,6 +10228,10 @@ async function submitRec() {
       key: _recGoalKey,
       value: numEl ? (parseFloat(numEl.value) || 0) : 0,
     };
+    // 🪜 阶梯模式 → backend 触发 build_ladder
+    if (_recGoalKey === 'build_ladder' && _recGoalContext.value > 0) {
+      body.ladder = { budget: _recGoalContext.value, size: 4 };
+    }
   } else {
     _recGoalContext = null;
   }
@@ -10258,6 +10653,7 @@ function renderRecResult(d) {
     ${pcPanel}
     ${tierPills}
     ${goalBanner}
+    ${renderLadderProposal(d)}
     ${emptyFilterMsg}
     <div class="rec-cards">${cards}</div>
     <div style="font-size:10px;color:var(--sub);margin-top:8px">

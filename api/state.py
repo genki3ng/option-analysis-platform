@@ -2354,6 +2354,7 @@ def build_ladder(candidates: list, budget: float, size: int = 4) -> Optional[dic
         ps = c.get("prob_safe_pct") or 0
 
         rungs.append({
+            "ticker": c.get("ticker"),
             "strike": strike,
             "expiry": c.get("expiry"),
             "days": c.get("days"),

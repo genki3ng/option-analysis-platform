@@ -1851,7 +1851,7 @@ def _strike_for_delta(S: float, T: float, sigma: float, delta_target: float,
 #   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
 # ─────────────────────────────────────────────────────────────────────
 ALGORITHM_NAME = "包租公算法"
-ALGORITHM_VERSION = "2.0"
+ALGORITHM_VERSION = "2.1"
 ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
 # v1.1 changes: 流动性因子从单一 spread% 升级为 spread × OI × volume 复合分
 

@@ -3,7 +3,26 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公式 exit_plan 4 触发线渲染 ship · 候选卡片 2×2 网格 + 动作行）
+最后更新：2026-05-19（cloud — 包租公算法 v2.1 publish · 3 wave 收尾）
+
+### ✅ v2.1 全面完成（2026-05-19 cloud · 3 波收尾）
+
+**7 件套**（参见 `CHANGELOG.md` 完整版）：
+1. **Score-verdict 统一** — tier 改 rent_score 百分位驱动（≥80% 5星/...），weight 仅作 cons/pros narrative。veto 仍硬封顶。
+2. **回测同步 exit_plan** — `_backtest_strategy` 路径模拟 50% 早平 + DTE cutoff；hold_to_expiry 走旧逻辑。新增 `early_close_rate`。
+3. **DTE IV 自适应** — IV ≥70 甜蜜区 × 0.70 滑短 / ≤30 × 1.30 滑长，30-70 不动。
+4. **3 出场人设 UI** — 🏠 早收租派 / 🏘️ 接货 Wheel / 💰 死磕到期（替代旧 auto / wheel_purist 双选；backend 已 alias）
+5. **🔄 Roll 建议器** — 持仓卡按钮触发，约束更长 DTE + 更 OTM strike，每张显示 net credit
+6. **🔍 多 ticker 扫描** — 逗号分隔输入 `TSLA,NVDA,GOOG` 自动 scan_multi action + 跨 ticker 排序
+7. **💎 财报 IV crush 红利** — 跨财报候选额外算"crush 后红利"显示在 verdict pro
+
+**ALGORITHM_VERSION**: 2.0 → 2.1
+**intro.html** 算法 hero + section 头部更新（formula/factors 矩阵未动，design-heavy 留下次）
+**CHANGELOG.md** 创建（v2.1 + v2.0 + v1.x 历史 + 设计哲学）
+
+---
+
+### 上一轮 — 包租公式 exit_plan 4 触发线渲染 ship · 候选卡片 2×2 网格 + 动作行
 
 ### ✅ 这一轮（包租公式 exit plan UI ship — 2×2 网格 + 动作行）
 

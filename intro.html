@@ -1110,8 +1110,8 @@
         <div class="v" data-i18n>期权 mark 优先走 Schwab Market Data API（实时），失败兜底 Yahoo / yfinance，BS 模型保底。</div>
       </li>
       <li class="reveal">
-        <div class="k" data-i18n>包租公算法 1.3</div>
-        <div class="v" data-i18n-html>房东视角排序：<strong>年化租金 × 安全度(BS) × DTE 甜蜜区 × Delta 甜蜜区 × IV rank × 流动性 × 财报衰减 × 12 月回测</strong>。v1.3 DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank 自适应。⭐⭐⭐⭐⭐ 永远在前。</div>
+        <div class="k" data-i18n>包租公算法 2.1</div>
+        <div class="v" data-i18n-html>v2 重写评分基底：<strong>年化超额收益 (EV vs 30d 实际波动率)</strong> 替代纯年化租金，捕到 VRP 才赚钱才显示在前。新增 <strong>资金硬上限 / 压测 -5%/-10% / 杠杆 ETF 警告 / Wheel 阶梯 / Roll 建议 / 多 ticker 扫描 / 财报 IV crush 红利</strong>。⭐⭐⭐⭐⭐ 永远在前。</div>
       </li>
       <li class="reveal">
         <div class="k" data-i18n>POP 校准 + Exit plan</div>
@@ -1157,12 +1157,12 @@
   </div>
 </section>
 
-<!-- ── 包租公算法 1.3 方法论 ─────────────────────────────────────── -->
+<!-- ── 包租公算法 2.1 方法论 ─────────────────────────────────────── -->
 <section id="algo">
   <div class="wrap">
-    <div class="eyebrow reveal" data-i18n>包租公算法 1.3 · Methodology</div>
-    <h2 class="reveal" style="max-width:820px" data-i18n-html>不是黑盒，是<br>八个能讲清楚的因子。</h2>
-    <p class="lead algo-lede reveal" data-i18n-html>大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。<br>v1.3 升级：DTE / Delta 甜蜜区跟用户 timeframe 和 IV rank <strong>自适应</strong>，财报因子 <strong>距财报天数衰减</strong>，回测窗口扩到 <strong>12 个月</strong> + BS premium。</p>
+    <div class="eyebrow reveal" data-i18n>包租公算法 2.1 · Methodology</div>
+    <h2 class="reveal" style="max-width:820px" data-i18n-html>不是黑盒，是<br>能讲清楚的每一个因子。</h2>
+    <p class="lead algo-lede reveal" data-i18n-html>大部分期权工具只看年化收益和 delta，结果你看到的"高回报"经常踩坑。<strong>包租公算法</strong>把每笔卖期权当成「出租一套房」——<strong>稳定的周租 &gt; 一次性的暴利</strong>。<br><strong>v2 重写评分基底</strong>：年化租金 → <strong>年化超额收益（EV vs 30d 实际波动率）</strong>，只在 IV 真的比实际波动高（VRP &gt; 1）时给加分。配套：资金硬上限、压测、杠杆 ETF 警告、Wheel 阶梯、Roll 建议、多 ticker 扫描、财报 IV crush 红利。</p>
 
     <!-- Formula -->
     <div class="formula reveal">

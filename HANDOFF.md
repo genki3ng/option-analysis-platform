@@ -3,6 +3,37 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
+最后更新：2026-05-19 晚（cloud — 用户 QA 报 4 bugs 一轮修复）
+
+### ✅ 这一轮（用户 QA bug 修复）
+
+用户报 4 个 bug，本轮一次修完：
+
+1. **🔍 找出最佳 推荐按钮点击没反应** — `submitRec()` 在 `_savePref('rec_last_ticker', ticker)` 处
+   抛 `ReferenceError: ticker is not defined`（v2.1 Wave 3.1+3.2 多 ticker 改动把 `ticker`
+   重命名成 `rawTicker` 但漏了这一处）。整个 async 函数 reject，前端无反应。
+   修：`index.html` `ticker` → `rawTicker`。
+
+2. **管家信息今早登陆没更新** — `_generate_morning_brief` 缓存键用 `date.today()`（服务器 UTC 日期），
+   美东时间凌晨用户登陆时，UTC 已是今天，cache 早晨命中 → 复用昨晚 22-23 点（同 UTC 日期）
+   生成的 brief 文。修：改用 America/New_York 时区做"今天" — `api/state.py:_generate_morning_brief` 用 `zoneinfo.ZoneInfo`。
+   旧 UTC 时间戳 snap 自然失效（next refresh 重新生成）。
+
+3. **持仓选择同步后下次登陆全部 unchecked** — `loadSelection` 把空数组 `[]` 当 truthy
+   返回 `new Set([])` 全部 unchecked；位置 id strike 格式漂移导致 cloud 存的 ids 全不匹配
+   当前 positions 时 `selectAll-cleanup` 把 Set 清空。修 `index.html:7494-7530`：
+   - cloud / localStorage 都需要 length > 0 才用；空数组 fallback 到默认全选
+   - filter 现有 ids，如果 0 match → fallback 到默认全选（而非 stuck 在 unchecked）
+   - `saveSelection` 加 null guard（之前 `[...null]` 会 throw 阻止 cloud 同步）
+
+4. **语言选择器 截图 → 高亮 简 框只有 14px 高，pill 容器 34px 高** — `.lang-selector { align-items: center }`
+   让按钮只占内容高度，gold 背景没填满 pill。修 `index.html:182-195`：parent 改 `align-items: stretch`，
+   button 加 `display: flex; align-items: center; justify-content: center` 内文继续居中。
+
+**Deploy**：commit `9b45f0e` rebase 到 `origin/main`（上面有 `dbaeaa8` round 2 i18n + `1978728` exit_plan 全链路）后 fast-forward push 到 main 触发 Vercel auto-build。
+
+---
+
 最后更新：2026-05-19（cloud — UI/UX QA 第二轮 · 注入假持仓后再扫，发现 brief 星期 + risk hint i18n leak）
 
 ### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 2）

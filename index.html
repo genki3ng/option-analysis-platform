@@ -183,7 +183,7 @@
   .lang-selector {
     position: absolute; right: 46px; top: 50%;
     transform: translateY(-50%);
-    display: flex; align-items: center;
+    display: flex; align-items: stretch;
     background: var(--card); border: 1px solid var(--line);
     border-radius: 17px; height: 34px;
     overflow: hidden;
@@ -196,6 +196,7 @@
     transition: color 0.15s, background 0.15s;
     min-width: 32px;
     letter-spacing: 0.02em;
+    display: flex; align-items: center; justify-content: center;
   }
   .lang-selector button:hover { color: var(--text); }
   .lang-selector button.active {
@@ -7543,18 +7544,31 @@ updateHideClosedBtn();
 
 function loadSelection(allIds) {
   // 已登录：优先读云端的 state._meta.selection（跨设备同步）
+  // 注意：cloud 里空数组 [] 也是 truthy，但说明"没有有效选择"（或老数据漂移导致清空），
+  // 不应据此把界面全部 uncheck — fallback 到 localStorage 或默认全选。
   if (_currentUser && _cloudReady && _cloudCache?.state?._meta?.selection) {
     const cloud = _cloudCache.state._meta.selection;
-    if (Array.isArray(cloud)) return new Set(cloud);
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      const matched = cloud.filter(id => allIds.includes(id));
+      // 云端 ids 完全跟当前持仓不匹配 → 数据漂移（strike 格式 / expiry 变化），别用
+      if (matched.length > 0) return new Set(matched);
+    }
   }
   try {
     const raw = localStorage.getItem('selectedPositions');
-    if (raw) return new Set(JSON.parse(raw));
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const matched = parsed.filter(id => allIds.includes(id));
+        if (matched.length > 0) return new Set(matched);
+      }
+    }
   } catch (e) {}
   return new Set(allIds);  // 默认全选
 }
 
 function saveSelection() {
+  if (!selectedIds) return;  // null guard：首次 refresh 前可能 null
   const arr = [...selectedIds];
   if (_currentUser && _cloudReady && _cloudCache) {
     _cloudCache.state = _cloudCache.state || {};
@@ -10943,7 +10957,7 @@ async function submitRec() {
   if (acct.available_margin || (acct.stock_positions && acct.stock_positions.length) || openOptionPositions.length) {
     body.account = { ...acct, option_positions: openOptionPositions };
   }
-  _savePref('rec_last_ticker', ticker);
+  _savePref('rec_last_ticker', rawTicker);
   _savePref('rec_last_choice', JSON.stringify(_recSelection));
 
   // 🎯 目标驱动 mode：快照「目标 + 用户输入」供结果卡渲染目标达成度

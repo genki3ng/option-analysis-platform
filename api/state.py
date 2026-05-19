@@ -4887,8 +4887,14 @@ def _parse_concierge_json(text, lang):
 def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_theta,
                               state=None, lang="zh"):
     """结构化早安简报 — 返回 dict（管家文 + top 3 + chips + 14 天日历 + snapshot）。
-    Concierge 文本一天一次，缓存到 brief_snapshot；其它信号（top 3 / chips / 日历）每次重算。"""
-    today = date.today()
+    Concierge 文本一天一次，缓存到 brief_snapshot；其它信号（top 3 / chips / 日历）每次重算。
+    "今天" 用美东市场时区 — 服务器 UTC 早上 4 点已经是新一天，但盘前 4amET 用户还视为"昨晚"，
+    用 UTC 会导致美东时间凌晨那段窗口看到的是真正昨天生成的 brief 但不刷新。"""
+    try:
+        from zoneinfo import ZoneInfo
+        today = datetime.now(ZoneInfo("America/New_York")).date()
+    except Exception:
+        today = date.today()
     today_iso = today.isoformat()
     state = state if isinstance(state, dict) else {}
 

@@ -12723,6 +12723,13 @@ function showRecForRoll(ticker, posType, posStrike, posExpiry, currentMid) {
 }
 
 function renderAll(d) {
+  // null guard：selectedIds 在 _onSignedIn / cloud realtime sub / import 后短暂为 null，
+  // race 窗口里如果用户切语言/排序/勾选触发 renderAll 会爆 selectedIds.has of null。
+  // 用 loadSelection 兜底（行为跟 refresh 路径一致：先 cloud → localStorage → 默认全选）。
+  if (selectedIds === null) {
+    selectedIds = loadSelection((d.positions || []).map(p => p.id));
+  }
+
   // ── 早安 brief
   renderMorningBrief(d.morning_brief);
 

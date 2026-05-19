@@ -3,9 +3,30 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公管家付费刷新：5🪙/次 + 后端 LLM force_refresh + brief_refresh usage event）
+最后更新：2026-05-19（cloud — renderAll selectedIds null guard）
 
-### ✅ 这一轮（2026-05-19 cloud · 包租公管家付费刷新功能）
+### ✅ 这一轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
+
+**用户报错**：`刷新失败：Cannot read properties of null (reading 'has')`
+
+**根因**：3 个路径会把 `selectedIds = null`（`_onSignedIn` line 13001 / cloud realtime sub line 13506 / import line 11682），都依赖紧接着的 `refresh()` 重新初始化。但 `refresh` 是 async，在 await fetch 几秒窗口里如果用户切语言（`setLang` → `renderAll(window._currentData)`）/ 排序 / 勾选 / `togglePos` → 调到 `renderAll`，里面 `selectedIds.has(p.id)` 直接抛 — footer 显示 "刷新失败" prefix（line 13814）。
+
+**修复** (`index.html:12584-12591`)：`renderAll` 入口加 null guard，用 `loadSelection` 兜底（行为跟 refresh 路径 line 13798-13804 一致：cloud → localStorage → 默认全选）。
+
+```js
+function renderAll(d) {
+  if (selectedIds === null) {
+    selectedIds = loadSelection((d.positions || []).map(p => p.id));
+  }
+  ...
+}
+```
+
+**没改的**：3 个 `selectedIds = null` 重置点都保留 — 那是设计上让下次 refresh 用真实 cloud selection 初始化；guard 只是 race 兜底。
+
+---
+
+### 上一轮（2026-05-19 cloud · 包租公管家付费刷新功能）
 
 **主题**：用户要求"管家每天早上才更新一次，但市场一天可能在变幻"——给管家加 refresh 按钮，一次 5 金币。
 

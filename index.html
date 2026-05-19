@@ -4028,13 +4028,18 @@
     flex-shrink: 0;
   }
   .sug-head .row2 {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 6px; font-size: 11px; line-height: 1.4;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 4px 8px; font-size: 11px; line-height: 1.4;
   }
-  .sug-head .status { flex: 1; }
-  .sug-head .sub { color: var(--sub); font-weight: 400; }
+  /* status 是最重要的告警信息，单独占一行避免长中文挤成单字竖排 */
+  .sug-head .status { flex: 1 1 100%; min-width: 0; }
+  .sug-head .sub {
+    color: var(--sub); font-weight: 400;
+    flex: 1 1 auto; min-width: 0;
+  }
   .sug-head .arr {
     font-size: 9px; opacity: 0.5;
+    flex-shrink: 0; margin-left: auto;
     transition: transform 0.2s;
   }
   .sug.expanded .sug-head .arr { transform: rotate(90deg); }

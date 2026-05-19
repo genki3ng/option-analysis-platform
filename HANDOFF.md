@@ -3,9 +3,21 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — UI/UX QA 第四轮 · 复盘表头 持仓 / 负 theta 显示 "$-13" 格式 bug）
+最后更新：2026-05-19（cloud — 操作建议卡 status 长中文挤成单字竖排 fix）
 
-### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 4）
+### ✅ 这一轮（2026-05-19 cloud · sug-card status 竖排 bug）
+
+**主题**：用户截图反馈"操作建议"卡片里的告警状态（如 `⚠️ 房客违约触发 · 🏠 早收租派` / `⏱️ 21 天换租线 · 🏠 早收租派`）在移动端被挤成每个字一行的竖向排列。
+
+**根因**（`index.html:4030-4038`）：`.sug-head .row2` 是 flex 行，`.status { flex: 1 }`（= `1 1 0%`，basis 0），同行的 `.sub`（"Exp 2026-05-22 · 3 张 · 剩 3 天 · 🏠 早收租派"）默认 `flex: 0 1 auto`。中文无 word boundary，flex 收缩时 `.status` 收到 min-content = 单字宽，`.sub` 抢走主流剩余空间 → status 文本逐字向下堆叠成竖条。
+
+**修复**：`.row2` 加 `flex-wrap: wrap`；`.status` 改 `flex: 1 1 100%` + `min-width: 0`（永远独占一行）；`.arr` 加 `margin-left: auto` + `flex-shrink: 0` 保持右贴。所有 sug 卡片现在统一布局：row1 标题 + pnl tag / row2 告警状态独占 / row3 sub 元数据 + ▶。
+
+**不修复**：用户截图里 TSLA $415 Put 显示 `-623.8%` — 是 fake data 跟 live quote 错配的极端百分比，HANDOFF round 4 已记为非 bug。
+
+---
+
+### 上一轮（2026-05-19 cloud · UI/UX QA round 4）
 
 **主题**：用户要求"更小心"。先 grep 确认每个函数 + selector 存在再写脚本，每张截图视觉验证后才下结论。Round 3 报的 "pos-card-expanded" 其实**不是一个 feature** — `.pos` 卡片本来就一直展开。
 

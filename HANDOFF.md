@@ -3,9 +3,21 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 操作建议卡 status 长中文挤成单字竖排 fix）
+最后更新：2026-05-19（cloud — 窄屏 header 4 个绝对定位徽章顶撞 fix）
 
-### ✅ 这一轮（2026-05-19 cloud · sug-card status 竖排 bug）
+### ✅ 这一轮（2026-05-19 cloud · 窄屏 header 徽章重叠 bug）
+
+**主题**：用户截图反馈窄屏（Pixel/Galaxy ~320-360 CSS px 视口）顶部 4 个徽章（user-badge / coin-badge / lang-selector / theme-toggle）挤成一团甚至重叠。
+
+**根因**（`index.html:212-267` + `4256-4267`）：4 个徽章都用 `position: absolute` 固定像素偏移 — user-badge `left:0 max-width:110`，coin-badge `left:124`，lang-selector `right:38`（width ≈ 84），theme-toggle `right:0 width:30`。在 320 CSS px 视口下，coin 末端 = 124+~80 = 204，lang 起点 = 320-38-84 = 198，**实际重叠 6px**。
+
+**修复**（`index.html:4380-4390`）：在已有 `@media (max-width:480px)` 块里追加窄屏徽章缩水规则 — user-badge max 110→96 / padding 8→7 / avatar 22→20，coin-badge left 124→104 / padding 14→8，lang-selector right 38→34 / button padding 7→5 min-width 28→22，theme-toggle 30→28。新算下来 320px 视口 coin 末端 160，lang 起点 190，留 30px 余量。
+
+**没改的**：桌面与 480-720px 之间的尺寸保持原状（那里本就够宽）。
+
+---
+
+### 上一轮（2026-05-19 cloud · sug-card status 竖排 bug）
 
 **主题**：用户截图反馈"操作建议"卡片里的告警状态（如 `⚠️ 房客违约触发 · 🏠 早收租派` / `⏱️ 21 天换租线 · 🏠 早收租派`）在移动端被挤成每个字一行的竖向排列。
 

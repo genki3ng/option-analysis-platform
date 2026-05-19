@@ -4377,6 +4377,16 @@
     .header .sub { display: none; }
     .summary { grid-template-columns: repeat(2, 1fr); }
     .pos-actions button { font-size: 10.5px; padding: 6px 4px; }
+    /* 窄屏 header 4 个绝对定位徽章在 ≤340px 视口下会顶撞，缩一缩 */
+    .user-badge { max-width: 96px; padding: 0 7px; font-size: 10.5px; }
+    .user-badge .name { max-width: 52px; font-size: 10.5px; }
+    .user-badge .user-avatar { width: 20px; height: 20px; }
+    .user-badge .icon { font-size: 11px; }
+    .coin-badge { left: 104px; padding: 0 8px 0 7px; font-size: 10.5px; }
+    .coin-badge .coin-icon { font-size: 11px; }
+    .lang-selector { right: 34px; }
+    .lang-selector button { padding: 0 5px; min-width: 22px; font-size: 10px; }
+    .theme-toggle { width: 28px; height: 28px; font-size: 11px; }
   }
 
   /* ─── 账户设置 modal ─── */

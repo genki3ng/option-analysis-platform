@@ -9072,6 +9072,8 @@ function switchRecMode(mode) {
 function applyGoal(key) {
   const g = REC_GOALS[key];
   if (!g) return;
+  // 切换 goal 时数值需要重置（不同 goal 的数值语义完全不同：$/月 vs % vs $strike）
+  const goalChanged = (_recGoalKey !== key);
   _recGoalKey = key;
   Object.assign(_recSelection, g.fill);
   // 写入 localStorage 让下次打开记住（共用 rec_last_choice，本来就有）
@@ -9090,8 +9092,13 @@ function applyGoal(key) {
       document.getElementById('rec-goal-num-post').textContent = g.numPost ? t(g.numPost) : '';
       document.getElementById('rec-goal-num-hint').textContent = g.numHint ? t(g.numHint) : '';
       const numEl = document.getElementById('rec-goal-num');
-      // 仅在用户没填过 / 数值为空时设默认
-      if (!numEl.value && g.numDefault != null) numEl.value = g.numDefault;
+      // 真正切换 goal 时强制重置（数值语义变了）；
+      // 重复点击同一 goal 仅在空值时填默认（保留用户已输入的值）
+      if (goalChanged) {
+        numEl.value = (g.numDefault != null) ? g.numDefault : '';
+      } else if (!numEl.value && g.numDefault != null) {
+        numEl.value = g.numDefault;
+      }
     } else {
       numRow.hidden = true;
     }

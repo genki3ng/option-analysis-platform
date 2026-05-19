@@ -3,9 +3,44 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公管家付费刷新：5🪙/次 + 后端 LLM force_refresh + brief_refresh usage event）
+最后更新：2026-05-19（cloud — 持仓卡出场建议去重复 💰 logo + 解释出场逻辑）
 
-### ✅ 这一轮（2026-05-19 cloud · 包租公管家付费刷新功能）
+### ✅ 这一轮（2026-05-19 cloud · 出场建议重复 logo 修复）
+
+**主题**：用户截图反馈持仓卡出场建议行有重复的 💰 emoji（`📍 出场建议 💰 💰 死磕到期...`）。同时要求解释「出场建议」整套逻辑及 why。
+
+**根因**（`index.html:8166` `renderPositionExitPlan`）：渲染结构为
+`📍 出场建议 [styleEmoji ep-style-mini] [tag-pill][primary.icon primary.text] [· secondary]`。
+
+- `styleEmoji` 当前风格 emoji：🏠 / 🏘️ / 💰
+- `primary.icon` 主触发线 emoji：🚨/⚠️/📬/⏱️ + hold_to_expiry 默认分支的 💰
+
+当 user 是 `hold_to_expiry` 派且没触发红线/违约/锁利/DTE → fallback 分支 primary.icon = 💰，跟 styleEmoji 重叠。
+其他两种风格（🏠 early_close / 🏘️ wheel_assign）的 styleEmoji 跟 primary.icon 候选集不重叠，没有此 bug。
+
+**修复**（`index.html:8200-8202` + `8234-8235`，3 处）：
+1. hold_to_expiry 默认分支 `primary.icon` 从 `'💰'` 改为 `''`
+2. tag-pill 映射：原靠 `primary.icon === '💰' ? '死磕'`，改成 `style === 'hold_to_expiry' ? '死磕'`（因为 icon 已空，得用 style 兜底；移动端的"死磕"标签照常显示）
+3. ep-body 渲染：`${primary.icon} ${primary.text}` 改成 `${primary.icon ? primary.icon + ' ' : ''}${primary.text}`（避免空 icon 留前导空格）
+
+**没改的**：
+- 后端 `position_advice` / `_exit_plan` 4 触发线逻辑不变
+- 早收租派 / Wheel 派的渲染不变（本来就没重复）
+- 副信息（🤝 跌穿 $strike 接 ticker / 📤 升破 $strike 卖出 ticker）不变
+- i18n 字典不动（"exit_hold_expire_pos" 文本本来就含"死磕到期"）
+
+**`ALGORITHM_VERSION` 未碰**（纯前端 UI 去重，跟算法无关）。
+
+**出场建议逻辑速查**（写给下个 session）：
+- 入口 `renderPositionExitPlan(p)` 仅对 short premium 持仓显示，对应后端 `position_advice`
+- 4 触发线优先级：🚨 红线（财报跨期）> ⚠️ 违约（|Δ| ≥ 阈值）> 📬 锁利（profit% ≥ 50）> ⏱️ DTE（剩 ≤ 21d 且盈利）
+- 风格门：early_close 全开 / wheel_assign 全开但 deltaTh 抬到 0.45 / hold_to_expiry 只留红线（其余 None）
+- 都没触发：hold_to_expiry → "死磕到期 · 剩 N 天 · 持到 expire"，其他 → "离 50% 锁利还差 X%"
+- 副信息：未触发 delta/红线时显示 Δ vs 阈值；hold_to_expiry 且非红线 → 显示接货/卖出预期
+
+---
+
+### 上一轮（2026-05-19 cloud · 包租公管家付费刷新功能）
 
 **主题**：用户要求"管家每天早上才更新一次，但市场一天可能在变幻"——给管家加 refresh 按钮，一次 5 金币。
 

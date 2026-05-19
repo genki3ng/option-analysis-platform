@@ -8198,7 +8198,8 @@ function renderPositionExitPlan(p) {
     primary = { icon: '⏱️', cls: 'pf',
       text: _fillTpl(t('exit_dte_near_pos'), { n: days, th: dteTh }) };
   } else if (style === 'hold_to_expiry') {
-    primary = { icon: '💰', cls: 'pf',
+    // icon 置空：避免和 ep-style-mini 的 💰 重复（前缀已有 💰）
+    primary = { icon: '', cls: 'pf',
       text: _fillTpl(t('exit_hold_expire_pos'), { n: days }) };
   } else {
     // 默认：离 50% 锁利还差多少
@@ -8230,8 +8231,8 @@ function renderPositionExitPlan(p) {
         <span class="ep-style-mini" title="${t('当前出场风格')}">${styleEmoji}</span>
       </span>
       <div class="ep-row">
-        <span class="ep-tag tag-profit">${t(primary.icon === '🚨' ? '红线' : primary.icon === '⚠️' ? '违约' : primary.icon === '⏱️' ? 'DTE' : primary.icon === '💰' ? '死磕' : '锁利')}</span>
-        <span class="ep-body ${primary.cls}">${primary.icon} ${primary.text}</span>
+        <span class="ep-tag tag-profit">${t(primary.icon === '🚨' ? '红线' : primary.icon === '⚠️' ? '违约' : primary.icon === '⏱️' ? 'DTE' : style === 'hold_to_expiry' ? '死磕' : '锁利')}</span>
+        <span class="ep-body ${primary.cls}">${primary.icon ? primary.icon + ' ' : ''}${primary.text}</span>
       </div>
       ${secondary}
     </div>

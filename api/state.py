@@ -531,7 +531,7 @@ SUPABASE_ANON_KEY = os.environ.get(
     "SUPABASE_ANON_KEY",
     "sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws",  # 与 index.html 中 publishable key 一致
 )
-ADMIN_EMAIL_WHITELIST = {"hi@congyangwang.com"}
+ADMIN_EMAIL_WHITELIST = {"hi@congyangwang.com", "avatar.wang@gmail.com"}
 
 
 def _supabase_request(method, path, body=None, params=None, use_service_role=True, timeout=8):

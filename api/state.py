@@ -142,7 +142,19 @@ TRANS_EN = {
     "持续监控": "Monitor",
     "Exp {exp} · {n} 张 · 剩 {d} 天 · {emoji} {style}":
       "Exp {exp} · {n} contracts · {d}d left · {emoji} {style}",
-    # Concentration card
+    # Concentration card — 中性化文案，承认集中是策略选择
+    "⚠️ 单点集中 · {tk} 占 {pct}%": "⚠️ Single-point · {tk} = {pct}%",
+    "💡 高度集中 · {tk} 占 {pct}%": "💡 Highly concentrated · {tk} = {pct}%",
+    "🏘 集中度 · {tk} 占 {pct}%": "🏘 Concentration · {tk} = {pct}%",
+    "几乎全部押在一个标的。这是你的策略选择 — 留意单点风险（大跌、IV 飙、财报暴雷）就行。":
+      "Nearly all exposure on one ticker. That's your call — just stay aware of single-point risk (drawdowns, IV spikes, earnings surprises).",
+    "超过七成在一个标的。包租公没有标准答案 — 集中收得多，分散更抗黑天鹅，看你的偏好。":
+      "Over 70% on one ticker. No one right answer — concentration collects more rent, diversification weathers black swans. Your call.",
+    "六到七成在单一标的。属于偏集中的策略，因人而异 — 看你的资金体量与投资目标。":
+      "60-70% on a single ticker. A concentrated stance — fits some accounts and goals more than others.",
+    "💡 集中是策略选择，不是 bug — 关键看你能不能扛单点波动。":
+      "💡 Concentration is a strategy choice, not a bug — what matters is whether you can ride out a single-name move.",
+    # Legacy keys retained for safety (no longer used after 2026-05-19)
     "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 Concentration too high · {tk} = {pct}%",
     "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ Concentration high · {tk} = {pct}%",
     "💡 集中度提醒 · {tk} 占 {pct}%": "💡 Concentration notice · {tk} = {pct}%",
@@ -314,6 +326,19 @@ TRANS_TW = {
     "持续监控": "持續監控",
     "Exp {exp} · {n} 张 · 剩 {d} 天 · {emoji} {style}":
       "Exp {exp} · {n} 張 · 剩 {d} 天 · {emoji} {style}",
+    # Concentration card — 中性化文案
+    "⚠️ 单点集中 · {tk} 占 {pct}%": "⚠️ 單點集中 · {tk} 佔 {pct}%",
+    "💡 高度集中 · {tk} 占 {pct}%": "💡 高度集中 · {tk} 佔 {pct}%",
+    "🏘 集中度 · {tk} 占 {pct}%": "🏘 集中度 · {tk} 佔 {pct}%",
+    "几乎全部押在一个标的。这是你的策略选择 — 留意单点风险（大跌、IV 飙、财报暴雷）就行。":
+      "幾乎全部押在一個標的。這是你的策略選擇 — 留意單點風險（大跌、IV 飆、財報暴雷）就行。",
+    "超过七成在一个标的。包租公没有标准答案 — 集中收得多，分散更抗黑天鹅，看你的偏好。":
+      "超過七成在一個標的。包租公沒有標準答案 — 集中收得多，分散更抗黑天鵝，看你的偏好。",
+    "六到七成在单一标的。属于偏集中的策略，因人而异 — 看你的资金体量与投资目标。":
+      "六到七成在單一標的。屬於偏集中的策略，因人而異 — 看你的資金體量與投資目標。",
+    "💡 集中是策略选择，不是 bug — 关键看你能不能扛单点波动。":
+      "💡 集中是策略選擇，不是 bug — 關鍵看你能不能扛單點波動。",
+    # Legacy keys retained for safety (no longer used after 2026-05-19)
     "🚨 集中度过高 · {tk} 占 {pct}%": "🚨 集中度過高 · {tk} 佔 {pct}%",
     "⚠️ 集中度偏高 · {tk} 占 {pct}%": "⚠️ 集中度偏高 · {tk} 佔 {pct}%",
     "💡 集中度提醒 · {tk} 占 {pct}%": "💡 集中度提醒 · {tk} 佔 {pct}%",
@@ -1652,20 +1677,20 @@ def get_suggestions(positions, lang: str = "zh", exit_style: str = "early_close"
         "facts": port_facts, "actions": [],
     })
 
-    # 集中度警告
-    if top_concentration >= 50 and len(ticker_exposure) >= 2:
-        if top_concentration >= 75:
-            sev = "danger"
-            status = _T(lang, "🚨 集中度过高 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
-            advice = _T(lang, "几乎全部押在一个标的上。这个 ticker 单日大跌 10% 你可能就被全员指派。")
-        elif top_concentration >= 60:
+    # 集中度提示（中性化：集中是策略选择不是 bug，不再用 danger 红，只在极端时提）
+    if top_concentration >= 60 and len(ticker_exposure) >= 2:
+        if top_concentration >= 90:
             sev = "warn"
-            status = _T(lang, "⚠️ 集中度偏高 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
-            advice = _T(lang, "超过六成暴露在一个标的。考虑下次推荐时换个 ticker，分散一下房产。")
-        else:
+            status = _T(lang, "⚠️ 单点集中 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "几乎全部押在一个标的。这是你的策略选择 — 留意单点风险（大跌、IV 飙、财报暴雷）就行。")
+        elif top_concentration >= 75:
             sev = "caution"
-            status = _T(lang, "💡 集中度提醒 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
-            advice = _T(lang, "过半暴露在单一标的。包租公经验：3-5 个标的左右更稳。")
+            status = _T(lang, "💡 高度集中 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "超过七成在一个标的。包租公没有标准答案 — 集中收得多，分散更抗黑天鹅，看你的偏好。")
+        else:
+            sev = "info"
+            status = _T(lang, "🏘 集中度 · {tk} 占 {pct}%", tk=top_ticker, pct=f"{top_concentration:.0f}")
+            advice = _T(lang, "六到七成在单一标的。属于偏集中的策略，因人而异 — 看你的资金体量与投资目标。")
         cards.append({
             "position_id": None,
             "label": _T(lang, "集中度 · {tk}", tk=top_ticker),
@@ -1677,7 +1702,7 @@ def get_suggestions(positions, lang: str = "zh", exit_style: str = "early_close"
                 _T(lang, "当前 {tk} 抵押暴露 ${exp}",
                    tk=top_ticker, exp=f"{ticker_exposure[top_ticker]:,.0f}"),
                 _T(lang, "组合总抵押暴露 ${exp}", exp=f"{total_exposure:,.0f}"),
-                _T(lang, "💡 一只标的大跌、IV 飙升、财报暴雷 — 全靠它一个，没有缓冲。"),
+                _T(lang, "💡 集中是策略选择，不是 bug — 关键看你能不能扛单点波动。"),
             ],
             "actions": [],
         })
@@ -4560,11 +4585,11 @@ def _build_focus_chips(positions, market, total_pnl, total_realized, total_theta
             chg = (info["price"] - info["prev"]) / info["prev"] * 100
             chips.append({"label": tk, "value": f"{chg:+.1f}%",
                           "tone": "up" if chg >= 0 else "down"})
-    if concentration.get("top_pct", 0) >= 40 and concentration.get("top_ticker"):
+    if concentration.get("top_pct", 0) >= 60 and concentration.get("top_ticker"):
         chips.append({
             "label": _T(lang, "{tk} 集中度", tk=concentration["top_ticker"]),
             "value": f"{concentration['top_pct']:.0f}%",
-            "tone": "warn",
+            "tone": "neutral",
         })
     near_exp = sum(1 for p in positions
                    if not p.get("closed") and 0 <= p.get("days", 999) <= 7)
@@ -4732,9 +4757,12 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "}\n"
         "**priority 含义**：urgent=今天必动（距行权<3%、≤7d 到期且亏损、财报≤2d）；"
         "cashflow=守住别动（Theta 流入、≥70% 锁利、稳健 ITM 有缓冲）；"
-        "root=结构性问题需中期审（集中度爆、长短期互锤、方向错）；"
+        "root=结构性问题需中期审（长短期互锤、方向错配、ITM 但缓冲不够）；"
         "watch=平稳放着。\n"
-        "**必有 1 个 urgent**（没紧急就放最值得关注的）；有显著盈利 → 必有 1 cashflow；集中度 ≥40% → 必有 1 root。\n"
+        "**必有 1 个 urgent**（没紧急就放最值得关注的）；有显著盈利 → 必有 1 cashflow。\n"
+        "**集中度是策略选择不是问题** — Wheel 蓝筹、长期看好单票的用户本来就偏集中。"
+        "数据里给的集中度只作背景信息，不要因为单一百分比就归 root 或 urgent；"
+        "只在叠加方向性风险时（重仓 ticker 财报临近 / 宏观事件 / 已 ITM 且缓冲薄）才提，措辞中性 — 不说\"过高\"\"分散\"。\n"
         "**action**：看持仓用 `position:<pid>`——**pid 必须从 `All active positions` 行里 `[pid=...]` 复制**，不要瞎拼或拼缩写；"
         "找新机会/调仓用 `rec`；无明确下一步 → null。\n"
         "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。"

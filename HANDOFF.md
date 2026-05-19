@@ -3,40 +3,55 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — v2 路线全 4 项完成：surface UI / ladder / wheel_purist / willing-to-own toggle）
+最后更新：2026-05-19（cloud — UI/UX QA 第一轮 · sticky 遮挡 / i18n 漏翻 / 登录按钮截断 / baseline 对齐）
 
-### ✅ 这一轮（v2 #3 + #4 收尾）
+### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 1）
 
-**v2 #3 wheel_purist 出场风格 UI**：rec form 加新 row "5. 出场风格"（在风险偏好之后），两个选项：
-- ⚙️ 自动锁利（默认，50% 锁利 / 200% 止损）
-- 🪜 持到到期（Wheel 派 · 接货为乐 · 不锁利不止损）
-CSS 复用 risk row 模式（2 列 grid）。`_recDefaults.exit_style = 'auto'`。`submitRec` 传 body.exit_style。Backend 早已就绪。
+**主题**：用户要求做 UI/UX 视觉 QA — "最容易出现的就是偏移或者不对齐"。装 Playwright Chromium 跑 3 viewport (desktop 1440 / tablet 768 / mobile 390) 截 6 个表面 = 18 张截图，配合 CSS 静态 agent 扫，定真假 bug。
 
-**v2 #4 per-ticker willing_to_own 手动 toggle**：账户设置 modal 加新 section "🎯 愿意接货清单"：
-- 列表每行：ticker + 🟢想接/🔴不接 toggle + × 移除
-- 添加：input + 两按钮（🟢/🔴）
-- 数据：`state._meta.willing_overrides = {TSLA: 'on', AMD: 'off'}` (CLAUDE.md §4.2 reserved namespace)
-- 即时持久化（添加/切换/删除即写云端）
-- submitRec 请求带 body.willing_overrides
-- Backend `recommend()` 改：override 优先于自动推导
-- UX 解决两类盲区：(a) 想买但还没建仓 (e.g. GOOG)，(b) 历史持股不想加 (e.g. AMD 套住)
-- 不在列表里的 ticker → 跟以前一样自动推导
+**真 bug 修复（5 大类 + 7 个改动）**：
 
-**v2 路线全部 4 项完成**：
-- #1 ✅ Surface v2 字段到候选卡片 (sigbox + hover tooltips + EDU)
-- #2 ✅ Ladder builder mode (按预算自适应 2-4 档)
-- #3 ✅ wheel_purist exit style UI
-- #4 ✅ Per-ticker willing_to_own 手动 toggle
+1. **i18n 漏翻** — EN/繁中模式下仍显示中文的 5 处：
+   - `index.html:7387` ticker 空状态提示
+   - `index.html:10163` 账户摘要"保证金/正股/修改"
+   - `index.html:10165` 账户未设置提示"⚙️ 设置账户可显示资金占比"
+   - `index.html:11842` 页脚"更新于 X · 自动每 30 秒刷新"
+   - `index.html:5033` 推荐表单"目标数值"label（data-i18n 但 dict 缺 key）
+   - 修：6 个新 i18n key × 3 套字典 = 18 个新词条；JS 调用全部用 `t()` 包
 
-**待用户验证**：
-- [ ] 推荐表单看到"5. 出场风格"row + 选"持到到期"验证 exit_plan 改变
-- [ ] 账户设置滚到底有"🎯 愿意接货清单"section，添加 TSLA→🟢 / AMD→🔴 后跑 TSLA CSP 推荐验证 wto_f 起效
+2. **手机推荐 modal sticky 底栏遮挡内容** — Cancel/Find Best 浮在 viewport 底部，把 "MONTHLY TARGET" 输入框压在底栏后面
+   - 修：`.rec-form.modal` 加 `padding-bottom: 84px`（≥ 底栏 ~68px 高度），让最后一行表单内容能滚到底栏上方
+
+3. **手机 "Sign in with Google" 按钮被截成 "Sign in wit..."** — `.user-badge` 在 mobile 是 `max-width: 110px / .name max-width: 64px / font-size: 11px`，"Sign in with Google" 字面宽度 ~95px，超 64px 限制
+   - 修：登录按钮文案改用短 key `'登录'`（zh: 登录 / zh_tw: 登入 / en: Sign in）；原长 `'Google 登录'` 保留用于信息文案
+
+4. **首页"包租公推荐指数"黄卡 → 箭头贴文字** — `.rec-btn-large` `padding: 16px 18px` + 箭头 `::after right: 18px` 导致长文案跟箭头贴住
+   - 修：padding 改 `16px 38px 16px 18px` 给箭头留 20px
+
+5. **3 处 baseline / 居中对齐** （agent 静态扫验证后的安全改）：
+   - `.welcome-grant align-items: baseline` → `center`（大数字 + 小标签不再下沉）
+   - `.rec-form h4 .x` 加 `line-height: 1`（20px 关闭 X 不再相对 14px 标题偏低）
+   - `.lang-selector` flex 加 `align-items: center`（11px 字符不再浮在 34px 容器顶）
+
+**没碰的 agent 建议**：agent 一共报了 16 条 CSS 改进，验证后**6-8 条值得改但需要带数据视觉验证**（如 `.ld-mrung-head` / `.exit-plan.compact` / `.edit-form` 等需要有持仓数据才能看到效果）。空状态截图看不到。等用户登录有数据后再回来扫这批。
+
+**audit agent 命中率（UI 路线）**：CSS 静态报 16 / 已验真改 3，截图视觉发现 5 个静态扫漏掉的（i18n / sticky 遮挡 / 按钮截断 / 箭头贴边）。结论：**静态扫 + 真截图缺一不可**。
+
+**部署**：本 commit push 后 Vercel 自动 build；建议用户在手机上 hard-refresh `/app` 验证：① 切英文模式 → 看页脚 / ticker 空提示 / 推荐 modal 都是英文；② 推荐 modal 拉到底 → MONTHLY TARGET 输入框完全可见；③ 顶部"Sign in" 按钮不再截断
 
 ---
 
-### 上一轮（2026-05-19 cloud · QA P2 round 3）— i18n 繁中瑕疵 + goal 数值校验
+### 上一轮（2026-05-19 cloud · v2 #3 + #4 收尾 — wheel_purist 出场风格 UI + per-ticker willing toggle）
 
-### ✅ 这一轮（2026-05-19 cloud · QA P2 round 3）
+**v2 #3 wheel_purist 出场风格 UI**：rec form 加新 row "5. 出场风格"（在风险偏好之后）：⚙️ 自动锁利（默认 50% / 200%）+ 🪜 持到到期。CSS 复用 risk row 2 列 grid。`_recDefaults.exit_style = 'auto'`。`submitRec` 传 body.exit_style。Backend 早已就绪。
+
+**v2 #4 per-ticker willing_to_own 手动 toggle**：账户设置 modal 加"🎯 愿意接货清单"section：列表每行 ticker + 🟢想接/🔴不接 toggle + × 移除；添加 input + 两按钮（🟢/🔴）；数据存 `state._meta.willing_overrides = {TSLA:'on', AMD:'off'}`（CLAUDE.md §4.2 reserved namespace）；即时持久化；submitRec 带 body.willing_overrides；backend recommend() override 优先于自动推导；UX 解决两类盲区（想买没建仓 / 历史持股不想加）；不在列表的 ticker 沿用自动推导。
+
+**v2 路线全 4 项完成**：#1 surface 字段 ✅ #2 ladder ✅ #3 wheel_purist ✅ #4 willing toggle ✅
+
+---
+
+### 上一轮（2026-05-19 cloud · QA P2 round 3）
 
 **主题**：P0/P1 ship 完后清理 P2 杂项。原 audit 报"i18n 348 个 key 缺失"经详细核对**严重夸大**——绝大多数 key 实际存在，只是少数 zh_tw value 还是简体副本。
 

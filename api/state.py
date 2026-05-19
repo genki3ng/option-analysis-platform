@@ -4608,21 +4608,27 @@ def _roll_changes_log(prev_log, pos_changes, now_ts: int, window_sec: int = 24 *
     if added or removed:
         log.append({"ts": now_ts, "added": added, "removed": removed})
 
-    seen_add, seen_rm = {}, {}
+    # 同一 label 在 24h 内可能既被 add 又被 remove（试错操作 / strike 调整 / 多次刷新 snap 缺失）。
+    # 按时间顺序遍历，last-action-wins —— 每个 label 最后那次事件决定它当前在 added 还是 removed，
+    # 避免 LLM 看到同一笔既新开又平仓而误判"已平仓"。
+    events_sorted = []
     for e in log:
         ts = e.get("ts", now_ts)
         for it in e.get("added") or []:
             label = (it or {}).get("label") or ""
-            if not label:
-                continue
-            if label not in seen_add or ts > seen_add[label]:
-                seen_add[label] = ts
+            if label:
+                events_sorted.append((ts, "added", label))
         for it in e.get("removed") or []:
             label = (it or {}).get("label") or ""
-            if not label:
-                continue
-            if label not in seen_rm or ts > seen_rm[label]:
-                seen_rm[label] = ts
+            if label:
+                events_sorted.append((ts, "removed", label))
+    events_sorted.sort(key=lambda x: x[0])  # 升序：后写覆盖先写
+    final_state = {}  # label -> (action, ts)
+    for ts, action, label in events_sorted:
+        final_state[label] = (action, ts)
+
+    seen_add = {label: ts for label, (act, ts) in final_state.items() if act == "added"}
+    seen_rm = {label: ts for label, (act, ts) in final_state.items() if act == "removed"}
 
     def _fmt(label_ts_map):
         out = []
@@ -5075,6 +5081,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         resp = client.with_options(timeout=call_timeout).messages.create(
             model=model_id,
             max_tokens=1600,
+            # temperature 0.3：相同输入下输出稳定（避免用户重刷看到完全不同的措辞 / item 选择），
+            # 同时仍允许针对不同持仓状态有合理变化。默认 1.0 太放飞。
+            temperature=0.3,
             system=system_prompt,
             messages=[
                 {"role": "user", "content": user_prompt},

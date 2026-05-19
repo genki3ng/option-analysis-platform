@@ -1510,7 +1510,7 @@ def _strike_for_delta(S: float, T: float, sigma: float, delta_target: float,
 #   7. Wheel 友好  — CSP 若 strike 在历史低位，被指派也是好价位
 # ─────────────────────────────────────────────────────────────────────
 ALGORITHM_NAME = "包租公算法"
-ALGORITHM_VERSION = "1.2"
+ALGORITHM_VERSION = "2.0"
 ALGORITHM_TAGLINE = "把股票租出去，每周收稳定的租金"
 # v1.1 changes: 流动性因子从单一 spread% 升级为 spread × OI × volume 复合分
 
@@ -1840,29 +1840,220 @@ def _earnings_factor(days_to_earnings: int, risk: str, intent: str = "premium") 
     return round(base, 2)
 
 
+# ──────────────────────────────────────────────────────────────────────
+# 包租公算法 2.0 — 新增辅助函数（杠杆 ETF / 已实现波动率 / 压力测试 / 资金占用）
+# ──────────────────────────────────────────────────────────────────────
+
+# 已知杠杆 ETF（2x / 3x bullish & bearish + 单股杠杆产品）。
+# CSP 在杠杆 ETF 上有隐藏陷阱：被指派后波动率衰减让回本极慢。
+LEVERAGED_ETF = {
+    # 3x 指数 ETF (bullish)
+    "TQQQ", "SOXL", "SPXL", "UDOW", "TNA", "FAS", "NUGT",
+    "LABU", "DPST", "CURE", "FNGU", "DFEN", "BNKU", "ERX", "RETL",
+    # 3x 指数 ETF (bearish / inverse)
+    "SQQQ", "SOXS", "SPXU", "SDOW", "TZA", "FAZ", "LABD", "DUST",
+    "DRV", "FNGD", "JDST", "DRIP", "ERY", "BERZ",
+    # 2x ETF
+    "QLD", "SSO", "DDM", "UWM", "ROM", "USD", "UYG", "AGQ", "UCO",
+    "QID", "SDS", "DXD", "TWM", "SKF", "SCO", "ZSL", "REW", "SSG", "BIB", "BIS",
+    # 单股 2x bullish (Direxion / GraniteShares / T-Rex / Tradr)
+    "NVDL", "TSLL", "TSLR", "MSFU", "AAPB", "AMDL", "AMZU",
+    "GGLL", "METU", "NFXL", "AVGX", "MUU", "PLTU", "CONL", "MSTX", "MSTU", "BITX", "ETHU",
+    # 单股 inverse / bearish
+    "NVDS", "NVDQ", "TSLZ", "TSDD", "TSLS", "MSFD", "AAPD", "AMDS",
+    "AMZD", "GGLS", "METD", "NFXS", "MSTZ", "BITI",
+}
+
+
+def _is_leveraged_etf(ticker: str) -> bool:
+    return (ticker or "").upper() in LEVERAGED_ETF
+
+
+def _realized_vol(ticker: str, window: int = 30) -> Optional[float]:
+    """过去 window 个交易日的年化已实现波动率（小数，0-1+）。
+    用 yfinance 历史价 close-to-close 对数收益率，年化 × √252。
+    数据不足或失败返回 None — 调用方需有 fallback。
+    """
+    try:
+        # 多取一些日历日 buffer：window=30 实际取 ~50 日历日（去掉周末/假期）
+        start = date.today() - timedelta(days=int(window * 1.7) + 10)
+        hist = fetch_history(ticker, start)
+        if not hist:
+            return None
+        sorted_dates = sorted(hist.keys())
+        prices = [hist[d] for d in sorted_dates[-(window + 1):]]
+        if len(prices) < 5:
+            return None
+        log_returns = []
+        for i in range(1, len(prices)):
+            if prices[i - 1] > 0 and prices[i] > 0:
+                log_returns.append(math.log(prices[i] / prices[i - 1]))
+        if len(log_returns) < 3:
+            return None
+        n = len(log_returns)
+        mean = sum(log_returns) / n
+        var = sum((r - mean) ** 2 for r in log_returns) / (n - 1)
+        sigma_daily = math.sqrt(var)
+        return sigma_daily * math.sqrt(252)
+    except Exception:
+        return None
+
+
+def _stress_test(opt: dict, underlying: float, iv_pct: float,
+                  is_call: bool, is_short: bool) -> dict:
+    """情景压力测试：标的明日朝不利方向移动 5% / 10%，叠加 IV pump。
+    short put：不利 = 跌；short call：不利 = 涨。
+    返回 dict {adverse_5pct: {...}, adverse_10pct: {...}}。
+    mtm_pnl_$ 正数为浮盈、负数为浮亏（房东视角：option 价上涨我亏钱）。
+    """
+    if not is_short:
+        return {}
+    try:
+        mid = float(opt.get("mid") or 0)
+        days = int(opt.get("days") or 1)
+        strike = float(opt.get("strike") or 0)
+    except (TypeError, ValueError):
+        return {}
+    if mid <= 0 or days <= 0 or strike <= 0:
+        return {}
+    T_new = max(1, days - 1) / 365.0
+    iv_dec = iv_pct / 100 if iv_pct > 3 else iv_pct
+    if iv_dec <= 0:
+        return {}
+    # 不利方向：short put → -1（跌），short call → +1（涨）
+    adverse_sign = +1 if is_call else -1
+    out = {}
+    for adverse_pct, iv_pump_pct in [(0.05, 0.15), (0.10, 0.30)]:
+        S_new = max(0.01, underlying * (1 + adverse_sign * adverse_pct))
+        iv_new = iv_dec * (1 + iv_pump_pct)
+        try:
+            new_price, new_delta, _, _ = price_option(
+                S_new, strike, T_new, RISK_FREE, iv_new, is_call)
+            # short PnL = -(new_price - mid) * 100，房东侧
+            mtm_pnl_dollar = -(new_price - mid) * 100
+            collateral = strike * 100
+            out[f"adverse_{int(adverse_pct * 100)}pct"] = {
+                "stressed_underlying": round(S_new, 2),
+                "stressed_iv_pct": round(iv_new * 100, 1),
+                "new_mid": round(new_price, 3),
+                "mtm_pnl_$": round(mtm_pnl_dollar, 2),
+                "mtm_pnl_pct_of_collateral": round(
+                    mtm_pnl_dollar / collateral * 100, 2),
+                "new_delta": round(new_delta, 3),
+            }
+        except Exception:
+            continue
+    return out
+
+
+def _capital_risk_check(candidates: list, option_positions: list,
+                         avail_cash: float) -> None:
+    """评估每个 short put 候选若被指派 + 现有所有 short put 累计抵押对比可用现金。
+    in-place 给每个 candidate 加：
+      capital_pct: 百分比
+      capital_risk: "veto" (>95%) / "warning" (60-95%) / "ok" / "n/a" / "unknown"
+      capital_commitments: 拆分明细
+    用激进阈值 95% / 60%。
+    """
+    existing_commit = 0.0
+    for p in (option_positions or []):
+        if p.get("closed"):
+            continue
+        if p.get("type") != "put":
+            continue
+        try:
+            strike = float(p.get("strike", 0) or 0)
+            contracts = int(p.get("contracts", 0) or 0)
+            existing_commit += strike * 100 * contracts
+        except (TypeError, ValueError):
+            continue
+
+    for c in candidates:
+        # 仅短 put 算 capital risk（CC / 长仓不占现金抵押）
+        if c.get("type") != "put":
+            c["capital_risk"] = "n/a"
+            continue
+        contracts = int(c.get("suggested_contracts") or 1)
+        this_commit = float(c.get("strike") or 0) * 100 * contracts
+        total = existing_commit + this_commit
+        c["capital_commitments"] = {
+            "existing_$": round(existing_commit, 0),
+            "this_$": round(this_commit, 0),
+            "total_$": round(total, 0),
+            "available_$": round(avail_cash, 0),
+        }
+        if avail_cash <= 0:
+            c["capital_risk"] = "unknown"
+            c["capital_pct"] = None
+            continue
+        pct = total / avail_cash * 100
+        c["capital_pct"] = round(pct, 1)
+        if pct > 95:
+            c["capital_risk"] = "veto"
+        elif pct > 60:
+            c["capital_risk"] = "warning"
+        else:
+            c["capital_risk"] = "ok"
+
+
 def _landlord_score(opt: dict, is_csp: bool, underlying: float,
                      iv_rank: Optional[dict], backtest: Optional[dict],
                      earnings_cross: bool, earnings_days_until: Optional[int],
                      risk: str, intent: str = "premium",
-                     target_days: int = None) -> dict:
+                     target_days: int = None,
+                     realized_vol: Optional[float] = None,
+                     is_leveraged_etf: bool = False,
+                     is_willing_to_own: bool = False) -> dict:
     """
-    包租公分（rent_score）— 综合"周租"质量评分。
-    返回 {"score": float, "components": {...}}，components 用于解释。
+    包租公分（rent_score）2.0 — VRP-based 边际收益评分。
+
+    v2.0 改动：
+      - base 换成"年化 EV %"（用 realized vol 算 fair value，premium - fair = edge）
+      - 替代原 period_roc × prob_safe^1.5 × iv_f 三项（VRP 已隐含 prob & IV-vs-history）
+      - 新增 wto_f（willing_to_own）：CSP on 你愿接的标的 +8%，CC 上 -3%
+      - 杠杆 ETF：不享受 wto bonus（vol decay 让长期持有不值得 wheel）
+      - realized_vol 不可用时回退 v1.4 公式保证 backward compatibility
+    返回 {"score": float, "components": {...}}。
     """
-    period_roc = max(0, opt.get("period_roc_pct", 0))  # 本期实际收益率（不年化）
-    prob_safe  = max(0, min(100, opt["prob_safe_pct"])) / 100  # 0-1
+    period_roc = max(0, opt.get("period_roc_pct", 0))
+    prob_safe  = max(0, min(100, opt["prob_safe_pct"])) / 100
     spread_pct = opt["spread_pct"]
     days       = opt["days"]
     abs_delta  = abs(opt["delta"])
     oi         = opt.get("oi", 0)
     volume     = opt.get("volume", 0)
+    mid        = float(opt.get("mid") or 0)
+    strike     = float(opt.get("strike") or 0)
+    iv_pct     = opt.get("iv", 0)
+    is_call    = (opt.get("type") == "call")
 
-    # 1. 基础：本期实际收益率（不年化）
-    # 用 period_roc 而非 annualized_yield，防止 3-DTE 的超高年化虚高排名
-    base = period_roc
+    # 1. 基底：用 realized vol 算 fair value，premium - fair = edge → 年化 EV %
+    ev_annualized_pct = None
+    vrp_ratio = None
+    fair_value = None
+    used_v2_base = False
+    base = period_roc  # v1.4 fallback
 
-    # 2. 安全度幂次 — 安全压倒一切
-    safety = prob_safe ** 1.5
+    if (realized_vol is not None and realized_vol > 0
+            and days > 0 and mid > 0 and strike > 0 and underlying > 0):
+        try:
+            T = days / 365.0
+            fair_value, _, _, _ = price_option(
+                underlying, strike, T, RISK_FREE, realized_vol, is_call)
+            edge_per_share = mid - fair_value
+            # 用 strike 作 collateral 基数（与 recommend() 的 collateral 计算一致）
+            ev_annualized_pct = (edge_per_share / strike) * (365 / days) * 100
+            # base = EV，但有 floor 防止接近 0 时 score 整段塌掉
+            base = max(0.5, ev_annualized_pct)
+            iv_dec = iv_pct / 100 if iv_pct > 3 else iv_pct
+            if iv_dec > 0:
+                vrp_ratio = round(iv_dec / realized_vol, 3)
+            used_v2_base = True
+        except Exception:
+            base = period_roc
+
+    # 2. 安全度：v2 base 已隐含尾部概率（fair_value 用了 N(-d2_RV)），不再重复
+    safety = 1.0 if used_v2_base else (prob_safe ** 1.5)
 
     # 3. DTE 甜蜜区
     dte_f = _dte_sweet_factor(days, target_days=target_days)
@@ -1870,24 +2061,24 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
     # 4. Delta 甜蜜区
     delta_f = _delta_sweet_factor(abs_delta)
 
-    # 5. IV rank 加成（IV 高 = 多收租）
+    # 5. IV rank：v2 已被 EV/VRP 吸收，仅 v1.4 fallback 时启用
     iv_f = 1.0
-    if iv_rank and "iv_rank" in iv_rank:
+    if not used_v2_base and iv_rank and "iv_rank" in iv_rank:
         ir = iv_rank["iv_rank"]
         if ir >= 70:   iv_f = 1.20
         elif ir >= 50: iv_f = 1.08
         elif ir <= 20: iv_f = 0.85
         elif ir <= 35: iv_f = 0.93
 
-    # 6. 流动性（包租公 1.1：spread × OI × volume 复合）
+    # 6. 流动性
     liq_f, liq_breakdown = _liquidity_factor_v11(spread_pct, oi, volume)
 
-    # 7. 财报跨期：1.3 按 intent 区分利弊（CSP/CC 跨财报是优势）
+    # 7. 财报跨期
     earnings_f = 1.0
     if earnings_cross and earnings_days_until is not None and earnings_days_until >= 0:
         earnings_f = _earnings_factor(earnings_days_until, risk, intent=intent)
 
-    # 8. 回测胜率加成
+    # 8. 回测胜率
     bt_f = 1.0
     if backtest and backtest.get("n_trades", 0) >= 5:
         wr = backtest["win_rate"]
@@ -1895,31 +2086,61 @@ def _landlord_score(opt: dict, is_csp: bool, underlying: float,
         elif wr >= 60: bt_f = 1.04
         elif wr < 45: bt_f = 0.85
 
-    score = base * safety * dte_f * delta_f * iv_f * liq_f * earnings_f * bt_f
+    # 9. NEW — Willing-to-own bonus / penalty（杠杆 ETF 例外）
+    wto_f = 1.0
+    if is_willing_to_own and not is_leveraged_etf:
+        if is_csp:
+            wto_f = 1.08   # 你愿接的标的卖 put：被指派 = 拿到想要的股票
+        elif is_call:
+            wto_f = 0.97   # CC on 你心爱的股：你不想被叫走 → 轻微扣分
 
-    return {
-        "score": round(score, 2),
-        "components": {
-            "period_roc": round(period_roc, 2),
-            "safety": round(safety, 3),
-            "dte_factor": round(dte_f, 2),
-            "delta_factor": round(delta_f, 2),
-            "iv_factor": round(iv_f, 2),
-            "liquidity_factor": round(liq_f, 2),
-            "liquidity_breakdown": liq_breakdown,
-            "earnings_factor": round(earnings_f, 2),
-            "backtest_factor": round(bt_f, 2),
-        }
+    score = base * safety * dte_f * delta_f * iv_f * liq_f * earnings_f * bt_f * wto_f
+
+    components = {
+        "period_roc": round(period_roc, 2),
+        "safety": round(safety, 3),
+        "dte_factor": round(dte_f, 2),
+        "delta_factor": round(delta_f, 2),
+        "iv_factor": round(iv_f, 2),
+        "liquidity_factor": round(liq_f, 2),
+        "liquidity_breakdown": liq_breakdown,
+        "earnings_factor": round(earnings_f, 2),
+        "backtest_factor": round(bt_f, 2),
+        "wto_factor": round(wto_f, 2),
+        "used_v2_base": used_v2_base,
     }
+    if used_v2_base:
+        components["ev_annualized_pct"] = round(ev_annualized_pct, 2)
+        components["fair_value_per_share"] = round(fair_value, 3)
+        if realized_vol is not None:
+            components["realized_vol_pct"] = round(realized_vol * 100, 1)
+        if vrp_ratio is not None:
+            components["vrp_ratio"] = vrp_ratio
+    if is_leveraged_etf:
+        components["is_leveraged_etf"] = True
+    if is_willing_to_own:
+        components["is_willing_to_own"] = True
+
+    return {"score": round(score, 2), "components": components}
 
 
 def _make_verdict(opt: dict, is_short: bool, intent: str,
                   iv_rank: Optional[dict],
                   backtest: Optional[dict] = None, risk: str = "balanced",
-                  is_csp: bool = False, underlying: float = 0) -> dict:
-    """生成一句话推荐 verdict（包租公算法 1.0 — 房东视角，损失厌恶）"""
+                  is_csp: bool = False, underlying: float = 0,
+                  is_leveraged_etf: bool = False) -> dict:
+    """生成一句话推荐 verdict（包租公算法 2.0 — 房东视角，损失厌恶 + EV/资金/杠杆 ETF 三类新信号）"""
     pros, cons = [], []
     weight = 0  # 综合权重：正数 = 偏好，负数 = 不偏好
+
+    # ── 2.0 新增：从 score_components 读 EV / VRP 信号
+    sc = opt.get("score_components") or {}
+    used_v2 = sc.get("used_v2_base", False)
+    ev_pct = sc.get("ev_annualized_pct")
+    vrp = sc.get("vrp_ratio")
+    capital_risk = opt.get("capital_risk", "n/a")
+    capital_pct = opt.get("capital_pct")
+    capital_veto = False
 
     # ── 包租公专属信号 #1：Wheel 友好（CSP strike 是否好接货价）
     if is_csp and underlying > 0:
@@ -2093,12 +2314,40 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
         sa = opt["spread_alt"]
         pros.append(f"🛡 可考虑改成 Spread (买 ${sa['protect_strike']:.0f} 保护腿)，最大亏损降到 ${sa['max_loss']:,.0f}")
 
+    # ── 2.0 新增信号：EV / VRP（仅 v2 base 时启用）
+    if is_short and used_v2 and ev_pct is not None:
+        if ev_pct < 0:
+            cons.append(f"⚠️ 年化边际收益 {ev_pct:.1f}% — IV 低于已实现 vol，正在亏卖"); weight -= 2
+        elif ev_pct > 15 and vrp and vrp > 1.20:
+            pros.append(f"💰 年化边际收益 {ev_pct:.1f}% (VRP {vrp:.2f}，IV 比真实 vol 高 20%+)"); weight += 2
+        elif ev_pct > 5:
+            pros.append(f"📊 年化边际收益 {ev_pct:.1f}%"); weight += 1
+
+    # ── 2.0 新增信号：资金占用风险
+    if capital_risk == "veto":
+        cons.append(f"🚫 若被指派 + 现有 short put 占现金 {capital_pct:.0f}% (>95%)")
+        weight -= 5
+        capital_veto = True
+    elif capital_risk == "warning" and capital_pct is not None:
+        cons.append(f"⚠️ 接货后现金占用 {capital_pct:.0f}%"); weight -= 1
+
+    # ── 2.0 新增信号：杠杆 ETF 警告
+    if is_leveraged_etf and is_short:
+        cons.append("⚠️ 杠杆 ETF — 长期持有有波动率衰减损耗，wheel 回本慢")
+        weight -= 1
+
     # 损失厌恶：cons 数量 ≥ pros 时再扣一分（包租公房东最讨厌"麻烦")
     if len(cons) > len(pros):
         weight -= 1
 
     # 综合评级（基于加权得分，越大越好）
-    if earnings_veto:
+    if capital_veto:
+        # 资金硬否决：tier 顶到 2 星
+        tier, stars, label, color = (
+            (2, "⭐⭐", "资金不足，谨慎", "orange")
+            if weight >= -4 else (1, "⭐", "现金已超限", "red")
+        )
+    elif earnings_veto:
         # 财报硬否决：不会超过 2 星
         tier, stars, label, color = (
             (2, "⭐⭐", "谨慎 — 财报跨期", "orange")
@@ -2153,7 +2402,8 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
 
 
 def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
-               is_covered: bool = False, is_short: bool = True) -> dict:
+               is_covered: bool = False, is_short: bool = True,
+               exit_style: str = "auto") -> dict:
     """
     出场计划：按 risk × strategy 矩阵生成。
     返回:
@@ -2165,6 +2415,7 @@ def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
       roll_trigger: roll 触发条件（短卖才有）
       summary_key: 给前端用的 i18n key
       summary_vars: 模板变量
+      exit_style: auto / wheel_purist（持到到期接货派）
     """
     mid = float(opt.get("mid") or 0)
     # 推断策略类型
@@ -2210,6 +2461,11 @@ def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
     }
     profit_pct, stop_pct = matrix[kind].get(risk, matrix[kind]["balanced"])
 
+    # ── 2.0 新增：wheel_purist 风格覆盖短卖出场（持到到期接货派 — 不锁利不止损）
+    if exit_style == "wheel_purist" and kind in ("short_premium", "csp", "covered_call"):
+        profit_pct = 100   # 持到到期（premium 衰减到 ~0 = expire OTM）
+        stop_pct = None
+
     # ── 价格换算
     exit_at_price = None
     stop_at_price = None
@@ -2227,11 +2483,17 @@ def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
     # ── Roll 触发（仅短卖）
     roll_trigger = None
     if kind in ("short_premium", "csp", "covered_call"):
-        # DTE 是当前候选的到期天数，不是 trigger 本身；trigger 是「当 DTE 缩到 ≤7 时」
-        # 这里给出文案模板，前端按 i18n key 渲染
-        roll_trigger = "dte7_delta50_loss"  # i18n key
+        # wheel_purist：除非被指派否则不动
+        if exit_style == "wheel_purist":
+            roll_trigger = "assigned_only"
+        else:
+            # DTE 是当前候选的到期天数，不是 trigger 本身；trigger 是「当 DTE 缩到 ≤7 时」
+            # 这里给出文案模板，前端按 i18n key 渲染
+            roll_trigger = "dte7_delta50_loss"  # i18n key
 
     summary_key = f"exit_summary_{kind}"
+    if exit_style == "wheel_purist" and kind in ("short_premium", "csp", "covered_call"):
+        summary_key = f"exit_summary_{kind}_wheel_purist"
     summary_vars = {
         "profit_pct": profit_pct,
         "stop_pct": stop_pct if stop_pct is not None else 0,
@@ -2241,6 +2503,7 @@ def _exit_plan(opt: dict, intent: str, is_csp: bool, risk: str,
 
     return {
         "kind": kind,
+        "exit_style": exit_style,
         "profit_target_pct": profit_pct,
         "stop_loss_pct": stop_pct,
         "stop_loss_disabled": stop_pct is None,
@@ -2311,6 +2574,24 @@ def recommend(req: dict) -> dict:
     underlying = prices.get(ticker, {}).get("price", 0.0)
     if underlying <= 0:
         return {"error": f"无法拉到 {ticker} 实时价格"}
+
+    # 2.0 新增：已实现波动率（30d） / 杠杆 ETF flag / willing_to_own 推导
+    realized_vol_30d = _realized_vol(ticker, window=30)
+    is_leveraged_etf = _is_leveraged_etf(ticker)
+    # willing_to_own = 持有正股 或 已经在该 ticker 上有 short put（已用行动表态）
+    held_shares = stock_map.get(ticker, 0)
+    has_existing_short_put = any(
+        (p.get("ticker") or "").upper() == ticker
+        and p.get("type") == "put"
+        and not p.get("closed")
+        for p in (option_positions or [])
+    )
+    is_willing_to_own = bool(held_shares >= 100 or has_existing_short_put)
+
+    # exit_style：默认 auto；用户可传 wheel_purist 改成持到到期接货派
+    exit_style = req.get("exit_style", "auto")
+    if exit_style not in ("auto", "wheel_purist"):
+        exit_style = "auto"
 
     is_call, is_short = _decide_strategy(direction, intent)
     # LEAPS / 股票替代：扫描深度 ITM 区间（Delta 0.55-0.85）
@@ -2539,19 +2820,29 @@ def recommend(req: dict) -> dict:
                 "max_loss": max_loss,
             }
 
-        # 包租公算法 1.2：替换原 score 为 rent_score（仅 short）
+        # 包租公算法 2.0：rent_score 用 EV-based base + wto + 杠杆 ETF 例外
         earnings_days_until = (earnings_date - today).days if earnings_date else None
         if is_short:
             ls = _landlord_score(c, is_csp, underlying, iv_rank, backtest,
                                   earnings_cross, earnings_days_until, risk,
-                                  intent=intent, target_days=timeframe)
+                                  intent=intent, target_days=timeframe,
+                                  realized_vol=realized_vol_30d,
+                                  is_leveraged_etf=is_leveraged_etf,
+                                  is_willing_to_own=is_willing_to_own)
             c["rent_score"] = ls["score"]
             c["score_components"] = ls["components"]
             c["score"] = ls["score"]   # 排序统一用 rent_score
 
-        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank,
-                                      backtest, risk=risk, is_csp=is_csp,
-                                      underlying=underlying)
+        # 2.0 新增：情景压力测试 -5% / -10%（仅 short premium 关心）
+        if is_short:
+            c["stress_components"] = _stress_test(c, underlying, c.get("iv", 0),
+                                                    is_call, is_short)
+
+        # 标记 candidate 上的 meta 给 verdict 用
+        c["is_leveraged_etf"] = is_leveraged_etf
+        c["is_willing_to_own"] = is_willing_to_own
+
+        # verdict 在 capital_risk_check 之后再算，所以这里先占位
 
         # 账户 context：保证金占比 + 张数建议 + Covered Call 检测 + BPR
         collateral = c["collateral_per_contract"]
@@ -2582,7 +2873,22 @@ def recommend(req: dict) -> dict:
         # 出场计划（短卖 + LEAPS 都生成；其他做多场景生成基础版）
         c["exit_plan"] = _exit_plan(c, intent, is_csp, risk,
                                      is_covered=is_covered_call,
-                                     is_short=is_short)
+                                     is_short=is_short,
+                                     exit_style=exit_style)
+
+    # 2.0 新增：资金占用检查（依赖 suggested_contracts 已在第一轮算好）
+    if is_short and not is_call:
+        _capital_risk_check(candidates, option_positions, avail_margin)
+    else:
+        for c in candidates:
+            c["capital_risk"] = "n/a"
+
+    # 2.0：verdict 在 capital_risk_check 之后算（这样能读到 capital_risk）
+    for c in candidates:
+        c["verdict"] = _make_verdict(c, is_short, intent, iv_rank,
+                                      backtest, risk=risk, is_csp=is_csp,
+                                      underlying=underlying,
+                                      is_leveraged_etf=is_leveraged_etf)
 
     # 5. 排序后保留 top 15
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
@@ -2617,6 +2923,11 @@ def recommend(req: dict) -> dict:
         "portfolio_context": portfolio_context,
         "skew_signal": skew_signal,
         "backtest_summary": backtest,  # win_rate / theoretical_pop / calibration_ratio
+        # 2.0 transparency
+        "realized_vol_30d_pct": round(realized_vol_30d * 100, 1) if realized_vol_30d else None,
+        "is_leveraged_etf": is_leveraged_etf,
+        "is_willing_to_own": is_willing_to_own,
+        "exit_style": exit_style,
     }
 
 

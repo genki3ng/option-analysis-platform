@@ -3,9 +3,84 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-18（cloud — 候选对比支持跨 ticker）
+最后更新：2026-05-19（cloud — 包租公算法 2.0 · EV/VRP + willing_to_own + 资金占用 + 杠杆 ETF + 压力测试）
 
-### ✅ 这一轮（2026-05-18 cloud · `claude/cross-ticker-comparison-Ha2I6`）
+### ✅ 这一轮（2026-05-19 cloud · `claude/improve-recommendation-algorithm-Gid32`）
+
+**主题**：用户主动发起讨论"推荐算法有没有变得更厉害更正确的空间"。深度讨论后落地 v2.0 算法（backend-only，前端不动，按 §9 留 v2 走预览页）。
+
+**讨论收敛**（4 轮）：
+1. 我提了 7 个可改点，用户挑了 EV/VRP + 集中度 + verdict 统一 三块
+2. 用户反对"集中度惩罚"（Wheel 派"all in TSLA"是 conviction 不是风险）→ 我同意，改成 **willing_to_own + 资金硬上限**
+3. 用户问"明日跌 5% gamma 风险算法怎么考虑" → 加 **stress test 透明披露**（不进 score，只出数）
+4. 用户晒别人的实盘截图（NVDL/TQQQ/SOXL 等 3x 杠杆 ETF + 6 档阶梯 + 无平仓）→ 吸收**杠杆 ETF 警告** + `wheel_purist` 出场风格；阶梯 ladder builder 留 v2
+
+**核心改动**（`api/state.py`，~250 行）：
+
+**新 helper**（line 1843 前）：
+- `LEVERAGED_ETF` set：~50 个 2x/3x 指数 ETF + 单股杠杆产品（NVDL/TSLL/TQQQ/SOXL/SQQQ/...）
+- `_is_leveraged_etf(ticker)` membership check
+- `_realized_vol(ticker, window=30)`：yfinance close-to-close 对数收益率 × √252，年化波动率
+- `_stress_test(opt, underlying, iv, is_call, is_short)`：BS 重新定价标的朝不利方向 -5% / -10%，IV 同时 pump 15%/30%（vol-of-vol 经验）。返回 `adverse_5pct` / `adverse_10pct` 字典，每个含 `mtm_pnl_$` / `mtm_pnl_pct_of_collateral` / `new_delta`。仅 short premium 关心。
+- `_capital_risk_check(candidates, option_positions, avail_cash)`：累计现有未平仓 short put 抵押 + 当前候选若被指派，对比 avail_cash。> 95% → veto；60-95% → warning；其他 → ok。in-place 给每个 candidate 加 `capital_risk` / `capital_pct` / `capital_commitments`。激进阈值。
+
+**`_landlord_score` 2.0 重写**：
+- 新签名加 `realized_vol` / `is_leveraged_etf` / `is_willing_to_own` 三参
+- **base 换成"年化 EV %"**：`fair_value = bs_put(S, K, T, realized_vol_30d)`，`edge = mid - fair_value`，`EV_annualized = edge / strike × 365/days × 100`。floor 0.5 防归零。
+- 经济意义：VRP > 1 时正 EV（IV 比实际 vol 高 = 卖期权赚溢价），VRP < 1 时负 EV（你在亏卖 vol）
+- v2 base 启用时 `safety = 1.0`（已隐含 N(-d2_RV) 不双重计分），`iv_f = 1.0`（已被 EV/VRP 吸收）
+- 新增 `wto_f`：CSP on willing-to-own ticker × 1.08（被指派 = 接到想要的股票）；CC × 0.97（你不想被叫走）；**杠杆 ETF 例外，wto_f 永远 = 1.0**
+- realized_vol 不可用时回退 v1.4 公式，backward compatible
+- components 多吐：`ev_annualized_pct` / `realized_vol_pct` / `vrp_ratio` / `fair_value_per_share` / `wto_factor` / `used_v2_base` / `is_leveraged_etf` / `is_willing_to_own`
+
+**`_make_verdict` 加 3 类新信号**：
+- EV / VRP：v2 时 `ev_pct < 0` 加 con "正在亏卖 vol" (-2)；`ev_pct > 15 且 VRP > 1.20` 加 pro "年化边际收益 X% (VRP Y.YY)" (+2)；`ev_pct > 5` 加 pro 弱 (+1)
+- 资金占用：`capital_risk = veto` → cons "🚫 若被指派 + 现有 short put 占现金 X% (>95%)" + weight -5 + **强制 tier 顶到 2 星**；`warning` → cons "⚠️ 接货后现金占用 X%" + weight -1
+- 杠杆 ETF：`is_leveraged_etf and is_short` → cons "⚠️ 杠杆 ETF — 长期持有有波动率衰减损耗，wheel 回本慢" + weight -1
+- 新增 `is_leveraged_etf` 参数
+
+**`_exit_plan` 加 `exit_style` 参数**：
+- 默认 `"auto"` = v1.4 矩阵行为
+- `"wheel_purist"` 覆盖：profit_pct=100（持到到期）、stop_pct=None、roll_trigger="assigned_only"、summary_key=`exit_summary_{kind}_wheel_purist`
+- v1 只加 backend 参数，UI 选择器留 v2 走 §9 预览页
+
+**`recommend()` 主流程**：
+- 新计算 `realized_vol_30d` / `is_leveraged_etf` / `is_willing_to_own`（自动推导：持股 ≥100 或 已有 short put on this ticker）
+- 读 `req.exit_style`（默认 auto，校验白名单）
+- 第一轮 loop 末加：`_stress_test` → `c["stress_components"]`；`c["is_leveraged_etf"]` / `c["is_willing_to_own"]` 标 candidate
+- **拆分 verdict 到 loop 外**：因为 verdict 现在依赖 `capital_risk`，而 `capital_risk` 依赖第一轮算好的 `suggested_contracts`。两轮：第一轮算 score + stress + exit_plan + suggested_contracts；然后 `_capital_risk_check` 全表过一遍；再第二轮算 verdict
+- 响应顶层多吐：`realized_vol_30d_pct` / `is_leveraged_etf` / `is_willing_to_own` / `exit_style` 透明字段
+
+**`ALGORITHM_VERSION`**：1.2 → **2.0**
+
+**自检**（pure-python unit tests，无 network）：
+- `_is_leveraged_etf`：TQQQ/NVDL=T，TSLA/AAPL=F ✓
+- `_landlord_score` v2 (TSLA $400 put, 30 DTE, IV=45%, RV=35% → VRP=1.286)：score=15.68，EV=12.78%，wto=1.08 ✓
+- VRP < 1 (RV=50%)：EV=-6.59%，score 缩到 0.55 (floor) ✓
+- realized_vol=None → 走 v1.4 fallback，score=2.3，used_v2=False ✓
+- 杠杆 ETF + willing → wto_f=1.0 (bonus 被屏蔽) ✓
+- `_stress_test`：TSLA -5% (S=399, IV pump→51.7%)，put 12→23，MTM=-$1094=-2.7% collateral；-10%：MTM=-$2507=-6.3% ✓
+- `_capital_risk_check`：existing $35k + this $80k = 76% → warning；3 张 $40k strike vs $100k 现金 = 120% → veto ✓
+- `_make_verdict`：veto 强制 tier=2；杠杆 ETF cons 命中；wheel_purist exit_plan profit=100/stop=None ✓
+
+**前端没动**（按 §9）：v2 才做预览页把 `ev_annualized_pct` / `vrp_ratio` / `stress_components` / `capital_risk` 这些新字段渲染出来。当前用户在 UI 上仍只看到 rent_score 数字（数量级会变，因为 base 从 period_roc 换成 EV），star tier 和 verdict pros/cons 字符串会自然带新信号（因为已经是动态拼接）。
+
+**待用户验证**：
+- [ ] curl `/api/state` 推荐路径不爆 5xx
+- [ ] 已登录用户对 TSLA / NVDA 等持仓 ticker 的 CSP 推荐应该看到新 pros：「💰 年化边际收益 X% (VRP Y.YY)」「📊 ...」
+- [ ] 杠杆 ETF（TQQQ/NVDL）推 CSP 应该看到 cons：「⚠️ 杠杆 ETF — 长期持有有波动率衰减损耗」
+- [ ] avail_margin 不够时（user 在账户设置填可用现金 < 现有 short put 总抵押 ×1.05）应该看到 capital veto，tier 被压到 2 星
+- [ ] realized_vol 偶尔 None 时不爆错（应该走 v1.4 fallback）
+
+**v2 路线**（未做）：
+- 前端 UI surface：ev_annualized_pct / VRP / stress_components / capital_risk → 候选卡片渲染（要走 §9 预览页）
+- wheel_purist 出场风格的 UI 选择器（risk profile 旁边加一个 dropdown）
+- ladder builder 模式：输入 ticker + 总愿意接货金额，输出 3-5 档 strike 组合，捆绑卖出建议
+- per-ticker 手动 willing_to_own toggle（v1 自动推导覆盖不到"我想买 GOOG 但没建仓"的情况）
+
+---
+
+### 上一轮（2026-05-18 cloud · `claude/cross-ticker-comparison-Ha2I6`）— 候选对比支持跨 ticker
 
 **主题**：用户报"候选对比功能应该支持跨 ticker"。
 
@@ -54,7 +129,7 @@
 
 ---
 
-### 上一轮（2026-05-18 cloud · `claude/fix-window-scrolling-Ok62X`）— 账户设置 modal 滚动修复
+### 更早一轮（2026-05-18 cloud · `claude/fix-window-scrolling-Ok62X`）— 账户设置 modal 滚动修复
 
 **主题**：用户报"账户设置窗口不能上下滚动"。截图显示账户 03 被截断到屏幕底部、无法滚动到底。
 

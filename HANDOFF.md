@@ -3,9 +3,29 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — usage tracking + /admin 面板上线）
+最后更新：2026-05-19（cloud — 每日 P&L 图表"今日点"与 hero 数字对不上）
 
-### ✅ 这一轮 feature（2026-05-19 cloud · usage 埋点 + /admin 后台）
+### ✅ 这一轮 hotfix（2026-05-19 cloud · `api/state.py` `portfolio_history`）
+
+**问题**：截图里图表 tooltip 显示 "2026-05-19 已选总 P&L: $-202.00"，但顶部 hero "未实现盈亏" 显示 "+$226.00"，相差 $428。
+
+**Root cause**：图表的"今日点"在 `portfolio_history` 里用 **BS 模型 + 交易日反推的 IV** 重新定价；而顶部 hero 用 `enriched.pnl`，后者来自 **实时期权报价**（Schwab/yfinance mid）。两条路径数据源不同：
+- IV 用的是交易日反推的（trade-day IV），不是当前 IV → IV 变化 → mark 偏移
+- mark = BS(u, K, T, r, trade_iv) ≠ 市场 mid（spread / 流动性 / 真实 vol surface）
+
+历史日（trade_date → 昨天）只能用 BS（没有当时的期权报价），可以接受。但**今日点**完全可以直接用 enriched 的实时报价。
+
+**修复**：`portfolio_history(...)` 新增 `enriched=None` 形参，main handler 把已富集的持仓传进来。今日点直接使用 `e.pnl` / `e.sold` / `e.id`，跟 hero 数字同源 → 不再对不上。历史点逻辑不变（仍是 BS）。
+
+调用点：`enriched = [position_state(...) for p in positions]` 已在 history 之前算出，按顺序传入即可。
+
+**遗留**：今天点和昨天点之间会有视觉上"小跳"（昨天 BS，今天市场 mid）。这是真实数据差异，不是 bug — 用户最关心的是当前 P&L 跟 hero 一致。
+
+---
+
+### 上一轮（2026-05-19 cloud — usage tracking + /admin 面板上线）
+
+### ✅ feature（2026-05-19 cloud · usage 埋点 + /admin 后台）
 
 **目标**：用户可在 /admin 看到每个登录用户用了多少次推荐、复盘、早安简报、登录次数。先只埋点，额度不卡。
 
@@ -41,7 +61,7 @@
 
 ---
 
-### ✅ 上一轮 hotfix #2（2026-05-19 cloud · `index.html:9072` `applyGoal`）
+### ✅ hotfix #2（2026-05-19 cloud · `index.html:9072` `applyGoal`）
 
 **问题**：用户报"没有候选达到 ≥ 300% 安全度"。max_safety 默认 85%，怎么会是 300？
 

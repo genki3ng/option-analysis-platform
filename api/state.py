@@ -1104,7 +1104,7 @@ def position_state(p, today, state, prices, earliest):
 
 
 # ── 历史 P&L ──────────────────────────────────────────────────────────────────
-def portfolio_history(positions, state, prices, today):
+def portfolio_history(positions, state, prices, today, enriched=None):
     if not positions:
         return []
     earliest = min(p["trade_date"] for p in positions)
@@ -1183,40 +1183,49 @@ def portfolio_history(positions, state, prices, today):
             "total_sold": total_sold, "per_pos": per_pos,
         })
 
-    # 今日实时点
+    # 今日实时点 — 优先用 enriched（来自实时期权报价，与 hero P&L 同源）；
+    # 没有 enriched 才走 BS 模型 fallback，避免和顶部 hero 数字对不上。
     today_str = today.isoformat()
     today_pnl = today_sold = 0.0
     today_per_pos = {}
-    for p in positions:
-        if today < p["trade_date"]: continue
-        shares = p["contracts"] * 100
-        sold = p["sell_price"] * shares
-        pid = position_id(p)
+    if enriched is not None:
+        for e in enriched:
+            # enriched 里 trade_date 是 isoformat 字符串
+            if today < date.fromisoformat(e["trade_date"]): continue
+            today_pnl += e["pnl"]
+            today_sold += e["sold"]
+            today_per_pos[e["id"]] = e["pnl"]
+    else:
+        for p in positions:
+            if today < p["trade_date"]: continue
+            shares = p["contracts"] * 100
+            sold = p["sell_price"] * shares
+            pid = position_id(p)
 
-        # 已平仓 → 锁定 realized P&L
-        closed_info = state.get(pid, {})
-        close_price = closed_info.get("close_price")
-        if closed_info.get("closed") and close_price is not None:
-            pnl = (p["sell_price"] - float(close_price)) * shares
+            # 已平仓 → 锁定 realized P&L
+            closed_info = state.get(pid, {})
+            close_price = closed_info.get("close_price")
+            if closed_info.get("closed") and close_price is not None:
+                pnl = (p["sell_price"] - float(close_price)) * shares
+                today_pnl += pnl
+                today_sold += sold
+                today_per_pos[pid] = pnl
+                continue
+
+            u = prices.get(p["ticker"], {}).get("price", 0)
+            if u <= 0: continue
+            days_left = (p["expiry"] - today).days
+            T = max(days_left / 365.0, 1e-8)
+            iv = pos_iv.get(pid, 0.4)
+            if days_left <= 0:
+                mark = max(u - p["strike"], 0) if p["type"] == "call" else max(p["strike"] - u, 0)
+            else:
+                mark = price_option(u, p["strike"], T, RISK_FREE, iv, p["type"] == "call")[0]
+            mktval = mark * shares
+            pnl = sold - mktval
             today_pnl += pnl
             today_sold += sold
             today_per_pos[pid] = pnl
-            continue
-
-        u = prices.get(p["ticker"], {}).get("price", 0)
-        if u <= 0: continue
-        days_left = (p["expiry"] - today).days
-        T = max(days_left / 365.0, 1e-8)
-        iv = pos_iv.get(pid, 0.4)
-        if days_left <= 0:
-            mark = max(u - p["strike"], 0) if p["type"] == "call" else max(p["strike"] - u, 0)
-        else:
-            mark = price_option(u, p["strike"], T, RISK_FREE, iv, p["type"] == "call")[0]
-        mktval = mark * shares
-        pnl = sold - mktval
-        today_pnl += pnl
-        today_sold += sold
-        today_per_pos[pid] = pnl
 
     if today_per_pos:
         if series and series[-1]["date"] == today_str:
@@ -1497,7 +1506,7 @@ def compute(payload):
             list(ex.map(lambda args: fetch_chain(*args), active_chains))
 
     enriched = [position_state(p, today, state, prices, earliest) for p in positions]
-    history = portfolio_history(positions, state, prices, today)
+    history = portfolio_history(positions, state, prices, today, enriched=enriched)
     suggestions = get_suggestions(enriched, lang=lang)
 
     total_sold = sum(x["sold"] for x in enriched)

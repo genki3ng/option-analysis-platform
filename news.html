@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管家 · 新闻条设计预览</title>
+<style>
+  :root {
+    --bg:        #0A0A0B;
+    --card:      #0F0F11;
+    --card2:     #16161A;
+    --card3:     #1C1C20;
+    --text:      #EDEDEC;
+    --sub:       #888889;
+    --dim:       #5A5A5C;
+    --line:      #232328;
+    --line-2:    #2E2E36;
+    --accent:    #E6B86A;
+    --accent-2:  #B89255;
+    --accent-light: #F0C778;
+    --accent-tint: rgba(230,184,106,0.10);
+    --accent-tint-strong: rgba(230,184,106,0.18);
+    --green:     #34D399;
+    --red:       #F87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Inter",
+                 "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    padding: 28px max(20px, 3vw);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1480px; margin: 0 auto; }
+  .page-head { margin-bottom: 32px; }
+  .page-head h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .page-head h1 span { color: var(--accent); }
+  .page-head p { color: var(--sub); font-size: 13.5px; max-width: 720px; }
+  .page-head .meta {
+    margin-top: 14px; padding: 10px 14px;
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 8px; font-size: 12px; color: var(--sub);
+    max-width: 720px; line-height: 1.6;
+  }
+  .page-head .meta strong { color: var(--text); }
+
+  .candidate {
+    margin-bottom: 56px;
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+  }
+  .candidate-title {
+    font-size: 18px; font-weight: 700; margin-bottom: 4px;
+  }
+  .candidate-title .letter {
+    color: var(--accent); margin-right: 8px;
+  }
+  .candidate-desc {
+    color: var(--sub); font-size: 13px; margin-bottom: 18px;
+    max-width: 720px;
+  }
+  .candidate-desc em { color: var(--accent-light); font-style: normal; }
+
+  /* 桌面 + 手机对照 */
+  .frames {
+    display: grid;
+    grid-template-columns: 1fr 395px;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 1000px) {
+    .frames { grid-template-columns: 1fr; }
+  }
+  .frame {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; overflow: hidden;
+  }
+  .frame-label {
+    padding: 8px 14px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--line);
+    font-size: 11px; color: var(--sub);
+    font-weight: 600; letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .frame-body {
+    padding: 20px;
+  }
+  .frame.mobile { width: 395px; }
+  .frame.mobile .frame-body {
+    width: 375px; margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  /* ============ 共享：模拟 .morning-brief mode-priority 上下文 ============ */
+  .mb-context {
+    background:
+      radial-gradient(140% 100% at 0% 0%,
+        rgba(230,184,106,0.07) 0%,
+        rgba(230,184,106,0) 50%),
+      var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .mb-context.tight { padding: 14px 16px; }
+  .mb-greeting {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .mb-greeting .mb-time {
+    color: var(--sub); font-weight: 500;
+    text-transform: none; letter-spacing: 0;
+  }
+  /* 模拟 priority list 占位 — 让用户看到 news 条在 brief 里的相对位置 */
+  .mb-stub {
+    margin: 10px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card2);
+    color: var(--sub);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .mb-stub .stub-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--card3);
+    color: var(--dim);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-right: 8px;
+    text-transform: uppercase;
+  }
+
+  /* ────────────────── A · 单卡片渐变切换（推荐） ────────────────── */
+  .news-a {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background:
+      linear-gradient(180deg, rgba(230,184,106,0.05) 0%, var(--card2) 100%);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .news-a-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .news-a-head .lbl {
+    font-size: 10.5px; font-weight: 700; color: var(--accent);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .news-a-head .lbl::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(230,184,106,0.6);
+    animation: pulse-a 2s ease-in-out infinite;
+  }
+  @keyframes pulse-a {
+    50% { opacity: 0.35; transform: scale(0.85); }
+  }
+  .news-a-head .dots {
+    display: inline-flex; gap: 4px;
+  }
+  .news-a-head .dots .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--line-2); transition: background 200ms;
+  }
+  .news-a-head .dots .dot.active {
+    background: var(--accent); width: 14px; border-radius: 2px;
+  }
+  .news-a-stage {
+    position: relative;
+    height: 44px;
+    overflow: hidden;
+  }
+  .news-a-item {
+    position: absolute; inset: 0;
+    font-size: 14px; line-height: 1.5;
+    color: var(--text);
+    opacity: 0; transform: translateY(12px);
+    transition: opacity 450ms ease, transform 450ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  .news-a-item.active {
+    opacity: 1; transform: translateY(0);
+  }
+  .news-a-item .ic { margin-right: 6px; }
+  .news-a-item strong {
+    color: var(--accent-light); font-weight: 700;
+  }
+  .news-a-item .tone-red { color: var(--red); font-weight: 700; }
+  .news-a-item .tone-green { color: var(--green); font-weight: 700; }
+
+  @media (max-width: 600px) {
+    .news-a { padding: 12px 13px; }
+    .news-a-item { font-size: 13px; line-height: 1.5; }
+    .news-a-stage { height: 56px; }
+  }
+
+  /* ────────────────── B · 终端 ticker（all visible）────────────────── */
+  .news-b {
+    margin-top: 14px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .news-b-head {
+    padding: 8px 14px;
+    background: rgba(230,184,106,0.06);
+    border-bottom: 1px solid var(--line);
+    font-size: 10.5px; font-weight: 700;
+    color: var(--accent); letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .news-b-head .live {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 9.5px; color: var(--sub);
+    font-weight: 600;
+  }
+  .news-b-head .live::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse-b 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-b { 50% { opacity: 0.25; } }
+  .news-b-stage {
+    height: 96px;
+    overflow: hidden;
+    position: relative;
+  }
+  .news-b-track {
+    display: flex; flex-direction: column;
+    transition: transform 500ms cubic-bezier(0.5, 0, 0.2, 1);
+  }
+  .news-b-row {
+    height: 32px; padding: 0 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px; line-height: 1;
+    color: var(--sub);
+    border-bottom: 1px dashed rgba(255,255,255,0.04);
+    transition: color 300ms;
+  }
+  .news-b-row.now {
+    color: var(--text);
+    background: rgba(230,184,106,0.04);
+  }
+  .news-b-row .ic { width: 16px; text-align: center; opacity: 0.7; flex-shrink: 0; }
+  .news-b-row .tag {
+    font-size: 9.5px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    background: var(--card3); color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.3px;
+    flex-shrink: 0;
+  }
+  .news-b-row.now .tag.market { background: rgba(52,211,153,0.15); color: var(--green); }
+  .news-b-row.now .tag.position { background: rgba(248,113,113,0.15); color: var(--red); }
+  .news-b-row.now .tag.cashflow { background: rgba(52,211,153,0.15); color: var(--green); }
+  .news-b-row.now .tag.calendar { background: var(--accent-tint-strong); color: var(--accent); }
+  .news-b-row .body { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .news-b-row .body strong { color: var(--accent-light); font-weight: 700; }
+  .news-b-row.now .body strong { color: var(--accent-light); }
+
+  @media (max-width: 600px) {
+    .news-b-row { font-size: 11.5px; padding: 0 12px; gap: 8px; }
+    .news-b-row .tag { font-size: 8.5px; padding: 2px 5px; }
+  }
+
+  /* ────────────────── C · 堆叠 peek（iOS-style）────────────────── */
+  .news-c {
+    margin-top: 14px;
+    position: relative;
+    height: 88px;
+    overflow: visible;
+  }
+  .news-c-card {
+    position: absolute;
+    left: 0; right: 0;
+    padding: 12px 16px;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    transition: all 500ms cubic-bezier(0.2, 0.9, 0.3, 1);
+    display: flex; align-items: center; gap: 12px;
+    overflow: hidden;
+  }
+  .news-c-card.layer-0 {
+    top: 0; z-index: 3;
+    transform: scale(1);
+    opacity: 1;
+    border-left: 3px solid var(--accent);
+  }
+  .news-c-card.layer-1 {
+    top: 6px; z-index: 2;
+    transform: scale(0.97);
+    opacity: 0.55;
+    filter: blur(0.3px);
+  }
+  .news-c-card.layer-2 {
+    top: 12px; z-index: 1;
+    transform: scale(0.94);
+    opacity: 0.25;
+  }
+  .news-c-card.exiting {
+    transform: translateY(-32px) scale(1.02);
+    opacity: 0;
+  }
+  .news-c-card .ic {
+    width: 28px; height: 28px;
+    background: var(--card3);
+    border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .news-c-card.layer-0 .ic {
+    background: rgba(230,184,106,0.12);
+  }
+  .news-c-card .text {
+    flex: 1; min-width: 0;
+    font-size: 13px; line-height: 1.45;
+    color: var(--text);
+  }
+  .news-c-card .text strong {
+    color: var(--accent-light); font-weight: 700;
+  }
+  .news-c-card .text .tone-red { color: var(--red); font-weight: 700; }
+  .news-c-card .text .tone-green { color: var(--green); font-weight: 700; }
+  .news-c-card .text .sub {
+    font-size: 11px; color: var(--sub);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .news-c { height: 80px; }
+    .news-c-card .text { font-size: 12px; }
+  }
+
+  /* ────────────────── D · 极简文字 fade（无 card chrome）────────────────── */
+  .news-d {
+    margin-top: 16px;
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--line);
+  }
+  .news-d-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .news-d-head .lbl {
+    font-size: 10.5px; font-weight: 700; color: var(--sub);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .news-d-head .lbl::before {
+    content: ''; display: inline-block;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .news-d-head .progress {
+    display: flex; gap: 3px;
+  }
+  .news-d-head .progress .bar {
+    width: 14px; height: 2px;
+    background: var(--line-2); border-radius: 1px;
+    transition: background 200ms;
+  }
+  .news-d-head .progress .bar.active {
+    background: var(--accent);
+  }
+  .news-d-stage {
+    position: relative;
+    height: 38px;
+    overflow: hidden;
+  }
+  .news-d-item {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; line-height: 1.5;
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 400ms ease, transform 400ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+  .news-d-item.active {
+    opacity: 1; transform: translateY(0);
+  }
+  .news-d-item .dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+  .news-d-item.is-position .dot { background: var(--red); }
+  .news-d-item.is-cashflow .dot { background: var(--green); }
+  .news-d-item.is-calendar .dot { background: var(--accent); }
+  .news-d-item strong {
+    color: var(--accent-light); font-weight: 700;
+  }
+  .news-d-item .tone-red { color: var(--red); font-weight: 700; }
+  .news-d-item .tone-green { color: var(--green); font-weight: 700; }
+
+  @media (max-width: 600px) {
+    .news-d-item { font-size: 12px; }
+  }
+
+  /* before/after 对照 */
+  .before-block {
+    margin: 32px 0 48px;
+    padding: 20px;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  .before-block h3 {
+    font-size: 13px; font-weight: 700; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .before-block h3 .label { color: var(--red); }
+  /* 原 footer 还原 — 用户截图里的样式 */
+  .legacy-footer {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    background: var(--card2);
+    border-left: 2px solid var(--accent);
+    border-radius: 6px;
+    font-size: 11.5px; color: var(--sub);
+    line-height: 1.5;
+  }
+  .legacy-footer strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="page-head">
+  <h1>包租公管家 · <span>新闻条上下滚动</span> 设计预览</h1>
+  <p>把原来 footer 那行单句 synthesis insight，升级成 3-4 条自动垂直滚动的「新闻条」。
+  4 个候选方案，请挑一个；不行就告诉我哪点不顺。</p>
+  <div class="meta">
+    <strong>展示内容</strong>（4 条信息我先选了这套）：<br>
+    1. 📊 市场环境 — VIX 平稳 17.9 · 卖方友好<br>
+    2. ⚠️ 持仓提醒 — TSLA $415 Put 剩 3 天 · 距 strike 3%<br>
+    3. 💰 现金流 — 今日 Theta +$1,027 · 时间在你这边<br>
+    4. 📅 日历 — 本周 5 月 22 日 · 2 张合约到期
+  </div>
+</div>
+
+<!-- 原 footer 是什么样 -->
+<div class="before-block">
+  <h3><span class="label">改之前</span> · 截图里的样式（单句、信息密度低、跟 app 美学有点脱节）</h3>
+  <div class="mb-context">
+    <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+    <div class="mb-stub"><span class="stub-chip">P1 urgent</span>这里模拟 priority list ……</div>
+    <div class="mb-stub"><span class="stub-chip">P2 cashflow</span>这里模拟 priority list ……</div>
+    <div class="legacy-footer">VIX 平稳 17.9, 但你的组合被 <strong>TSLA 双边失策</strong>拖累 -$4.3k；今日 Theta 还在拼命吃 $1,027，说明时间和概率站在你这边——关键是止血那两张 <strong>3DTE</strong>。</div>
+  </div>
+</div>
+
+
+<!-- ============ A ============ -->
+<div class="candidate" id="cand-a">
+  <div class="candidate-title"><span class="letter">A ·</span>单卡片渐变切换 <em style="color:var(--accent);font-size:12px;font-style:normal;font-weight:500;letter-spacing:0.3px"> · 推荐</em></div>
+  <div class="candidate-desc">单条 slot，每 4 秒切下一条；左侧 3px 金边 + 微 gradient 背景，对齐 app 里其他 "spotlight" 区块（早安卡 / 出场建议）。顶部有 pulsing 金点 + 横向 dots 显示进度。</div>
+
+  <div class="frames">
+    <div class="frame">
+      <div class="frame-label">桌面</div>
+      <div class="frame-body">
+        <div class="mb-context">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub"><span class="stub-chip">P1 urgent</span>TSLA $415 Put · 剩 3 天 · 距 strike 3% — 考虑提前回购或滚动</div>
+          <div class="mb-stub"><span class="stub-chip">P2 cashflow</span>NVDA Covered Call · 实现 72% 权利金 — 可以锁利平仓了</div>
+          <div class="news-a" id="news-a-desktop">
+            <div class="news-a-head">
+              <span class="lbl">实时动态</span>
+              <span class="dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </span>
+            </div>
+            <div class="news-a-stage">
+              <div class="news-a-item active"><span class="ic">📊</span>VIX 平稳 <strong>17.9</strong> · 卖方友好窗口，IV 偏低有利于建新仓</div>
+              <div class="news-a-item"><span class="ic">⚠️</span>TSLA $415 Put · 剩 <strong>3 天</strong>到期 · 距 strike <span class="tone-red">3%</span></div>
+              <div class="news-a-item"><span class="ic">💰</span>今日 Theta <span class="tone-green">+$1,027</span> · 全仓收租稳定</div>
+              <div class="news-a-item"><span class="ic">📅</span>本周 <strong>5/22 周五</strong> · 共 2 张合约到期</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame mobile">
+      <div class="frame-label">手机 (375px)</div>
+      <div class="frame-body">
+        <div class="mb-context tight">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P1</span>TSLA $415P 剩 3 天 · 距 strike 3%</div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P2</span>NVDA CC · 实现 72% 权利金</div>
+          <div class="news-a" id="news-a-mobile">
+            <div class="news-a-head">
+              <span class="lbl">实时动态</span>
+              <span class="dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </span>
+            </div>
+            <div class="news-a-stage">
+              <div class="news-a-item active"><span class="ic">📊</span>VIX 平稳 <strong>17.9</strong> · 卖方友好窗口</div>
+              <div class="news-a-item"><span class="ic">⚠️</span>TSLA $415P 剩 <strong>3 天</strong> · 距 strike <span class="tone-red">3%</span></div>
+              <div class="news-a-item"><span class="ic">💰</span>今日 Theta <span class="tone-green">+$1,027</span></div>
+              <div class="news-a-item"><span class="ic">📅</span><strong>5/22 周五</strong> · 2 张合约到期</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ B ============ -->
+<div class="candidate" id="cand-b">
+  <div class="candidate-title"><span class="letter">B ·</span>终端 ticker · 多行可见</div>
+  <div class="candidate-desc">Bloomberg 金融终端式样 — 3 行同时可见，当前 active 行高亮带 tag pill 颜色；track 每 4 秒整体上移一行，绿色 live 心跳指示数据流动。信息密度高，适合 power user。</div>
+
+  <div class="frames">
+    <div class="frame">
+      <div class="frame-label">桌面</div>
+      <div class="frame-body">
+        <div class="mb-context">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub"><span class="stub-chip">P1 urgent</span>TSLA $415 Put · 剩 3 天 · 距 strike 3%</div>
+          <div class="mb-stub"><span class="stub-chip">P2 cashflow</span>NVDA Covered Call · 实现 72% 权利金</div>
+          <div class="news-b" id="news-b-desktop">
+            <div class="news-b-head">
+              <span>市场 · 持仓 · 现金流</span>
+              <span class="live">LIVE</span>
+            </div>
+            <div class="news-b-stage">
+              <div class="news-b-track">
+                <div class="news-b-row"><span class="ic">📊</span><span class="tag market">市场</span><span class="body">VIX 平稳 <strong>17.9</strong> · 卖方友好窗口</span></div>
+                <div class="news-b-row"><span class="ic">⚠️</span><span class="tag position">持仓</span><span class="body">TSLA $415P 剩 <strong>3 天</strong> · 距 strike 3%</span></div>
+                <div class="news-b-row"><span class="ic">💰</span><span class="tag cashflow">现金</span><span class="body">今日 Theta <strong>+$1,027</strong> · 时间在你这边</span></div>
+                <div class="news-b-row"><span class="ic">📅</span><span class="tag calendar">日历</span><span class="body"><strong>5/22 周五</strong> · 2 张合约到期</span></div>
+                <div class="news-b-row"><span class="ic">📊</span><span class="tag market">市场</span><span class="body">VIX 平稳 <strong>17.9</strong> · 卖方友好窗口</span></div>
+                <div class="news-b-row"><span class="ic">⚠️</span><span class="tag position">持仓</span><span class="body">TSLA $415P 剩 <strong>3 天</strong> · 距 strike 3%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame mobile">
+      <div class="frame-label">手机 (375px)</div>
+      <div class="frame-body">
+        <div class="mb-context tight">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P1</span>TSLA $415P 剩 3 天</div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P2</span>NVDA CC · 72%</div>
+          <div class="news-b" id="news-b-mobile">
+            <div class="news-b-head">
+              <span>实时</span>
+              <span class="live">LIVE</span>
+            </div>
+            <div class="news-b-stage">
+              <div class="news-b-track">
+                <div class="news-b-row"><span class="ic">📊</span><span class="tag market">市场</span><span class="body">VIX 平稳 <strong>17.9</strong></span></div>
+                <div class="news-b-row"><span class="ic">⚠️</span><span class="tag position">持仓</span><span class="body">TSLA $415P 剩 <strong>3 天</strong></span></div>
+                <div class="news-b-row"><span class="ic">💰</span><span class="tag cashflow">现金</span><span class="body">Theta <strong>+$1,027</strong></span></div>
+                <div class="news-b-row"><span class="ic">📅</span><span class="tag calendar">日历</span><span class="body"><strong>5/22</strong> 2 张到期</span></div>
+                <div class="news-b-row"><span class="ic">📊</span><span class="tag market">市场</span><span class="body">VIX 平稳 <strong>17.9</strong></span></div>
+                <div class="news-b-row"><span class="ic">⚠️</span><span class="tag position">持仓</span><span class="body">TSLA $415P 剩 <strong>3 天</strong></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ C ============ -->
+<div class="candidate" id="cand-c">
+  <div class="candidate-title"><span class="letter">C ·</span>堆叠 peek · iOS notification</div>
+  <div class="candidate-desc">iOS 通知中心风格——当前条完整显示，后面 2 条逐层缩进 + 模糊 + 透明度递减偷偷露出半截；切换时顶层向上滑出消失，下层往上挤升。视觉很 modern，但占垂直空间略大。</div>
+
+  <div class="frames">
+    <div class="frame">
+      <div class="frame-label">桌面</div>
+      <div class="frame-body">
+        <div class="mb-context">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub"><span class="stub-chip">P1 urgent</span>TSLA $415 Put · 剩 3 天 · 距 strike 3%</div>
+          <div class="mb-stub"><span class="stub-chip">P2 cashflow</span>NVDA Covered Call · 实现 72% 权利金</div>
+          <div class="news-c" id="news-c-desktop"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame mobile">
+      <div class="frame-label">手机 (375px)</div>
+      <div class="frame-body">
+        <div class="mb-context tight">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P1</span>TSLA $415P 剩 3 天</div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P2</span>NVDA CC · 72%</div>
+          <div class="news-c" id="news-c-mobile"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ D ============ -->
+<div class="candidate" id="cand-d">
+  <div class="candidate-title"><span class="letter">D ·</span>极简文字 fade · 无 card chrome</div>
+  <div class="candidate-desc">没有独立卡片底色，只用一行文字 + 顶部小标签 + 微小进度条；左边小 dot 颜色编码类型（金 = 市场/日历、红 = 持仓、绿 = 现金流）。完全融入 brief 流，最不抢风头。</div>
+
+  <div class="frames">
+    <div class="frame">
+      <div class="frame-label">桌面</div>
+      <div class="frame-body">
+        <div class="mb-context">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub"><span class="stub-chip">P1 urgent</span>TSLA $415 Put · 剩 3 天 · 距 strike 3%</div>
+          <div class="mb-stub"><span class="stub-chip">P2 cashflow</span>NVDA Covered Call · 实现 72% 权利金</div>
+          <div class="news-d" id="news-d-desktop">
+            <div class="news-d-head">
+              <span class="lbl">动态</span>
+              <span class="progress">
+                <span class="bar active"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </span>
+            </div>
+            <div class="news-d-stage">
+              <div class="news-d-item is-market active"><span class="dot"></span><span>VIX 平稳 <strong>17.9</strong> · 卖方友好窗口</span></div>
+              <div class="news-d-item is-position"><span class="dot"></span><span>TSLA $415P 剩 <strong>3 天</strong> · 距 strike <span class="tone-red">3%</span></span></div>
+              <div class="news-d-item is-cashflow"><span class="dot"></span><span>今日 Theta <span class="tone-green">+$1,027</span> · 时间在你这边</span></div>
+              <div class="news-d-item is-calendar"><span class="dot"></span><span><strong>5/22 周五</strong> · 2 张合约到期</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame mobile">
+      <div class="frame-label">手机 (375px)</div>
+      <div class="frame-body">
+        <div class="mb-context tight">
+          <div class="mb-greeting">包租公管家 <span class="mb-time">· 10:42</span></div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P1</span>TSLA $415P 剩 3 天</div>
+          <div class="mb-stub" style="font-size:11.5px"><span class="stub-chip">P2</span>NVDA CC · 72%</div>
+          <div class="news-d" id="news-d-mobile">
+            <div class="news-d-head">
+              <span class="lbl">动态</span>
+              <span class="progress">
+                <span class="bar active"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </span>
+            </div>
+            <div class="news-d-stage">
+              <div class="news-d-item is-market active"><span class="dot"></span><span>VIX 平稳 <strong>17.9</strong></span></div>
+              <div class="news-d-item is-position"><span class="dot"></span><span>TSLA $415P 剩 <strong>3 天</strong></span></div>
+              <div class="news-d-item is-cashflow"><span class="dot"></span><span>Theta <span class="tone-green">+$1,027</span></span></div>
+              <div class="news-d-item is-calendar"><span class="dot"></span><span><strong>5/22</strong> · 2 张到期</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// 共享 news 数据
+const NEWS_ITEMS = [
+  { kind: 'market',   icon: '📊', tag: '市场', text: 'VIX 平稳 <strong>17.9</strong> · 卖方友好窗口，IV 偏低有利于建新仓', textMobile: 'VIX 平稳 <strong>17.9</strong> · 卖方友好窗口', tone: null },
+  { kind: 'position', icon: '⚠️', tag: '持仓', text: 'TSLA $415 Put · 剩 <strong>3 天</strong>到期 · 距 strike <span class="tone-red">3%</span>', textMobile: 'TSLA $415P 剩 <strong>3 天</strong> · 距 strike <span class="tone-red">3%</span>', tone: 'red' },
+  { kind: 'cashflow', icon: '💰', tag: '现金', text: '今日 Theta <span class="tone-green">+$1,027</span> · 全仓收租稳定', textMobile: '今日 Theta <span class="tone-green">+$1,027</span>', tone: 'green' },
+  { kind: 'calendar', icon: '📅', tag: '日历', text: '本周 <strong>5/22 周五</strong> · 共 2 张合约到期', textMobile: '<strong>5/22 周五</strong> · 2 张合约到期', tone: null }
+];
+
+const INTERVAL_MS = 4000;
+
+// ============== A · 单卡渐变 ==============
+function tickA(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  const items = root.querySelectorAll('.news-a-item');
+  const dots  = root.querySelectorAll('.news-a-head .dot');
+  let idx = 0;
+  setInterval(() => {
+    items[idx].classList.remove('active');
+    dots[idx].classList.remove('active');
+    idx = (idx + 1) % items.length;
+    items[idx].classList.add('active');
+    dots[idx].classList.add('active');
+  }, INTERVAL_MS);
+}
+tickA('news-a-desktop');
+tickA('news-a-mobile');
+
+// ============== B · 终端 ticker（整 track 上移）==============
+function tickB(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  const track = root.querySelector('.news-b-track');
+  const rows = root.querySelectorAll('.news-b-row');
+  if (!rows.length) return;
+  let idx = 0;
+  // 初始 highlight 第 1 行
+  rows[0].classList.add('now');
+  setInterval(() => {
+    rows.forEach(r => r.classList.remove('now'));
+    idx = (idx + 1) % NEWS_ITEMS.length;
+    // 让 idx 行成为视觉上的中间行（即视图位移 idx 个）
+    track.style.transform = `translateY(-${idx * 32}px)`;
+    // active row 是当前 idx
+    rows[idx].classList.add('now');
+    // 当移到最后一项，准备 reset 时复制 track（这里靠多渲染 2 行处理 wrap）
+    if (idx === NEWS_ITEMS.length - 1) {
+      setTimeout(() => {
+        track.style.transition = 'none';
+        track.style.transform = 'translateY(0)';
+        rows.forEach(r => r.classList.remove('now'));
+        rows[0].classList.add('now');
+        idx = 0;
+        // 强制 reflow
+        void track.offsetHeight;
+        track.style.transition = '';
+      }, INTERVAL_MS - 100);
+    }
+  }, INTERVAL_MS);
+}
+tickB('news-b-desktop');
+tickB('news-b-mobile');
+
+// ============== C · 堆叠 peek（动态 DOM 渲染）==============
+function renderC(rootId, mobile) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  let order = [0, 1, 2, 3]; // 当前顺序：order[0] 是顶层
+
+  const render = () => {
+    root.innerHTML = '';
+    for (let layer = 0; layer < Math.min(3, order.length); layer++) {
+      const itemIdx = order[layer];
+      const item = NEWS_ITEMS[itemIdx];
+      const card = document.createElement('div');
+      card.className = `news-c-card layer-${layer}`;
+      const txt = mobile ? item.textMobile : item.text;
+      const subTxt = layer === 0
+        ? (item.kind === 'market'   ? '<div class="sub">市场环境</div>'
+          : item.kind === 'position' ? '<div class="sub">持仓提醒</div>'
+          : item.kind === 'cashflow' ? '<div class="sub">现金流</div>'
+          :                            '<div class="sub">日历事件</div>')
+        : '';
+      card.innerHTML = `
+        <div class="ic">${item.icon}</div>
+        <div class="text">${txt}${subTxt}</div>
+      `;
+      root.appendChild(card);
+    }
+  };
+  render();
+
+  setInterval(() => {
+    // 顶层 exit
+    const top = root.querySelector('.news-c-card.layer-0');
+    if (top) top.classList.add('exiting');
+    setTimeout(() => {
+      // rotate: 把第一项挪到末尾
+      order.push(order.shift());
+      render();
+    }, 450);
+  }, INTERVAL_MS);
+}
+renderC('news-c-desktop', false);
+renderC('news-c-mobile', true);
+
+// ============== D · 极简 fade ==============
+function tickD(rootId) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  const items = root.querySelectorAll('.news-d-item');
+  const bars  = root.querySelectorAll('.news-d-head .bar');
+  let idx = 0;
+  setInterval(() => {
+    items[idx].classList.remove('active');
+    bars[idx].classList.remove('active');
+    idx = (idx + 1) % items.length;
+    items[idx].classList.add('active');
+    bars[idx].classList.add('active');
+  }, INTERVAL_MS);
+}
+tickD('news-d-desktop');
+tickD('news-d-mobile');
+</script>
+</body>
+</html>

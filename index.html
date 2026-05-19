@@ -240,6 +240,138 @@
   .user-badge.signed-out:hover {
     background: rgba(230,184,106,0.08);
   }
+  /* 金币徽章 — 在 user-badge 右侧，pill 风格 */
+  .coin-badge {
+    position: absolute; left: 220px; top: 50%;
+    transform: translateY(-50%);
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 17px; height: 34px; padding: 0 14px 0 12px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; color: var(--accent); font-weight: 600;
+    transition: border-color 0.15s, transform 0.2s;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+  }
+  .coin-badge:hover { border-color: var(--accent); }
+  .coin-badge .coin-icon { font-size: 14px; line-height: 1; }
+  .coin-badge .coin-num { line-height: 1; }
+  .coin-badge.deducting {
+    animation: coin-pulse 0.5s ease;
+  }
+  @keyframes coin-pulse {
+    0%   { transform: translateY(-50%) scale(1); }
+    30%  { transform: translateY(-50%) scale(1.18); color: var(--bad, #F87171); }
+    100% { transform: translateY(-50%) scale(1); }
+  }
+
+  /* 首次登录欢迎遮罩 */
+  .welcome-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(10,10,11,0.78);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .welcome-overlay.open { opacity: 1; pointer-events: auto; }
+  .welcome-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 36px 32px 28px;
+    text-align: center;
+    max-width: 380px; width: 100%;
+    position: relative;
+    overflow: hidden;
+    transform: scale(0.92);
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5),
+                0 0 80px rgba(230,184,106,0.12);
+  }
+  .welcome-overlay.open .welcome-card { transform: scale(1); }
+  .welcome-confetti {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .welcome-confetti .confetti {
+    position: absolute; top: -20px;
+    width: 8px; height: 14px;
+    border-radius: 2px;
+    animation: confetti-fall 2.6s ease-in forwards;
+  }
+  .welcome-confetti .c0 { left: 8%;  background: #E6B86A; animation-delay: 0s;   transform: rotate(15deg); }
+  .welcome-confetti .c1 { left: 22%; background: #F87171; animation-delay: 0.1s; transform: rotate(-10deg); }
+  .welcome-confetti .c2 { left: 35%; background: #4ADE80; animation-delay: 0.05s; transform: rotate(8deg); }
+  .welcome-confetti .c3 { left: 50%; background: #60A5FA; animation-delay: 0.15s; transform: rotate(-20deg); }
+  .welcome-confetti .c4 { left: 65%; background: #E6B86A; animation-delay: 0.08s; transform: rotate(12deg); }
+  .welcome-confetti .c5 { left: 80%; background: #F472B6; animation-delay: 0.18s; transform: rotate(-15deg); }
+  .welcome-confetti .confetti:nth-child(n+7)  { animation-delay: 0.25s; top: -40px; }
+  .welcome-confetti .confetti:nth-child(n+13) { animation-delay: 0.4s;  top: -60px; }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(0) rotate(0); opacity: 1; }
+    100% { transform: translateY(520px) rotate(540deg); opacity: 0; }
+  }
+  .welcome-coin {
+    font-size: 56px; line-height: 1;
+    margin-bottom: 10px;
+    animation: coin-bounce 1.6s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(230,184,106,0.4));
+  }
+  @keyframes coin-bounce {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-8px) rotate(4deg); }
+  }
+  .welcome-title {
+    font-size: 22px; font-weight: 600;
+    color: var(--text); margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .welcome-sub {
+    color: var(--sub); font-size: 13.5px; line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .welcome-grant {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg,
+      rgba(230,184,106,0.12),
+      rgba(230,184,106,0.04));
+    border: 1px solid rgba(230,184,106,0.3);
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .welcome-num {
+    font-size: 44px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .welcome-unit {
+    color: var(--accent);
+    font-size: 14px; font-weight: 500;
+  }
+  .welcome-line {
+    color: var(--sub); font-size: 12.5px;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+  .welcome-btn {
+    background: var(--accent); color: #0A0A0B;
+    border: none; border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .welcome-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(230,184,106,0.35);
+  }
+
   .user-badge.signed-in .name {
     color: var(--accent);
   }
@@ -3839,6 +3971,8 @@
     .theme-toggle { width: 30px; height: 30px; font-size: 12px; }
     .user-badge { padding: 0 8px; height: 30px; max-width: 110px; font-size: 11px; }
     .user-badge .name { max-width: 64px; font-size: 11px; }
+    .coin-badge { left: 124px; padding: 0 9px 0 8px; height: 30px; font-size: 11px; }
+    .coin-badge .coin-icon { font-size: 12px; }
     .lang-selector { right: 38px; height: 30px; border-radius: 15px; }
     .lang-selector button { padding: 0 6px; min-width: 24px; font-size: 10.5px; }
 
@@ -4431,6 +4565,10 @@
     <div class="user-badge" id="user-badge" onclick="editUsername()" data-i18n-title="点击修改用户名（仅本地显示）" title="点击修改用户名（仅本地显示）">
       <span class="icon">👤</span>
       <span class="name" id="user-name" data-i18n="本地用户">本地用户</span>
+    </div>
+    <div class="coin-badge" id="coin-badge" style="display:none" onclick="showCoinInfo()" data-i18n-title="包租公金币 — 每次推荐消耗 1 枚" title="包租公金币 — 每次推荐消耗 1 枚">
+      <span class="coin-icon">🪙</span>
+      <span class="coin-num" id="coin-num">—</span>
     </div>
     <div class="lang-selector" id="lang-selector">
       <button data-lang="zh" data-i18n="简">简</button>
@@ -5107,6 +5245,14 @@ const I18N = {
     '包租公管家': '包租公管家',
     '展开管家': '展開管家',
     '展开包租公管家': '展開包租公管家',
+    '包租公金币 — 每次推荐消耗 1 枚': '包租公金幣 — 每次推薦消耗 1 枚',
+    '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': '包租公金幣 — 每次推薦消耗 1 枚。當前餘額：{n}',
+    '欢迎入坑包租公': '歡迎入坑包租公',
+    '欢迎，{name}': '歡迎，{name}',
+    '包租公已经为你开好账号 — 送你一份开张红包': '包租公已經為你開好賬號 — 送你一份開張紅包',
+    '枚金币': '枚金幣',
+    '每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度': '每次「找出最佳推薦」消耗 1 枚 · 1000 次試用額度',
+    '开始挑租客 →': '開始挑租客 →',
     '今日要关注': '今日要關注',
     '组合健康': '組合健康',
     '📅 未来 14 天关键日': '📅 未來 14 天關鍵日',
@@ -5754,6 +5900,14 @@ const I18N = {
     '包租公管家': 'Landlord Concierge',
     '展开管家': 'Show concierge',
     '展开包租公管家': 'Show concierge',
+    '包租公金币 — 每次推荐消耗 1 枚': 'Landlord coins — each recommendation costs 1',
+    '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': 'Landlord coins — each recommendation costs 1. Current balance: {n}',
+    '欢迎入坑包租公': 'Welcome to Landlord',
+    '欢迎，{name}': 'Welcome, {name}',
+    '包租公已经为你开好账号 — 送你一份开张红包': "We've set up your account — here's a starter bonus",
+    '枚金币': 'coins',
+    '每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度': 'Each recommendation costs 1 coin · 1,000 free queries to start',
+    '开始挑租客 →': 'Start picking tenants →',
     '今日要关注': 'Today’s focus',
     '组合健康': 'Portfolio health',
     '📅 未来 14 天关键日': '📅 Next 14 days',
@@ -9691,6 +9845,11 @@ async function submitRec() {
       body: JSON.stringify(body),
     });
     const data = await r.json();
+    // 推荐成功扣 1 枚（乐观更新 + 后台 reconcile）；失败不扣
+    if (!data.error && _currentUser) {
+      _deductCoin();
+      setTimeout(() => _loadCoinBalance({ silent: true }), 2000);
+    }
     if (data.error) {
       // 数据源不可用 — 加重试按钮
       const isDataErr = data.error_kind === 'data_unavailable';
@@ -11194,6 +11353,142 @@ function renderAll(d) {
 const SUPABASE_URL = 'https://nvavwcvxmzksadpbtafs.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws';
 
+// ── 包租公金币 ────────────────────────────────────────────────
+// 初始 1000 枚，每次推荐扣 1。从 usage_events 推导，无独立 schema。
+const COIN_INITIAL = 1000;
+let _coinBalance = null;  // 当前已知余额
+
+function _renderCoinBadge(remaining) {
+  const el = document.getElementById('coin-badge');
+  const numEl = document.getElementById('coin-num');
+  if (!el || !numEl) return;
+  if (remaining === null || remaining === undefined) {
+    el.style.display = 'none';
+    return;
+  }
+  numEl.textContent = remaining.toLocaleString();
+  el.style.display = 'inline-flex';
+}
+
+async function _loadCoinBalance(opts) {
+  if (!_currentUser) { _coinBalance = null; _renderCoinBadge(null); return; }
+  try {
+    const r = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_balance', user_id: _currentUser.id }),
+    });
+    const d = await r.json();
+    if (d && d.ok && typeof d.remaining === 'number') {
+      _coinBalance = d.remaining;
+      _renderCoinBadge(_coinBalance);
+    } else if (!(opts && opts.silent)) {
+      // 未配 service role 或出错时，给一个保底显示 1000
+      _coinBalance = COIN_INITIAL;
+      _renderCoinBadge(_coinBalance);
+    }
+  } catch (e) {
+    if (!(opts && opts.silent)) {
+      _coinBalance = COIN_INITIAL;
+      _renderCoinBadge(_coinBalance);
+    }
+  }
+}
+
+function _deductCoin() {
+  if (_coinBalance === null) return;
+  _coinBalance = Math.max(0, _coinBalance - 1);
+  _renderCoinBadge(_coinBalance);
+  const el = document.getElementById('coin-badge');
+  if (el) {
+    el.classList.remove('deducting');
+    void el.offsetWidth;  // restart animation
+    el.classList.add('deducting');
+  }
+}
+
+function showCoinInfo() {
+  if (!_currentUser) return;
+  const n = _coinBalance == null ? '—' : _coinBalance.toLocaleString();
+  alert(t('包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}').replace('{n}', n));
+}
+
+// ── 首次登录欢迎动画 ─────────────────────────────────────────
+async function _maybeShowWelcome(isFirstSession) {
+  if (!_currentUser || window._isShareView) return;
+  // 跨设备 replay 保护：state._meta.welcome_seen
+  const st = (_cloudCache && _cloudCache.state) || {};
+  const meta = st._meta || {};
+  if (meta.welcome_seen) return;
+  // 只在 cloud 完全空（视为首次注册）时播
+  const cloudEmpty = !!(_cloudCache &&
+    (!_cloudCache.positions || _cloudCache.positions.length === 0) &&
+    (!_cloudCache.state || Object.keys(_cloudCache.state).length === 0));
+  if (!cloudEmpty && !isFirstSession) return;
+  // 显示动画
+  _renderWelcomeOverlay();
+  // 标记 — 不阻塞动画，先写云
+  try {
+    st._meta = st._meta || {};
+    st._meta.welcome_seen = new Date().toISOString();
+    if (_cloudCache) _cloudCache.state = st;
+    if (typeof saveStateMap === 'function') saveStateMap(st);
+  } catch (e) {}
+}
+
+function _renderWelcomeOverlay() {
+  if (document.getElementById('welcome-overlay')) return;
+  const meta = _currentUser && _currentUser.user_metadata || {};
+  const name = (meta.full_name || meta.name || (_currentUser.email || '').split('@')[0] || '').trim();
+  const hi = name ? t('欢迎，{name}').replace('{name}', name.split(' ')[0]) : t('欢迎入坑包租公');
+  const overlay = document.createElement('div');
+  overlay.id = 'welcome-overlay';
+  overlay.className = 'welcome-overlay';
+  overlay.innerHTML = `
+    <div class="welcome-card">
+      <div class="welcome-confetti">
+        ${Array.from({length: 18}).map((_,i) => `<span class="confetti c${i%6}"></span>`).join('')}
+      </div>
+      <div class="welcome-coin">🪙</div>
+      <h2 class="welcome-title">${_escapeHtml(hi)}</h2>
+      <div class="welcome-sub">${t('包租公已经为你开好账号 — 送你一份开张红包')}</div>
+      <div class="welcome-grant">
+        <div class="welcome-num" id="welcome-num">0</div>
+        <div class="welcome-unit">${t('枚金币')}</div>
+      </div>
+      <div class="welcome-line">${t('每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度')}</div>
+      <button class="welcome-btn" onclick="_dismissWelcome()">${t('开始挑租客 →')}</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // 触发入场
+  requestAnimationFrame(() => overlay.classList.add('open'));
+  // 数字滚动 0 → 1000
+  const start = performance.now();
+  const dur = 1400;
+  const target = COIN_INITIAL;
+  const numEl = document.getElementById('welcome-num');
+  function tick(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    if (numEl) numEl.textContent = Math.round(target * eased).toLocaleString();
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function _dismissWelcome() {
+  const el = document.getElementById('welcome-overlay');
+  if (!el) return;
+  el.classList.remove('open');
+  setTimeout(() => el.remove(), 350);
+}
+
+function _escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // ── 用量埋点（fire-and-forget，失败不影响主流程）────────────────
 function _logUsage(event, metadata) {
   try {
@@ -11363,16 +11658,20 @@ async function _onSignedIn(isFresh) {
   _renderUserBadge();
   _setSyncStatus('synced', t('☁ 已同步'));
   // 用量埋点：每个 session 第一次登入时记 login；首次注册（cloud 无任何数据）记 first_login
+  let _isFirstLogin = false;
   try {
     const sessKey = 'usage-login-' + _currentUser.id + '-' + new Date().toISOString().slice(0,10);
     if (!sessionStorage.getItem(sessKey)) {
       sessionStorage.setItem(sessKey, '1');
-      const isFirst = !!(_cloudCache &&
+      _isFirstLogin = !!(_cloudCache &&
         (!_cloudCache.positions || _cloudCache.positions.length === 0) &&
         (!_cloudCache.state || Object.keys(_cloudCache.state).length === 0));
-      _logUsage(isFirst ? 'first_login' : 'login', { fresh: !!isFresh });
+      _logUsage(_isFirstLogin ? 'first_login' : 'login', { fresh: !!isFresh });
     }
   } catch(e) {}
+  // 加载金币余额 + 必要时播首次欢迎动画
+  _loadCoinBalance();
+  _maybeShowWelcome(_isFirstLogin);
   // 关键：云数据加载完，把 selectedIds 设回 null，让下次 refresh() 用 cloud
   // 的 positions 重新初始化选择（之前会用初次 refresh 时空的 positions 把 selection 清空）
   selectedIds = null;
@@ -11388,6 +11687,8 @@ async function _onSignedOut() {
   }
   _cloudReady = false;
   _cloudCache = null;
+  _coinBalance = null;
+  _renderCoinBadge(null);
   _renderUserBadge();
   _setSyncStatus(null);
   if (typeof refresh === 'function') refresh();

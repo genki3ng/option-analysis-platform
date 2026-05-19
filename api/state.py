@@ -533,6 +533,9 @@ SUPABASE_ANON_KEY = os.environ.get(
 )
 ADMIN_EMAIL_WHITELIST = {"hi@congyangwang.com", "avatar.wang@gmail.com"}
 
+# 初始 coin 额度（per user）
+COIN_INITIAL_GRANT = 1000
+
 
 def _supabase_request(method, path, body=None, params=None, use_service_role=True, timeout=8):
     """通用 Supabase REST 调用。返回 (status, json|text)。失败抛异常。"""
@@ -739,6 +742,52 @@ def admin_stats(payload):
             "by_top_tier": dict(tier_counter),
             "candidates_buckets": dict(candidates_buckets),
         },
+    }
+
+
+def get_coin_balance(payload):
+    """返回某用户当前 coin 余额。用 Supabase count head 一次性算 used。
+    不做 JWT 验证（低风险只读，最多被人探测某用户用了多少次）。"""
+    user_id = (payload.get("user_id") or "").strip()
+    if not user_id:
+        return {"error": "missing user_id"}
+    if not SUPABASE_SERVICE_ROLE_KEY:
+        # 没配 service role 就退化为"满额"，不阻塞前端
+        return {"ok": True, "total": COIN_INITIAL_GRANT, "used": 0,
+                "remaining": COIN_INITIAL_GRANT, "note": "service_role missing"}
+    # Supabase count 模式：HEAD + Prefer: count=exact，返回值在 Content-Range
+    key = SUPABASE_SERVICE_ROLE_KEY
+    url = (SUPABASE_URL.rstrip("/") + "/rest/v1/usage_events"
+           + "?" + urllib.parse.urlencode({
+                "select": "id",
+                "user_id": f"eq.{user_id}",
+                "event": "eq.recommend",
+           }))
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Prefer": "count=exact",
+        "Range-Unit": "items",
+        "Range": "0-0",
+    }
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            cr = resp.headers.get("Content-Range") or ""
+            # 形如 "0-0/42" 或 "*/42"
+            used = 0
+            if "/" in cr:
+                tail = cr.split("/", 1)[1].strip()
+                if tail.isdigit():
+                    used = int(tail)
+    except Exception as e:
+        return {"error": f"{type(e).__name__}: {e}"}
+    remaining = max(0, COIN_INITIAL_GRANT - used)
+    return {
+        "ok": True,
+        "total": COIN_INITIAL_GRANT,
+        "used": used,
+        "remaining": remaining,
     }
 
 
@@ -4293,6 +4342,8 @@ class handler(BaseHTTPRequestHandler):
                     result = {"ok": True}
             elif action == "admin_stats":
                 result = admin_stats(payload)
+            elif action == "get_balance":
+                result = get_coin_balance(payload)
             else:
                 result = compute(payload)
             self._send_json(200, result)

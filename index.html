@@ -1787,8 +1787,14 @@
     display: grid; grid-template-columns: repeat(3, 1fr);
     gap: 8px; margin-bottom: 14px; align-items: stretch;
   }
-  .rec-form .row[data-section="risk"] .label { grid-column: 1 / -1; }
-  .rec-form .row[data-section="risk"] .opt-btn {
+  .rec-form .row[data-section="exit_style"] {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 8px; margin-bottom: 14px; align-items: stretch;
+  }
+  .rec-form .row[data-section="risk"] .label,
+  .rec-form .row[data-section="exit_style"] .label { grid-column: 1 / -1; }
+  .rec-form .row[data-section="risk"] .opt-btn,
+  .rec-form .row[data-section="exit_style"] .opt-btn {
     display: grid !important;
     grid-template-columns: auto 1fr;
     grid-template-areas:
@@ -1801,16 +1807,19 @@
     padding: 8px 10px;
     min-height: 48px;
   }
-  .rec-form .row[data-section="risk"] .opt-icon {
+  .rec-form .row[data-section="risk"] .opt-icon,
+  .rec-form .row[data-section="exit_style"] .opt-icon {
     grid-area: icon;
     font-size: 16px; line-height: 1;
     display: inline-flex; align-items: center;
   }
-  .rec-form .row[data-section="risk"] .opt-title {
+  .rec-form .row[data-section="risk"] .opt-title,
+  .rec-form .row[data-section="exit_style"] .opt-title {
     grid-area: title;
     align-self: center;
   }
-  .rec-form .row[data-section="risk"] .opt-sub {
+  .rec-form .row[data-section="risk"] .opt-sub,
+  .rec-form .row[data-section="exit_style"] .opt-sub {
     grid-area: sub;
     margin-top: 1px;
   }
@@ -5106,6 +5115,21 @@
     <span class="risk-hint" id="risk-hint"></span>
   </div>
 
+  <div class="row" data-section="exit_style">
+    <span class="label" data-i18n="5. 出场风格">5. 出场风格</span>
+    <button class="opt-btn" data-group="exit_style" data-value="auto">
+      <span class="opt-icon" aria-hidden="true">⚙️</span>
+      <span class="opt-title" data-i18n="自动锁利">自动锁利</span>
+      <span class="opt-sub" data-i18n="50% 锁利 / 200% 止损">50% 锁利 / 200% 止损</span>
+    </button>
+    <button class="opt-btn" data-group="exit_style" data-value="wheel_purist">
+      <span class="opt-icon" aria-hidden="true">🪜</span>
+      <span class="opt-title" data-i18n="持到到期">持到到期</span>
+      <span class="opt-sub" data-i18n="Wheel 派 · 接货为乐">Wheel 派 · 接货为乐</span>
+    </button>
+    <span class="risk-hint" data-i18n="持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。">持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。</span>
+  </div>
+
   </div><!-- /rec-strategy-mode -->
 
   <div class="rec-result" id="rec-result"></div>
@@ -5335,6 +5359,14 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡',
     '预算够': '预算够',
     '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
+
+    // ── 🪜 出场风格 (v2 #3 wheel_purist UI)
+    '5. 出场风格': '5. 出场风格',
+    '自动锁利': '自动锁利',
+    '50% 锁利 / 200% 止损': '50% 锁利 / 200% 止损',
+    '持到到期': '持到到期',
+    'Wheel 派 · 接货为乐': 'Wheel 派 · 接货为乐',
+    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。',
     '总接货预算': '总接货预算',
     '从预算里给 4 档 strike 等量分配 contracts': '从预算里给 4 档 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
@@ -6029,6 +6061,14 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看漲 · CSP 階梯（自適應 2-4 檔）· {tf}d · 平衡',
     '预算够': '預算夠',
     '档（你想要 N 档需要更多预算）': '檔（你想要 N 檔需要更多預算）',
+
+    // ── 🪜 出场风格
+    '5. 出场风格': '5. 出場風格',
+    '自动锁利': '自動鎖利',
+    '50% 锁利 / 200% 止损': '50% 鎖利 / 200% 止損',
+    '持到到期': '持到到期',
+    'Wheel 派 · 接货为乐': 'Wheel 派 · 接貨為樂',
+    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不鎖利不止損，只在被指派後處理（接貨換正股 / 賣 CC）。僅短賣適用。',
     '总接货预算': '總接貨預算',
     '从预算里给 4 档 strike 等量分配 contracts': '從預算裡給 4 檔 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看漲 · CSP 4 檔階梯 · {tf}d · 平衡',
@@ -6815,6 +6855,14 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': 'Bullish · CSP ladder (auto-fit 2-4) · {tf}d · balanced',
     '预算够': 'Budget fits',
     '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
+
+    // ── 🪜 Exit style (wheel_purist UI)
+    '5. 出场风格': '5. Exit style',
+    '自动锁利': 'Auto lock-in',
+    '50% 锁利 / 200% 止损': '50% profit / 200% stop',
+    '持到到期': 'Hold to expiry',
+    'Wheel 派 · 接货为乐': 'Wheel-style · happy to be assigned',
+    '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': 'Hold to expiry = no profit-lock, no stop-loss; only act when assigned (take stock / sell CC). Short positions only.',
     '总接货预算': 'Total assignment budget',
     '从预算里给 4 档 strike 等量分配 contracts': 'Equal contracts across 4 strikes within budget',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': 'Bullish · CSP 4-rung ladder · {tf}d · balanced',
@@ -9677,6 +9725,7 @@ const _recDefaults = {
   intent: 'premium',
   timeframe: '7',
   risk: 'balanced',
+  exit_style: 'auto',
 };
 const _recSelection = (() => {
   // 模块级初始化 — 任何 throw 都会让整个 app 启动失败。localStorage 损坏
@@ -10222,6 +10271,7 @@ async function submitRec() {
     intent: _recSelection.intent,
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
+    exit_style: _recSelection.exit_style || 'auto',
   };
   // 用量埋点：把当前用户带上，后端在 do_POST 末尾 log_usage_event
   if (_currentUser) {

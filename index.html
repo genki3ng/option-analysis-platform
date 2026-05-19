@@ -12488,19 +12488,25 @@ async function refreshMorningBrief() {
     }
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    window._currentData = d;
-    renderAll(d);
-    // 仅当后端真的走了 LLM（生成新 brief）才扣 5 金币
+    // 仅当后端真的走了 LLM（生成新 brief）才扣 5 金币 + 替换 brief
     if (d.brief_refresh_charged) {
+      window._currentData = d;
+      renderAll(d);
       _deductCoin(MB_REFRESH_COST);
       // 后台 reconcile 真实余额（双保险，避免乐观扣的偏差）
       setTimeout(() => _loadCoinBalance({ silent: true }), 2000);
     } else {
-      // LLM 没成功 → 没扣费，告诉用户重试
-      // 把 _llm_diag 拼进提示，方便用户报错时直接复制
+      // LLM 没成功 → 没扣费。
+      // 保留旧 brief（不让 template fallback 跳回 placeholder 取代用户已看到的 LLM brief），
+      // 其他数据（持仓 P&L / 推荐等）正常更新。
+      const oldBrief = (window._currentData || {}).morning_brief || null;
+      // 取 fallback brief 里的诊断信息再回填旧 brief（方便下次报错复制）
       const diag = (d.morning_brief || {})._llm_diag || {};
+      d.morning_brief = oldBrief;
+      window._currentData = d;
+      renderAll(d);
       const detail = diag.phase
-        ? `\n[${diag.phase}${diag.model ? ' · ' + diag.model : ''}${diag.error_type ? ' · ' + diag.error_type : ''}${diag.elapsed_s != null ? ' · ' + diag.elapsed_s + 's' : ''}]`
+        ? `\n[${diag.phase}${diag.model ? ' · ' + diag.model : ''}${diag.error_type ? ' · ' + diag.error_type : ''}${diag.elapsed_s != null ? ' · ' + diag.elapsed_s + 's' : ''}${diag.error_msg ? '\n' + String(diag.error_msg).slice(0, 120) : ''}]`
         : '';
       alert(t('管家暂时打盹（生成失败），本次未扣金币。稍后再试。') + detail);
     }

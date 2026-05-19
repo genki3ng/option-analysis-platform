@@ -5249,10 +5249,14 @@ const I18N = {
     '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': '包租公金幣 — 每次推薦消耗 1 枚。當前餘額：{n}',
     '欢迎入坑包租公': '歡迎入坑包租公',
     '欢迎，{name}': '歡迎，{name}',
+    '好久不见！': '好久不見！',
+    '好久不见，{name}': '好久不見，{name}',
     '包租公已经为你开好账号 — 送你一份开张红包': '包租公已經為你開好賬號 — 送你一份開張紅包',
+    '包租公升级了 — 加了金币额度系统，先送你一笔启动金': '包租公升級了 — 加了金幣額度系統，先送你一筆啟動金',
     '枚金币': '枚金幣',
     '每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度': '每次「找出最佳推薦」消耗 1 枚 · 1000 次試用額度',
     '开始挑租客 →': '開始挑租客 →',
+    '开始用金币挑租客 →': '開始用金幣挑租客 →',
     '今日要关注': '今日要關注',
     '组合健康': '組合健康',
     '📅 未来 14 天关键日': '📅 未來 14 天關鍵日',
@@ -5904,10 +5908,14 @@ const I18N = {
     '包租公金币 — 每次推荐消耗 1 枚。当前余额：{n}': 'Landlord coins — each recommendation costs 1. Current balance: {n}',
     '欢迎入坑包租公': 'Welcome to Landlord',
     '欢迎，{name}': 'Welcome, {name}',
+    '好久不见！': 'Welcome back!',
+    '好久不见，{name}': 'Welcome back, {name}',
     '包租公已经为你开好账号 — 送你一份开张红包': "We've set up your account — here's a starter bonus",
+    '包租公升级了 — 加了金币额度系统，先送你一笔启动金': 'Landlord just shipped a coin system — here\'s your starter grant',
     '枚金币': 'coins',
     '每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度': 'Each recommendation costs 1 coin · 1,000 free queries to start',
     '开始挑租客 →': 'Start picking tenants →',
+    '开始用金币挑租客 →': 'Spend coins on tenants →',
     '今日要关注': 'Today’s focus',
     '组合健康': 'Portfolio health',
     '📅 未来 14 天关键日': '📅 Next 14 days',
@@ -11414,20 +11422,17 @@ function showCoinInfo() {
 }
 
 // ── 首次登录欢迎动画 ─────────────────────────────────────────
-async function _maybeShowWelcome(isFirstSession) {
+// 每个用户只播一次（state._meta.welcome_seen，云端 flag，跨设备）。
+// 老用户首次进来也补播 — 文案换成"好久不见，加了金币系统"。
+async function _maybeShowWelcome(_isFirstSession) {
   if (!_currentUser || window._isShareView) return;
-  // 跨设备 replay 保护：state._meta.welcome_seen
   const st = (_cloudCache && _cloudCache.state) || {};
   const meta = st._meta || {};
   if (meta.welcome_seen) return;
-  // 只在 cloud 完全空（视为首次注册）时播
-  const cloudEmpty = !!(_cloudCache &&
-    (!_cloudCache.positions || _cloudCache.positions.length === 0) &&
-    (!_cloudCache.state || Object.keys(_cloudCache.state).length === 0));
-  if (!cloudEmpty && !isFirstSession) return;
-  // 显示动画
-  _renderWelcomeOverlay();
-  // 标记 — 不阻塞动画，先写云
+  const isReturning = !!(_cloudCache &&
+    ((_cloudCache.positions && _cloudCache.positions.length > 0) ||
+     (_cloudCache.state && Object.keys(_cloudCache.state).filter(k => k !== '_meta').length > 0)));
+  _renderWelcomeOverlay({ isReturning });
   try {
     st._meta = st._meta || {};
     st._meta.welcome_seen = new Date().toISOString();
@@ -11436,11 +11441,26 @@ async function _maybeShowWelcome(isFirstSession) {
   } catch (e) {}
 }
 
-function _renderWelcomeOverlay() {
+function _renderWelcomeOverlay(opts) {
   if (document.getElementById('welcome-overlay')) return;
+  opts = opts || {};
   const meta = _currentUser && _currentUser.user_metadata || {};
   const name = (meta.full_name || meta.name || (_currentUser.email || '').split('@')[0] || '').trim();
-  const hi = name ? t('欢迎，{name}').replace('{name}', name.split(' ')[0]) : t('欢迎入坑包租公');
+  const firstName = name ? name.split(' ')[0] : '';
+  let title, sub, cta;
+  if (opts.isReturning) {
+    title = firstName
+      ? t('好久不见，{name}').replace('{name}', firstName)
+      : t('好久不见！');
+    sub = t('包租公升级了 — 加了金币额度系统，先送你一笔启动金');
+    cta = t('开始用金币挑租客 →');
+  } else {
+    title = firstName
+      ? t('欢迎，{name}').replace('{name}', firstName)
+      : t('欢迎入坑包租公');
+    sub = t('包租公已经为你开好账号 — 送你一份开张红包');
+    cta = t('开始挑租客 →');
+  }
   const overlay = document.createElement('div');
   overlay.id = 'welcome-overlay';
   overlay.className = 'welcome-overlay';
@@ -11450,14 +11470,14 @@ function _renderWelcomeOverlay() {
         ${Array.from({length: 18}).map((_,i) => `<span class="confetti c${i%6}"></span>`).join('')}
       </div>
       <div class="welcome-coin">🪙</div>
-      <h2 class="welcome-title">${_escapeHtml(hi)}</h2>
-      <div class="welcome-sub">${t('包租公已经为你开好账号 — 送你一份开张红包')}</div>
+      <h2 class="welcome-title">${_escapeHtml(title)}</h2>
+      <div class="welcome-sub">${_escapeHtml(sub)}</div>
       <div class="welcome-grant">
         <div class="welcome-num" id="welcome-num">0</div>
         <div class="welcome-unit">${t('枚金币')}</div>
       </div>
       <div class="welcome-line">${t('每次「找出最佳推荐」消耗 1 枚 · 1000 次试用额度')}</div>
-      <button class="welcome-btn" onclick="_dismissWelcome()">${t('开始挑租客 →')}</button>
+      <button class="welcome-btn" onclick="_dismissWelcome()">${_escapeHtml(cta)}</button>
     </div>
   `;
   document.body.appendChild(overlay);

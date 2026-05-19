@@ -3,9 +3,28 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（concierge — 新闻条上下滚动 ticker · 替换老 footer）
+最后更新：2026-05-19（concierge — roll log last-action-wins + Sonnet temperature 0.3）
 
-### ✅ 这一轮 (2026-05-19 concierge · "新闻条上下滚动" 终端 ticker 替换老 footer)
+### ✅ 这一轮 (2026-05-19 concierge · 24h log 误判 "已平仓" + 重刷内容跳动)
+
+**用户报错（2 张同时刻截图对比）**：付 5🪙 连刷两次，brief 内容大变：第一张 TSLA $425 Call 写"新开即亏 62%"，第二张写"新开数小时内又平仓（记录显示 0h ago 两笔）"。但用户根本没平过 TSLA Call。
+
+**根因 #1（误判平仓）**：`_roll_changes_log` (line 4391) 用 `seen_add` + `seen_rm` 两个独立 map，互不感知。当同一 label 在 24h 内被 add→remove→add（试错操作 / strike 调整 / 多次刷新 snap 缺失），seen_add 和 seen_rm **都**保留它，LLM prompt 里就同时出现「+ 新开: TSLA $425 Call (0h ago)」+「- 平仓: TSLA $425 Call (0h ago)」 — LLM 误解为"刚加完又删了"。
+
+**根因 #2（重刷内容跳动）**：LLM 默认 `temperature=1.0`，用户付钱重刷，相同输入下 LLM 输出会显著不同（措辞 / 选哪些 item / 风险等级）。用户感觉"不停更新"。
+
+**修复**（`api/state.py`）：
+1. `_roll_changes_log` 改成 **last-action-wins**：按时间序遍历，每个 label 最后一次事件决定它当前在 added 还是 removed。同一 label 不再同时出现两边。
+2. Sonnet 路径 `messages.create(temperature=0.3, ...)`：相同输入下输出稳定，不同输入仍反映差异。
+
+**没改的**：
+- CONCIERGE_VERSION 不动（不改 prompt 文本，今天 cache 仍有效；下次 force refresh 走新逻辑）
+- Haiku 路径默认 temperature 不动（自动刷新走 Haiku，稳定性已经够）
+- LLM 失败时保留旧 brief 的逻辑（上一轮加的）
+
+---
+
+### 上一轮 (2026-05-19 concierge · "新闻条上下滚动" 终端 ticker 替换老 footer)
 
 **用户场景**：截图里早安简报底部那条暖黄色单句 `footer`（"VIX 平稳 17.9... 关键是止血那两张 3DTE"）设计太老气，不 match 现在 app 的暗金卡片美学。同时单句信息密度低，希望换成"新闻上下滚动 3-4 条"。
 

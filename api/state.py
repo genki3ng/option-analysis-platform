@@ -4384,7 +4384,59 @@ def _make_brief_snapshot(positions: List[dict], market: dict, today: date) -> di
         "date": today.isoformat(),
         "vix": (market.get("vix") or {}).get("price"),
         "positions": pos_snap,
+        "changes_log": [],
     }
+
+
+def _roll_changes_log(prev_log, pos_changes, now_ts: int, window_sec: int = 24 * 3600):
+    """滚动 24h 持仓变动 log。
+    - 先 prune 掉 window_sec 之前的旧事件
+    - 当前 diff 非空就 append 一条 {ts, added, removed}
+    - 返回 (new_log, recent_changes_summary)
+      recent_changes_summary: 给 LLM prompt 用的"过去 24h"汇总
+        {added: [{label, hours_ago}], removed: [{label, hours_ago}], has_changes: bool}
+        — 跨 ticker+strike+type+expiry 去重，按时间倒序，多次出现取最近时间。
+    """
+    log = []
+    if isinstance(prev_log, list):
+        cutoff = now_ts - window_sec
+        for e in prev_log:
+            if isinstance(e, dict) and isinstance(e.get("ts"), (int, float)) and e["ts"] >= cutoff:
+                log.append(e)
+    added = list((pos_changes or {}).get("added") or [])
+    removed = list((pos_changes or {}).get("removed") or [])
+    if added or removed:
+        log.append({"ts": now_ts, "added": added, "removed": removed})
+
+    seen_add, seen_rm = {}, {}
+    for e in log:
+        ts = e.get("ts", now_ts)
+        for it in e.get("added") or []:
+            label = (it or {}).get("label") or ""
+            if not label:
+                continue
+            if label not in seen_add or ts > seen_add[label]:
+                seen_add[label] = ts
+        for it in e.get("removed") or []:
+            label = (it or {}).get("label") or ""
+            if not label:
+                continue
+            if label not in seen_rm or ts > seen_rm[label]:
+                seen_rm[label] = ts
+
+    def _fmt(label_ts_map):
+        out = []
+        for label, ts in sorted(label_ts_map.items(), key=lambda kv: -kv[1]):
+            hours_ago = max(0, int(round((now_ts - ts) / 3600)))
+            out.append({"label": label, "hours_ago": hours_ago})
+        return out
+
+    summary = {
+        "added": _fmt(seen_add),
+        "removed": _fmt(seen_rm),
+        "has_changes": bool(seen_add or seen_rm),
+    }
+    return log, summary
 
 
 def _compute_position_changes(yesterday_snap: dict, positions: List[dict]) -> Dict:
@@ -4683,7 +4735,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
       prose_text: 派生 prose（backward compat / share view）
       structured_brief: {headline, sub?, items[], footer?}
     positions: 完整活跃持仓列表（compact 格式塞进 prompt 让管家有全局视野）
-    pos_changes: 自上次刷新的新开/平仓 diff，让管家能主动提到刚发生的动作。"""
+    pos_changes: 过去 24h 滚动持仓变动汇总（_roll_changes_log 产出），让管家看得到
+      跨多次 refresh 的累积变化，而不只是"上次 refresh 到这次"的瞬时 diff。
+      每项 {label, hours_ago}。"""
     client = _get_anthropic_client()
     if not client:
         print(f"[concierge] llm_skip: no_client lang={lang}", flush=True)
@@ -4729,15 +4783,19 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
                 f"Δ{delta:+.2f} · θ${theta:+.1f}{money_tag}"
             )
 
-    # 持仓变化 — 让管家主动提到刚发生的动作
+    # 持仓变化 — 过去 24h 滚动窗口，跨多次 refresh 不被消化掉
     added = pos_changes.get("added") or []
     removed = pos_changes.get("removed") or []
     if added or removed:
-        signal_lines.append("\nRecent position changes (since last brief):")
+        signal_lines.append("\nRecent position changes (last 24h):")
         for it in added:
-            signal_lines.append(f"  + 新开: {it.get('label','')}")
+            ha = it.get("hours_ago")
+            ago = f" ({ha}h ago)" if isinstance(ha, int) else ""
+            signal_lines.append(f"  + 新开: {it.get('label','')}{ago}")
         for it in removed:
-            signal_lines.append(f"  - 平仓/移除: {it.get('label','')}")
+            ha = it.get("hours_ago")
+            ago = f" ({ha}h ago)" if isinstance(ha, int) else ""
+            signal_lines.append(f"  - 平仓/移除: {it.get('label','')}{ago}")
 
     if top_3:
         signal_lines.append("\nToday's top 3 focus:")
@@ -4782,7 +4840,9 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "**action**：看持仓用 `position:<pid>`——**pid 必须从 `All active positions` 行里 `[pid=...]` 复制**，不要瞎拼或拼缩写；"
         "找新机会/调仓用 `rec`；无明确下一步 → null。\n"
         "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。"
-        "Recent changes 有就挑 1 条最值得讲的体现在 headline 或 body。"
+        "Recent changes (last 24h) 是用户最近 24h 内开仓/平仓的持仓 — 这是滚动窗口（多次 refresh 累积），"
+        "**必须**至少有 1 个 item 提到其中最值得讲的那笔（headline 或 body 里点名 + 数字），"
+        "尤其是同 ticker call+put 共存、新加的方向暴露、临近行权或财报的新仓。"
     )
 
     user_prompt = "今早信号:\n" + "\n".join(signal_lines) + (
@@ -4963,7 +5023,13 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     chips = _build_focus_chips(positions, market, total_pnl, total_realized, total_theta,
                                 concentration, lang)
     # 持仓变化（新开 / 平仓 / 编辑）— 触发重新生成 + 喂给 LLM 让它能主动提到
+    # pos_changes 是"上次 snap → 现在"的瞬时 diff，用作 cache invalidation（has_changes 决定要不要重调 LLM）
+    # recent_changes_24h 是"过去 24h 滚动窗口"汇总，喂给 LLM 让它看到跨多次 refresh 的累积变化
     pos_changes = _compute_position_changes(yesterday_snap, positions)
+    now_ts = int(time.time())
+    new_changes_log, recent_changes_24h = _roll_changes_log(
+        yesterday_snap.get("changes_log") if isinstance(yesterday_snap, dict) else [],
+        pos_changes, now_ts)
 
     # Concierge 一天一次：今天已生成过就复用，不重新调 LLM（避免跳动 + 省钱）
     # concierge_version: prompt 改了就 bump，让旧 cache 失效
@@ -4973,7 +5039,9 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     # bump 9: 缓存键从 UTC date 换成 America/New_York date — 旧 UTC snap 在
     #         美东时间凌晨那段窗口被错误复用（同 UTC 日期 → 命中昨天的文）。
     #         强制失效一次，确保用户今早登陆拿到真正"今天"的 brief。
-    CONCIERGE_VERSION = 9
+    # bump 10: Recent changes section 改用滚动 24h log（而非"上次 snap → 现在"瞬时 diff），
+    #          解决 force refresh 看不到上午新加持仓的问题。LLM prompt 表述变化。
+    CONCIERGE_VERSION = 10
     cached_text = None
     cached_brief = None
     cached_by = None
@@ -4996,7 +5064,7 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     else:
         concierge_text, concierge_brief = _generate_concierge_llm(
             top_3, market, total_pnl, total_theta,
-            concentration, positions, pos_changes, lang)
+            concentration, positions, recent_changes_24h, lang)
         by = "llm"
         if not concierge_text or not concierge_brief:
             concierge_text, concierge_brief = _template_concierge(top_3, market, lang)
@@ -5013,6 +5081,10 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
           flush=True)
 
     next_snap = _make_brief_snapshot(positions, market, today)
+    # 滚动 24h 持仓变动 log 始终写入（无论 LLM 成功 / template / cache 命中）
+    # 这样多次 refresh 不会消化掉变化信号 — 例如早上加 TSLA call 后中午 force refresh
+    # 仍能让 LLM 看到这条变动。
+    next_snap["changes_log"] = new_changes_log
     # 只在 LLM 成功或复用 LLM cache 时才写 concierge_* 字段。
     # template 兜底不缓存，让下次 refresh（5min 后）重新尝试 LLM；
     # diff 用的 positions/vix snap 仍写入，跨日 diff 不受影响。

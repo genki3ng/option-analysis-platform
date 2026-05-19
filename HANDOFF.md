@@ -3,9 +3,32 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 持仓卡出场建议去重复 💰 logo + 解释出场逻辑）
+最后更新：2026-05-19（cloud — 早安 brief 滚动 24h 持仓变动 log）
 
-### ✅ 这一轮（2026-05-19 cloud · 出场建议重复 logo 修复）
+### ✅ 这一轮 (2026-05-19 cloud · 付费刷新看不到上午新加持仓 — 滚动 24h diff log)
+
+**用户报错**：早上加了 TSLA $425 Call，中午花 5 coin 重 generate insight，brief 没提到这个新持仓。
+
+**根因**：`brief_snapshot.positions` 每次 refresh 都立即覆盖 → `_compute_position_changes` 算出来的是"上一次 refresh 到这次"的瞬时 diff。早上 09:35 自动 refresh 触发的 LLM regen 已经"消化"掉 TSLA call 这条新加事件（snap 同步更新），中午 force refresh 时 `pos_changes.added = []`，LLM prompt 里的 "Recent changes" 段是空的 — LLM 只能从 "All active positions" 列表里看到 TSLA call 静静躺着，未必选它进 top items。
+
+**修复**（`api/state.py`）：
+- 新增 `_roll_changes_log(prev_log, pos_changes, now_ts, window=24h)` — 累积事件 + prune >24h 的旧条目
+- `brief_snapshot` schema 加 `changes_log` 字段（list of `{ts, added, removed}`）
+- `_generate_concierge_llm` 改吃 24h 滚动汇总而非即时 diff，prompt 里 "Recent position changes (last 24h):" 每行带 `(Nh ago)`
+- prompt 强化："**必须**至少有 1 个 item 提到最值得讲的那笔（尤其同 ticker call+put 共存 / 新方向暴露 / 临近行权或财报的新仓）"
+- `next_snap["changes_log"]` 始终写入（无论 LLM 成功 / template / cache 命中）
+- `CONCIERGE_VERSION` bump 9 → 10（旧 cache 失效）
+
+**cache invalidation 不动**：仍走 `pos_changes["has_changes"]`（瞬时 diff），所以 09:35 触发重新生成的逻辑保留。
+
+**timeline 验证（unit-tested）**：
+- 09:35 加 TSLA call → log 累积该事件
+- 09:40 / 12:00 后续 refresh → TSLA call 仍在 log 里（hours_ago 递增）
+- 次日 09:40（>24h）→ 自动 prune
+
+---
+
+### 上一轮（2026-05-19 cloud · 出场建议重复 logo 修复）
 
 **主题**：用户截图反馈持仓卡出场建议行有重复的 💰 emoji（`📍 出场建议 💰 💰 死磕到期...`）。同时要求解释「出场建议」整套逻辑及 why。
 
@@ -40,7 +63,7 @@
 
 ---
 
-### 上一轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
+### 上上轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
 
 **用户报错**：`刷新失败：Cannot read properties of null (reading 'has')`
 

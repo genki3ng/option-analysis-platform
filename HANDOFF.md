@@ -3,9 +3,34 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 每日 P&L 图表"今日点"与 hero 数字对不上）
+最后更新：2026-05-19（cloud — 候选卡片 surface 2.0 信号 box · 方案 B + hover tooltip + 小白指南扩容）
 
-### ✅ 这一轮 hotfix（2026-05-19 cloud · `api/state.py` `portfolio_history`）
+### ✅ 这一轮（2026-05-19 cloud · v2 #1 surface v2 fields）
+
+**主题**：v1 backend 已 ship 但前端没显示 EV / VRP / RV / 压测 / 资金占用 — 价值看不见。按 §9 建预览页 `v2-cards.html` 让用户选 A/B/C，**用户选 B（结构化信号 box）**，并要求"hover 时小白能看懂的解释" + "概念加到小白指南"。
+
+**核心实现**（`index.html`）：
+
+1. **新 `renderV2Sigbox(opt, isShort)`**（line 6947 后）：候选卡片 `rec-metrics` 下方插入"📊 包租公 2.0 信号" box。6 行：年化边际收益 / VRP / 已实现波动率 / 压测 -5% / 压测 -10% / 接货占现金。每行带颜色（good/warn/bad）+ tag + `?` 帮助 icon。仅 `used_v2_base=true` 时显示，v1.4 fallback 静默。
+
+2. **Hover/tap tooltip**（line 2030+ CSS）：`[data-tip]::after` 伪元素，hover/focus 时绝对定位显示；移动端点击行 toggle `.show-tip` class 同样显示。5 个 tooltip 长文案 `tip_ev` / `tip_vrp` / `tip_rv` / `tip_stress` / `tip_capital`，大白话解释怎么算 / 怎么用。
+
+3. **小白指南扩容**（EDU_TOPICS）：新增分类"📊 包租公 2.0 信号（高阶）"，5 个词条（EV / VRP / RV / 压测 / 接货占现金），每个含 desc / 例子 / care + 三语字段。
+
+4. **i18n 三语补 24 个 key**：sigbox 标签 + 5 个长 tooltip 文案 + EDU 分类名 + tag 词。
+
+5. **清理**：删 `v2-cards.html` 预览页 + `vercel.json` 移路由（rebase 时和 main 的 admin.html 添加冲突，已解掉）。
+
+**待用户验证**：
+- [ ] hard-refresh `/app` 对 TSLA 跑 CSP → 候选卡片显示"📊 包租公 2.0 信号" box
+- [ ] hover ? icon → tooltip 弹出
+- [ ] 移动端 tap 整行 → tooltip 显示
+- [ ] 小白指南滚到底有新分类 + 5 个新词条
+- [ ] 切英文/繁中 → 标签 + tooltip + EDU 都翻译
+
+---
+
+### 上一轮 hotfix（2026-05-19 cloud · `api/state.py` `portfolio_history`）— 每日 P&L 图表"今日点"与 hero 数字对不上
 
 **问题**：截图里图表 tooltip 显示 "2026-05-19 已选总 P&L: $-202.00"，但顶部 hero "未实现盈亏" 显示 "+$226.00"，相差 $428。
 

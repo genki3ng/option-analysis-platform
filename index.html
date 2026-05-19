@@ -8594,6 +8594,7 @@ function showReview() {
   const d = window._currentData;
   if (!d) { alert(t('数据未加载')); return; }
   const closed = d.positions.filter(p => p.closed && p.close_price !== null && p.close_price !== undefined);
+  _logUsage('review', { closed_n: closed.length });
 
   if (!closed.length) {
     document.getElementById('review-modal').innerHTML = `
@@ -9267,6 +9268,11 @@ async function submitRec() {
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
   };
+  // 用量埋点：把当前用户带上，后端在 do_POST 末尾 log_usage_event
+  if (_currentUser) {
+    body.user_id = _currentUser.id;
+    body.user_email = _currentUser.email || null;
+  }
   const tfRange = _TIMEFRAME_RANGES[String(_recSelection.timeframe)];
   if (tfRange) {
     body.timeframe_min = tfRange[0];
@@ -10538,6 +10544,19 @@ function renderMorningBrief(brief) {
     el.classList.remove('mode-priority');
     return;
   }
+  // 用量埋点：每天每用户每会话只记一次 brief view
+  try {
+    if (_currentUser && !window._isShareView) {
+      const k = 'usage-brief-' + _currentUser.id + '-' + (brief.today_date || new Date().toISOString().slice(0,10));
+      if (!sessionStorage.getItem(k)) {
+        sessionStorage.setItem(k, '1');
+        _logUsage('morning_brief_view', {
+          by: brief.generated_by || null,
+          lang: brief.concierge_lang || null,
+        });
+      }
+    }
+  } catch(e) {}
   const chips = Array.isArray(brief.chips) ? brief.chips : [];
   const cal = Array.isArray(brief.calendar_14d) ? brief.calendar_14d : [];
   const chipsHtml = chips.length
@@ -10777,6 +10796,25 @@ function renderAll(d) {
 const SUPABASE_URL = 'https://nvavwcvxmzksadpbtafs.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws';
 
+// ── 用量埋点（fire-and-forget，失败不影响主流程）────────────────
+function _logUsage(event, metadata) {
+  try {
+    if (!_currentUser) return;
+    fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'log_event',
+        event,
+        user_id: _currentUser.id,
+        user_email: _currentUser.email || null,
+        metadata: metadata || {},
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) { /* noop */ }
+}
+
 let _sb = null;
 let _currentUser = null;
 let _cloudCache = null;     // { positions: [], state: {} }
@@ -10926,6 +10964,17 @@ async function _onSignedIn(isFresh) {
   _subscribeCloud();
   _renderUserBadge();
   _setSyncStatus('synced', t('☁ 已同步'));
+  // 用量埋点：每个 session 第一次登入时记 login；首次注册（cloud 无任何数据）记 first_login
+  try {
+    const sessKey = 'usage-login-' + _currentUser.id + '-' + new Date().toISOString().slice(0,10);
+    if (!sessionStorage.getItem(sessKey)) {
+      sessionStorage.setItem(sessKey, '1');
+      const isFirst = !!(_cloudCache &&
+        (!_cloudCache.positions || _cloudCache.positions.length === 0) &&
+        (!_cloudCache.state || Object.keys(_cloudCache.state).length === 0));
+      _logUsage(isFirst ? 'first_login' : 'login', { fresh: !!isFresh });
+    }
+  } catch(e) {}
   // 关键：云数据加载完，把 selectedIds 设回 null，让下次 refresh() 用 cloud
   // 的 positions 重新初始化选择（之前会用初次 refresh 时空的 positions 把 selection 清空）
   selectedIds = null;

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>包租公 · Admin</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 8C5 5 7 3 12 3C17 3 19 5 19 8V19C19 20.5 18 21 17 21H7C6 21 5 20.5 5 19V8Z' stroke='%23E6B86A' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='9' y='11' width='6' height='5' rx='0.5' fill='%23E6B86A'/%3E%3C/svg%3E">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg:    #0A0A0B;
+    --card:  #0F0F11;
+    --card2: #16161A;
+    --text:  #EDEDEC;
+    --sub:   #888889;
+    --dim:   #5A5A5C;
+    --line:  #232328;
+    --accent:#E6B86A;
+    --good:  #4ADE80;
+    --bad:   #F87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    padding: 24px;
+    max-width: 1200px; margin-left: auto; margin-right: auto;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--sub); font-size: 13px; margin-bottom: 24px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 13px; font-weight: 600; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 0 0 14px;
+  }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 140px; }
+  .stat .v { font-size: 26px; font-weight: 600; color: var(--text); }
+  .stat .l { font-size: 12px; color: var(--sub); margin-top: 2px; }
+  .stat .v.accent { color: var(--accent); }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  th {
+    text-align: left; color: var(--sub); font-weight: 500;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--line); padding: 8px 10px;
+  }
+  td {
+    padding: 10px; border-bottom: 1px solid var(--line);
+    color: var(--text);
+  }
+  td.mono { font-family: ui-monospace, SF Mono, Menlo, monospace; color: var(--sub); font-size: 12px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.dim { color: var(--dim); }
+  .btn {
+    background: var(--accent); color: #0A0A0B; border: none;
+    padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn:hover { opacity: 0.9; }
+  .pill {
+    display: inline-block; padding: 2px 8px;
+    background: var(--card2); border: 1px solid var(--line);
+    border-radius: 999px; font-size: 11px; color: var(--sub);
+    margin-right: 4px; margin-bottom: 4px;
+  }
+  .pill .n { color: var(--text); font-weight: 600; margin-left: 4px; }
+  .err {
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3);
+    color: var(--bad); padding: 14px; border-radius: 8px; font-size: 13px;
+  }
+  .loading { color: var(--sub); padding: 20px 0; }
+  .bar {
+    height: 6px; background: var(--card2); border-radius: 3px;
+    overflow: hidden; margin-top: 2px;
+  }
+  .bar .fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+  .topbar { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
+  .topbar .right { color: var(--sub); font-size: 12px; }
+  .topbar .right a { color: var(--accent); text-decoration: none; margin-left: 14px; }
+  .empty { color: var(--dim); padding: 14px 0; font-size: 13px; }
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 50px; margin-top: 6px; }
+  .sparkline .col {
+    flex: 1; background: var(--accent); opacity: 0.65;
+    border-radius: 1px; min-height: 1px;
+  }
+  .sparkline .col.zero { opacity: 0.08; }
+</style>
+</head>
+<body>
+
+<div id="gate" class="card" style="text-align:center;padding:40px 20px;display:none">
+  <h1>🔒 Admin</h1>
+  <div class="sub" id="gate-msg">需要登录</div>
+  <button class="btn" onclick="signIn()">使用 Google 登录</button>
+  <div style="margin-top:10px"><button class="btn secondary" onclick="signOut()" id="gate-signout" style="display:none">退出当前账号</button></div>
+</div>
+
+<div id="dash" style="display:none">
+  <div class="topbar">
+    <div>
+      <h1>包租公 · Admin</h1>
+      <div class="sub" id="meta-line">加载中…</div>
+    </div>
+    <div class="right">
+      <span id="me-email"></span>
+      <a href="#" onclick="loadStats();return false">↻ 刷新</a>
+      <a href="#" onclick="signOut();return false">退出</a>
+    </div>
+  </div>
+
+  <div id="err" class="err" style="display:none"></div>
+
+  <div class="card">
+    <h2>核心指标</h2>
+    <div class="row">
+      <div class="stat"><div class="v accent" id="s-24h">—</div><div class="l">最近 24h 事件</div></div>
+      <div class="stat"><div class="v" id="s-7d">—</div><div class="l">最近 7d 事件</div></div>
+      <div class="stat"><div class="v" id="s-all">—</div><div class="l">样本内总事件</div></div>
+      <div class="stat"><div class="v" id="s-users">—</div><div class="l">样本内独立用户</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>事件类型分布</h2>
+    <div id="by-event-block">
+      <div class="loading">…</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>近 30 天每日活跃</h2>
+    <div id="by-day-block" class="loading">…</div>
+  </div>
+
+  <div class="card">
+    <h2>Top 用户（按总事件数）</h2>
+    <table id="top-users-table">
+      <thead>
+        <tr>
+          <th>用户</th>
+          <th class="num">总数</th>
+          <th class="num">推荐</th>
+          <th class="num">复盘</th>
+          <th class="num">早安</th>
+          <th class="num">登录</th>
+          <th>最近活跃</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="7" class="loading">…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>推荐系统健康度</h2>
+    <div id="rec-health-block" class="loading">…</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nvavwcvxmzksadpbtafs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws';
+const ADMIN_EMAILS = new Set(['hi@congyangwang.com']);
+
+let _sb = null;
+let _user = null;
+let _accessToken = null;
+
+function _showError(msg) {
+  const el = document.getElementById('err');
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+function _clearError() { document.getElementById('err').style.display = 'none'; }
+
+function _fmtN(n) {
+  if (n === null || n === undefined) return '—';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+function _fmtTs(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    const now = Date.now();
+    const diff = (now - d.getTime()) / 1000;
+    if (diff < 60) return Math.round(diff) + 's 前';
+    if (diff < 3600) return Math.round(diff/60) + 'm 前';
+    if (diff < 86400) return Math.round(diff/3600) + 'h 前';
+    if (diff < 86400*30) return Math.round(diff/86400) + 'd 前';
+    return d.toISOString().slice(0,10);
+  } catch(e) { return iso; }
+}
+function _esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function _showGate(msg) {
+  document.getElementById('gate-msg').textContent = msg || '需要登录';
+  document.getElementById('gate').style.display = 'block';
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('gate-signout').style.display = _user ? 'inline-block' : 'none';
+}
+function _showDash() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  document.getElementById('me-email').textContent = (_user && _user.email) || '';
+}
+
+async function signIn() {
+  if (!_sb) return;
+  await _sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: location.origin + '/admin' },
+  });
+}
+async function signOut() {
+  if (!_sb) return;
+  await _sb.auth.signOut();
+  location.reload();
+}
+
+async function loadStats() {
+  if (!_accessToken) { _showGate('未拿到 access_token，请重新登录'); return; }
+  _clearError();
+  try {
+    const r = await fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'admin_stats', access_token: _accessToken }),
+    });
+    const data = await r.json();
+    if (data && data.error) {
+      if (data.error === 'unauthorized') {
+        _showGate('当前账号无权访问：' + (data.reason || ''));
+        return;
+      }
+      _showError(data.error + (data.detail ? ' — ' + JSON.stringify(data.detail).slice(0, 200) : ''));
+      return;
+    }
+    renderStats(data);
+  } catch (e) {
+    _showError('请求失败：' + e.message);
+  }
+}
+
+function renderStats(d) {
+  const totals = d.totals || {};
+  document.getElementById('s-24h').textContent = _fmtN(totals.last_24h);
+  document.getElementById('s-7d').textContent = _fmtN(totals.last_7d);
+  document.getElementById('s-all').textContent = _fmtN(totals.all_time_in_sample);
+  document.getElementById('s-users').textContent = _fmtN(totals.unique_users_in_sample);
+  document.getElementById('meta-line').textContent =
+    `样本：${d.sampled_rows} 行${d.sample_limit_hit ? '（达上限，老数据被截）' : ''} · 截至 ${d.as_of}`;
+
+  // By event
+  const be = d.by_event || {};
+  const total = be.total || {};
+  const h24 = be.last_24h || {};
+  const w7 = be.last_7d || {};
+  const allEvents = Array.from(new Set([
+    ...Object.keys(total), ...Object.keys(h24), ...Object.keys(w7),
+  ])).sort((a,b) => (total[b]||0) - (total[a]||0));
+  const beBlock = allEvents.length === 0
+    ? '<div class="empty">暂无数据。</div>'
+    : '<table><thead><tr><th>事件</th><th class="num">24h</th><th class="num">7d</th><th class="num">样本内总数</th></tr></thead><tbody>' +
+      allEvents.map(ev => `
+        <tr>
+          <td><span class="pill">${_esc(ev)}</span></td>
+          <td class="num">${_fmtN(h24[ev] || 0)}</td>
+          <td class="num">${_fmtN(w7[ev] || 0)}</td>
+          <td class="num">${_fmtN(total[ev] || 0)}</td>
+        </tr>`).join('') +
+      '</tbody></table>';
+  document.getElementById('by-event-block').innerHTML = beBlock;
+
+  // By day
+  const days = d.by_day_30d || [];
+  if (!days.length) {
+    document.getElementById('by-day-block').innerHTML = '<div class="empty">暂无数据。</div>';
+  } else {
+    const max = Math.max(...days.map(x => x.total));
+    const lastDay = days[days.length - 1];
+    const sparkline = '<div class="sparkline">' +
+      days.map(x => `<div class="col ${x.total === 0 ? 'zero' : ''}" style="height:${max ? (x.total/max*100) : 0}%" title="${x.day}: ${x.total}"></div>`).join('') +
+      '</div>';
+    document.getElementById('by-day-block').innerHTML = `
+      <div style="font-size:12px;color:var(--sub);margin-bottom:8px">
+        最近 ${days.length} 天 · 最高 ${max} 事件/天 · 最新 ${lastDay.day}: <span style="color:var(--text)">${lastDay.total}</span>（推荐 ${lastDay.recommend || 0}）
+      </div>
+      ${sparkline}
+    `;
+  }
+
+  // Top users
+  const tu = d.top_users || [];
+  const tuTbody = !tu.length
+    ? '<tr><td colspan="7" class="empty">暂无用户活跃</td></tr>'
+    : tu.map(u => {
+        const be = u.by_event || {};
+        const email = u.email || '(no email)';
+        const uid = u.user_id ? u.user_id.slice(0, 8) + '…' : '—';
+        return `<tr>
+          <td>${_esc(email)}<br><span class="mono">${_esc(uid)}</span></td>
+          <td class="num">${u.total}</td>
+          <td class="num">${be.recommend || 0}</td>
+          <td class="num">${be.review || 0}</td>
+          <td class="num">${be.morning_brief_view || 0}</td>
+          <td class="num">${(be.login || 0) + (be.first_login || 0)}</td>
+          <td class="dim">${_fmtTs(u.last_seen)}</td>
+        </tr>`;
+      }).join('');
+  document.querySelector('#top-users-table tbody').innerHTML = tuTbody;
+
+  // Recommend health
+  const rh = d.recommend_health || {};
+  const totalRec = (rh.ok || 0) + (rh.fail || 0);
+  const okPct = totalRec ? (rh.ok / totalRec * 100).toFixed(1) : '—';
+  const failCodes = rh.fail_codes || {};
+  const byGoal = rh.by_goal || {};
+  const byRisk = rh.by_risk || {};
+  const byTier = rh.by_top_tier || {};
+  const cb = rh.candidates_buckets || {};
+  const codesHtml = Object.keys(failCodes).length
+    ? Object.entries(failCodes).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('')
+    : '<span class="empty">无失败</span>';
+  document.getElementById('rec-health-block').innerHTML = `
+    <div class="row" style="margin-bottom:14px">
+      <div class="stat"><div class="v">${_fmtN(totalRec)}</div><div class="l">总推荐请求</div></div>
+      <div class="stat"><div class="v" style="color:var(--good)">${_fmtN(rh.ok || 0)}</div><div class="l">成功</div></div>
+      <div class="stat"><div class="v" style="color:var(--bad)">${_fmtN(rh.fail || 0)}</div><div class="l">失败</div></div>
+      <div class="stat"><div class="v">${okPct}%</div><div class="l">成功率</div></div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">失败码 top</div>
+      ${codesHtml}
+    </div>
+    <div style="margin-top:14px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">按 goal</div>
+      ${Object.entries(byGoal).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">按 risk</div>
+      ${Object.entries(byRisk).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Top 候选 tier 分布</div>
+      ${Object.entries(byTier).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">候选数桶</div>
+      ${Object.entries(cb).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+  `;
+}
+
+function _bootSb() {
+  if (!window.supabase || !window.supabase.createClient) {
+    setTimeout(_bootSb, 100); return;
+  }
+  // 清理历史遗留 supabase localStorage keys（与 index.html 保持一致）
+  try {
+    const expected = 'sb-nvavwcvxmzksadpbtafs-auth';
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-') && k.includes('auth') && !k.startsWith(expected))
+      .forEach(k => localStorage.removeItem(k));
+  } catch(e){}
+  _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true, flowType: 'pkce' },
+  });
+  _sb.auth.onAuthStateChange((evt, session) => {
+    if (session && session.user) {
+      _user = session.user;
+      _accessToken = session.access_token;
+      const email = (_user.email || '').toLowerCase();
+      if (!ADMIN_EMAILS.has(email)) {
+        _showGate('当前账号无权限：' + email);
+        return;
+      }
+      _showDash();
+      loadStats();
+    } else {
+      _user = null; _accessToken = null;
+      _showGate();
+    }
+  });
+  _sb.auth.getSession().then(({ data }) => {
+    const s = data && data.session;
+    if (s && s.user) {
+      _user = s.user;
+      _accessToken = s.access_token;
+      const email = (_user.email || '').toLowerCase();
+      if (!ADMIN_EMAILS.has(email)) {
+        _showGate('当前账号无权限：' + email);
+        return;
+      }
+      _showDash();
+      loadStats();
+    } else {
+      _showGate();
+    }
+  });
+}
+_bootSb();
+</script>
+</body>
+</html>

@@ -13,7 +13,8 @@
     { "src": "recommend-cta.html", "use": "@vercel/static" },
     { "src": "account-modal-preview.html", "use": "@vercel/static" },
     { "src": "iphone-text.html", "use": "@vercel/static" },
-    { "src": "v2-cards.html", "use": "@vercel/static" }
+    { "src": "v2-cards.html", "use": "@vercel/static" },
+    { "src": "admin.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/state", "dest": "/api/state.py" },
@@ -27,6 +28,7 @@
     { "src": "/account-modal-preview/?", "dest": "/account-modal-preview.html" },
     { "src": "/iphone-text/?", "dest": "/iphone-text.html" },
     { "src": "/v2-cards/?", "dest": "/v2-cards.html" },
+    { "src": "/admin/?", "dest": "/admin.html" },
     { "src": "/(.*)", "dest": "/intro.html" }
   ]
 }

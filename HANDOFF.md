@@ -3,9 +3,45 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — goal 切换数值残留 + closed 持仓漏滤修复）
+最后更新：2026-05-19（cloud — usage tracking + /admin 面板上线）
 
-### ✅ 这一轮 hotfix #2（2026-05-19 cloud · `index.html:9072` `applyGoal`）
+### ✅ 这一轮 feature（2026-05-19 cloud · usage 埋点 + /admin 后台）
+
+**目标**：用户可在 /admin 看到每个登录用户用了多少次推荐、复盘、早安简报、登录次数。先只埋点，额度不卡。
+
+**改动**：
+- `supabase/usage_events.sql` — 新表 schema（需要用户在 Supabase SQL Editor 跑一次）。RLS 启用 + 默认无 SELECT policy → 只有 service_role 能读。
+- `api/state.py` —
+  - 新 section "Usage tracking"（Schwab 之后、yfinance 之前）：`_supabase_request` / `log_usage_event` / `_verify_admin_token` / `admin_stats`
+  - `do_POST` 加 3 路：`recommend` 末尾自动埋点（带 goal/risk/candidates_n/top_tier/error_kind）；`log_event`（前端来源，白名单 4 个 event）；`admin_stats`（JWT 验证 + 内存聚合）
+- `index.html` —
+  - `_logUsage(event, metadata)` helper（fire-and-forget，无登录 noop）
+  - `_onSignedIn`：每天每用户每会话一次 `login` 或 `first_login`（用 sessionStorage 防抖）
+  - `showReview`：每次开复盘 modal 记一次 `review`
+  - `renderMorningBrief`：每天每用户每会话一次 `morning_brief_view`
+  - `submitRec`：请求 body 加 `user_id` / `user_email`，后端用来落 usage_event
+- `admin.html` — 新建 /admin 仪表盘。Google 登录后客户端验 email 白名单，调 `admin_stats` 拿聚合数据（核心指标 / 事件分布 / 30 天 sparkline / top 25 用户 / 推荐健康度）
+- `vercel.json` — 加 admin.html build + `/admin` 路由
+
+**需要用户做**（一次性）：
+1. 去 Supabase Dashboard → SQL Editor，跑 `supabase/usage_events.sql`
+2. 去 Vercel 项目（option-analysis-platform-web） → Settings → Environment Variables → 加 `SUPABASE_SERVICE_ROLE_KEY`（Supabase Dashboard → Settings → API → service_role secret，⚠️ 不是 anon key）
+3. 验证：访问 https://trade.congyangwang.com/admin → Google 登录（hi@congyangwang.com）→ 应能看到 dashboard。如果空，先去 /app 用一次推荐，回来刷新。
+
+**安全设计**：
+- `log_event` 白名单 event 类型（login/first_login/review/morning_brief_view）。user_id/email 来自前端，不可信，最坏情况是被冒充制造噪声事件 — 可接受。
+- `admin_stats` 接受前端传的 Supabase access_token，后端调 `/auth/v1/user` 验证 + 检查 email ∈ ADMIN_EMAIL_WHITELIST。无效 token / 非白名单 email 返回 `unauthorized`。
+- 服务端用 `SUPABASE_SERVICE_ROLE_KEY` 调 REST API 插入/查询，绕过 RLS。
+
+**没埋什么**：未登录用户不埋（设计），匿名分享视图不埋，share view 下也不发 brief_view。
+
+**没做的扩展位**（以后想做时改这里）：
+- 真要加额度/coin 系统 → 在 `log_usage_event` 之前查月度 count，超额返回 `{ error: 'quota_exceeded' }`，前端识别后弹付费/升级
+- 想看小时粒度活跃 → admin_stats 已有 `by_day_30d` 框架，按小时聚合改一下 strftime 即可
+
+---
+
+### ✅ 上一轮 hotfix #2（2026-05-19 cloud · `index.html:9072` `applyGoal`）
 
 **问题**：用户报"没有候选达到 ≥ 300% 安全度"。max_safety 默认 85%，怎么会是 300？
 

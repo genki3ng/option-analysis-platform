@@ -522,6 +522,226 @@ def fetch_chain_schwab(ticker: str, expiry_str: str) -> Dict:
     return out
 
 
+# ── Usage tracking (Supabase usage_events) ─────────────────────────
+# 用 service_role 直写 Supabase REST，绕过 RLS。前端发 user_id/email，
+# 服务端再加上推荐返回的元数据。任何失败都吞掉，不影响主请求。
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://nvavwcvxmzksadpbtafs.supabase.co")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_ANON_KEY = os.environ.get(
+    "SUPABASE_ANON_KEY",
+    "sb_publishable_hPltd-pP9xhaHKcd1jQO2w_91xAABws",  # 与 index.html 中 publishable key 一致
+)
+ADMIN_EMAIL_WHITELIST = {"hi@congyangwang.com"}
+
+
+def _supabase_request(method, path, body=None, params=None, use_service_role=True, timeout=8):
+    """通用 Supabase REST 调用。返回 (status, json|text)。失败抛异常。"""
+    key = SUPABASE_SERVICE_ROLE_KEY if use_service_role else SUPABASE_ANON_KEY
+    if not key:
+        raise RuntimeError("missing supabase key")
+    url = SUPABASE_URL.rstrip("/") + path
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+    }
+    data_bytes = json.dumps(body).encode("utf-8") if body is not None else None
+    req = urllib.request.Request(url, data=data_bytes, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            raw = resp.read().decode("utf-8")
+            try:
+                return resp.status, json.loads(raw) if raw else None
+            except Exception:
+                return resp.status, raw
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="replace") if e.fp else ""
+        try:
+            return e.code, json.loads(raw) if raw else None
+        except Exception:
+            return e.code, raw
+
+
+def log_usage_event(user_id, user_email, event, metadata=None):
+    """埋点入口。任何失败安静吞掉。"""
+    if not SUPABASE_SERVICE_ROLE_KEY:
+        return  # 没配 key 就 noop，不影响主流程
+    try:
+        row = {
+            "user_id": user_id or None,
+            "user_email": (user_email or None),
+            "event": str(event),
+            "metadata": metadata or {},
+        }
+        _supabase_request("POST", "/rest/v1/usage_events", body=row, timeout=5)
+    except Exception as e:
+        try:
+            print(f"[usage] log fail: {type(e).__name__}: {e}", flush=True)
+        except Exception:
+            pass
+
+
+def _verify_admin_token(access_token):
+    """用 Supabase /auth/v1/user 验 JWT，返回 (ok, email|err_msg)。"""
+    if not access_token:
+        return False, "missing token"
+    url = SUPABASE_URL.rstrip("/") + "/auth/v1/user"
+    headers = {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": f"Bearer {access_token}",
+    }
+    req = urllib.request.Request(url, headers=headers, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        email = (data.get("email") or "").lower().strip()
+        if email in ADMIN_EMAIL_WHITELIST:
+            return True, email
+        return False, f"not whitelisted: {email}"
+    except urllib.error.HTTPError as e:
+        return False, f"auth/v1/user HTTP {e.code}"
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+
+
+def admin_stats(payload):
+    """白名单管理员看用量。需要 access_token；服务端验 JWT。"""
+    ok, info = _verify_admin_token(payload.get("access_token"))
+    if not ok:
+        return {"error": "unauthorized", "reason": info}
+    if not SUPABASE_SERVICE_ROLE_KEY:
+        return {"error": "missing SUPABASE_SERVICE_ROLE_KEY env"}
+
+    # 拉最近 5000 行做内存聚合（量级足够撑相当长时间）
+    limit = int(payload.get("limit", 5000))
+    status, rows = _supabase_request(
+        "GET", "/rest/v1/usage_events",
+        params={
+            "select": "id,user_id,user_email,event,metadata,created_at",
+            "order": "created_at.desc",
+            "limit": str(limit),
+        },
+    )
+    if status >= 400 or not isinstance(rows, list):
+        return {"error": f"supabase {status}", "detail": rows}
+
+    from collections import Counter, defaultdict
+    now = datetime.utcnow()
+    win_24h = now - timedelta(hours=24)
+    win_7d = now - timedelta(days=7)
+    win_30d = now - timedelta(days=30)
+
+    by_event_total = Counter()
+    by_event_24h = Counter()
+    by_event_7d = Counter()
+    by_user = defaultdict(lambda: {"email": None, "total": 0, "last": None, "by_event": Counter()})
+    by_day = defaultdict(int)         # YYYY-MM-DD → 总事件数
+    by_day_recommend = defaultdict(int)
+    rec_ok = 0
+    rec_fail = 0
+    fail_codes = Counter()
+    goal_counter = Counter()
+    risk_counter = Counter()
+    tier_counter = Counter()
+    candidates_buckets = Counter()
+
+    for r in rows:
+        ev = r.get("event") or ""
+        uid = r.get("user_id") or "anon"
+        email = r.get("user_email")
+        meta = r.get("metadata") or {}
+        ts_str = r.get("created_at") or ""
+        try:
+            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00")).replace(tzinfo=None)
+        except Exception:
+            ts = now
+
+        by_event_total[ev] += 1
+        if ts >= win_24h:
+            by_event_24h[ev] += 1
+        if ts >= win_7d:
+            by_event_7d[ev] += 1
+
+        u = by_user[uid]
+        if email:
+            u["email"] = email
+        u["total"] += 1
+        u["by_event"][ev] += 1
+        if u["last"] is None or ts > u["last"]:
+            u["last"] = ts
+
+        day = ts.strftime("%Y-%m-%d")
+        if ts >= win_30d:
+            by_day[day] += 1
+            if ev == "recommend":
+                by_day_recommend[day] += 1
+
+        if ev == "recommend":
+            if meta.get("ok") is True or meta.get("ok") == "true":
+                rec_ok += 1
+            elif meta.get("ok") is False or meta.get("error_kind"):
+                rec_fail += 1
+                code = meta.get("error_kind") or meta.get("error") or "unknown"
+                fail_codes[str(code)[:40]] += 1
+            if meta.get("goal"):
+                goal_counter[str(meta["goal"])] += 1
+            if meta.get("risk"):
+                risk_counter[str(meta["risk"])] += 1
+            if meta.get("top_tier") is not None:
+                tier_counter[f"tier_{meta['top_tier']}"] += 1
+            n = meta.get("candidates_n")
+            if isinstance(n, (int, float)):
+                if n == 0: candidates_buckets["0"] += 1
+                elif n <= 3: candidates_buckets["1-3"] += 1
+                elif n <= 7: candidates_buckets["4-7"] += 1
+                else: candidates_buckets["8+"] += 1
+
+    top_users = sorted(
+        ({
+            "user_id": uid,
+            "email": u["email"],
+            "total": u["total"],
+            "last_seen": u["last"].isoformat() if u["last"] else None,
+            "by_event": dict(u["by_event"]),
+         } for uid, u in by_user.items()),
+        key=lambda x: -x["total"],
+    )[:25]
+
+    return {
+        "ok": True,
+        "as_of": now.isoformat() + "Z",
+        "sampled_rows": len(rows),
+        "sample_limit_hit": len(rows) >= limit,
+        "totals": {
+            "all_time_in_sample": sum(by_event_total.values()),
+            "last_24h": sum(by_event_24h.values()),
+            "last_7d": sum(by_event_7d.values()),
+            "unique_users_in_sample": len(by_user),
+        },
+        "by_event": {
+            "total": dict(by_event_total),
+            "last_24h": dict(by_event_24h),
+            "last_7d": dict(by_event_7d),
+        },
+        "top_users": top_users,
+        "by_day_30d": sorted(({"day": k, "total": v, "recommend": by_day_recommend.get(k, 0)}
+                              for k, v in by_day.items()),
+                             key=lambda x: x["day"]),
+        "recommend_health": {
+            "ok": rec_ok,
+            "fail": rec_fail,
+            "fail_codes": dict(fail_codes.most_common(10)),
+            "by_goal": dict(goal_counter),
+            "by_risk": dict(risk_counter),
+            "by_top_tier": dict(tier_counter),
+            "candidates_buckets": dict(candidates_buckets),
+        },
+    }
+
+
 # ── yfinance + curl_cffi UA 伪装 ─────────────────────────────────
 # yfinance 默认用 requests 库，Yahoo 能识别出来限流。
 # curl_cffi 能伪装 Chrome 的 TLS fingerprint + HTTP/2 frames，绕开识别。
@@ -3866,6 +4086,50 @@ class handler(BaseHTTPRequestHandler):
                 }
             elif action == "recommend":
                 result = recommend(payload)
+                try:
+                    user_id = payload.get("user_id")
+                    user_email = payload.get("user_email")
+                    if user_id or user_email:
+                        cands = result.get("candidates") or []
+                        top_tier = None
+                        if cands:
+                            try:
+                                top_tier = (cands[0].get("verdict") or {}).get("tier")
+                            except Exception:
+                                top_tier = None
+                        meta = {
+                            "ok": "error" not in result,
+                            "ticker": payload.get("ticker"),
+                            "goal": payload.get("intent"),
+                            "risk": payload.get("risk"),
+                            "direction": payload.get("direction"),
+                            "timeframe": payload.get("timeframe"),
+                            "candidates_n": len(cands),
+                            "top_tier": top_tier,
+                        }
+                        if "error" in result:
+                            meta["error_kind"] = result.get("error_kind") or "unknown"
+                            meta["error"] = (result.get("error") or "")[:160]
+                        log_usage_event(user_id, user_email, "recommend", meta)
+                except Exception as _e:
+                    try: print(f"[usage] recommend log skip: {_e}", flush=True)
+                    except Exception: pass
+            elif action == "log_event":
+                # 前端主动埋点：login / first_login / review 等
+                ev = payload.get("event") or ""
+                allowed = {"login", "first_login", "review", "morning_brief_view"}
+                if ev not in allowed:
+                    result = {"ok": False, "error": "event not allowed"}
+                else:
+                    log_usage_event(
+                        payload.get("user_id"),
+                        payload.get("user_email"),
+                        ev,
+                        payload.get("metadata") or {},
+                    )
+                    result = {"ok": True}
+            elif action == "admin_stats":
+                result = admin_stats(payload)
             else:
                 result = compute(payload)
             self._send_json(200, result)

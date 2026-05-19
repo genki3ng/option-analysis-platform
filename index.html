@@ -9267,8 +9267,13 @@ async function submitRec() {
   }
   const acct = _getAccountMeta();
   // 把用户当前的开仓期权打包传给后端，用于 portfolio context（同 ticker 敞口 / 压力测试）
+  // closed 标志在 state map 里（按 position_id 索引），不在 position 对象上
+  const __stMap = loadStateMap();
   const openOptionPositions = loadPositions()
-    .filter(p => !p.closed)
+    .filter(p => {
+      const st = __stMap[posIdOf(p)];
+      return !(st && st.closed);
+    })
     .map(p => ({
       ticker: p.ticker, type: p.type,
       strike: p.strike, expiry: p.expiry,

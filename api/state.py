@@ -785,6 +785,20 @@ def admin_stats(payload):
     tier_counter = Counter()
     candidates_buckets = Counter()
 
+    # 管家 Insight 付费刷新（brief_refresh，5🪙/次）专项聚合
+    br_total = 0
+    br_24h = 0
+    br_7d = 0
+    br_uids = set()
+    br_by_lang = Counter()
+    br_by_model = Counter()
+    br_by_day = defaultdict(int)  # 30d 窗口
+    br_by_user = defaultdict(lambda: {"email": None, "count": 0, "last": None})
+    # 自动展示（free view）对比
+    mbv_total = 0
+    mbv_24h = 0
+    mbv_uids = set()
+
     for r in rows:
         ev = r.get("event") or ""
         uid = r.get("user_id") or "anon"
@@ -836,6 +850,28 @@ def admin_stats(payload):
                 elif n <= 7: candidates_buckets["4-7"] += 1
                 else: candidates_buckets["8+"] += 1
 
+        if ev == "brief_refresh":
+            br_total += 1
+            br_uids.add(uid)
+            if ts >= win_24h: br_24h += 1
+            if ts >= win_7d: br_7d += 1
+            if ts >= win_30d:
+                br_by_day[day] += 1
+            lang = (meta.get("lang") or "?")[:10]
+            br_by_lang[str(lang)] += 1
+            by = (meta.get("by") or "?")[:20]
+            br_by_model[str(by)] += 1
+            bu = br_by_user[uid]
+            if email:
+                bu["email"] = email
+            bu["count"] += 1
+            if bu["last"] is None or ts > bu["last"]:
+                bu["last"] = ts
+        elif ev == "morning_brief_view":
+            mbv_total += 1
+            mbv_uids.add(uid)
+            if ts >= win_24h: mbv_24h += 1
+
     top_users = sorted(
         ({
             "user_id": uid,
@@ -875,6 +911,34 @@ def admin_stats(payload):
             "by_risk": dict(risk_counter),
             "by_top_tier": dict(tier_counter),
             "candidates_buckets": dict(candidates_buckets),
+        },
+        "brief_refresh": {
+            "total": br_total,
+            "last_24h": br_24h,
+            "last_7d": br_7d,
+            "unique_users": len(br_uids),
+            "coins_consumed": br_total * 5,
+            "by_lang": dict(br_by_lang),
+            "by_model": dict(br_by_model),
+            "by_day_30d": sorted(
+                ({"day": k, "n": v} for k, v in br_by_day.items()),
+                key=lambda x: x["day"],
+            ),
+            "top_users": sorted(
+                ({
+                    "user_id": uid,
+                    "email": bu["email"],
+                    "count": bu["count"],
+                    "coins": bu["count"] * 5,
+                    "last": bu["last"].isoformat() if bu["last"] else None,
+                 } for uid, bu in br_by_user.items()),
+                key=lambda x: -x["count"],
+            )[:15],
+            "morning_brief_view": {
+                "total": mbv_total,
+                "last_24h": mbv_24h,
+                "unique_users": len(mbv_uids),
+            },
         },
     }
 

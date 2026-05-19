@@ -3,9 +3,40 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — app 加 admin 入口图标）
+最后更新：2026-05-19（cloud — admin 加管家 Insight 付费刷新统计卡）
 
-### ✅ 这一轮 (2026-05-19 cloud · app 加 admin 入口图标)
+### ✅ 这一轮 (2026-05-19 cloud · admin 管家 Insight 付费刷新统计)
+
+**主题**：用户花 5🪙 手动刷新管家的 `brief_refresh` 事件现在只能在 admin 的"事件类型分布"里看到一个总数。补一张专用卡 drill-down，让 admin 看清这条付费链路在用户里的渗透。
+
+**后端**（`api/state.py:admin_stats`，+64 行）：
+- 在原有 row loop 里加 `brief_refresh` 专项 Counter：24h/7d/总数 · 独立付费用户 set · `by_lang`（zh/zh_tw/en）· `by_model`（llm/template — 实际全部应该是 llm，因 charging 条件是 `generated_by == "llm"`）· `by_day_30d` 趋势 · `by_user`（邮箱+次数+最近付费时间）
+- 同时聚合 `morning_brief_view`（用户看管家展示的免费事件，24h/总/独立用户）做"付费转化率" denom
+- 返回 dict 新增 `brief_refresh` 字段，含上述全部聚合 + `coins_consumed` (= total × 5) + top_users[15]
+- 老字段（totals / by_event / top_users / recommend_health 等）零改动 — 向后兼容
+
+**前端**（`admin.html`，+78 行）：
+- 加一张卡"管家 Insight · 付费刷新（5🪙/次）"，放在"推荐系统健康度"下面
+- 上排 5 个 stat：24h / 7d / 样本内总次数 / 累计消耗金币 / 付费用户数
+- 下排 4 个 stat：管家展示总次数 / 24h 展示 / 看过管家的用户 / 付费转化率
+- pill 行：按语言、按生成路径
+- 30d 趋势 sparkline（复用现有 `.sparkline` CSS）
+- Top 付费用户表（邮箱 / 次数 / 消耗 / 最近付费）
+
+**没改的**：
+- `log_usage_event` 调用点不动 — `brief_refresh` 在 `do_POST` 里已经埋好
+- `get_coin_balance` 仍是 `recommend × 1 + brief_refresh × 5`
+- 前端主 app `index.html` 完全不动
+- i18n 字典不动（admin 页只有中文）
+
+**验证**：
+- `python3 -c "import ast; ast.parse(open('api/state.py').read())"` 通过
+- 部署后 admin 用 google 登录 → 应该看到底部新卡
+- 如果用户最近没刷过 brief_refresh，应该全是 0/无数据 — 这是预期
+
+---
+
+### 上一轮 (2026-05-19 cloud · app 加 admin 入口图标)
 
 **主题**：admin 后端（`admin.html` + `/admin` 路由 + `api/state.py:_verify_admin_token`）早就有了，但主 app 没入口 — admin 用户每次得手敲 `/admin` URL。补一个仅 admin 邮箱可见的小盾牌图标按钮。
 

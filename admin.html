@@ -161,6 +161,11 @@
     <h2>推荐系统健康度</h2>
     <div id="rec-health-block" class="loading">…</div>
   </div>
+
+  <div class="card">
+    <h2>管家 Insight · 付费刷新（5🪙/次）</h2>
+    <div id="brief-refresh-block" class="loading">…</div>
+  </div>
 </div>
 
 <script>
@@ -357,6 +362,79 @@ function renderStats(d) {
     <div style="margin-top:10px">
       <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">候选数桶</div>
       ${Object.entries(cb).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+  `;
+
+  // Butler Insight · 付费刷新
+  const br = d.brief_refresh || {};
+  const brTop = br.top_users || [];
+  const brByLang = br.by_lang || {};
+  const brByModel = br.by_model || {};
+  const brDays = br.by_day_30d || [];
+  const mbv = br.morning_brief_view || {};
+
+  let brSparkline;
+  if (brDays.length === 0) {
+    brSparkline = '<div class="empty">最近 30 天没有付费刷新事件。</div>';
+  } else {
+    const maxN = Math.max(...brDays.map(x => x.n), 1);
+    brSparkline = '<div class="sparkline">' +
+      brDays.map(x => `<div class="col ${x.n === 0 ? 'zero' : ''}" style="height:${x.n/maxN*100}%" title="${x.day}: ${x.n}"></div>`).join('') +
+      '</div>';
+  }
+
+  const brTopRows = !brTop.length
+    ? '<tr><td colspan="4" class="empty">暂无付费用户</td></tr>'
+    : brTop.map(u => {
+        const email = u.email || '(no email)';
+        const uid = u.user_id ? u.user_id.slice(0, 8) + '…' : '—';
+        return `<tr>
+          <td>${_esc(email)}<br><span class="mono">${_esc(uid)}</span></td>
+          <td class="num">${u.count}</td>
+          <td class="num">${u.coins} 🪙</td>
+          <td class="dim">${_fmtTs(u.last)}</td>
+        </tr>`;
+      }).join('');
+
+  // 付费转化率：本样本内付费过的用户 / 见过 morning brief 的用户
+  const convPct = (mbv.unique_users && br.unique_users)
+    ? (br.unique_users / mbv.unique_users * 100).toFixed(1) + '%'
+    : '—';
+
+  document.getElementById('brief-refresh-block').innerHTML = `
+    <div class="row" style="margin-bottom:14px">
+      <div class="stat"><div class="v accent">${_fmtN(br.last_24h)}</div><div class="l">24h 付费刷新</div></div>
+      <div class="stat"><div class="v">${_fmtN(br.last_7d)}</div><div class="l">7d 付费刷新</div></div>
+      <div class="stat"><div class="v">${_fmtN(br.total)}</div><div class="l">样本内总次数</div></div>
+      <div class="stat"><div class="v">${_fmtN(br.coins_consumed)} 🪙</div><div class="l">累计消耗金币</div></div>
+      <div class="stat"><div class="v">${_fmtN(br.unique_users)}</div><div class="l">付费用户数</div></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="stat"><div class="v">${_fmtN(mbv.total)}</div><div class="l">管家展示总次数</div></div>
+      <div class="stat"><div class="v">${_fmtN(mbv.last_24h)}</div><div class="l">24h 管家展示</div></div>
+      <div class="stat"><div class="v">${_fmtN(mbv.unique_users)}</div><div class="l">看过管家的用户</div></div>
+      <div class="stat"><div class="v">${convPct}</div><div class="l">付费转化率</div></div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">按语言</div>
+      ${Object.entries(brByLang).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+    <div style="margin-top:10px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">按生成路径</div>
+      ${Object.entries(brByModel).map(([k,v]) => `<span class="pill">${_esc(k)}<span class="n">${v}</span></span>`).join('') || '<span class="empty">—</span>'}
+    </div>
+    <div style="margin-top:14px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">30d 趋势</div>
+      ${brSparkline}
+    </div>
+    <div style="margin-top:14px">
+      <div class="l" style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Top 付费用户</div>
+      <table>
+        <thead>
+          <tr><th>用户</th><th class="num">次数</th><th class="num">消耗</th><th>最近付费</th></tr>
+        </thead>
+        <tbody>${brTopRows}</tbody>
+      </table>
     </div>
   `;
 }

@@ -1669,22 +1669,24 @@ def _compute_iv_rank(ticker: str, current_iv: float) -> Optional[dict]:
 
 def _backtest_strategy(ticker: str, days_back: int = 90,
                        sample_dte: int = 7, delta_target: float = 0.25,
-                       is_short_put: bool = True) -> Optional[dict]:
+                       is_short_put: bool = True,
+                       exit_style: str = "early_close") -> Optional[dict]:
     """
-    历史回测（POP 校准版 v2）：
-    - 拉过去 12 个月日线（不够就 6 月）
-    - 每 3 天采样一次（之前 5）
-    - 用 BS 反推 strike（解 |Δ(K)|≈delta_target），不再用粗略 offset
-    - 用 BS 算 premium（不再用 offset×0.3）
-    - 同时输出经验胜率 (win_rate) + 理论 POP (理论 N(d2) 均值)
-    - 报 calibration_ratio = empirical / theoretical（>1.05 = 历史偏乐观，
-      <0.95 = 历史偏悲观）
+    历史回测（POP 校准版 v2.1，跟 exit_plan 路径触发同步）：
+
+    - 拉过去 12 个月日线（不够 6 月），每 3 天采样
+    - 用 BS 反推 strike（|Δ(K)| ≈ delta_target），BS 算 premium
+    - **v2.1：按 exit_style 路径模拟**
+      - early_close / wheel_assign：日内重新定价，**当 premium 衰减到 50%
+        就早平**；DTE 剩余 ≤ cutoff（30%/20% of orig DTE）也强制平
+      - hold_to_expiry：照旧持到到期
+    - 同时输出经验胜率 (win_rate) + 理论 POP + calibration_ratio
+    - 新增 `early_close_rate`：路径模拟里多少 % 通过早平退场（vs 到期）
     """
     try:
         import yfinance as yf
         session = _get_yf_session()
         ticker_obj = yf.Ticker(ticker, session=session) if session else yf.Ticker(ticker)
-        # 优先 12 个月，不够回退到 6 个月
         hist = ticker_obj.history(period="1y", interval="1d", auto_adjust=True)
         closes = hist["Close"].dropna().tolist()
         if len(closes) < 60:
@@ -1692,11 +1694,23 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
             closes = hist["Close"].dropna().tolist()
         if len(closes) < 60:
             return None
+
         wins, losses = 0, 0
         total_pnl_pct = 0.0
         total_theo_pop = 0.0
+        early_closes = 0   # 多少次走早平
         sample_dte = max(3, min(sample_dte, 60))
-        for i in range(20, len(closes) - sample_dte, 3):  # 每 3 天采样
+        is_call = not is_short_put
+
+        # 路径触发参数（仅 early_close / wheel_assign 启用）
+        path_sim = exit_style in ("early_close", "wheel_assign")
+        target_decay = 0.50  # premium 衰减到 entry × 50% → 早平
+        if exit_style == "wheel_assign":
+            dte_cutoff = max(5, int(sample_dte * 0.20))
+        else:  # early_close
+            dte_cutoff = max(7, int(sample_dte * 0.30))
+
+        for i in range(20, len(closes) - sample_dte, 3):
             S = closes[i]
             rets = [math.log(closes[j] / closes[j-1]) for j in range(i-19, i+1)]
             mean = sum(rets) / len(rets)
@@ -1704,45 +1718,81 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
             if rv <= 0 or rv > 3:
                 continue
             T = sample_dte / 365.0
-            is_call = not is_short_put
-            # 用二分反推 strike，使 |Δ(K)| ≈ delta_target
             K = _strike_for_delta(S, T, rv, delta_target, is_call)
             if K is None or K <= 0:
                 continue
-            # BS premium（合约单位 per share）
             premium, _, _, _ = price_option(S, K, T, RISK_FREE, rv, is_call)
             if premium <= 0:
                 continue
-            # 理论 POP（N(d2) 或 N(-d2)）
             try:
                 d2 = (math.log(S / K) + (RISK_FREE - 0.5 * rv * rv) * T) / (rv * math.sqrt(T))
             except (ValueError, ZeroDivisionError):
                 continue
             theo_pop = _ncdf(-d2) if is_call else _ncdf(d2)
             total_theo_pop += theo_pop
-            # 模拟到期 P&L
-            S_exp = closes[i + sample_dte]
-            if is_short_put:
-                if S_exp >= K:
-                    pnl = premium / S
+
+            # ── 路径模拟（仅 path_sim 时启用日内步进）
+            exit_premium = None  # set if early-closed
+            exit_day = None
+            if path_sim:
+                for d_offset in range(1, sample_dte):
+                    T_remaining = (sample_dte - d_offset) / 365.0
+                    if T_remaining <= 0:
+                        break
+                    S_t = closes[i + d_offset]
+                    P_t, _, _, _ = price_option(S_t, K, T_remaining, RISK_FREE, rv, is_call)
+                    if P_t <= 0:
+                        continue
+                    # 50% 早平
+                    if P_t <= premium * target_decay:
+                        exit_premium = P_t
+                        exit_day = d_offset
+                        break
+                    # DTE cutoff（无论盈亏强制平 — early_close；wheel_assign 仅盈利时）
+                    dte_remaining = sample_dte - d_offset
+                    if dte_cutoff > 0 and dte_remaining <= dte_cutoff:
+                        if exit_style == "wheel_assign" and P_t >= premium:
+                            # wheel_assign 仅在盈利时强制 cutoff
+                            continue
+                        exit_premium = P_t
+                        exit_day = d_offset
+                        break
+
+            # ── 计算 PnL
+            if exit_premium is not None:
+                # 早平：(entry - exit) per share
+                pnl = (premium - exit_premium) / S
+                early_closes += 1
+                if pnl > 0:
                     wins += 1
                 else:
-                    pnl = (premium - (K - S_exp)) / S
                     losses += 1
             else:
-                if S_exp <= K:
-                    pnl = premium / S
-                    wins += 1
+                # 持到到期
+                S_exp = closes[i + sample_dte]
+                if is_short_put:
+                    if S_exp >= K:
+                        pnl = premium / S
+                        wins += 1
+                    else:
+                        pnl = (premium - (K - S_exp)) / S
+                        losses += 1
                 else:
-                    pnl = (premium - (S_exp - K)) / S
-                    losses += 1
+                    if S_exp <= K:
+                        pnl = premium / S
+                        wins += 1
+                    else:
+                        pnl = (premium - (S_exp - K)) / S
+                        losses += 1
             total_pnl_pct += pnl
+
         n = wins + losses
         if n < 5:
             return None
         win_rate = wins / n * 100
         theo_pop_avg = total_theo_pop / n * 100
         calibration = (win_rate / theo_pop_avg) if theo_pop_avg > 0 else None
+        early_rate = (early_closes / n * 100) if path_sim else None
         return {
             "win_rate": round(win_rate, 0),
             "avg_pnl_pct": round(total_pnl_pct / n * 100, 1),
@@ -1750,6 +1800,8 @@ def _backtest_strategy(ticker: str, days_back: int = 90,
             "theoretical_pop": round(theo_pop_avg, 0),
             "calibration_ratio": round(calibration, 2) if calibration else None,
             "window_months": 12 if len(closes) >= 220 else 6,
+            "exit_style": exit_style,
+            "early_close_rate": round(early_rate, 0) if early_rate is not None else None,
         }
     except Exception:
         return None
@@ -3491,10 +3543,12 @@ def recommend(req: dict) -> dict:
         iv_rank = _compute_iv_rank(ticker, sample_iv)
 
     # 2. 回测（per ticker，一次就够）— 估个该方向短卖策略的胜率
+    #    v2.1：回测跟 exit_style 路径触发同步（50% 早平 + DTE cutoff）
     backtest = _backtest_strategy(
         ticker, sample_dte=min(max(timeframe, 5), 30),
         delta_target=sum(delta_band) / 2,
         is_short_put=(is_short and not is_call),
+        exit_style=exit_style,
     ) if is_short else None
 
     # 3. 财报警告（per ticker，一次就够）

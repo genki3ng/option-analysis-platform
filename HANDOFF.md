@@ -3,9 +3,34 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
+最后更新：2026-05-19（cloud — 包租公算法 2.0.1 · capital_risk 双重计算修正）
+
+### ✅ 这一轮 hotfix（2026-05-19 cloud · 2.0.1）
+
+**问题**：用户反馈 prod 上"看到好几次资金不足"警告。
+
+**Root cause**（`_capital_risk_check`）：
+- UI 上"账户可用保证金"=用户填的 broker dashboard Available to Trade（**已扣除**现有持仓后净可用现金）
+- 但我在 `_capital_risk_check` 里又**叠加了**现有所有 short put 的累计抵押 → **双重计算**
+- 加上 `suggested_contracts` = avail × 20% 自动算，所以现有持仓占可用 ≥ 40% 就触发 60% 阈值 warning，太常见
+
+**修复**（一笔）：
+1. 删 `existing_commit` 叠加：只算 `this_commit / avail_cash`
+2. 阈值放松：veto > **100%**（真超额）/ warning > **80%**（占大头）
+3. warning **从 verdict cons 拿掉**（只作 metadata 字段，避免 v1 UI 噪音）
+4. veto 文案改 factual：`🚫 接货需 ${X,YYY}，超过可用现金 ${A,BBB}`
+5. veto label 改"可用现金不够接货"（更直白）
+
+**Smoke**：
+- 1 张 $40k / avail $300k = 13% → ok ✓
+- 1 张 $90k / avail $100k = 90% → warning（不进 cons）✓
+- 3 张 $40k / avail $100k = 120% → veto（cons 显示金额）+ tier=2 ✓
+
+---
+
 最后更新：2026-05-19（cloud — 包租公算法 2.0 · EV/VRP + willing_to_own + 资金占用 + 杠杆 ETF + 压力测试）
 
-### ✅ 这一轮（2026-05-19 cloud · `claude/improve-recommendation-algorithm-Gid32`）
+### ✅ 上一轮（2026-05-19 cloud · `claude/improve-recommendation-algorithm-Gid32`）
 
 **主题**：用户主动发起讨论"推荐算法有没有变得更厉害更正确的空间"。深度讨论后落地 v2.0 算法（backend-only，前端不动，按 §9 留 v2 走预览页）。
 

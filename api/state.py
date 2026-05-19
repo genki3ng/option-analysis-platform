@@ -1948,49 +1948,39 @@ def _stress_test(opt: dict, underlying: float, iv_pct: float,
 
 def _capital_risk_check(candidates: list, option_positions: list,
                          avail_cash: float) -> None:
-    """评估每个 short put 候选若被指派 + 现有所有 short put 累计抵押对比可用现金。
-    in-place 给每个 candidate 加：
-      capital_pct: 百分比
-      capital_risk: "veto" (>95%) / "warning" (60-95%) / "ok" / "n/a" / "unknown"
-      capital_commitments: 拆分明细
-    用激进阈值 95% / 60%。
-    """
-    existing_commit = 0.0
-    for p in (option_positions or []):
-        if p.get("closed"):
-            continue
-        if p.get("type") != "put":
-            continue
-        try:
-            strike = float(p.get("strike", 0) or 0)
-            contracts = int(p.get("contracts", 0) or 0)
-            existing_commit += strike * 100 * contracts
-        except (TypeError, ValueError):
-            continue
+    """评估每个 short put 候选若被指派需要的现金，占用户可用现金的比例。
 
+    Semantics（2.0.1 修正）：
+      `avail_cash` = 用户在账户设置填的"可用保证金/现金"。
+      绝大多数券商 dashboard 上的 Available to Trade / Buying Power **已经扣除**
+      当前持仓占用，所以这里**不再叠加** existing short put commitments —
+      那样会双重计算。
+
+    in-place 给每个 candidate 加：
+      capital_pct: 这一单抵押 / avail_cash × 100
+      capital_risk: "veto" (>100%) / "warning" (>80%) / "ok" / "n/a" / "unknown"
+      capital_commitments: 拆分明细
+    """
     for c in candidates:
-        # 仅短 put 算 capital risk（CC / 长仓不占现金抵押）
         if c.get("type") != "put":
             c["capital_risk"] = "n/a"
             continue
         contracts = int(c.get("suggested_contracts") or 1)
         this_commit = float(c.get("strike") or 0) * 100 * contracts
-        total = existing_commit + this_commit
         c["capital_commitments"] = {
-            "existing_$": round(existing_commit, 0),
             "this_$": round(this_commit, 0),
-            "total_$": round(total, 0),
             "available_$": round(avail_cash, 0),
+            "suggested_contracts": contracts,
         }
         if avail_cash <= 0:
             c["capital_risk"] = "unknown"
             c["capital_pct"] = None
             continue
-        pct = total / avail_cash * 100
+        pct = this_commit / avail_cash * 100
         c["capital_pct"] = round(pct, 1)
-        if pct > 95:
+        if pct > 100:
             c["capital_risk"] = "veto"
-        elif pct > 60:
+        elif pct > 80:
             c["capital_risk"] = "warning"
         else:
             c["capital_risk"] = "ok"
@@ -2324,12 +2314,17 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
             pros.append(f"📊 年化边际收益 {ev_pct:.1f}%"); weight += 1
 
     # ── 2.0 新增信号：资金占用风险
+    # 2.0.1：warning 不再进 verdict cons（避免噪音）—只保留 veto 这种真超额情况
     if capital_risk == "veto":
-        cons.append(f"🚫 若被指派 + 现有 short put 占现金 {capital_pct:.0f}% (>95%)")
+        cc = opt.get("capital_commitments") or {}
+        this_v = cc.get("this_$")
+        avail_v = cc.get("available_$")
+        if this_v and avail_v:
+            cons.append(f"🚫 接货需 ${int(this_v):,}，超过可用现金 ${int(avail_v):,}")
+        else:
+            cons.append(f"🚫 接货抵押超可用现金 {capital_pct:.0f}%")
         weight -= 5
         capital_veto = True
-    elif capital_risk == "warning" and capital_pct is not None:
-        cons.append(f"⚠️ 接货后现金占用 {capital_pct:.0f}%"); weight -= 1
 
     # ── 2.0 新增信号：杠杆 ETF 警告
     if is_leveraged_etf and is_short:
@@ -2344,8 +2339,8 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
     if capital_veto:
         # 资金硬否决：tier 顶到 2 星
         tier, stars, label, color = (
-            (2, "⭐⭐", "资金不足，谨慎", "orange")
-            if weight >= -4 else (1, "⭐", "现金已超限", "red")
+            (2, "⭐⭐", "可用现金不够接货", "orange")
+            if weight >= -4 else (1, "⭐", "可用现金不够接货", "red")
         )
     elif earnings_veto:
         # 财报硬否决：不会超过 2 星

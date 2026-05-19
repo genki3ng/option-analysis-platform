@@ -2625,7 +2625,72 @@
     .exit-plan.compact .ep-body {
       flex: 1; min-width: 0; line-height: 1.45;
     }
+    /* 移动端 grid：1×4 单列 stack */
+    .exit-plan.grid .ep-grid { grid-template-columns: 1fr; gap: 5px; }
+    .exit-plan.grid .ep-cell { padding: 6px 9px; }
+    .exit-plan.grid .ep-cell .ep-val { font-size: 12px; white-space: normal; }
+    .exit-plan.grid .ep-cell .ep-sub { white-space: normal; }
+    .exit-plan.grid .ep-cell .ep-act { white-space: normal; }
   }
+  /* grid（推荐卡用 v2）：2×2 触发线 + 每 cell 4 行（top / val / sub / action）
+     —— 包租公式 exit plan 渲染：每个 cell 是一条房东事件触发线 */
+  .exit-plan.grid {
+    padding: 10px 11px;
+    background: rgba(102,179,255,0.04);
+    border: 1px solid rgba(102,179,255,0.20);
+  }
+  .exit-plan.grid .ep-grid-header {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px; padding-bottom: 6px;
+    border-bottom: 1px dashed rgba(102,179,255,0.15);
+    color: var(--accent); font-weight: 600; font-size: 12px;
+  }
+  .exit-plan.grid .ep-grid-header .ep-style-tag {
+    margin-left: auto;
+    font-size: 10.5px; color: var(--sub); font-weight: 500;
+    background: rgba(0,0,0,0.20); padding: 2px 8px; border-radius: 99px;
+  }
+  .exit-plan.grid .ep-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  }
+  .exit-plan.grid .ep-cell {
+    background: rgba(0,0,0,0.20);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 6px;
+    padding: 7px 9px;
+    line-height: 1.4;
+    min-width: 0;
+  }
+  .exit-plan.grid .ep-cell.dim { opacity: 0.45; }
+  .exit-plan.grid .ep-cell.armed {
+    border-color: rgba(248,113,113,0.40);
+    background: rgba(248,113,113,0.07);
+  }
+  .exit-plan.grid .ep-cell .ep-top {
+    display: flex; align-items: center; gap: 5px; margin-bottom: 2px;
+  }
+  .exit-plan.grid .ep-cell .ep-top .ic { font-size: 13px; line-height: 1; }
+  .exit-plan.grid .ep-cell .ep-top .lbl {
+    font-size: 10.5px; color: var(--sub); font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .exit-plan.grid .ep-cell .ep-val {
+    font-size: 12.5px; color: var(--text); font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .exit-plan.grid .ep-cell.armed .ep-val { color: var(--red); }
+  .exit-plan.grid .ep-cell .ep-sub {
+    font-size: 10px; color: var(--sub); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .exit-plan.grid .ep-cell .ep-act {
+    font-size: 10px; color: var(--accent); margin-top: 3px;
+    padding-top: 3px; border-top: 1px dotted rgba(255,255,255,0.06);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .exit-plan.grid .ep-cell.dim .ep-act { display: none; }
+  .exit-plan.grid .ep-cell.ok .ep-val { color: var(--green); }
+
   /* 数据源降级 pill（Schwab → Yahoo / yfinance 兜底时显示） */
   .ds-pill {
     display: flex; align-items: center; gap: 8px;
@@ -5416,6 +5481,45 @@ const I18N = {
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 卖出 {ticker}',
     'pos_meta_line':      'Exp {expiry} · {contracts} 张 · 卖价 ${sell_price}/股',
     '出场建议': '出场建议',
+
+    // ── 出场计划 · 包租公式 2×2 网格触发线（B 渲染）─────────────
+    'exit_trig_early_rent':    '早收租 · 找新租客',
+    'exit_trig_dte_cutoff':    '21 天换租',
+    'exit_trig_tenant_breach': '房客违约',
+    'exit_trig_prepare_assign':'准备接货',
+    'exit_trig_red_line':      '红线（必出）',
+    'exit_trig_leaps_profit':  '锁利',
+    'exit_trig_leaps_stop':    '止损',
+    'exit_val_dte_left':       '剩 {d} 天关',
+    'exit_val_dte_hold':       '不主动关',
+    'exit_val_no_breach':      '持到 ITM 接货',
+    'exit_val_red_safe':       '未触发',
+    'exit_val_above':          '涨破 ',
+    'exit_val_below':          '跌破 ',
+    'exit_reason_vrp_high':    'VRP {vrp} 偏高 · IV crush 快 · 早平 {amt}/张',
+    'exit_reason_vrp_above':   'VRP {vrp} 偏高 · 比 50% 早 10%',
+    'exit_reason_vrp_low':     'VRP {vrp} 偏低 · 等 vol expansion',
+    'exit_reason_vrp_below':   'VRP {vrp} 偏低 · 比 50% 晚 10%',
+    'exit_reason_hold_expire': '持到 expire 吃满租金',
+    'exit_reason_default_profit':'早平锁 {amt}/张',
+    'exit_reason_tasty_21d':   'Tasty 21 天经验 · 剩余 theta 不值 gamma',
+    'exit_reason_delta_real_risk':'Δ 是接货真风险（不是 premium ×2）',
+    'exit_reason_red_line':    '财报跨期 · 占金 &gt; {pct}% · 破支撑',
+    'exit_reason_leaps_profit':'入场 mid {entry}',
+    'exit_reason_leaps_stop':  '入场 mid {entry}',
+    'exit_act_close_redeploy': '买回锁利，开新合约',
+    'exit_act_hold_to_zero':   '持到 expire（不主动平）',
+    'exit_act_force_close':    '强制平仓（不论盈亏）',
+    'exit_act_close_if_profit':'盈利则关；亏损接货',
+    'exit_act_roll_or_stop':   'Roll 下月 / 止损（不接货）',
+    'exit_act_roll_or_accept': 'Roll 或接货（Wheel 阶段二）',
+    'exit_act_hold_assign':    '持到期 · 自动接货',
+    'exit_act_immediate_close':'立即买回 · 不接货',
+    'exit_act_lock_profit':    '买回锁利出场',
+    'exit_act_stop_loss':      '止损出场',
+    'red_evt_earnings_cross':   '财报夹期',
+    'red_evt_capital_exceeded': '占金超阈',
+    'red_evt_capital_red':      '资金红线',
     '锁利': '锁利',
     '接货': '接货',
     '卖出': '卖出',
@@ -6153,6 +6257,45 @@ const I18N = {
     'pos_exit_csp':       '跌穿 <strong>{strike}</strong> 接 {ticker}',
     'pos_exit_cc':        '升破 <strong>{strike}</strong> 賣出 {ticker}',
     '出场建议': '出場建議',
+
+    // ── 出場計劃 · 包租公式 2×2 觸發線 ─────────────
+    'exit_trig_early_rent':    '早收租 · 找新租客',
+    'exit_trig_dte_cutoff':    '21 天換租',
+    'exit_trig_tenant_breach': '房客違約',
+    'exit_trig_prepare_assign':'準備接貨',
+    'exit_trig_red_line':      '紅線（必出）',
+    'exit_trig_leaps_profit':  '鎖利',
+    'exit_trig_leaps_stop':    '止損',
+    'exit_val_dte_left':       '剩 {d} 天關',
+    'exit_val_dte_hold':       '不主動關',
+    'exit_val_no_breach':      '持到 ITM 接貨',
+    'exit_val_red_safe':       '未觸發',
+    'exit_val_above':          '漲破 ',
+    'exit_val_below':          '跌破 ',
+    'exit_reason_vrp_high':    'VRP {vrp} 偏高 · IV crush 快 · 早平 {amt}/張',
+    'exit_reason_vrp_above':   'VRP {vrp} 偏高 · 比 50% 早 10%',
+    'exit_reason_vrp_low':     'VRP {vrp} 偏低 · 等 vol expansion',
+    'exit_reason_vrp_below':   'VRP {vrp} 偏低 · 比 50% 晚 10%',
+    'exit_reason_hold_expire': '持到 expire 吃滿租金',
+    'exit_reason_default_profit':'早平鎖 {amt}/張',
+    'exit_reason_tasty_21d':   'Tasty 21 天經驗 · 剩餘 theta 不值 gamma',
+    'exit_reason_delta_real_risk':'Δ 是接貨真風險（不是 premium ×2）',
+    'exit_reason_red_line':    '財報跨期 · 佔金 &gt; {pct}% · 破支撐',
+    'exit_reason_leaps_profit':'入場 mid {entry}',
+    'exit_reason_leaps_stop':  '入場 mid {entry}',
+    'exit_act_close_redeploy': '買回鎖利，開新合約',
+    'exit_act_hold_to_zero':   '持到 expire（不主動平）',
+    'exit_act_force_close':    '強制平倉（不論盈虧）',
+    'exit_act_close_if_profit':'盈利則關；虧損接貨',
+    'exit_act_roll_or_stop':   'Roll 下月 / 止損（不接貨）',
+    'exit_act_roll_or_accept': 'Roll 或接貨（Wheel 階段二）',
+    'exit_act_hold_assign':    '持到期 · 自動接貨',
+    'exit_act_immediate_close':'立即買回 · 不接貨',
+    'exit_act_lock_profit':    '買回鎖利出場',
+    'exit_act_stop_loss':      '止損出場',
+    'red_evt_earnings_cross':   '財報夾期',
+    'red_evt_capital_exceeded': '佔金超閾',
+    'red_evt_capital_red':      '資金紅線',
     // ── 🎯 Goal banner + 帳戶預算 ─────────────────────
     'banner_acct_money':   '帳戶可用保證金 <strong>{margin}</strong>',
     'banner_acct_unset':   '未設定帳戶保證金（<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">點這裡設定</a>，可看佔比和上限）',
@@ -6975,6 +7118,45 @@ const I18N = {
     '隐藏已平': 'Hide',
     '📐 简洁': '📐 Simple',
     '📐 完整': '📐 Full',
+
+    // ── Exit plan · landlord-style 2×2 triggers ─────────────
+    'exit_trig_early_rent':    'Collect early · new tenant',
+    'exit_trig_dte_cutoff':    '21-DTE cutoff',
+    'exit_trig_tenant_breach': 'Tenant default',
+    'exit_trig_prepare_assign':'Prepare to assign',
+    'exit_trig_red_line':      'Red line (must exit)',
+    'exit_trig_leaps_profit':  'Lock profit',
+    'exit_trig_leaps_stop':    'Stop loss',
+    'exit_val_dte_left':       '{d}d left',
+    'exit_val_dte_hold':       'Hold to expiry',
+    'exit_val_no_breach':      'Hold for assign',
+    'exit_val_red_safe':       'Not triggered',
+    'exit_val_above':          'above ',
+    'exit_val_below':          'below ',
+    'exit_reason_vrp_high':    'VRP {vrp} high · fast IV crush · lock {amt}/ct early',
+    'exit_reason_vrp_above':   'VRP {vrp} above 1 · 10% earlier than 50%',
+    'exit_reason_vrp_low':     'VRP {vrp} low · wait for vol expansion',
+    'exit_reason_vrp_below':   'VRP {vrp} below 1 · 10% later than 50%',
+    'exit_reason_hold_expire': 'Hold to expire · collect full premium',
+    'exit_reason_default_profit':'Lock {amt}/contract early',
+    'exit_reason_tasty_21d':   'Tasty 21-DTE rule · gamma not worth remaining theta',
+    'exit_reason_delta_real_risk':'Δ is the real assignment risk (not premium ×2)',
+    'exit_reason_red_line':    'Earnings cross · capital &gt; {pct}% · support break',
+    'exit_reason_leaps_profit':'Entry mid {entry}',
+    'exit_reason_leaps_stop':  'Entry mid {entry}',
+    'exit_act_close_redeploy': 'Buy back · redeploy capital',
+    'exit_act_hold_to_zero':   'Hold to expire (no active close)',
+    'exit_act_force_close':    'Force close (regardless of P&L)',
+    'exit_act_close_if_profit':'Close if profitable; assign if loss',
+    'exit_act_roll_or_stop':   'Roll next month / stop (no assign)',
+    'exit_act_roll_or_accept': 'Roll or accept assign (Wheel phase 2)',
+    'exit_act_hold_assign':    'Hold to expiry · auto-assign',
+    'exit_act_immediate_close':'Buy back now · no assign',
+    'exit_act_lock_profit':    'Buy back to lock profit',
+    'exit_act_stop_loss':      'Stop out',
+    'red_evt_earnings_cross':   'Earnings cross',
+    'red_evt_capital_exceeded': 'Capital exceeded',
+    'red_evt_capital_red':      'Capital red zone',
     // ── 🎯 Goal banner + account budget ───────────────
     'banner_acct_money':   'Account margin available: <strong>{margin}</strong>',
     'banner_acct_unset':   'No account margin set (<a href="javascript:void(0)" onclick="showAccountSettings()" style="color:var(--accent)">click to set</a> to see budget %)',
@@ -7633,81 +7815,115 @@ function _fillTpl(tpl, vars) {
   return s;
 }
 
+// ── 出场计划 · 包租公式 2×2 网格渲染（4 触发线 + 推荐动作）─────────────
+// plan.triggers[i] = { id, icon, label_key, condition_key, condition_vars,
+//                      action_key, reason_key, reason_vars, active, armed }
+function _fmtTriggerCell(trig, opt) {
+  const v = trig.condition_vars || {};
+  const r = trig.reason_vars || {};
+  const fmtMoney2 = (n) => (n != null ? '$' + fmt(n, 2) : '—');
+  const fmtMoney = (n) => (n != null ? '$' + fmt(n, 0) : '—');
+  const dim = !trig.active;
+
+  if (trig.id === 'early_close_profit') {
+    const val = `${fmtMoney2(v.target_px)} · ${v.profit_pct}%`;
+    const subKey =
+      trig.reason_key === 'vrp_high'  ? 'exit_reason_vrp_high'  :
+      trig.reason_key === 'vrp_above' ? 'exit_reason_vrp_above' :
+      trig.reason_key === 'vrp_low'   ? 'exit_reason_vrp_low'   :
+      trig.reason_key === 'vrp_below' ? 'exit_reason_vrp_below' :
+      trig.reason_key === 'hold_expire' ? 'exit_reason_hold_expire' :
+      'exit_reason_default_profit';
+    const sub = trig.reason_key === 'hold_expire'
+      ? t('exit_reason_hold_expire')
+      : _fillTpl(t(subKey),
+          { vrp: r.vrp != null ? fmt(r.vrp, 2) : '—', amt: fmtMoney(v.profit_amt) });
+    const action = t(trig.action_key === 'exit_act_hold_to_zero'
+      ? 'exit_act_hold_to_zero' : 'exit_act_close_redeploy');
+    return { val, sub, action, dim };
+  }
+
+  if (trig.id === 'dte_cutoff') {
+    if (dim) return { val: t('exit_val_dte_hold'), sub: '—', action: '', dim: true };
+    const val = _fillTpl(t('exit_val_dte_left'), { d: v.dte_threshold });
+    const sub = _fillTpl(t('exit_reason_tasty_21d'), { d: v.dte_threshold });
+    const action = t(trig.action_key === 'exit_act_close_if_profit'
+      ? 'exit_act_close_if_profit' : 'exit_act_force_close');
+    return { val, sub, action, dim };
+  }
+
+  if (trig.id === 'tenant_breach') {
+    if (dim) return { val: t('exit_val_no_breach'), sub: '—', action: '', dim: true };
+    const dt = v.delta_threshold;
+    const px = v.underlying_breach_px;
+    const tk = v.ticker || '';
+    const dir = v.side === 'above' ? t('exit_val_above') : t('exit_val_below');
+    const val = `|Δ| ${fmt(dt, 2)} · ${tk} ${dir}${fmtMoney2(px)}`;
+    const sub = t('exit_reason_delta_real_risk');
+    const action = t(trig.action_key);
+    return { val, sub, action, dim };
+  }
+
+  if (trig.id === 'red_line') {
+    const events = v.events || [];
+    const armed = events.length > 0;
+    const val = armed
+      ? events.map(e => t('red_evt_' + e.trigger)).join(' · ')
+      : t('exit_val_red_safe');
+    const sub = _fillTpl(t('exit_reason_red_line'), { pct: v.capital_threshold });
+    const action = t('exit_act_immediate_close');
+    return { val, sub, action, armed, ok: !armed };
+  }
+
+  if (trig.id === 'leaps_profit') {
+    const val = `${fmtMoney2(v.target_px)} · +${v.profit_pct}%`;
+    const sub = _fillTpl(t('exit_reason_leaps_profit'), { entry: fmtMoney2(v.entry_px) });
+    return { val, sub, action: t('exit_act_lock_profit') };
+  }
+  if (trig.id === 'leaps_stop') {
+    const val = `${fmtMoney2(v.target_px)} · −${v.loss_pct}%`;
+    const sub = _fillTpl(t('exit_reason_leaps_stop'), { entry: fmtMoney2(v.entry_px) });
+    return { val, sub, action: t('exit_act_stop_loss') };
+  }
+  return { val: '—', sub: '', action: '' };
+}
+
 function renderExitPlan(plan, opt) {
   if (!plan || !plan.kind) return '';
-  const v = plan.summary_vars || {};
-  const exitPx = Number(v.exit_price) || 0;
-  const stopPx = Number(v.stop_price) || 0;
-  const pp = v.profit_pct ?? 0;
-  const xp = v.stop_pct ?? 0;
-  const entry = Number((opt && opt.mid) || 0);
-  const profitDollars = (entry - exitPx) * 100;
-  const stopDollars = (stopPx - entry) * 100;
-  const strike = Number((opt && opt.strike) || 0);
-  const ticker = (opt && opt.ticker) || '';
-  const collateral = strike * 100;
+  const triggers = Array.isArray(plan.triggers) ? plan.triggers : [];
+  if (!triggers.length) return '';
 
-  const fmtMoney = (n) => '$' + fmt(n, 0);
-  const fmtMoney2 = (n) => '$' + fmt(n, 2);
+  const styleEmoji = plan.exit_style === 'wheel_assign' ? '🏘️'
+                   : plan.exit_style === 'hold_to_expiry' ? '💰' : '🏠';
+  const styleName = t(plan.exit_style === 'wheel_assign' ? '接货 Wheel'
+                   : plan.exit_style === 'hold_to_expiry' ? '死磕到期'
+                   : '早收租派');
+  const styleTag = `${styleEmoji} ${styleName}`;
 
-  // 段 1：锁利
-  const profitAction = _fillTpl(t('exit_profit_action'), { pct: pp });
-  const profitDetail = _fillTpl(t('exit_profit_detail'), {
-    amt: fmtMoney(profitDollars), entry: fmtMoney2(entry), exit: fmtMoney2(exitPx),
-  });
-  const profitItem = `
-    <div class="ep-item profit">
-      <span class="ic">🎯</span>
-      <span class="body">
-        <span class="ep-action">${profitAction}</span>
-        <span class="ep-detail">— ${profitDetail}</span>
-      </span>
-    </div>`;
-
-  // 段 2：止损 / 接货 / 被叫走
-  let stopItem = '';
-  if (plan.stop_loss_disabled) {
-    if (plan.kind === 'csp') {
-      const txt = _fillTpl(t('exit_csp_full'), {
-        strike: '$' + strike, ticker, collateral: fmtMoney(collateral),
-      });
-      stopItem = `<div class="ep-item assign"><span class="ic">🤝</span><span class="body">${txt}</span></div>`;
-    } else if (plan.kind === 'covered_call') {
-      const txt = _fillTpl(t('exit_cc_full'), { strike: '$' + strike, ticker });
-      stopItem = `<div class="ep-item assign"><span class="ic">📤</span><span class="body">${txt}</span></div>`;
-    } else {
-      stopItem = `<div class="ep-item assign"><span class="ic">⊘</span><span class="body">${t('不止损')}</span></div>`;
-    }
-  } else {
-    const stopAction = _fillTpl(t('exit_stop_action'), { stop: fmtMoney2(stopPx) });
-    const stopDetail = _fillTpl(t('exit_stop_detail'), {
-      amt: fmtMoney(stopDollars), pct: xp,
-    });
-    stopItem = `
-      <div class="ep-item stop">
-        <span class="ic">🛑</span>
-        <span class="body">
-          <span class="ep-action">${stopAction}</span>
-          <span class="ep-detail">— ${stopDetail}</span>
-        </span>
+  const cells = triggers.map(trig => {
+    const info = _fmtTriggerCell(trig, opt);
+    const cls = ['ep-cell'];
+    if (info.dim) cls.push('dim');
+    if (info.armed) cls.push('armed');
+    if (info.ok) cls.push('ok');
+    const lbl = t(trig.label_key);
+    return `
+      <div class="${cls.join(' ')}">
+        <div class="ep-top"><span class="ic">${trig.icon}</span><span class="lbl">${lbl}</span></div>
+        <div class="ep-val">${info.val}</div>
+        ${info.sub ? `<div class="ep-sub">${info.sub}</div>` : ''}
+        ${info.action ? `<div class="ep-act">→ ${info.action}</div>` : ''}
       </div>`;
-  }
-
-  // 段 3：Roll
-  let rollItem = '';
-  if (plan.roll_trigger) {
-    rollItem = `<div class="ep-item roll"><span class="ic">↻</span><span class="body">${t('exit_roll_dte7_delta50')}</span></div>`;
-  }
+  }).join('');
 
   return `
-    <div class="exit-plan expanded exit-plan-${plan.kind}">
-      <div class="ep-header">
+    <div class="exit-plan grid exit-plan-${plan.kind}">
+      <div class="ep-grid-header">
         <span class="ep-icon">📍</span>
         <span>${t('出场计划')}</span>
+        <span class="ep-style-tag">${styleTag}</span>
       </div>
-      ${profitItem}
-      ${stopItem}
-      ${rollItem}
+      <div class="ep-grid">${cells}</div>
     </div>
   `;
 }
@@ -10512,7 +10728,7 @@ async function submitRec() {
     intent: _recSelection.intent,
     timeframe: parseInt(_recSelection.timeframe, 10),
     risk: _recSelection.risk,
-    exit_style: _recSelection.exit_style || 'auto',
+    exit_style: _recSelection.exit_style || 'early_close',
   };
   // 🎯 willing_to_own 手动 override (v2 #4) — 在 state._meta.willing_overrides 里
   const _wo = _loadWillingOverrides();

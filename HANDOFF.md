@@ -3,9 +3,48 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — UI/UX QA 第一轮 · sticky 遮挡 / i18n 漏翻 / 登录按钮截断 / baseline 对齐）
+最后更新：2026-05-19（cloud — 包租公式 exit_plan 4 触发线渲染 ship · 候选卡片 2×2 网格 + 动作行）
 
-### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 1）
+### ✅ 这一轮（包租公式 exit plan UI ship — 2×2 网格 + 动作行）
+
+**背景**：用户问"出场算法有优化空间吗，大家都是一个逻辑"。我从产品核心竞争力（散户房东叙事）
+深度思考后顶了一套方案：4 条事件触发线 × 3 个房东人设。
+
+**Phase 1（后端，已 ship `acb0060`）**：`_exit_plan` 重写为 4 触发线 + VRP/DTE 动态阈值。
+**Phase 2（预览页 `/landlord-exit`）**：3 渲染方案 A 时间线 / B 2×2 网格 / C 折叠摘要 让用户对比。
+**Phase 3（本轮）**：用户选 B + 要求"推荐动作不能放进去吗" → 每 cell 加底部 act 行。
+
+并行 session 同时 ship 了 v2.1 Wave 1（`4a811c9`）已经做了 picker 扩 3 选 / 默认 early_close /
+旧值迁移 / picker 三语 i18n / Score-verdict 统一 / DTE-IV 自适应；Wave 2.1（`b1932b2`）做了
+backtest 路径模拟跟 exit_plan 同步。本轮在他们基础上补上独有的渲染层：
+
+**本轮独有改动**：
+- 新 `.exit-plan.grid` CSS：2×2 网格（桌面）/ 1×4 stack（手机），每 cell 4 行（top icon+label /
+  val 关键值 / sub 为什么 / → act 推荐动作）；armed 状态变红，ok 状态变绿
+- `renderExitPlan` 重写：读后端 `triggers[]`，按 `trigger.id` 路由格式化（early_close_profit /
+  dte_cutoff / tenant_breach / red_line / leaps_profit / leaps_stop）
+- 新 `_fmtTriggerCell` 辅助函数处理 6 种 trigger 类型 → {val, sub, action, dim, armed, ok}
+- 三语 i18n 补 40+ key：触发线标签 / 值显示 / reason 行（VRP 4 档 + Tasty 21d + Δ 真风险等）/
+  动作 9 条 / 红线事件 3 个
+- `submitRec` 兜底 `_recSelection.exit_style || 'early_close'`（之前还是 'auto'）
+- 删除预览页 `landlord-exit.html` + 移除 vercel.json 对应 build/route
+
+**待用户验证**：
+- [ ] hard-refresh `/app` 跑推荐 → 候选卡片显示 2×2 出场计划（4 个 cell + 每个底部"→ 动作"）
+- [ ] 切换 picker 三档（🏠/🏘️/💰）→ 数值和动作变（早收租派 delta 0.30/Wheel 0.45/死磕 dim）
+- [ ] 手机宽度 → 1×4 stacked，全部可读
+- [ ] 切换三语 → 触发线 / 动作 / reason 都翻译
+- [ ] 红线触发场景（财报夹期 / 占金超阈）→ 第 4 cell 变红，列出事件
+
+**未做（下一轮）**：
+- `position_advice`（持仓侧栏"操作建议"）还是固定 80%/50% 阈值，应该读用户 exit_style
+  动态生成 4 触发线 + 显示"你离哪条最近"
+- `renderPositionExitPlan`（持仓卡片下的 1 行）还是用旧叙事；可以按用户当前 exit_style 展示
+- 小白指南没补"早收租派 / 接货 Wheel / 21 天换租 / 房客违约 / 红线" 5 个词条
+
+---
+
+### 上一轮（2026-05-19 cloud · UI/UX QA round 1）
 
 **主题**：用户要求做 UI/UX 视觉 QA — "最容易出现的就是偏移或者不对齐"。装 Playwright Chromium 跑 3 viewport (desktop 1440 / tablet 768 / mobile 390) 截 6 个表面 = 18 张截图，配合 CSS 静态 agent 扫，定真假 bug。
 

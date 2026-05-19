@@ -3,9 +3,21 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 推荐请求 closed 持仓漏滤修复）
+最后更新：2026-05-19（cloud — goal 切换数值残留 + closed 持仓漏滤修复）
 
-### ✅ 这一轮 hotfix（2026-05-19 cloud · `index.html:9271`）
+### ✅ 这一轮 hotfix #2（2026-05-19 cloud · `index.html:9072` `applyGoal`）
+
+**问题**：用户报"没有候选达到 ≥ 300% 安全度"。max_safety 默认 85%，怎么会是 300？
+
+**Root cause**：用户之前选过 stable_rent (默认 $300/月)，输入框留下 "300"。切到 max_safety 时 label / unit 都变了 (安全度下限 %)，但旧逻辑只在空值时填默认 → 残留 300 被解读为 **300% 安全度** → 永不满足。
+
+不同 goal 数值语义完全不同（$/月 vs % vs $strike），保留前一个 goal 的值无意义。
+
+**修复**：检测 goal 真正切换 (`_recGoalKey !== key`)，切换时强制重置为新 default（或清空）。重复点击同一 goal 仅在空值时填默认（保留用户输入）。
+
+---
+
+### ✅ 这一轮 hotfix #1（2026-05-19 cloud · `index.html:9271`）
 
 **问题**：用户反馈"TSLA 敞口 11 张 short put · 15 张 short call · 抵押 $438k · 占账户 893.9%"，张数远超实际。
 

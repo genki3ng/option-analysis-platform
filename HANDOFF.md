@@ -3,9 +3,46 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — renderAll selectedIds null guard）
+最后更新：2026-05-19（concierge — prompt 硬约束 + brief_refresh 走 Sonnet）
 
-### ✅ 这一轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
+### ✅ 这一轮 (2026-05-19 concierge · LLM hallucination 修复 + Sonnet 路由)
+
+**用户场景**：截图里早安简报写「TSLA $415 Put **明天**到期，浮亏 $3,834 **已成定局**」。实际上：
+- TSLA 现价 $403、strike $415、距 strike 仅 3%（明显 ITM 但不深）
+- 5/22 周五到期、剩 3 天（不是「明天」）
+- |Δ| 大约 0.6（不是接近 -1）→ 到期 ITM 概率 55-65%，**远没到"定局"**
+
+也就是 Haiku 同时犯了两个错：**事实复述错**（3d → 明天）+ **推理判断错**（边缘 ITM → 终结性宣判）。用户问"换 Sonnet 还是改 prompt 重要"，选了 B（两者都做）。
+
+**修复**（`api/state.py`）：
+
+1. **system prompt 加两条硬约束**（`_generate_concierge_llm` line ~4789-4796）：
+   - **时间表达**：`{X}d` 必须直译「剩 X 天到期」/「X days to expiry」/「剩 X 天到期」(zh_tw)，禁止「明天/今天/快到了/迫在眉睫」等模糊词，哪怕 X=1
+   - **"已成定局" 类措辞**：仅当 |Δ| ≥ 0.85 **且** ITM > 8% 才允许「已成定局/接货定了/无法回头/认命/板上钉钉/翻盘无望」；其他情况用「概率偏高/接货风险大/准备应对」
+2. **数据行加距 strike %**（line ~4720-4731）：原来只有 `[ITM]` / `[ATM]` tag，现在 `[ITM 3.0%]` / `[ATM +1.2%]` / `[OTM 5.5%]` — LLM 才有数据做"|Δ| 阈值 + ITM%"判断
+3. **`_generate_concierge_llm(use_premium_model=False)` 新参数**：True 走 Sonnet 4.6，False 走 Haiku 4.5（默认）
+4. **`_generate_morning_brief` 把 `force_refresh` 透传为 `use_premium_model`**：用户付 5🪙 手动刷新 → Sonnet；自动 5min 刷新 → 继续 Haiku 省钱
+5. **bump CONCIERGE_VERSION 9 → 10**：让今天已生成的旧 prompt cache 全部失效，下次刷新走新 prompt
+6. **`_last_llm_diag` 加 `model` 字段**：方便诊断时知道用的哪个模型（response 里能看到）
+
+**没改的**：
+- recommend / 其他算法版本号都没动
+- `claudemd` 里"ALGORITHM_VERSION 改动须先问"规则不适用 — 这里 bump 的是 cache key（CONCIERGE_VERSION），不是算法版本号；且 prompt 改了必须 bump 否则今天的旧 cache 还会被命中
+- template fallback 不走 LLM，prompt 改动对它无影响
+
+**成本影响**：
+- 自动刷新（每用户每天通常 1 次 LLM 命中）：仍 Haiku 4.5
+- 用户付 5🪙 手动刷新：走 Sonnet 4.6，单次成本 3-4x Haiku
+- 5🪙 = $0.05 用户价 vs Sonnet 单次约 $0.005-0.01 实际成本 → 利润仍合理
+
+**验证方式**：用户重新刷新一次管家（消耗 5🪙），应该看到：
+- 写「剩 3 天到期」不再写「明天」
+- 不再用「已成定局」（除非真的 deep ITM）
+- 响应里 `_llm_diag.model = "claude-sonnet-4-6"`
+
+---
+
+### 上一轮 (2026-05-19 cloud · renderAll selectedIds null 崩溃)
 
 **用户报错**：`刷新失败：Cannot read properties of null (reading 'has')`
 

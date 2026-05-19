@@ -2383,6 +2383,12 @@
     background: rgba(248,113,113,0.10); border-left: 3px solid var(--red);
     font-size: 12px; color: var(--red);
   }
+  /* 自适应缩档提示（信息蓝） */
+  .ld-info {
+    margin: 8px 0 0; padding: 8px 12px; border-radius: 6px;
+    background: rgba(230,184,106,0.08); border-left: 3px solid var(--accent);
+    font-size: 12px; color: var(--accent);
+  }
 
   /* IV Rank 横幅 */
   .iv-banner {
@@ -5009,7 +5015,7 @@
         <span class="gc-ic" aria-hidden="true">🪜</span>
         <span class="gc-body">
           <span class="gc-t" data-i18n="搭阶梯组合">搭阶梯组合</span>
-          <span class="gc-s" data-i18n="一次卖 4 档 strike，按预算分配">一次卖 4 档 strike，按预算分配</span>
+          <span class="gc-s" data-i18n="按预算自动分 2-4 档 strike">按预算自动分 2-4 档 strike</span>
         </span>
       </button>
     </div>
@@ -5324,7 +5330,11 @@ const I18N = {
 
     // ── 🪜 Ladder 阶梯方案（v2 #2）
     '搭阶梯组合': '搭阶梯组合',
-    '一次卖 4 档 strike，按预算分配': '一次卖 4 档 strike，按预算分配',
+    '按预算自动分 2-4 档 strike': '按预算自动分 2-4 档 strike',
+    '按预算自适应：2-4 档 strike 自动选': '按预算自适应：2-4 档 strike 自动选',
+    '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡',
+    '预算够': '预算够',
+    '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
     '总接货预算': '总接货预算',
     '从预算里给 4 档 strike 等量分配 contracts': '从预算里给 4 档 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
@@ -6014,7 +6024,11 @@ const I18N = {
 
     // ── 🪜 Ladder 阶梯方案
     '搭阶梯组合': '搭階梯組合',
-    '一次卖 4 档 strike，按预算分配': '一次賣 4 檔 strike，按預算分配',
+    '按预算自动分 2-4 档 strike': '按預算自動分 2-4 檔 strike',
+    '按预算自适应：2-4 档 strike 自动选': '按預算自適應：2-4 檔 strike 自動選',
+    '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看漲 · CSP 階梯（自適應 2-4 檔）· {tf}d · 平衡',
+    '预算够': '預算夠',
+    '档（你想要 N 档需要更多预算）': '檔（你想要 N 檔需要更多預算）',
     '总接货预算': '總接貨預算',
     '从预算里给 4 档 strike 等量分配 contracts': '從預算裡給 4 檔 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看漲 · CSP 4 檔階梯 · {tf}d · 平衡',
@@ -6796,7 +6810,11 @@ const I18N = {
 
     // ── 🪜 Ladder Builder
     '搭阶梯组合': 'Build a strike ladder',
-    '一次卖 4 档 strike，按预算分配': 'Sell 4 strikes at once, sized by budget',
+    '按预算自动分 2-4 档 strike': 'Auto-fit 2-4 strikes within budget',
+    '按预算自适应：2-4 档 strike 自动选': 'Auto-fits 2-4 strikes within budget',
+    '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': 'Bullish · CSP ladder (auto-fit 2-4) · {tf}d · balanced',
+    '预算够': 'Budget fits',
+    '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
     '总接货预算': 'Total assignment budget',
     '从预算里给 4 档 strike 等量分配 contracts': 'Equal contracts across 4 strikes within budget',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': 'Bullish · CSP 4-rung ladder · {tf}d · balanced',
@@ -7700,6 +7718,11 @@ function renderLadderProposal(d) {
         ? `${t('年化')} ${lad.weighted_annualized_yield_pct.toFixed(1)}%`
         : '');
 
+  // 自适应缩档提示（蓝色 info）：预算够付当前 size 但不够 requested_size
+  const shrunkHtml = (lad.was_shrunk && lad.requested_size && lad.actual_size)
+    ? `<div class="ld-info">ℹ️ ${t('预算够')} ${lad.actual_size} ${t('档（你想要 N 档需要更多预算）').replace('N', lad.requested_size)}</div>`
+    : '';
+  // 预算超额警告（红色）
   const warnHtml = !isAffordable
     ? `<div class="ld-warn">⚠️ ${t('预算不够：最少需要')} $${fmt0(lad.min_budget_needed)} ${t('才能买齐这 N 档（每档 1 张）').replace('N', size)}</div>`
     : (overpct ? `<div class="ld-warn">⚠️ ${t('总抵押超出预算')} ${overpct.toFixed(0)}%</div>` : '');
@@ -7744,6 +7767,7 @@ function renderLadderProposal(d) {
       <tbody>${tableRows}</tbody>
     </table>
     <div class="ld-mobile-cards">${mobileCards}</div>
+    ${shrunkHtml}
     ${warnHtml}
   </div>`;
 }
@@ -9759,8 +9783,8 @@ const REC_GOALS = {
     numPre: '$',
     numPost: '',
     numDefault: 100000,
-    numHint: '从预算里给 4 档 strike 等量分配 contracts',
-    descTpl: '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
+    numHint: '按预算自适应：2-4 档 strike 自动选',
+    descTpl: '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡',
   },
 };
 

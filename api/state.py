@@ -2274,27 +2274,29 @@ def _capital_risk_check(candidates: list, option_positions: list,
             c["capital_risk"] = "ok"
 
 
-def build_ladder(candidates: list, budget: float, size: int = 4) -> Optional[dict]:
+def build_ladder(candidates: list, budget: float, size: int = 4,
+                  min_size: int = 2) -> Optional[dict]:
     """从 recommend 已排序候选清单里构建一组 CSP strike 阶梯。
 
-    思路（v2 #2）：
+    思路（v2 #2，2 版加自适应）：
       - 用同一个到期日（候选最多的那个 expiry，保证可比性）
-      - 从候选 pool 里按 |delta| 升序排序后均匀选 `size` 档（覆盖 prob_safe 范围）
-      - 每档分配等量 contracts，按 budget 算出能买几"组"
+      - 从候选 pool 里按 |delta| 升序排序后均匀选 N 档（覆盖 prob_safe 范围）
+      - **自动按 budget 自适应**：默认尝试 size 档，预算不够就降到 size-1、size-2…直到 min_size
+      - 每档分配等量 contracts（units 单位）
       - 算总抵押 / 加权 prob_safe / 加权 EV / 加权年化等聚合指标
 
     用法约束：仅 CSP（short put）适用；call/long 直接返回 None。
-    候选数 < size 直接返回 None（pool 不够选出多样化的阶梯）。
+    候选数 < min_size 直接返回 None。
 
     返回:
-      None — 不可构建
-      dict — 含 rungs / 聚合数 / budget 信息
+      None — 不可构建（candidates 太少 或 池子无 puts）
+      dict — 含 rungs / 聚合数 / budget 信息 + requested_size / actual_size（说明是否缩减）
     """
     # 仅 short put（CSP）
     if not candidates:
         return None
     puts = [c for c in candidates if c.get("type") == "put"]
-    if len(puts) < size:
+    if len(puts) < min_size:
         return None
 
     # 1. 选候选最多的 expiry（保证 strikes 都属于同一到期，方便比较 + 一次性下单）
@@ -2302,34 +2304,66 @@ def build_ladder(candidates: list, budget: float, size: int = 4) -> Optional[dic
     for c in puts:
         by_expiry.setdefault(c["expiry"], []).append(c)
     chosen_expiry, pool = max(by_expiry.items(), key=lambda kv: len(kv[1]))
-    if len(pool) < size:
+    if len(pool) < min_size:
         return None
 
-    # 2. 按 |delta| 升序（最安全 → 最激进），均匀选 size 档
+    # 2. 按 |delta| 升序（最安全 → 最激进）
     pool.sort(key=lambda c: abs(c.get("delta", 0)))
-    if size == 1:
-        indices = [len(pool) // 2]
-    else:
-        indices = sorted(set(
-            int(round(i * (len(pool) - 1) / (size - 1))) for i in range(size)
-        ))
-    if len(indices) < size:
-        # 候选重叠（同 strike 多 expiry 时可能），补齐
-        all_idx = list(range(len(pool)))
-        for i in all_idx:
-            if i not in indices:
-                indices.append(i)
-            if len(indices) >= size:
-                break
-        indices = sorted(indices[:size])
-    selected = [pool[i] for i in indices]
 
-    # 3. 按 budget 等量分配 contracts
-    cost_per_unit = sum(float(c.get("strike", 0)) * 100 for c in selected)
-    if cost_per_unit <= 0:
-        return None
+    def _select_n(n: int):
+        """从 pool 里均匀挑 n 档，处理 indices 重叠"""
+        if n == 1:
+            return [pool[len(pool) // 2]]
+        idx = sorted(set(
+            int(round(i * (len(pool) - 1) / (n - 1))) for i in range(n)
+        ))
+        if len(idx) < n:
+            # 候选重叠，补齐
+            for i in range(len(pool)):
+                if i not in idx:
+                    idx.append(i)
+                if len(idx) >= n:
+                    break
+            idx = sorted(idx[:n])
+        return [pool[i] for i in idx]
+
+    # 3. 自适应：从 requested size 往下降，找第一个 budget 能塞下的
+    requested_size = size
+    actual_size = None
+    selected = None
+    cost_per_unit = None
+
+    if budget <= 0:
+        # 没预算约束，直接用 requested
+        actual_size = min(requested_size, len(pool))
+        selected = _select_n(actual_size)
+        cost_per_unit = sum(float(c.get("strike", 0)) * 100 for c in selected)
+    else:
+        # 有预算 — 从 requested 往 min_size 降
+        for try_size in range(min(requested_size, len(pool)), min_size - 1, -1):
+            try_selected = _select_n(try_size)
+            cpu = sum(float(c.get("strike", 0)) * 100 for c in try_selected)
+            if cpu <= 0:
+                continue
+            if budget >= cpu:
+                # 这档能塞下，用它
+                actual_size = try_size
+                selected = try_selected
+                cost_per_unit = cpu
+                break
+        if actual_size is None:
+            # 连 min_size 档都装不下 — fallback 到 min_size 单位 1（is_affordable=False）
+            if len(pool) < min_size:
+                return None
+            actual_size = min_size
+            selected = _select_n(min_size)
+            cost_per_unit = sum(float(c.get("strike", 0)) * 100 for c in selected)
+            if cost_per_unit <= 0:
+                return None
+
     units = max(1, int(budget // cost_per_unit)) if budget > 0 else 1
     is_affordable = (cost_per_unit * units <= budget) if budget > 0 else True
+    was_shrunk = (actual_size < requested_size)
 
     # 4. 构造 rungs + 聚合
     rungs = []
@@ -2397,6 +2431,9 @@ def build_ladder(candidates: list, budget: float, size: int = 4) -> Optional[dic
     return {
         "rungs": rungs,
         "size": len(rungs),
+        "requested_size": requested_size,
+        "actual_size": actual_size,
+        "was_shrunk": was_shrunk,
         "expiry": chosen_expiry,
         "days": selected[0].get("days"),
         "units_per_rung": units,

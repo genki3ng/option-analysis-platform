@@ -265,6 +265,23 @@
     30%  { transform: translateY(-50%) scale(1.18); color: var(--bad, #F87171); }
     100% { transform: translateY(-50%) scale(1); }
   }
+  /* 管理后台徽章 — 仅 admin 邮箱用户可见（body.is-admin） */
+  .admin-badge {
+    position: absolute; left: 220px; top: 50%;
+    transform: translateY(-50%);
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--card); border: 1px solid var(--line);
+    display: none;
+    align-items: center; justify-content: center;
+    cursor: pointer; text-decoration: none;
+    color: var(--accent);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .admin-badge:hover { border-color: var(--accent); background: rgba(230,184,106,0.08); }
+  .admin-badge svg { width: 16px; height: 16px; display: block; }
+  body.is-admin .admin-badge { display: inline-flex; }
+  body.is-admin .coin-badge { left: 258px; }
 
   /* 首次登录欢迎遮罩 */
   .welcome-overlay {
@@ -4305,6 +4322,9 @@
     .user-badge .name { max-width: 64px; font-size: 11px; }
     .coin-badge { left: 124px; padding: 0 9px 0 8px; height: 30px; font-size: 11px; }
     .coin-badge .coin-icon { font-size: 12px; }
+    .admin-badge { left: 124px; width: 28px; height: 28px; }
+    .admin-badge svg { width: 14px; height: 14px; }
+    body.is-admin .coin-badge { left: 158px; }
     .lang-selector { right: 38px; height: 30px; border-radius: 15px; }
     .lang-selector button { padding: 0 6px; min-width: 24px; font-size: 10.5px; }
 
@@ -4426,6 +4446,9 @@
     .user-badge .icon { font-size: 11px; }
     .coin-badge { left: 104px; padding: 0 8px 0 7px; font-size: 10.5px; }
     .coin-badge .coin-icon { font-size: 11px; }
+    .admin-badge { left: 104px; width: 26px; height: 26px; }
+    .admin-badge svg { width: 13px; height: 13px; }
+    body.is-admin .coin-badge { left: 136px; }
     .lang-selector { right: 34px; }
     .lang-selector button { padding: 0 5px; min-width: 22px; font-size: 10px; }
     .theme-toggle { width: 28px; height: 28px; font-size: 11px; }
@@ -5006,6 +5029,9 @@
       <span class="icon">👤</span>
       <span class="name" id="user-name" data-i18n="本地用户">本地用户</span>
     </div>
+    <a class="admin-badge" id="admin-badge" href="/admin" data-i18n-title="管理后台" title="管理后台" aria-label="Admin">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2L4 5V11C4 16 7.5 20.5 12 22C16.5 20.5 20 16 20 11V5L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
     <div class="coin-badge" id="coin-badge" style="display:none" onclick="showCoinInfo()" data-i18n-title="包租公金币 — 每次推荐消耗 1 枚" title="包租公金币 — 每次推荐消耗 1 枚">
       <span class="coin-icon">🪙</span>
       <span class="coin-num" id="coin-num">—</span>
@@ -5508,6 +5534,7 @@ const I18N = {
     'Google 登录': 'Google 登录',
     '登录后多设备云同步': '登录后多设备云同步 ☁',
     '点击查看选项': '点击查看选项',
+    '管理后台': '管理后台',
     '改昵称': '改昵称',
     '登出': '登出',
     '云同步开启': '云同步已开启',
@@ -6244,6 +6271,7 @@ const I18N = {
     'Google 登录': 'Google 登入',
     '登录后多设备云同步': '登入後多裝置雲同步 ☁',
     '点击查看选项': '點擊查看選項',
+    '管理后台': '管理後台',
     '改昵称': '改暱稱',
     '登出': '登出',
     '账户设置': '帳戶設定',
@@ -7144,6 +7172,7 @@ const I18N = {
     'Google 登录': 'Sign in with Google',
     '登录后多设备云同步': 'Sign in to enable cross-device cloud sync ☁',
     '点击查看选项': 'Click for options',
+    '管理后台': 'Admin',
     '改昵称': 'Edit nickname',
     '登出': 'Sign out',
     '账户设置': 'Account Settings',
@@ -12999,6 +13028,9 @@ let _currentUser = null;
 let _cloudCache = null;     // { positions: [], state: {} }
 let _cloudReady = false;
 let _cloudChannel = null;
+
+// 与 admin.html / api/state.py ADMIN_EMAIL_WHITELIST 保持一致
+const ADMIN_EMAILS = new Set(['hi@congyangwang.com', 'avatar.wang@gmail.com']);
 let _saveDebounce = null;
 let _lastSavedSignature = '';
 
@@ -13834,6 +13866,15 @@ function _renderUserBadge() {
     badge.title = t('登录后多设备云同步');
     badge.onclick = signInGoogle;
   }
+  _renderAdminBadge();
+}
+
+function _renderAdminBadge() {
+  const email = (_currentUser?.email || '').toLowerCase();
+  const isAdmin = !!email && ADMIN_EMAILS.has(email) && !window._isShareView;
+  document.body.classList.toggle('is-admin', isAdmin);
+  const ab = document.getElementById('admin-badge');
+  if (ab) ab.title = t('管理后台');
 }
 
 function showUserMenu(evt) {

@@ -3,11 +3,40 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — UI/UX QA 第三轮 · 6 处 placeholder / 动态渲染 i18n leak）
+最后更新：2026-05-19（cloud — UI/UX QA 第四轮 · 复盘表头 持仓 / 负 theta 显示 "$-13" 格式 bug）
 
-> 注意：origin/main 并行 session ship 了一波"用户报 4 bugs"修复（submitRec ticker / brief 时区 / selection 同步 / lang-selector 高度），在本轮第二条 entry 下面，跟本轮独立。
+### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 4）
 
-### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 3）
+**主题**：用户要求"更小心"。先 grep 确认每个函数 + selector 存在再写脚本，每张截图视觉验证后才下结论。Round 3 报的 "pos-card-expanded" 其实**不是一个 feature** — `.pos` 卡片本来就一直展开。
+
+**真 bug 修复（2 处）**：
+
+1. **复盘 modal 表头 "持仓" 中文** (`index.html:10359`) — `t('持仓')` 调用但 zh / zh_tw / en 任何字典都没有这个 key（只有 '持仓明细'）。EN 模式 review 表头第一列显示中文。补 zh_tw "持倉" + en "Position"。
+
+2. **每日 Theta 负值显示 "+$-13"** (`index.html:9035` + `9064`) — 两处都用 `+$${fmt(p.daily_theta, 0)}` 硬编码 `+` 前缀。深 ITM short put 的 theta 可能短期为负，渲染出 "+$-13" 怪异格式。改用 `signed(p.daily_theta, 0, '$')` + `colorOf()` 动态颜色，正负值都正确显示（`$X` / `$-X`）。
+
+**Round 1/2/3 修复在 round 4 截图全验证生效**：
+- ✓ "Set account to show capital usage" 英文
+- ✓ "Tue 5/19 · 14:24" brief 标题英文
+- ✓ rec ticker placeholder 英文 "Try SPY, TSLA, NVDA, META for high liquidity"
+- ✓ "Short premium: lower Δ = safer" 风险偏好 hint 英文
+- ✓ "+ Add stock" 账户 modal 按钮英文（动态渲染时也翻译）
+
+**深层 surface 截图栈**：`/tmp/qa-shots-4/<vp>/{01..13}.png` — 26 张，覆盖 review modal / edit modal (inline) / close dialog / roll suggestion (复用 rec modal pre-fill TSLA+CSP) / brief reopened / 小白指南 / EN data / 繁中 data。
+
+**false positive 排除**：
+- 推荐 modal STRATEGY INTENT 的 "Premium income" vs "Cash-Secured Put" 高度看似不齐 — CSS `align-items: stretch` 实际生效，是文字行数不同的视觉错觉，**非 bug**。
+- AAPL "-5,583%" / TSLA "+3,303%" 极端百分比 — fake data 跟 live quote 错配产生的，**非 bug**。
+- 移动版 review table META $580 Put wrap 3 行 — 是窄屏 natural wrap，**非 bug**。
+
+**剩余 backlog**：
+- 候选卡片渲染（2×2 出场计划 + sigbox 信号 + verdict 列表） — 必须真跑 recommend 后端返回有效候选才能看到，需要真账号 OR 后端 mock。
+- payoff diagram modal — 需要点击 "Payoff Diagram" 按钮触发，脚本没覆盖。
+- compare candidates modal — 需要勾选多个候选再点对比，更复杂。
+
+---
+
+### 上一轮（2026-05-19 cloud · UI/UX QA round 3）
 
 **主题**：重写 Playwright 脚本修 modal backdrop intercept 问题（用 `hideRec()` JS 调用替 Escape，显式 backdrop 清理），扫 16 个 surface × 2 viewport = 30 张截图，发现 round 1/2 没看到的 6 处 i18n leak — 都在动态渲染或 placeholder 上。
 

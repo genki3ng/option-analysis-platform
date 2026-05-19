@@ -5862,6 +5862,7 @@ const I18N = {
     '明天到账的钱（时间是空头的朋友）': '明天到帳的錢（時間是空頭的朋友）',
     // 持仓区
     '持仓明细': '持倉明細',
+    '持仓': '持倉',
     '勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释':
       '勾選要納入圖表和建議的持倉。綠邊 = Call，橙邊 = Put。每行小標籤 ⓘ 懸停看解釋',
     '+ 新建持仓': '+ 新建持倉',
@@ -6754,6 +6755,7 @@ const I18N = {
     '明天到账的钱（时间是空头的朋友）': "tomorrow's gain from time decay (time is a short's friend)",
     // Position section
     '持仓明细': 'Positions',
+    '持仓': 'Position',
     '勾选要纳入图表和建议的持仓。绿边 = Call，橙边 = Put。每行小标签 ⓘ 悬停看解释':
       'Check to include in chart & suggestions. Green = Call, Orange = Put. Hover ⓘ for explanations',
     '+ 新建持仓': '+ New Position',
@@ -9057,7 +9059,7 @@ function renderPosition(p) {
           <span class="pos-pnl-label">${t('浮盈亏')}</span>
           <div class="pos-theta-row" title="${TIPS.theta}">
             <span class="k">${t('每日 Theta')}</span>
-            <span class="v green">+$${fmt(p.daily_theta, 0)}</span>
+            <span class="v ${colorOf(p.daily_theta)}">${signed(p.daily_theta, 0, '$')}</span>
           </div>
         </div>
 
@@ -9086,7 +9088,7 @@ function renderPosition(p) {
               <span class="k">IV</span><strong>${fmt(p.trade_iv, 0)}%</strong>
             </span>
             <span class="stat" title="${TIPS.theta}">
-              <span class="k">θ</span><strong>+$${fmt(p.daily_theta, 0)}</strong>
+              <span class="k">θ</span><strong>${signed(p.daily_theta, 0, '$')}</strong>
             </span>
             <span class="stat full-only" title="${markSrcTip(p.mark_src)}">
               <span class="k">Mark</span><strong><span class="src-dot ${p.mark_src}"></span>$${fmt(p.mark, 2)}</strong>

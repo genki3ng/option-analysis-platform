@@ -10811,7 +10811,7 @@ function handleImportJSON(e) {
         throw new Error('文件格式错误：找不到 positions 数组');
       }
       const nPos = data.positions.length;
-      const nState = Object.keys(data.state || {}).length;
+      const nState = _stateRealKeys(data.state).length;
       const exportedAt = data.exportedAt
         ? new Date(data.exportedAt).toLocaleString('zh-CN')
         : '未知';
@@ -11851,7 +11851,7 @@ async function _maybeShowWelcome(_isFirstSession) {
   if (meta.welcome_seen) return;
   const isReturning = !!(_cloudCache &&
     ((_cloudCache.positions && _cloudCache.positions.length > 0) ||
-     (_cloudCache.state && Object.keys(_cloudCache.state).filter(k => k !== '_meta').length > 0)));
+     _stateRealKeys(_cloudCache.state).length > 0));
   _renderWelcomeOverlay({ isReturning });
   try {
     st._meta = st._meta || {};
@@ -12105,7 +12105,7 @@ async function _onSignedIn(isFresh) {
       sessionStorage.setItem(sessKey, '1');
       _isFirstLogin = !!(_cloudCache &&
         (!_cloudCache.positions || _cloudCache.positions.length === 0) &&
-        (!_cloudCache.state || Object.keys(_cloudCache.state).length === 0));
+        _stateRealKeys(_cloudCache.state).length === 0);
       _logUsage(_isFirstLogin ? 'first_login' : 'login', { fresh: !!isFresh });
     }
   } catch(e) {}
@@ -12566,8 +12566,9 @@ async function _checkMigration() {
   const migKey = 'cloud_migrated_' + _currentUser.id;
   if (localStorage.getItem(migKey) === '1') return;
   // 云端非空 → 不迁移（防止覆盖云数据）
+  // 注意：state 必须排除 _meta（selection / welcome_seen / account 等偏好不算"数据"）
   if ((_cloudCache.positions || []).length > 0 ||
-      Object.keys(_cloudCache.state || {}).length > 0) {
+      _stateRealKeys(_cloudCache.state).length > 0) {
     localStorage.setItem(migKey, '1');
     return;
   }
@@ -12628,7 +12629,7 @@ async function manualReimport() {
   }
   // 云端非空 → 二次确认（会被覆盖！）
   if ((_cloudCache.positions || []).length > 0 ||
-      Object.keys(_cloudCache.state || {}).length > 0) {
+      _stateRealKeys(_cloudCache.state).length > 0) {
     const sure = confirm(
       t('manual_reimport_overwrite_warn')
         .replace('{cloudN}', _cloudCache.positions.length)
@@ -12665,7 +12666,7 @@ function exportJsonBackup() {
       source,
       user: _currentUser?.email || null,
       n_positions: positions.length,
-      n_state: Object.keys(state).length,
+      n_state: _stateRealKeys(state).length,
     },
     positions,
     state,
@@ -12797,6 +12798,12 @@ function fmtStrike(s) {
 }
 function posIdOf(p) {
   return `${p.ticker}_${p.type}_${fmtStrike(p.strike)}_${p.expiry}`;
+}
+
+// state map 里的"真实"持仓状态 key 数（排除 _meta namespace，那里放 selection /
+// brief_snapshot / welcome_seen / account 等用户偏好，不算"用户的持仓数据"）
+function _stateRealKeys(s) {
+  return Object.keys(s || {}).filter(k => k !== '_meta');
 }
 
 async function refresh() {

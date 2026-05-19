@@ -2824,6 +2824,12 @@ def _make_verdict(opt: dict, is_short: bool, intent: str,
             else:
                 pros.append(f"📊 {ed['date']} 财报前（剩 {ed['days']} 天），IV 偏高，权利金充裕")
                 weight += 1
+                # v2.1 #6 财报 IV crush 红利估算（仅当 capture > 0）
+                crush = opt.get("earnings_crush_capture_$")
+                if crush and crush > 0:
+                    crush_pct = opt.get("earnings_crush_capture_pct", 0)
+                    pros.append(f"💎 财报 IV crush 红利估 +${crush:.0f}/张 ({crush_pct:.1f}% 抵押)")
+                    weight += 1
         else:
             # premium / long_vol：双向 gamma 风险
             if is_short and risk == "conservative":
@@ -3288,6 +3294,88 @@ def _find_expiries(ticker: str, target_days: int, n: int = 3,
         return []
 
 
+def scan_multi(req: dict) -> dict:
+    """v2.1 #7 多 ticker 单次扫描 — 对 tickers 数组逐一调 recommend 后合并 + 排序。
+
+    入参：
+      req.tickers: ["TSLA", "NVDA", "GOOG"]  最多 5 个
+      其他字段（direction/intent/timeframe/risk/exit_style/account/...）会原样
+      传给每个 ticker 的 recommend 调用
+    输出（同 recommend 形状，额外字段）:
+      tickers_scanned: 实际扫描的 ticker 列表
+      errors_per_ticker: {ticker: error_msg}（如有失败）
+      candidates: 跨 ticker 合并后按 rent_score 排序的 top 15
+    """
+    tickers = req.get("tickers") or []
+    lang = req.get("lang", "zh")
+    if not isinstance(tickers, list) or not tickers:
+        return {"error": _T(lang, "请提供 tickers 数组")}
+    # 去重 + 标准化 + 限 5 个
+    seen = set()
+    clean = []
+    for t in tickers:
+        u = (t or "").upper().strip()
+        if u and u not in seen and len(u) <= 6:
+            clean.append(u)
+            seen.add(u)
+        if len(clean) >= 5:
+            break
+    if not clean:
+        return {"error": _T(lang, "tickers 无效")}
+
+    all_candidates = []
+    errors_per_ticker = {}
+    per_ticker_summary = []
+    for tk in clean:
+        sub_req = dict(req)
+        sub_req["ticker"] = tk
+        sub_req["tickers"] = None  # 避免递归
+        try:
+            r = recommend(sub_req)
+        except Exception as e:
+            errors_per_ticker[tk] = str(e)
+            continue
+        if r.get("error"):
+            errors_per_ticker[tk] = r["error"]
+            continue
+        cands = r.get("candidates") or []
+        for c in cands:
+            c["origin_ticker"] = tk
+            all_candidates.append(c)
+        per_ticker_summary.append({
+            "ticker": tk,
+            "underlying": r.get("underlying"),
+            "n_candidates": len(cands),
+            "top_score": (cands[0].get("rent_score") or cands[0].get("score")) if cands else None,
+            "realized_vol_30d_pct": r.get("realized_vol_30d_pct"),
+            "is_leveraged_etf": r.get("is_leveraged_etf"),
+        })
+
+    # 跨 ticker 按 rent_score 排序
+    all_candidates.sort(key=lambda c: -(c.get("rent_score") or c.get("score") or 0))
+
+    return {
+        "tickers_scanned": clean,
+        "errors_per_ticker": errors_per_ticker or None,
+        "per_ticker_summary": per_ticker_summary,
+        "candidates": all_candidates[:15],
+        "total_examined": len(all_candidates),
+        "algorithm": {
+            "name": ALGORITHM_NAME,
+            "version": ALGORITHM_VERSION,
+            "tagline": ALGORITHM_TAGLINE,
+        },
+        "criteria": {
+            "direction": req.get("direction"),
+            "intent": req.get("intent"),
+            "timeframe": req.get("timeframe"),
+            "risk": req.get("risk"),
+            "exit_style": req.get("exit_style"),
+        },
+        "scan_mode": "multi",
+    }
+
+
 def recommend(req: dict) -> dict:
     """返回排名后的 option 候选清单"""
     ticker = (req.get("ticker") or "").upper().strip()
@@ -3610,6 +3698,28 @@ def recommend(req: dict) -> dict:
         earnings_cross = bool(earnings_date and today < earnings_date < exp_d)
         if earnings_cross:
             c["earnings_warning"] = earnings_warning
+
+            # ── v2.1 #6 财报 IV crush 红利估算（仅短卖 CSP/CC）
+            # 经验：财报后 ATM IV 跌约 40%（liquid name）。假设 crush 后剩 60%。
+            # 用 BS 重新算 crush 后期权值，差额 = 你能赚到的"crush 红利"
+            if is_short:
+                try:
+                    e_days = earnings_warning.get("days") or 0
+                    if 0 < e_days < c["days"]:
+                        iv_pre = (c.get("iv") or 0) / 100
+                        iv_post = max(0.05, iv_pre * 0.60)  # 40% crush，floor 5%
+                        days_after = c["days"] - e_days
+                        T_after = max(1, days_after) / 365.0
+                        price_post, _, _, _ = price_option(
+                            underlying, c["strike"], T_after, RISK_FREE, iv_post, is_call)
+                        crush_capture = (c["mid"] - price_post) * 100
+                        if crush_capture > 0:
+                            c["earnings_crush_capture_$"] = round(crush_capture, 2)
+                            collateral = c["strike"] * 100 if c["strike"] else 1
+                            c["earnings_crush_capture_pct"] = round(
+                                crush_capture / collateral * 100, 2)
+                except Exception:
+                    pass
 
         # Short option 距行权 < 8% 时，提供 spread 替代信号
         if is_short and abs(c["moneyness_pct"]) < 8:
@@ -4756,6 +4866,21 @@ class handler(BaseHTTPRequestHandler):
                     "anthropic_key_len": len(_os.environ.get("ANTHROPIC_API_KEY", "")),
                     "anthropic_client_ready": _get_anthropic_client() is not None,
                 }
+            elif action == "scan_multi":
+                # v2.1 #7 多 ticker 单次扫描 — 跨标的找最佳候选
+                result = scan_multi(payload)
+                self._send_json(200, result)
+                try:
+                    user_id = payload.get("user_id")
+                    user_email = payload.get("user_email")
+                    if user_id:
+                        tks = payload.get("tickers") or []
+                        meta = {"tickers": ",".join(tks[:5]), "intent": payload.get("intent")}
+                        log_usage_event(user_id, user_email, "scan_multi", meta)
+                except Exception as _e:
+                    try: print(f"[usage] scan_multi log skip: {_e}", flush=True)
+                    except Exception: pass
+                return
             elif action == "recommend":
                 result = recommend(payload)
                 # 先把响应发给用户 — usage 埋点不该阻塞用户拿到结果。

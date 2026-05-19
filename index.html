@@ -5174,7 +5174,7 @@
 
   <div class="row" data-section="ticker">
     <span class="label" data-i18n="标的 Ticker">标的 Ticker</span>
-    <input type="text" id="rec-ticker" placeholder="TSLA" maxlength="6">
+    <input type="text" id="rec-ticker" placeholder="TSLA · 或多个 TSLA,NVDA,GOOG" maxlength="40">
     <span style="color:var(--sub);font-size:11px" data-i18n="推荐 SPY, TSLA, NVDA, META 等高流动性标的">推荐 SPY, TSLA, NVDA, META 等高流动性标的</span>
   </div>
 
@@ -5600,6 +5600,12 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡',
     '预算够': '预算够',
     '档（你想要 N 档需要更多预算）': '档（你想要 N 档需要更多预算）',
+
+    // ── 🔍 Multi-ticker scan (v2.1 #7)
+    '多 ticker 扫描': '多 ticker 扫描',
+    '候选合计': '候选合计',
+    '请提供 tickers 数组': '请提供 tickers 数组',
+    'tickers 无效': 'tickers 无效',
 
     // ── 🔄 Roll 建议器 (v2.1 #5)
     'Roll': 'Roll',
@@ -6369,6 +6375,12 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': '看漲 · CSP 階梯（自適應 2-4 檔）· {tf}d · 平衡',
     '预算够': '預算夠',
     '档（你想要 N 档需要更多预算）': '檔（你想要 N 檔需要更多預算）',
+
+    // ── 🔍 多 ticker 掃描
+    '多 ticker 扫描': '多 ticker 掃描',
+    '候选合计': '候選合計',
+    '请提供 tickers 数组': '請提供 tickers 數組',
+    'tickers 无效': 'tickers 無效',
 
     // ── 🔄 Roll 建議器
     'Roll': 'Roll',
@@ -7230,6 +7242,12 @@ const I18N = {
     '看涨 · CSP 阶梯（自适应 2-4 档）· {tf}d · 平衡': 'Bullish · CSP ladder (auto-fit 2-4) · {tf}d · balanced',
     '预算够': 'Budget fits',
     '档（你想要 N 档需要更多预算）': 'rungs (you asked for N — needs more budget)',
+
+    // ── 🔍 Multi-ticker scan (v2.1)
+    '多 ticker 扫描': 'Multi-ticker scan',
+    '候选合计': 'Total candidates',
+    '请提供 tickers 数组': 'Please provide a tickers array',
+    'tickers 无效': 'Invalid tickers',
 
     // ── 🔄 Roll suggester (v2.1)
     'Roll': 'Roll',
@@ -10719,11 +10737,22 @@ function _updateRiskLabels() {
 }
 
 async function submitRec() {
-  const ticker = document.getElementById('rec-ticker').value.trim().toUpperCase();
-  if (!ticker) { alert('请输入 ticker'); return; }
-  const body = {
+  const rawTicker = document.getElementById('rec-ticker').value.trim().toUpperCase();
+  if (!rawTicker) { alert('请输入 ticker'); return; }
+  // v2.1 #7 多 ticker 扫描：检测逗号/空格/分号分隔，> 1 个 → scan_multi action
+  const tickers = rawTicker.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+  const isMultiScan = tickers.length > 1;
+  const body = isMultiScan ? {
+    action: 'scan_multi',
+    tickers: tickers.slice(0, 5),
+    direction: _recSelection.direction,
+    intent: _recSelection.intent,
+    timeframe: parseInt(_recSelection.timeframe, 10),
+    risk: _recSelection.risk,
+    exit_style: _recSelection.exit_style || 'auto',
+  } : {
     action: 'recommend',
-    ticker,
+    ticker: tickers[0],
     direction: _recSelection.direction,
     intent: _recSelection.intent,
     timeframe: parseInt(_recSelection.timeframe, 10),
@@ -10848,11 +10877,21 @@ function setTierFilter(val) {
 function renderRecResult(d) {
   _lastRecData = d;
   const c = d.criteria;
-  const strategyDesc = c.is_short
-    ? (c.is_call ? t('卖出 Call（看跌或减仓）') : t('卖出 Put（看涨或准备接货）'))
-    : (c.is_call ? t('买入 Call（看多）') : t('买入 Put（看空）'));
+  // v2.1 #7 多 ticker 扫描：is_short / is_call 没有，按 intent 推断
+  const _intent = c && c.intent;
+  const _isMulti = d.scan_mode === 'multi';
+  const _isShort = c && (c.is_short !== undefined ? c.is_short : (_intent === 'csp' || _intent === 'covered_call' || _intent === 'premium'));
+  const _isCall = c && (c.is_call !== undefined ? c.is_call : (_intent === 'covered_call'));
+  const strategyDesc = _isShort
+    ? (_isCall ? t('卖出 Call（看跌或减仓）') : t('卖出 Put（看涨或准备接货）'))
+    : (_isCall ? t('买入 Call（看多）') : t('买入 Put（看空）'));
 
-  const summary = `
+  // multi 模式自己的 summary（没有 d.ticker / d.underlying）
+  const summary = _isMulti ? `
+    ${t('多 ticker 扫描')} <strong>${(d.tickers_scanned || []).join(' · ')}</strong> ·
+    ${t('策略')} <strong>${strategyDesc}</strong> ·
+    ${t('候选合计')} <strong>${(d.candidates || []).length}</strong>
+  ` : `
     ${t('标的')} <strong>${d.ticker}</strong> ${t('现价')} $${fmt(d.underlying, 2)} ·
     ${t('策略')} <strong>${strategyDesc}</strong> ·
     Δ ${t('区间')} ${c.delta_band[0]}-${c.delta_band[1]} ·
@@ -10982,7 +11021,7 @@ function renderRecResult(d) {
     return;
   }
 
-  const isShort = c.is_short;
+  const isShort = _isShort;
   const isLeaps = c.intent === 'long_leaps';
 
   // Tier filter — 包租公视角：只看 ⭐⭐⭐⭐+ 还是全部

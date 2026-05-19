@@ -3,9 +3,53 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — QA 第一轮 P0 修复 · BS 边界 guard + position_id 小数 strike）
+最后更新：2026-05-19（cloud — v2 #2 阶梯方案 ladder builder 完整 ship）
 
-### ✅ 这一轮（2026-05-19 cloud · QA P0 round 1）
+### ✅ 这一轮（2026-05-19 cloud · v2 #2 ladder builder）
+
+**主题**：v2 路线第 2 项 — 用户给 ticker + 接货总预算，算法返回多档 strike 阶梯组合（灵感来自"他的国"实盘 NVDL 6 档 / TQQQ 4 档）。
+
+**Backend**（`api/state.py`）：
+- 新 `build_ladder(candidates, budget, size=4)`：
+  - 仅 CSP；选候选最多的 expiry；按 |delta| 升序均匀挑 size 档；按 budget 等量分配 contracts
+  - 聚合：总抵押 / 总 premium / 加权 prob_safe / 加权 EV / 组合年化
+  - `is_affordable` / `min_budget_needed` 标志
+  - 每个 rung 含 ticker/strike/expiry/days/type/contracts/mid/delta/prob_safe/EV/VRP
+- `recommend()` 增加 `req.ladder = {budget, size}` 触发；仅 short put 适用
+- 响应顶层增加 `ladder_proposal`
+
+**Frontend**（`index.html`）：
+- 新 goal card "🪜 搭阶梯组合"，REC_GOALS.build_ladder（默认 \$100k）
+- 提交时若是 ladder goal，`body.ladder = {budget, size:4}`
+- `renderLadderProposal(d)` 渲染在候选列表顶部（goalBanner 后）：
+  - 4 KPI（总抵押 / 总 Premium / 加权 prob_safe / 加权超额收益）
+  - 桌面表格（Strike/Δ/张/Mid/Premium/Prob/EV），每行 data-rung=r0..r3 控色阶（A+ 方案）：
+    - 3px 左色条 + 水平 fill 宽度（35%→100%）+ Strike 文字色（绿→金→红）
+    - 最安全 / 激进 标签
+  - 手机：表格 → mini 卡（同色阶处理）
+  - is_affordable=false → 红色 warning
+- `_ladderAddAll()`：confirm 模态列每档明细 + 总计 → 批量加入 positions（跳过逐张 prompt）
+
+**UX 流程**（用户视角）：
+1. 进推荐表单 → 切到"目标驱动"mode → 选 "🪜 搭阶梯组合"
+2. 输入预算 (默认 \$100k) → 输入 ticker → 找出最佳
+3. 顶部出现 ladder 卡片 + 4 个候选个体卡 (含阶梯里的 4 档)
+4. 点 "一键加仓" → 确认 → 批量录入 4 张持仓
+
+**按 §9 流程**：建预览页 v2-ladder.html 给 A/B/C/A+ 4 个变体 → 用户选 A+（A 表格 + C 色阶融合）→ 套到 index.html → 删预览。
+
+**i18n 三语补 29 个 key**：goal 文案 + ladder 卡标签 + 警告 + alert 文案。
+
+**待用户验证**：
+- [ ] hard-refresh `/app` 进推荐表单切目标驱动 → 看到 "🪜 搭阶梯组合" goal card
+- [ ] 选它 → 输入 ticker + 预算 → 提交 → 顶部应该出现金色 ladder 卡片含 4 档色阶
+- [ ] 桌面 hover 表格行 / 手机查看 mini 卡，色条 + 渐变 fill 都应正常
+- [ ] 点"一键加仓 (4)" → confirm 显示每档明细 → 确定后批量录入
+- [ ] 切英文 / 繁中 → 标签 + 警告都翻译
+
+---
+
+### 上一轮（2026-05-19 cloud · QA P0 round 1）— BS 边界 guard + position_id 小数 strike
 
 **主题**：用户让 QA 资深视角系统扫一遍 bug 池。并行起 4 个 audit agent（前端 JS / 后端 Python / i18n / 数据一致性），归类成 P0/P1/P2 表。用户选"全修"分阶段做，P0 自主推。
 

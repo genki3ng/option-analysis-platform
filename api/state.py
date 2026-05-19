@@ -4729,15 +4729,16 @@ def _template_concierge(top_3, market, lang):
 
 
 def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration,
-                              positions, pos_changes, lang):
-    """调 Claude Haiku 生成结构化管家简报。失败返回 (None, None)。
+                              positions, pos_changes, lang, use_premium_model=False):
+    """调 Claude 生成结构化管家简报。失败返回 (None, None)。
     返回 (prose_text, structured_brief)：
       prose_text: 派生 prose（backward compat / share view）
       structured_brief: {headline, sub?, items[], footer?}
     positions: 完整活跃持仓列表（compact 格式塞进 prompt 让管家有全局视野）
     pos_changes: 过去 24h 滚动持仓变动汇总（_roll_changes_log 产出），让管家看得到
       跨多次 refresh 的累积变化，而不只是"上次 refresh 到这次"的瞬时 diff。
-      每项 {label, hours_ago}。"""
+      每项 {label, hours_ago}。
+    use_premium_model: True 走 Sonnet 4.6（用户付 5🪙 手动刷新），False 走 Haiku 4.5（自动刷新）。"""
     client = _get_anthropic_client()
     if not client:
         print(f"[concierge] llm_skip: no_client lang={lang}", flush=True)
@@ -4773,11 +4774,14 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
             expiry = p.get("expiry")
             if hasattr(expiry, "isoformat"): expiry = expiry.isoformat()
             pid = f"{p.get('ticker','')}_{p.get('type','')}_{_fmt_strike(p.get('strike',0))}_{expiry}"
-            money_tag = ""
-            if (p.get("type") == "call" and money < 0) or (p.get("type") == "put" and money > 0):
-                money_tag = " [ITM]"
+            # money 是 (spot - strike) / strike × 100：put 为正→ITM、负→OTM；call 反之
+            is_itm = (p.get("type") == "call" and money < 0) or (p.get("type") == "put" and money > 0)
+            if is_itm:
+                money_tag = f" [ITM {abs(money):.1f}%]"
             elif abs(money) < 3:
-                money_tag = " [ATM]"
+                money_tag = f" [ATM {money:+.1f}%]"
+            else:
+                money_tag = f" [OTM {abs(money):.1f}%]"
             signal_lines.append(
                 f"  - [pid={pid}] {label} · {days}d · ${pnl:+,.0f} ({pnl_pct:+.0f}%) · "
                 f"Δ{delta:+.2f} · θ${theta:+.1f}{money_tag}"
@@ -4839,22 +4843,32 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
         "只在叠加方向性风险时（重仓 ticker 财报临近 / 宏观事件 / 已 ITM 且缓冲薄）才提，措辞中性 — 不说\"过高\"\"分散\"。\n"
         "**action**：看持仓用 `position:<pid>`——**pid 必须从 `All active positions` 行里 `[pid=...]` 复制**，不要瞎拼或拼缩写；"
         "找新机会/调仓用 `rec`；无明确下一步 → null。\n"
-        "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。"
+        "**只用我给的数字**，别编。All active positions 给你做全局判断用，不要逐张列。\n"
         "Recent changes (last 24h) 是用户最近 24h 内开仓/平仓的持仓 — 这是滚动窗口（多次 refresh 累积），"
         "**必须**至少有 1 个 item 提到其中最值得讲的那笔（headline 或 body 里点名 + 数字），"
-        "尤其是同 ticker call+put 共存、新加的方向暴露、临近行权或财报的新仓。"
+        "尤其是同 ticker call+put 共存、新加的方向暴露、临近行权或财报的新仓。\n"
+        "**时间表达硬约束**：天数严格直译。`{X}d` 写「剩 X 天到期」或「剩 X 天」。"
+        "**禁止**用「明天/今天/快到了/迫在眉睫/马上」等模糊词替代具体天数 — 哪怕 X=1 也写「剩 1 天到期」。"
+        "(English: \"X days to expiry\". 繁中：「剩 X 天到期」。)\n"
+        "**\"已成定局\" 类终结措辞硬约束**：仅当 |Δ| ≥ 0.85 **且** 距 strike > 8% ITM 时才允许说"
+        "「已成定局 / 接货定了 / 无法回头 / 认命 / 板上钉钉 / 翻盘无望」等终结性判断。"
+        "其他情况一律用「概率偏高 / 接货风险大 / 准备应对」等留余地的措辞 — "
+        "即使是 -50% 浮亏，只要 |Δ| < 0.85 就还有挣扎空间，不能宣判。"
     )
 
     user_prompt = "今早信号:\n" + "\n".join(signal_lines) + (
         f"\n\n严格 JSON 输出，items 3-5 个，{lang_word}。"
     )
 
+    # 模型选择：付费手动刷新（brief_refresh）→ Sonnet 4.6 推理更准；自动 5min 刷新 → Haiku 4.5 省成本
+    model_id = "claude-sonnet-4-6" if use_premium_model else "claude-haiku-4-5-20251001"
+
     # 把诊断信息暂存到 module-level dict，让响应能带回（不靠 Vercel logs）
     global _last_llm_diag
     t0 = time.time()
     try:
         resp = client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model=model_id,
             max_tokens=1600,
             system=system_prompt,
             messages=[
@@ -4864,27 +4878,27 @@ def _generate_concierge_llm(top_3, market, total_pnl, total_theta, concentration
             ],
         )
         elapsed = time.time() - t0
-        print(f"[concierge] llm_done: lang={lang} elapsed={elapsed:.2f}s", flush=True)
-        _last_llm_diag = {"phase": "done", "elapsed_s": round(elapsed, 2)}
+        print(f"[concierge] llm_done: model={model_id} lang={lang} elapsed={elapsed:.2f}s", flush=True)
+        _last_llm_diag = {"phase": "done", "model": model_id, "elapsed_s": round(elapsed, 2)}
         # prefill `{` 不会出现在 response.content 里，需要手动 prepend
         raw = (resp.content[0].text if resp.content else "")
         text = ("{" + raw).strip()
         if not text:
-            _last_llm_diag = {"phase": "empty", "elapsed_s": round(elapsed, 2)}
+            _last_llm_diag = {"phase": "empty", "model": model_id, "elapsed_s": round(elapsed, 2)}
             return None, None
         prose, brief = _parse_concierge_json(text, lang)
         if not brief or not brief.get("items"):
             print(f"[concierge] llm_parse_fail: lang={lang} text_head={text[:120]!r}", flush=True)
-            _last_llm_diag = {"phase": "parse_fail", "elapsed_s": round(elapsed, 2),
-                              "text_head": text[:200]}
+            _last_llm_diag = {"phase": "parse_fail", "model": model_id,
+                              "elapsed_s": round(elapsed, 2), "text_head": text[:200]}
             return None, None
-        _last_llm_diag = {"phase": "ok", "elapsed_s": round(elapsed, 2),
+        _last_llm_diag = {"phase": "ok", "model": model_id, "elapsed_s": round(elapsed, 2),
                           "items": len(brief.get("items") or [])}
         return prose, brief
     except Exception as e:
         elapsed = time.time() - t0
-        print(f"[concierge] llm_error: {type(e).__name__}: {e} elapsed={elapsed:.2f}s", flush=True)
-        _last_llm_diag = {"phase": "error", "error_type": type(e).__name__,
+        print(f"[concierge] llm_error: model={model_id} {type(e).__name__}: {e} elapsed={elapsed:.2f}s", flush=True)
+        _last_llm_diag = {"phase": "error", "model": model_id, "error_type": type(e).__name__,
                           "error_msg": str(e)[:200], "elapsed_s": round(elapsed, 2)}
         return None, None
 
@@ -5039,8 +5053,12 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     # bump 9: 缓存键从 UTC date 换成 America/New_York date — 旧 UTC snap 在
     #         美东时间凌晨那段窗口被错误复用（同 UTC 日期 → 命中昨天的文）。
     #         强制失效一次，确保用户今早登陆拿到真正"今天"的 brief。
-    # bump 10: Recent changes section 改用滚动 24h log（而非"上次 snap → 现在"瞬时 diff），
-    #          解决 force refresh 看不到上午新加持仓的问题。LLM prompt 表述变化。
+    # bump 10: 两组改动一起（cache 必须失效）：
+    #   (a) Recent changes section 改用滚动 24h log（而非"上次 snap → 现在"瞬时 diff），
+    #       解决 force refresh 看不到上午新加持仓的问题
+    #   (b) prompt 加时间表达硬约束（{X}d 必须直译为「剩 X 天」） + "已成定局"
+    #       类终结措辞仅 |Δ|≥0.85 且 ITM>8% 才允许；ITM/ATM/OTM tag 带具体距 strike %；
+    #       force_refresh（用户付 5🪙）走 Sonnet 4.6，自动刷新继续 Haiku 4.5
     CONCIERGE_VERSION = 10
     cached_text = None
     cached_brief = None
@@ -5064,7 +5082,8 @@ def _generate_morning_brief(positions, prices, total_pnl, total_realized, total_
     else:
         concierge_text, concierge_brief = _generate_concierge_llm(
             top_3, market, total_pnl, total_theta,
-            concentration, positions, recent_changes_24h, lang)
+            concentration, positions, recent_changes_24h, lang,
+            use_premium_model=force_refresh)
         by = "llm"
         if not concierge_text or not concierge_brief:
             concierge_text, concierge_brief = _template_concierge(top_3, market, lang)

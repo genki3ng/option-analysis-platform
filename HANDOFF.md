@@ -3,9 +3,45 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — QA 第二轮 P1 修复 · _meta 计数 / usage log 阻塞 / null guards / 模块级 JSON.parse）
+最后更新：2026-05-19（cloud — QA 第三轮 P2 收尾 · i18n 繁中瑕疵 + goal 数值校验）
 
-### ✅ 这一轮（2026-05-19 cloud · QA P1 round 2）
+### ✅ 这一轮（2026-05-19 cloud · QA P2 round 3）
+
+**主题**：P0/P1 ship 完后清理 P2 杂项。原 audit 报"i18n 348 个 key 缺失"经详细核对**严重夸大**——绝大多数 key 实际存在，只是少数 zh_tw value 还是简体副本。
+
+**真 P2 #1 — zh_tw 5 个未翻译副本**（i18n agent 1 round）：
+- `wheel_hint_assigned_body` / `wheel_hint_hold_body` / `wheel_hint_source_assigned` / `wheel_hint_source_hold` — 简体字"下半场/卖/张/账户/来自"残留
+- `+ 加正股` 用繁体习惯改成 `+ 新增正股`
+- 修：surgical 改 5 个 value，再次扫确认整个 zh_tw dict 100% 干净
+
+**真 P2 #2 — goal modal 数值空值兜底**：
+- `submitRec` 里 `value: numEl ? (parseFloat(numEl.value) || 0) : 0` — 用户清空输入 → parseFloat 返回 NaN → `|| 0` 静默继续 → banner 显示 "$0 / 月" / "0% 安全度" 等无意义数字
+- 修：检查 `goalDef.numLabel` + `Number.isFinite` + `> 0`；不通过 alert 提示并 focus，submit 阻断；新增 i18n key `'请输入'` 三语
+
+**audit 误报（i18n 部分）**：
+- 后端 TRANS_EN / TRANS_TW 完全对称 108/108，agent 报的"完全完整"反而是对的 ✓
+- 前端字典所谓"缺 164/184"实际是把"未翻译副本"也算成"缺失"，真缺失约 5 个量级
+- `_T()` fallback 到 zh key 是预期行为（无翻译就显示中文），无 bug
+
+**P2 安全 review**（无修复方案）：
+- `_verify_admin_token` 无本地 JWT 签名验证 — 完全依赖 Supabase /auth/v1/user 回调，没有 JWT_SECRET 无法本地验。已记 backlog
+
+**QA 三轮总览**（这条 thread）：
+- **P0 round 1**（commit 68fe683）：BS 边界 guard + position_id 小数 strike 一致化
+- **P1 round 2**（commits 5ae6b83 + adba1f8 → rebased a8b4443）：`_meta` 计数 + recommend log 阻塞 + selectedIds null + 模块级 JSON.parse
+- **P2 round 3**（本 commit）：5 个 zh_tw 繁中瑕疵 + goal 数值校验
+
+**audit agent 命中率**：
+- 前端 JS audit：6 报 / 实 2 真 bug（#4 事件重复绑定 / #7 goal 残留都是误报）
+- 后端 Python audit：12 报 / 实 3 真 bug（多数 P0 边界条件误报）
+- i18n audit：348 报 / 实 ~6 处（"缺"=未翻译副本，不是真缺）
+- 数据一致性 audit：10 报 / 实 1 真 bug（state._meta 计数）
+
+**结论**：agent 适合"广撒网定位嫌疑点"，但**每条都需要人盯代码验证**才能定真假。盲目按 agent 报告修会引入新 bug。
+
+---
+
+### 上一轮（2026-05-19 cloud · QA P1 round 2）
 
 **主题**：接 P0 round 1 之后把 P1 池 9 条逐条验证 + 修。验证后 5 条是 agent 误报（详见末），4 条是真 bug，全修。
 

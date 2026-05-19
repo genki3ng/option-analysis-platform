@@ -5368,6 +5368,7 @@ const I18N = {
     'Wheel 派 · 接货为乐': 'Wheel 派 · 接货为乐',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。',
     '总接货预算': '总接货预算',
+    '请输入': '请输入',
     '从预算里给 4 档 strike 等量分配 contracts': '从预算里给 4 档 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看涨 · CSP 4 档阶梯 · {tf}d · 平衡',
     '档阶梯方案': '档阶梯方案',
@@ -5830,10 +5831,10 @@ const I18N = {
     '张 short put': '張 short put',
     '张 short call': '張 short call',
     '张 put 进入 ITM': '張 put 進入 ITM',
-    'wheel_hint_assigned_body': '<strong>🔄 Wheel 下半场:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
-    'wheel_hint_hold_body': '<strong>💡 Wheel 提示:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可卖 {contracts} 张 Covered Call',
-    'wheel_hint_source_assigned': '来自 {date} CSP 指派',
-    'wheel_hint_source_hold': '账户中已持仓',
+    'wheel_hint_assigned_body': '<strong>🔄 Wheel 下半場:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可賣 {contracts} 張 Covered Call',
+    'wheel_hint_hold_body': '<strong>💡 Wheel 提示:</strong> 你持有 {shares} 股 <strong>{ticker}</strong>，可賣 {contracts} 張 Covered Call',
+    'wheel_hint_source_assigned': '來自 {date} CSP 指派',
+    'wheel_hint_source_hold': '帳戶中已持倉',
     '推荐 Covered Call': '推薦 Covered Call',
     '现有持仓': '現有持倉',
     '累计抵押金': '累計抵押金',
@@ -6024,7 +6025,7 @@ const I18N = {
     '类型': '類型',
     '保证金': '保證金',
     '正股': '正股',
-    '+ 加正股': '+ 加正股',
+    '+ 加正股': '+ 新增正股',
     '删除该账户': '刪除該帳戶',
     '至少保留 1 个账户': '至少保留 1 個帳戶',
     '其他': '其他',
@@ -6070,6 +6071,7 @@ const I18N = {
     'Wheel 派 · 接货为乐': 'Wheel 派 · 接貨為樂',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': '持到到期 = 不鎖利不止損，只在被指派後處理（接貨換正股 / 賣 CC）。僅短賣適用。',
     '总接货预算': '總接貨預算',
+    '请输入': '請輸入',
     '从预算里给 4 档 strike 等量分配 contracts': '從預算裡給 4 檔 strike 等量分配 contracts',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': '看漲 · CSP 4 檔階梯 · {tf}d · 平衡',
     '档阶梯方案': '檔階梯方案',
@@ -6864,6 +6866,7 @@ const I18N = {
     'Wheel 派 · 接货为乐': 'Wheel-style · happy to be assigned',
     '持到到期 = 不锁利不止损，只在被指派后处理（接货换正股 / 卖 CC）。仅短卖适用。': 'Hold to expiry = no profit-lock, no stop-loss; only act when assigned (take stock / sell CC). Short positions only.',
     '总接货预算': 'Total assignment budget',
+    '请输入': 'Please enter',
     '从预算里给 4 档 strike 等量分配 contracts': 'Equal contracts across 4 strikes within budget',
     '看涨 · CSP 4 档阶梯 · {tf}d · 平衡': 'Bullish · CSP 4-rung ladder · {tf}d · balanced',
     '档阶梯方案': '-rung ladder',
@@ -10305,10 +10308,19 @@ async function submitRec() {
 
   // 🎯 目标驱动 mode：快照「目标 + 用户输入」供结果卡渲染目标达成度
   if (_recMode === 'goal' && _recGoalKey) {
+    const goalDef = REC_GOALS[_recGoalKey];
     const numEl = document.getElementById('rec-goal-num');
+    const numVal = numEl ? parseFloat(numEl.value) : NaN;
+    // 4/5 个 goal 需要数值输入；用户清空 → parseFloat 返回 NaN
+    // 旧逻辑 `|| 0` 静默继续，banner 显示 "$0 / 月" 等无意义数字
+    if (goalDef && goalDef.numLabel && (!Number.isFinite(numVal) || numVal <= 0)) {
+      alert(t('请输入') + ' ' + t(goalDef.numLabel));
+      if (numEl) numEl.focus();
+      return;
+    }
     _recGoalContext = {
       key: _recGoalKey,
-      value: numEl ? (parseFloat(numEl.value) || 0) : 0,
+      value: Number.isFinite(numVal) ? numVal : 0,
     };
     // 🪜 阶梯模式 → backend 触发 build_ladder
     if (_recGoalKey === 'build_ladder' && _recGoalContext.value > 0) {

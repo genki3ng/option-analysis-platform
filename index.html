@@ -2840,6 +2840,26 @@
     font-size: 16px; line-height: 1;
   }
   .morning-brief.collapsed { display: none; }
+  /* 关闭后的"重新展开"小药丸 */
+  .mb-reopen {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 16px;
+    padding: 6px 12px 6px 10px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--sub);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .mb-reopen:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(230,184,106,0.06);
+  }
+  .mb-reopen .mb-reopen-icon { font-size: 13px; line-height: 1; }
+  .mb-reopen .mb-reopen-label { line-height: 1; }
   /* 包租公管家 hero — 重点信息，hero 级 spotlight */
   .morning-brief .mb-concierge {
     display: flex; gap: 16px; align-items: flex-start;
@@ -4440,6 +4460,10 @@
   </div>
 
   <div class="morning-brief" id="morning-brief" style="display:none"></div>
+  <div class="mb-reopen" id="mb-reopen" style="display:none" onclick="reopenMorningBrief()" data-i18n-title="展开包租公管家" title="展开包租公管家">
+    <span class="mb-reopen-icon">💼</span>
+    <span class="mb-reopen-label" data-i18n="展开管家">展开管家</span>
+  </div>
   <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="handleImportJSON(event)">
 
   <div class="summary">
@@ -5081,6 +5105,8 @@ const I18N = {
     '不懂某个指标？点开看大白话解释': '不懂某個指標？點開看大白話解釋',
     '今日早安': '今日早安',
     '包租公管家': '包租公管家',
+    '展开管家': '展開管家',
+    '展开包租公管家': '展開包租公管家',
     '今日要关注': '今日要關注',
     '组合健康': '組合健康',
     '📅 未来 14 天关键日': '📅 未來 14 天關鍵日',
@@ -5726,6 +5752,8 @@ const I18N = {
     '不懂某个指标？点开看大白话解释': "Don't know an indicator? Click to expand for plain-English explanation",
     '今日早安': 'Good Morning',
     '包租公管家': 'Landlord Concierge',
+    '展开管家': 'Show concierge',
+    '展开包租公管家': 'Show concierge',
     '今日要关注': 'Today’s focus',
     '组合健康': 'Portfolio health',
     '📅 未来 14 天关键日': '📅 Next 14 days',
@@ -10879,6 +10907,7 @@ function renderMorningBrief(brief) {
     if (localStorage.getItem('mb_dismissed_date') === today) {
       el.style.display = 'none';
       el.classList.remove('mode-priority');
+      _showBriefReopen();
       return;
     }
   }
@@ -10886,8 +10915,13 @@ function renderMorningBrief(brief) {
   if (!brief || typeof brief !== 'object' || Array.isArray(brief) || !brief.concierge_text) {
     el.style.display = 'none';
     el.classList.remove('mode-priority');
+    const re = document.getElementById('mb-reopen');
+    if (re) re.style.display = 'none';
     return;
   }
+  // 真正展示 brief 时，隐藏 reopen pill
+  const _re = document.getElementById('mb-reopen');
+  if (_re) _re.style.display = 'none';
   // 用量埋点：每天每用户每会话只记一次 brief view
   try {
     if (_currentUser && !window._isShareView) {
@@ -10953,6 +10987,26 @@ function dismissMorningBrief() {
   document.getElementById('morning-brief').style.display = 'none';
   const today = new Date().toISOString().slice(0, 10);
   localStorage.setItem('mb_dismissed_date', today);
+  _showBriefReopen();
+}
+
+function reopenMorningBrief() {
+  localStorage.removeItem('mb_dismissed_date');
+  const re = document.getElementById('mb-reopen');
+  if (re) re.style.display = 'none';
+  const brief = (window._currentData && window._currentData.morning_brief) || null;
+  if (brief) renderMorningBrief(brief);
+}
+
+function _showBriefReopen() {
+  if (window._isShareView) return;  // 分享视图不需要
+  const re = document.getElementById('mb-reopen');
+  if (!re) return;
+  // 只在今天确实有 brief 数据时才显示（没数据点开也是空白）
+  const hasBrief = !!(window._currentData && window._currentData.morning_brief
+    && window._currentData.morning_brief.concierge_text);
+  if (!hasBrief) { re.style.display = 'none'; return; }
+  re.style.display = 'inline-flex';
 }
 
 // Wheel 闭环提示：CSP 被指派或持有正股 ≥100 股时，建议卖 Covered Call

@@ -5580,6 +5580,8 @@ const I18N = {
     '设置账户可显示资金占比': '设置账户可显示资金占比',
     '未连接到 ticker 数据（添加持仓后会显示）': '未连接到 ticker 数据（添加持仓后会显示）',
     '更新于 {ts} · 自动每 30 秒刷新': '更新于 {ts} · 自动每 30 秒刷新',
+    '卖期权：Δ 越低越安全，权利金越少': '卖期权：Δ 越低越安全，权利金越少',
+    'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS：Δ 越高越接近正股，杠杆越低',
     '+ 加正股': '+ 加正股',
     '删除该账户': '删除该账户',
     '至少保留 1 个账户': '至少保留 1 个账户',
@@ -6368,6 +6370,8 @@ const I18N = {
     '设置账户可显示资金占比': '設定帳戶可顯示資金佔比',
     '未连接到 ticker 数据（添加持仓后会显示）': '未連接到 ticker 數據（新增持倉後會顯示）',
     '更新于 {ts} · 自动每 30 秒刷新': '更新於 {ts} · 自動每 30 秒重新整理',
+    '卖期权：Δ 越低越安全，权利金越少': '賣期權：Δ 越低越安全，權利金越少',
+    'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS：Δ 越高越接近正股，槓桿越低',
     '+ 加正股': '+ 新增正股',
     '删除该账户': '刪除該帳戶',
     '至少保留 1 个账户': '至少保留 1 個帳戶',
@@ -7248,6 +7252,8 @@ const I18N = {
     '设置账户可显示资金占比': 'Set account to show capital usage',
     '未连接到 ticker 数据（添加持仓后会显示）': 'No ticker data yet (will appear after adding positions)',
     '更新于 {ts} · 自动每 30 秒刷新': 'Updated {ts} · auto-refresh every 30s',
+    '卖期权：Δ 越低越安全，权利金越少': 'Short premium: lower Δ = safer, less premium',
+    'LEAPS：Δ 越高越接近正股，杠杆越低': 'LEAPS: higher Δ = closer to stock, lower leverage',
     '+ 加正股': '+ Add stock',
     '删除该账户': 'Delete this account',
     '至少保留 1 个账户': 'At least 1 account required',
@@ -12177,10 +12183,17 @@ function _mbOpenRec() {
 function _mbFormatTime() {
   const d = new Date();
   const mm = d.getMonth() + 1, dd = d.getDate();
-  const wkday = ['日','一','二','三','四','五','六'][d.getDay()];
+  const dow = d.getDay();
   const hh = d.getHours().toString().padStart(2,'0');
   const mn = d.getMinutes().toString().padStart(2,'0');
-  return `${mm}/${dd} 周${wkday} · ${hh}:${mn}`;
+  // 三套本地化星期 — EN 用缩写在前，中文/繁中用 "周X" / "週X" 后置
+  if (_lang === 'en') {
+    const w = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow];
+    return `${w} ${mm}/${dd} · ${hh}:${mn}`;
+  }
+  const w = ['日','一','二','三','四','五','六'][dow];
+  const prefix = _lang === 'zh_tw' ? '週' : '周';
+  return `${mm}/${dd} ${prefix}${w} · ${hh}:${mn}`;
 }
 function _mbSaveSnapshot(snap) {
   // 每天只上传一次：避免每次刷新 positions 价格变化触发"已同步"指示器一直闪。

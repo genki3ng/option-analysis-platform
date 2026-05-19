@@ -3,98 +3,52 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公式 exit_plan 全链路收尾 · position_advice + 持仓卡 + 小白指南）
+最后更新：2026-05-19（cloud — UI/UX QA 第二轮 · 注入假持仓后再扫，发现 brief 星期 + risk hint i18n leak）
 
-### ✅ 这一轮（包租公式 exit_plan 全链路收尾）
+### ✅ 这一轮（2026-05-19 cloud · UI/UX QA round 2）
 
-接住候选卡片 2×2 网格 ship 后，把"未做"清单 3 项都做完：
+**主题**：Round 1 只在空状态扫，agent 报的"带数据组件 baseline 问题"看不到。这轮用 Playwright 在 navigate 前注入 4 个假持仓（TSLA / AAPL / NVDA / META），让 pos card / brief modal / chart / rec modal-with-data 都真渲染再截图。
 
-**① 小白指南扩 5 词条** — 新分类 `🚪 出场触发线（包租公式）`：
-- 🏠 房东人设（3 选 1）· 早收租 / 接货 Wheel / 死磕到期 全讲清
-- 📬 早收租 · profit target + VRP 动态阈值
-- ⏱️ 21 天换租 · DTE cutoff (Tasty 21d)
-- ⚠️ 房客违约 · delta threshold（Δ 才是接货真风险）
-- 🚨 红线 · earnings cross / capital usage
-每条 4 字段（desc/ex/care/name）× zh + en（zh_tw fallback 到 zh，旧惯例）。分类名补 3 语 i18n。
+**真 bug 修复**（2 处 i18n leak）：
 
-**② renderPositionExitPlan 重写** — 持仓卡 1 行 hint：
-- 读 `_recSelection.exit_style`（用户的当前人设）
-- 选**最紧迫**触发线作 primary（红线 > delta > DTE > profit gap）
-- 显示当前 vs 阈值（例："已达 35% 锁利 (差 15%)" / "Δ 0.22 (限 0.30)" / "财报跨期 — 立即买回"）
-- Header 加迷你 emoji 显示当前风格（🏠/🏘️/💰）
-- hold_to_expiry 显示"死磕到期 · 剩 N 天"+ 接货 fallback
-- 三语 i18n 7 个新 key
+1. **`_mbFormatTime` 硬编码"周X"** (`index.html:11685`) — 包租公管家 brief 标题在 EN 模式下显示 "5/19 周二 13:33"，中英混搭。改为按 `_lang` 切换：en → `Tue 5/19 · 13:33`，zh_tw → `5/19 週二 · 13:33`，zh → `5/19 周二 · 13:33`
 
-**③ position_advice 重写**（侧栏"操作建议"，api/state.py）：
-- 函数签名加 `exit_style` 参数；compute() 从 payload 读取并向下透传到 get_suggestions
-- 整段重写：丢掉旧的 80/50/ITM/ATM/distance 阈值，改成 4 触发线评估
-- status 体现"哪条触发线在亮"+ 当前风格 emoji + 风格名
-- 触发优先级：红线 > 房客违约 > 21 天换租 > 早收租；都没触发就显示"离哪条最近"
-- 每条触发线按风格生成不同的 actions（早收租 vs Wheel 分歧明显）
-- 死磕风格：未触发时显示"等 N 天 expire / 持到 expire 吃满"
-- 三语后端字典各加 ~40 条新句子模板
-- 前端 fetch /api/state body 现在带 `exit_style: _recSelection.exit_style || 'early_close'`
+2. **风险偏好 hint i18n 缺 key** (`index.html:10399/10393`) — `_RISK_BANDS.default.hint = '卖期权：Δ 越低越安全，权利金越少'` 被 t() 包裹但 **dict 没这个 key**，所以 EN/繁中模式下 `t()` 回退到原文（中文）。LEAPS 那条同样。补 2 个 key × 3 套字典 = 6 词条。
 
-**未做**：无 — v2 exit 路线全链路完成（候选卡片 → 持仓卡片 → 侧栏 → 小白指南）。
-下一步可考虑：早安简报也用 4 触发线叙事？不在本轮 scope。
+**复用 round 1 截图栈**：`/tmp/qa-shots-2/<vp>/{01-positions-loaded, 02-chart, 03-fullpage, 06-rec-modal-with-data, 07-rec-modal-scrolled-bottom}.png`。还有 8 个 surface 在 Playwright 脚本里但 pos-card click 被 modal backdrop intercept，留 backlog。
+
+**已部署的 round 1 修复验证**：`padding-bottom: 84px` / `'设置账户可显示资金占比'` 翻译 / `'登录': 'Sign in'` 都在 prod ✓。截图里看到的中文 banner 是 Playwright run 跟 Vercel deploy 撞窗口，不是 fix 失效。
+
+**round 2 backlog（带数据 baseline）**：agent 报的 `.ld-mrung-head` / `.exit-plan.compact` / `.edit-form` 等问题需要点开 pos card / 跑推荐有候选返回 / 触发 ladder builder 才能看到，本轮没截到。
 
 ---
 
-### 上一轮（并行 session · 包租公算法 v2.0 publish · 3 wave 收尾）
+### 并行 session（2026-05-19 cloud · 包租公式 exit_plan 全链路收尾）
 
-**7 件套**（参见 `CHANGELOG.md`）：
-1. **Score-verdict 统一** — tier 改 rent_score 百分位驱动；weight 仅作 cons/pros narrative；veto 仍硬封顶
-2. **回测同步 exit_plan** — `_backtest_strategy` 路径模拟 50% 早平 + DTE cutoff；新增 `early_close_rate`
-3. **DTE IV 自适应** — IV ≥70 甜蜜区 × 0.70 滑短 / ≤30 × 1.30 滑长
-4. **3 出场人设 UI** — 🏠 / 🏘️ / 💰 替代旧 auto/wheel_purist 双选；backend 已 alias
-5. **🔄 Roll 建议器** — 持仓卡按钮触发，约束更长 DTE + 更 OTM strike，每张显示 net credit
-6. **🔍 多 ticker 扫描** — 逗号分隔输入 `TSLA,NVDA,GOOG` 自动 scan_multi action
-7. **💎 财报 IV crush 红利** — 跨财报候选额外算"crush 后红利"在 verdict pro
+接住候选卡片 2×2 网格 ship 后，3 项收尾全做完：
+- **小白指南扩 5 词条**：新分类 🚪 出场触发线（房东人设 / 早收租 / 21 天换租 / 房客违约 / 红线）
+- **renderPositionExitPlan 重写**：读 `_recSelection.exit_style`，选**最紧迫**触发线作 primary（红线>delta>DTE>profit gap），显示当前 vs 阈值；header 迷你 emoji 显示风格（🏠/🏘️/💰）；三语 7 新 key
+- **position_advice 重写**：函数签名加 `exit_style`，整段重写为 4 触发线评估；每条按风格生成不同 actions；三语字典各加 ~40 模板；前端 body 带 `exit_style: _recSelection.exit_style || 'early_close'`
 
-**ALGORITHM_VERSION**: 1.9 → 2.0
-**intro.html** 算法 hero + section 头部更新
-**CHANGELOG.md** 创建（v2.0 + v1.x 历史 + 设计哲学）
+**v2 exit 路线全链路完成**：候选卡片 → 持仓卡片 → 侧栏 → 小白指南。
 
 ---
 
-### 候选卡片 2×2 网格 ship（前一轮）
+### 上一轮（2026-05-19 cloud · 包租公算法 v2.0 publish · 3 wave 收尾）
 
-### ✅ 这一轮（包租公式 exit plan UI ship — 2×2 网格 + 动作行）
+**7 件套**（参见 `CHANGELOG.md` 完整版）：
+1. Score-verdict 统一（tier 改 rent_score 百分位驱动）
+2. 回测同步 exit_plan（`_backtest_strategy` 路径模拟 50% 早平 + DTE cutoff，新增 `early_close_rate`）
+3. DTE IV 自适应（IV ≥70 × 0.70 滑短 / ≤30 × 1.30 滑长）
+4. 3 出场人设 UI（🏠 早收租派 / 🏘️ 接货 Wheel / 💰 死磕到期 — 替代 auto / wheel_purist 双选）
+5. 🔄 Roll 建议器（持仓卡按钮，更长 DTE + 更 OTM strike + net credit）
+6. 🔍 多 ticker 扫描（逗号分隔 `TSLA,NVDA,GOOG` 自动 scan_multi action）
+7. 💎 财报 IV crush 红利（跨财报候选 verdict pro）
 
-**背景**：用户问"出场算法有优化空间吗，大家都是一个逻辑"。我从产品核心竞争力（散户房东叙事）
-深度思考后顶了一套方案：4 条事件触发线 × 3 个房东人设。
+**ALGORITHM_VERSION**: 1.9 → 2.0；intro.html hero 更新；CHANGELOG.md 创建。
 
-**Phase 1（后端，已 ship `acb0060`）**：`_exit_plan` 重写为 4 触发线 + VRP/DTE 动态阈值。
-**Phase 2（预览页 `/landlord-exit`）**：3 渲染方案 A 时间线 / B 2×2 网格 / C 折叠摘要 让用户对比。
-**Phase 3（本轮）**：用户选 B + 要求"推荐动作不能放进去吗" → 每 cell 加底部 act 行。
-
-并行 session 同时 ship 了 v2.0 Wave 1（`4a811c9`）已经做了 picker 扩 3 选 / 默认 early_close /
-旧值迁移 / picker 三语 i18n / Score-verdict 统一 / DTE-IV 自适应；Wave 2.1（`b1932b2`）做了
-backtest 路径模拟跟 exit_plan 同步。本轮在他们基础上补上独有的渲染层：
-
-**本轮独有改动**：
-- 新 `.exit-plan.grid` CSS：2×2 网格（桌面）/ 1×4 stack（手机），每 cell 4 行（top icon+label /
-  val 关键值 / sub 为什么 / → act 推荐动作）；armed 状态变红，ok 状态变绿
-- `renderExitPlan` 重写：读后端 `triggers[]`，按 `trigger.id` 路由格式化（early_close_profit /
-  dte_cutoff / tenant_breach / red_line / leaps_profit / leaps_stop）
-- 新 `_fmtTriggerCell` 辅助函数处理 6 种 trigger 类型 → {val, sub, action, dim, armed, ok}
-- 三语 i18n 补 40+ key：触发线标签 / 值显示 / reason 行（VRP 4 档 + Tasty 21d + Δ 真风险等）/
-  动作 9 条 / 红线事件 3 个
-- `submitRec` 兜底 `_recSelection.exit_style || 'early_close'`（之前还是 'auto'）
-- 删除预览页 `landlord-exit.html` + 移除 vercel.json 对应 build/route
-
-**待用户验证**：
-- [ ] hard-refresh `/app` 跑推荐 → 候选卡片显示 2×2 出场计划（4 个 cell + 每个底部"→ 动作"）
-- [ ] 切换 picker 三档（🏠/🏘️/💰）→ 数值和动作变（早收租派 delta 0.30/Wheel 0.45/死磕 dim）
-- [ ] 手机宽度 → 1×4 stacked，全部可读
-- [ ] 切换三语 → 触发线 / 动作 / reason 都翻译
-- [ ] 红线触发场景（财报夹期 / 占金超阈）→ 第 4 cell 变红，列出事件
-
-**未做（下一轮）**：
-- `position_advice`（持仓侧栏"操作建议"）还是固定 80%/50% 阈值，应该读用户 exit_style
-  动态生成 4 触发线 + 显示"你离哪条最近"
-- `renderPositionExitPlan`（持仓卡片下的 1 行）还是用旧叙事；可以按用户当前 exit_style 展示
-- 小白指南没补"早收租派 / 接货 Wheel / 21 天换租 / 房客违约 / 红线" 5 个词条
+并行 ship 了包租公式 exit_plan 4 触发线渲染（候选卡片 2×2 网格 + 动作行，三语 i18n 补 40+ key）。
+未做留下一轮：`position_advice` 还是固定阈值；`renderPositionExitPlan` 单行还是旧叙事；小白指南没补 5 个新词条。
 
 ---
 

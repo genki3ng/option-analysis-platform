@@ -2215,6 +2215,146 @@ def _capital_risk_check(candidates: list, option_positions: list,
             c["capital_risk"] = "ok"
 
 
+def build_ladder(candidates: list, budget: float, size: int = 4) -> Optional[dict]:
+    """从 recommend 已排序候选清单里构建一组 CSP strike 阶梯。
+
+    思路（v2 #2）：
+      - 用同一个到期日（候选最多的那个 expiry，保证可比性）
+      - 从候选 pool 里按 |delta| 升序排序后均匀选 `size` 档（覆盖 prob_safe 范围）
+      - 每档分配等量 contracts，按 budget 算出能买几"组"
+      - 算总抵押 / 加权 prob_safe / 加权 EV / 加权年化等聚合指标
+
+    用法约束：仅 CSP（short put）适用；call/long 直接返回 None。
+    候选数 < size 直接返回 None（pool 不够选出多样化的阶梯）。
+
+    返回:
+      None — 不可构建
+      dict — 含 rungs / 聚合数 / budget 信息
+    """
+    # 仅 short put（CSP）
+    if not candidates:
+        return None
+    puts = [c for c in candidates if c.get("type") == "put"]
+    if len(puts) < size:
+        return None
+
+    # 1. 选候选最多的 expiry（保证 strikes 都属于同一到期，方便比较 + 一次性下单）
+    by_expiry = {}
+    for c in puts:
+        by_expiry.setdefault(c["expiry"], []).append(c)
+    chosen_expiry, pool = max(by_expiry.items(), key=lambda kv: len(kv[1]))
+    if len(pool) < size:
+        return None
+
+    # 2. 按 |delta| 升序（最安全 → 最激进），均匀选 size 档
+    pool.sort(key=lambda c: abs(c.get("delta", 0)))
+    if size == 1:
+        indices = [len(pool) // 2]
+    else:
+        indices = sorted(set(
+            int(round(i * (len(pool) - 1) / (size - 1))) for i in range(size)
+        ))
+    if len(indices) < size:
+        # 候选重叠（同 strike 多 expiry 时可能），补齐
+        all_idx = list(range(len(pool)))
+        for i in all_idx:
+            if i not in indices:
+                indices.append(i)
+            if len(indices) >= size:
+                break
+        indices = sorted(indices[:size])
+    selected = [pool[i] for i in indices]
+
+    # 3. 按 budget 等量分配 contracts
+    cost_per_unit = sum(float(c.get("strike", 0)) * 100 for c in selected)
+    if cost_per_unit <= 0:
+        return None
+    units = max(1, int(budget // cost_per_unit)) if budget > 0 else 1
+    is_affordable = (cost_per_unit * units <= budget) if budget > 0 else True
+
+    # 4. 构造 rungs + 聚合
+    rungs = []
+    total_contracts = 0
+    total_premium = 0.0
+    total_collateral = 0.0
+    sum_ps_weighted = 0.0   # 按 collateral 权重
+    sum_ev_weighted = 0.0
+    sum_ay_weighted = 0.0
+    ev_data_count = 0
+
+    for c in selected:
+        contracts = units
+        mid = float(c.get("mid") or 0)
+        strike = float(c.get("strike") or 0)
+        premium = mid * 100 * contracts
+        collateral = strike * 100 * contracts
+        sc = c.get("score_components") or {}
+        ev_pct = sc.get("ev_annualized_pct")
+        vrp = sc.get("vrp_ratio")
+        ay = c.get("annualized_yield_pct") or 0
+        ps = c.get("prob_safe_pct") or 0
+
+        rungs.append({
+            "strike": strike,
+            "expiry": c.get("expiry"),
+            "days": c.get("days"),
+            "type": c.get("type"),
+            "contracts": contracts,
+            "mid": round(mid, 3),
+            "delta": c.get("delta"),
+            "prob_safe_pct": ps,
+            "annualized_yield_pct": ay,
+            "moneyness_pct": c.get("moneyness_pct"),
+            "premium_total": round(premium, 2),
+            "collateral_total": round(collateral, 2),
+            "ev_annualized_pct": ev_pct,
+            "vrp_ratio": vrp,
+            "rent_score": c.get("rent_score"),
+            "verdict_tier": (c.get("verdict") or {}).get("tier"),
+            "verdict_stars": (c.get("verdict") or {}).get("stars"),
+        })
+
+        total_contracts += contracts
+        total_premium += premium
+        total_collateral += collateral
+        sum_ps_weighted += ps * collateral
+        if ev_pct is not None:
+            sum_ev_weighted += ev_pct * collateral
+            ev_data_count += 1
+        sum_ay_weighted += ay * collateral
+
+    if total_collateral <= 0:
+        return None
+
+    weighted_ps = sum_ps_weighted / total_collateral
+    weighted_ay = sum_ay_weighted / total_collateral
+    weighted_ev = (sum_ev_weighted / total_collateral) if ev_data_count else None
+    portfolio_period_roc = total_premium / total_collateral * 100
+    portfolio_annualized = (
+        portfolio_period_roc * (365 / selected[0]["days"]) if selected[0].get("days") else None
+    )
+
+    return {
+        "rungs": rungs,
+        "size": len(rungs),
+        "expiry": chosen_expiry,
+        "days": selected[0].get("days"),
+        "units_per_rung": units,
+        "total_contracts": total_contracts,
+        "total_premium": round(total_premium, 2),
+        "total_collateral": round(total_collateral, 2),
+        "budget": round(budget, 2) if budget > 0 else None,
+        "budget_used_pct": round(total_collateral / budget * 100, 1) if budget > 0 else None,
+        "budget_remaining": round(budget - total_collateral, 2) if budget > 0 else None,
+        "is_affordable": is_affordable,
+        "min_budget_needed": round(cost_per_unit, 2),
+        "weighted_prob_safe_pct": round(weighted_ps, 1),
+        "weighted_ev_pct": round(weighted_ev, 2) if weighted_ev is not None else None,
+        "weighted_annualized_yield_pct": round(weighted_ay, 1),
+        "portfolio_annualized_pct": round(portfolio_annualized, 1) if portfolio_annualized else None,
+    }
+
+
 def _landlord_score(opt: dict, is_csp: bool, underlying: float,
                      iv_rank: Optional[dict], backtest: Optional[dict],
                      earnings_cross: bool, earnings_days_until: Optional[int],
@@ -3118,6 +3258,19 @@ def recommend(req: dict) -> dict:
     candidates.sort(key=lambda x: (-x["verdict"]["tier"], -x["score"]))
     candidates = candidates[:15]
 
+    # 6. Ladder builder（v2 #2）—— 仅 CSP 适用，req.ladder = {budget, size}
+    ladder_proposal = None
+    ladder_req = req.get("ladder") or {}
+    if ladder_req and is_short and not is_call:
+        try:
+            ladder_budget = float(ladder_req.get("budget") or 0)
+            ladder_size = int(ladder_req.get("size") or 4)
+            ladder_size = max(3, min(5, ladder_size))
+            if ladder_budget > 0:
+                ladder_proposal = build_ladder(candidates, ladder_budget, ladder_size)
+        except (TypeError, ValueError):
+            ladder_proposal = None
+
     # Portfolio context — 同 ticker 敞口 + -15% 情景（不影响 score）
     portfolio_context = _portfolio_context(ticker, underlying, option_positions, avail_margin)
 
@@ -3152,6 +3305,7 @@ def recommend(req: dict) -> dict:
         "is_leveraged_etf": is_leveraged_etf,
         "is_willing_to_own": is_willing_to_own,
         "exit_style": exit_style,
+        "ladder_proposal": ladder_proposal,
     }
 
 

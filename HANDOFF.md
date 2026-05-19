@@ -3,9 +3,32 @@
 > 本文件每次有较大改动后会更新。读完它你就接住了。
 > **新 session 第一句话**：先读 `CLAUDE.md` 再读本文件，然后简单复述你看到了什么。
 
-最后更新：2026-05-19（cloud — 包租公算法 2.0.1 · capital_risk 双重计算修正）
+最后更新：2026-05-19（cloud — 推荐请求 closed 持仓漏滤修复）
 
-### ✅ 这一轮 hotfix（2026-05-19 cloud · 2.0.1）
+### ✅ 这一轮 hotfix（2026-05-19 cloud · `index.html:9271`）
+
+**问题**：用户反馈"TSLA 敞口 11 张 short put · 15 张 short call · 抵押 $438k · 占账户 893.9%"，张数远超实际。
+
+**Root cause**：推荐请求构建 `openOptionPositions` 时用 `.filter(p => !p.closed)`，但 `closed` 标志存在 **state map** 里（按 position_id 索引），不在 position 对象上 → `p.closed` 永远 undefined → filter 永不剔除 → 所有历史持仓（含已平仓）都进 `option_positions` → `_portfolio_context` 全部累加 → 数字膨胀。
+
+副作用：`willing_to_own` 自动推导也被污染（有过 short put 历史的 ticker 永远 willing，不一定符合当前偏好）。
+
+**修复**（`index.html:9270-9281`）：
+```js
+const __stMap = loadStateMap();
+const openOptionPositions = loadPositions()
+  .filter(p => {
+    const st = __stMap[posIdOf(p)];
+    return !(st && st.closed);
+  })
+  .map(p => ({ ... }));
+```
+
+只影响推荐请求构建。前端展示侧用 `d.positions`（后端已富集 closed 字段），不受影响。
+
+---
+
+### 上一轮（2026-05-19 cloud — 包租公算法 2.0.1 · capital_risk 双重计算修正）
 
 **问题**：用户反馈 prod 上"看到好几次资金不足"警告。
 
